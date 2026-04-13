@@ -6,7 +6,7 @@ import { WeightChart } from "@/components/progress/weight-chart";
 import { useProgressLogs } from "@/hooks/use-progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function IlerlемePage() {
+export default function IlerlemePage() {
   const { data: logs } = useProgressLogs(1);
 
   const latestWeight = logs?.find((l) => l.weight)?.weight;
