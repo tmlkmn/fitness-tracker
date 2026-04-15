@@ -21,16 +21,22 @@ import {
   Shield,
   ChevronDown,
   CreditCard,
+  Plus,
+  Trash2,
+  Clock,
+  Pill,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
+import { updateDailyRoutine, updateSupplementSchedule } from "@/actions/user";
 import { ShareManager } from "@/components/sharing/share-manager";
 import { NotificationPreferencesCard } from "@/components/notifications/notification-preferences-card";
 import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
 import { PwaInstallCard } from "@/components/layout/pwa-install-card";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 
 const MEMBERSHIP_LABELS: Record<string, string> = {
@@ -143,6 +149,228 @@ function CollapsibleCard({
         </CollapsibleContent>
       </Card>
     </Collapsible>
+  );
+}
+
+type RoutineItem = { time: string; event: string };
+
+function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserProfile>["data"] }) {
+  const queryClient = useQueryClient();
+  const [items, setItems] = useState<RoutineItem[]>([]);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile?.dailyRoutine && Array.isArray(profile.dailyRoutine)) {
+      setItems(profile.dailyRoutine as RoutineItem[]);
+    }
+  }, [profile?.dailyRoutine]);
+
+  const handleSave = async () => {
+    const filtered = items.filter((i) => i.time.trim() && i.event.trim());
+    setSaving(true);
+    try {
+      await updateDailyRoutine(filtered);
+      await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <div className="space-y-2">
+        {items.length > 0 ? (
+          items.map((item, i) => (
+            <div key={i} className="flex justify-between text-sm">
+              <span className="text-muted-foreground font-mono">{item.time}</span>
+              <span>{item.event}</span>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">Henüz günlük akış eklenmemiş.</p>
+        )}
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs text-primary hover:underline mt-2"
+        >
+          {items.length > 0 ? "Düzenle" : "Ekle"}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input
+            value={item.time}
+            onChange={(e) => {
+              const copy = [...items];
+              copy[i] = { ...copy[i], time: e.target.value };
+              setItems(copy);
+            }}
+            placeholder="08:30"
+            className="flex h-8 w-24 rounded-md border border-input bg-background px-2 text-xs font-mono"
+          />
+          <input
+            value={item.event}
+            onChange={(e) => {
+              const copy = [...items];
+              copy[i] = { ...copy[i], event: e.target.value };
+              setItems(copy);
+            }}
+            placeholder="Etkinlik"
+            className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
+          />
+          <button
+            onClick={() => setItems(items.filter((_, j) => j !== i))}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={() => setItems([...items, { time: "", event: "" }])}
+        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+      >
+        <Plus className="h-3 w-3" /> Satır Ekle
+      </button>
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Kaydet"}
+        </button>
+        <button
+          onClick={() => {
+            if (profile?.dailyRoutine && Array.isArray(profile.dailyRoutine)) {
+              setItems(profile.dailyRoutine as RoutineItem[]);
+            }
+            setEditing(false);
+          }}
+          className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-input text-xs font-medium hover:bg-accent"
+        >
+          İptal
+        </button>
+      </div>
+    </div>
+  );
+}
+
+type SupplementItem = { period: string; supplements: string };
+
+function SupplementScheduleEditor({ profile }: { profile: ReturnType<typeof useUserProfile>["data"] }) {
+  const queryClient = useQueryClient();
+  const [items, setItems] = useState<SupplementItem[]>([]);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile?.supplementSchedule && Array.isArray(profile.supplementSchedule)) {
+      setItems(profile.supplementSchedule as SupplementItem[]);
+    }
+  }, [profile?.supplementSchedule]);
+
+  const handleSave = async () => {
+    const filtered = items.filter((i) => i.period.trim() && i.supplements.trim());
+    setSaving(true);
+    try {
+      await updateSupplementSchedule(filtered);
+      await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <div className="space-y-2">
+        {items.length > 0 ? (
+          items.map((item, i) => (
+            <div key={i} className="flex justify-between text-sm">
+              <span className="text-muted-foreground">{item.period}:</span>
+              <span className="font-medium">{item.supplements}</span>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">Henüz supplement takvimi eklenmemiş.</p>
+        )}
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs text-primary hover:underline mt-2"
+        >
+          {items.length > 0 ? "Düzenle" : "Ekle"}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input
+            value={item.period}
+            onChange={(e) => {
+              const copy = [...items];
+              copy[i] = { ...copy[i], period: e.target.value };
+              setItems(copy);
+            }}
+            placeholder="Hafta 1-2"
+            className="flex h-8 w-24 rounded-md border border-input bg-background px-2 text-xs"
+          />
+          <input
+            value={item.supplements}
+            onChange={(e) => {
+              const copy = [...items];
+              copy[i] = { ...copy[i], supplements: e.target.value };
+              setItems(copy);
+            }}
+            placeholder="Supplement listesi"
+            className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
+          />
+          <button
+            onClick={() => setItems(items.filter((_, j) => j !== i))}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ))}
+      <button
+        onClick={() => setItems([...items, { period: "", supplements: "" }])}
+        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+      >
+        <Plus className="h-3 w-3" /> Satır Ekle
+      </button>
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Kaydet"}
+        </button>
+        <button
+          onClick={() => {
+            if (profile?.supplementSchedule && Array.isArray(profile.supplementSchedule)) {
+              setItems(profile.supplementSchedule as SupplementItem[]);
+            }
+            setEditing(false);
+          }}
+          className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-input text-xs font-medium hover:bg-accent"
+        >
+          İptal
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -260,40 +488,12 @@ export default function AyarlarPage() {
           </div>
         </CollapsibleCard>
 
-        <CollapsibleCard title="Günlük Akış" icon={Info}>
-          <div className="space-y-2">
-            {[
-              { time: "08:30", event: "Uyanış" },
-              { time: "08:30-11:00", event: "Çocuk okula, toplantılar" },
-              { time: "10:30-11:00", event: "İlk kahvaltı fırsatı" },
-              { time: "19:00-20:30", event: "Antrenman" },
-              { time: "20:30-21:00", event: "Duş & toparlanma" },
-              { time: "21:00", event: "Antrenman sonrası beslenme" },
-              { time: "24:00", event: "Uyku" },
-            ].map(({ time, event }) => (
-              <div key={time} className="flex justify-between text-sm">
-                <span className="text-muted-foreground font-mono">{time}</span>
-                <span>{event}</span>
-              </div>
-            ))}
-          </div>
+        <CollapsibleCard title="Günlük Akış" icon={Clock}>
+          <DailyRoutineEditor profile={profile} />
         </CollapsibleCard>
 
-        <CollapsibleCard title="Supplement Takvimi" icon={Info}>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Hafta 1-2:</span>
-              <span className="font-medium">Supplement yok</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Hafta 3:</span>
-              <span className="font-medium">Whey Protein (su ile)</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Hafta 4:</span>
-              <span className="font-medium">Whey + Omega-3 + Magnezyum</span>
-            </div>
-          </div>
+        <CollapsibleCard title="Supplement Takvimi" icon={Pill}>
+          <SupplementScheduleEditor profile={profile} />
         </CollapsibleCard>
 
         <NotificationPreferencesCard />

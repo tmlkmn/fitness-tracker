@@ -5,6 +5,7 @@ import { useSession } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
 import { updateUserOnboarding } from "@/actions/user";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dumbbell, Loader2, Ruler, Scale, Target, Heart } from "lucide-react";
@@ -13,6 +14,7 @@ export default function ProfilTamamlaPage() {
   const { data: session, isPending: sessionPending } = useSession();
   const { data: profile, isLoading: profileLoading } = useUserProfile();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const user = session?.user;
 
   const [height, setHeight] = useState("");
@@ -68,6 +70,7 @@ export default function ProfilTamamlaPage() {
         targetWeight: targetWeight,
         healthNotes: healthNotes.trim() || undefined,
       });
+      await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       router.push("/");
       router.refresh();
     } catch {

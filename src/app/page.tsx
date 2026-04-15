@@ -82,14 +82,16 @@ export default function HomePage() {
     })
   );
 
-  // Membership info
-  const [membershipInfo] = useState(() => {
+  // Capture "now" once at mount to avoid Date.now() in render
+  const [nowMs] = useState(() => Date.now());
+
+  // Membership info — compute from profile using stable nowMs
+  const membershipInfo = (() => {
     if (!profile?.membershipEndDate) return null;
     const end = new Date(profile.membershipEndDate).getTime();
-    const now = Date.now();
-    if (end <= now) return { days: 0, expired: true };
-    return { days: Math.ceil((end - now) / (1000 * 60 * 60 * 24)), expired: false };
-  });
+    if (end <= nowMs) return { days: 0, expired: true };
+    return { days: Math.ceil((end - nowMs) / (1000 * 60 * 60 * 24)), expired: false };
+  })();
 
   // Compute today's completion
   const mealsDone = today?.meals?.filter((m) => m.isCompleted).length ?? 0;

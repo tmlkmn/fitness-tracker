@@ -51,10 +51,12 @@ export default function IlerlemePage() {
                 className={`text-lg font-bold ${
                   diff && parseFloat(diff) < 0
                     ? "text-green-500"
-                    : "text-muted-foreground"
+                    : diff && parseFloat(diff) > 0
+                      ? "text-red-400"
+                      : "text-muted-foreground"
                 }`}
               >
-                {diff ?? "0"}
+                {diff ? (parseFloat(diff) > 0 ? `+${diff}` : diff) : "—"}
               </p>
               <p className="text-xs text-muted-foreground">kg fark</p>
             </CardContent>
@@ -78,8 +80,8 @@ export default function IlerlemePage() {
         {/* Dynamic chart */}
         <ChartSelector data={logs ?? []} />
 
-        {/* AI Analysis */}
-        <ProgressAiAnalysis />
+        {/* AI Analysis — only show with 2+ measurements */}
+        {logs && logs.length >= 2 && <ProgressAiAnalysis />}
 
         {/* Expanded form */}
         <ProgressForm />

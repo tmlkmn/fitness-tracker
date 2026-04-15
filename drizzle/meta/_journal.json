@@ -50,6 +50,13 @@
       "when": 1776252225875,
       "tag": "0006_broken_spyke",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776259693254,
+      "tag": "0007_naive_corsair",
+      "breakpoints": true
     }
   ]
 }

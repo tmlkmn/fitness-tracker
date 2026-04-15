@@ -14,13 +14,15 @@ export async function getUserProfile() {
       targetWeight: users.targetWeight,
       height: users.height,
       healthNotes: users.healthNotes,
+      dailyRoutine: users.dailyRoutine,
+      supplementSchedule: users.supplementSchedule,
       membershipType: users.membershipType,
       membershipStartDate: users.membershipStartDate,
       membershipEndDate: users.membershipEndDate,
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, healthNotes: null, membershipType: null, membershipStartDate: null, membershipEndDate: null };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, healthNotes: null, dailyRoutine: null, supplementSchedule: null, membershipType: null, membershipStartDate: null, membershipEndDate: null };
 }
 
 export async function updateUserWeightTargets(data: {
@@ -57,4 +59,22 @@ export async function updateUserOnboarding(data: {
   revalidatePath("/");
   revalidatePath("/ayarlar");
   revalidatePath("/ilerleme");
+}
+
+export async function updateDailyRoutine(items: { time: string; event: string }[]) {
+  const user = await getAuthUser();
+  await db
+    .update(users)
+    .set({ dailyRoutine: items })
+    .where(eq(users.id, user.id));
+  revalidatePath("/ayarlar");
+}
+
+export async function updateSupplementSchedule(items: { period: string; supplements: string }[]) {
+  const user = await getAuthUser();
+  await db
+    .update(users)
+    .set({ supplementSchedule: items })
+    .where(eq(users.id, user.id));
+  revalidatePath("/ayarlar");
 }

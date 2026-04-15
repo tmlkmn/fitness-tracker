@@ -6,12 +6,14 @@ import { Bell, BellOff, Loader2 } from "lucide-react";
 import { subscribeToPush } from "@/lib/push-subscribe";
 
 export function PushPermissionButton() {
-  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [permission, setPermission] = useState<NotificationPermission | "loading">("loading");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (typeof Notification !== "undefined") {
       setPermission(Notification.permission);
+    } else {
+      setPermission("denied");
     }
   }, []);
 
@@ -27,8 +29,10 @@ export function PushPermissionButton() {
     }
   };
 
-  // Already granted — parent hides this, but also return null as safety
-  if (typeof Notification === "undefined") {
+  // Still loading — show nothing to avoid flash
+  if (permission === "loading") return null;
+
+  if (typeof window !== "undefined" && typeof Notification === "undefined") {
     return (
       <p className="text-xs text-muted-foreground">
         Tarayıcınız push bildirimlerini desteklemiyor.

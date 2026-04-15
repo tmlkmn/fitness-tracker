@@ -42,7 +42,7 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname();
 
-  const hiddenPaths = ["/giris", "/bekliyor", "/sifre-degistir", "/sifremi-unuttum", "/sifre-sifirla", "/admin"];
+  const hiddenPaths = ["/giris", "/bekliyor", "/sifre-degistir", "/sifremi-unuttum", "/sifre-sifirla", "/admin", "/profil-tamamla", "/uyelik-doldu"];
   if (hiddenPaths.some((p) => pathname.startsWith(p))) return null;
 
   return (
