@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { listAllUsers, resendInvite, removeUserAction } from "@/actions/admin";
-import type { UserWithStatus } from "@/actions/admin";
+import { listAllUsers, resendInvite, removeUserAction, extendMembership } from "@/actions/admin";
+import type { UserWithStatus, MembershipType } from "@/actions/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Users,
@@ -15,6 +15,8 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
+  CalendarClock,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -29,7 +31,143 @@ const statusConfig: Record<
     icon: AlertTriangle,
     className: "text-red-400 bg-red-400/10",
   },
+  "Üyelik Dolmuş": {
+    icon: AlertTriangle,
+    className: "text-orange-400 bg-orange-400/10",
+  },
 };
+
+const MEMBERSHIP_LABELS: Record<string, string> = {
+  unlimited: "Sınırsız",
+  "1-month": "1 Ay",
+  "3-month": "3 Ay",
+  "6-month": "6 Ay",
+  "1-year": "1 Yıl",
+  custom: "Özel",
+};
+
+const MEMBERSHIP_OPTIONS: { value: MembershipType; label: string }[] = [
+  { value: "1-month", label: "1 Ay" },
+  { value: "3-month", label: "3 Ay" },
+  { value: "6-month", label: "6 Ay" },
+  { value: "1-year", label: "1 Yıl" },
+  { value: "unlimited", label: "Sınırsız" },
+  { value: "custom", label: "Özel Tarih" },
+];
+
+function MembershipBadge({ user }: { user: UserWithStatus }) {
+  if (!user.membershipType || user.status === "Admin") return null;
+  const label = MEMBERSHIP_LABELS[user.membershipType] ?? user.membershipType;
+  const endDate = user.membershipEndDate
+    ? new Date(user.membershipEndDate).toLocaleDateString("tr-TR")
+    : null;
+  return (
+    <span className="text-xs text-muted-foreground">
+      {label}
+      {endDate && ` · ${endDate}`}
+    </span>
+  );
+}
+
+function ExtendDialog({
+  user,
+  onClose,
+  onSuccess,
+}: {
+  user: UserWithStatus;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [type, setType] = useState<MembershipType>(
+    (user.membershipType as MembershipType) ?? "1-month"
+  );
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (type === "custom" && !customEndDate) {
+      setError("Bitiş tarihi seçin.");
+      return;
+    }
+    if (type === "custom" && new Date(customEndDate) <= new Date()) {
+      setError("Bitiş tarihi bugünden sonra olmalı.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await extendMembership(
+        user.id,
+        type,
+        type === "custom" ? customEndDate : undefined
+      );
+      onSuccess();
+    } catch {
+      setError("Üyelik güncellenemedi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+      <Card className="w-full max-w-sm">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold">Üyelik Güncelle</h2>
+            <button
+              onClick={onClose}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground">{user.name}</p>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as MembershipType)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              {MEMBERSHIP_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            {type === "custom" && (
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            )}
+            {error && (
+              <p className="text-sm text-destructive text-center">{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Güncelle"
+              )}
+            </button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function AdminPage() {
   const router = useRouter();
@@ -37,6 +175,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [extendUser, setExtendUser] = useState<UserWithStatus | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -140,9 +279,19 @@ export default function AdminPage() {
                       <p className="text-sm text-muted-foreground truncate">
                         {user.email}
                       </p>
+                      <MembershipBadge user={user} />
                     </div>
 
                     <div className="flex items-center gap-1">
+                      {user.status !== "Admin" && (
+                        <button
+                          onClick={() => setExtendUser(user)}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
+                          title="Üyelik Güncelle"
+                        >
+                          <CalendarClock className="h-4 w-4" />
+                        </button>
+                      )}
                       {(user.status === "Bekliyor" ||
                         user.status === "Süresi Dolmuş") && (
                         <button
@@ -195,6 +344,17 @@ export default function AdminPage() {
           </Link>
         </div>
       </div>
+
+      {extendUser && (
+        <ExtendDialog
+          user={extendUser}
+          onClose={() => setExtendUser(null)}
+          onSuccess={() => {
+            setExtendUser(null);
+            fetchUsers();
+          }}
+        />
+      )}
     </div>
   );
 }

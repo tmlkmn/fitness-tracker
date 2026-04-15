@@ -8,6 +8,7 @@ import {
   getDailyPlansForWeekByDate,
   getWeeklyPlanById,
   getDatesWithPlansForMonth,
+  getTodayDashboardData,
 } from "@/actions/plans";
 
 export function useAllWeeks() {
@@ -70,5 +71,12 @@ export function useDatesWithPlans(year: number, month: number) {
     queryKey: ["dates-with-plans", year, month],
     queryFn: () => getDatesWithPlansForMonth(year, month),
     enabled: !!year && !!month,
+  });
+}
+
+export function useTodayDashboard() {
+  return useQuery({
+    queryKey: ["today-dashboard"],
+    queryFn: getTodayDashboardData,
   });
 }

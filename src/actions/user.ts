@@ -14,10 +14,13 @@ export async function getUserProfile() {
       targetWeight: users.targetWeight,
       height: users.height,
       healthNotes: users.healthNotes,
+      membershipType: users.membershipType,
+      membershipStartDate: users.membershipStartDate,
+      membershipEndDate: users.membershipEndDate,
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, healthNotes: null };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, healthNotes: null, membershipType: null, membershipStartDate: null, membershipEndDate: null };
 }
 
 export async function updateUserWeightTargets(data: {
@@ -32,5 +35,26 @@ export async function updateUserWeightTargets(data: {
       targetWeight: data.targetWeight ?? null,
     })
     .where(eq(users.id, user.id));
+  revalidatePath("/ilerleme");
+}
+
+export async function updateUserOnboarding(data: {
+  height: number;
+  weight: string;
+  targetWeight: string;
+  healthNotes?: string;
+}) {
+  const user = await getAuthUser();
+  await db
+    .update(users)
+    .set({
+      height: data.height,
+      weight: data.weight,
+      targetWeight: data.targetWeight,
+      healthNotes: data.healthNotes ?? null,
+    })
+    .where(eq(users.id, user.id));
+  revalidatePath("/");
+  revalidatePath("/ayarlar");
   revalidatePath("/ilerleme");
 }

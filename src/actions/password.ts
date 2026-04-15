@@ -7,6 +7,7 @@ import { hashPassword } from "better-auth/crypto";
 import { getAuthSession } from "@/lib/auth-utils";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { computeMembershipEndDate } from "@/actions/admin";
 
 export async function forceChangePassword(newPassword: string) {
   const user = await getAuthSession();
@@ -28,9 +29,36 @@ export async function forceChangePassword(newPassword: string) {
       and(eq(accounts.userId, user.id), eq(accounts.providerId, "credential"))
     );
 
+  // Fetch membership info to compute dates
+  const [dbUser] = await db
+    .select({
+      membershipType: users.membershipType,
+      membershipEndDate: users.membershipEndDate,
+    })
+    .from(users)
+    .where(eq(users.id, user.id));
+
+  const now = new Date();
+  const updateData: Record<string, unknown> = {
+    mustChangePassword: false,
+    isApproved: true,
+    membershipStartDate: now,
+  };
+
+  if (dbUser?.membershipType && dbUser.membershipType !== "unlimited") {
+    const endDate = await computeMembershipEndDate(
+      dbUser.membershipType,
+      now,
+      dbUser.membershipEndDate
+    );
+    if (endDate) {
+      updateData.membershipEndDate = endDate;
+    }
+  }
+
   await db
     .update(users)
-    .set({ mustChangePassword: false, isApproved: true })
+    .set(updateData)
     .where(eq(users.id, user.id));
 
   revalidatePath("/");

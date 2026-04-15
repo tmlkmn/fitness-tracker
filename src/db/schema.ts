@@ -30,6 +30,10 @@ export const users = pgTable("user", {
   banExpires: timestamp("ban_expires"),
   mustChangePassword: boolean("must_change_password").default(false),
   inviteExpiresAt: timestamp("invite_expires_at"),
+  membershipType: text("membership_type"),
+  membershipStartDate: timestamp("membership_start_date"),
+  membershipEndDate: timestamp("membership_end_date"),
+  membershipNotifiedAt: timestamp("membership_notified_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { weeklyPlans, dailyPlans, supplements } from "@/db/schema";
+import { weeklyPlans, dailyPlans, supplements, meals, exercises } from "@/db/schema";
 import { eq, asc, and, gte, lte, isNotNull } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import { verifyWeeklyPlanOwnership } from "@/lib/ownership";
@@ -143,4 +143,27 @@ export async function getDatesWithPlansForMonth(
       )
     );
   return rows.map((r) => r.date).filter(Boolean) as string[];
+}
+
+export async function getTodayDashboardData() {
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const dailyPlan = await getDailyPlanByDate(todayStr);
+  if (!dailyPlan) return { dailyPlan: null, meals: [], exercises: [], weeklyPlan: null };
+
+  const [mealRows, exerciseRows, weeklyPlan] = await Promise.all([
+    db
+      .select()
+      .from(meals)
+      .where(eq(meals.dailyPlanId, dailyPlan.id))
+      .orderBy(meals.sortOrder),
+    db
+      .select()
+      .from(exercises)
+      .where(eq(exercises.dailyPlanId, dailyPlan.id))
+      .orderBy(exercises.sortOrder),
+    getWeeklyPlanByDate(todayStr),
+  ]);
+
+  return { dailyPlan, meals: mealRows, exercises: exerciseRows, weeklyPlan };
 }

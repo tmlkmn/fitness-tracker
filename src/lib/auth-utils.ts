@@ -18,6 +18,14 @@ export async function getAuthUser() {
   if (!user.isApproved) {
     throw new Error("NotApproved");
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const u = user as any;
+  // Admin users are exempt from membership checks
+  if (u.role === "admin") return user;
+  // Check membership expiry (null = unlimited/legacy = no expiry)
+  if (u.membershipEndDate && new Date(u.membershipEndDate) <= new Date()) {
+    throw new Error("MembershipExpired");
+  }
   return user;
 }
 

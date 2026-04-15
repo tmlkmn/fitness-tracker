@@ -32,6 +32,10 @@ export const auth = betterAuth({
       isApproved: { type: "boolean", required: false, defaultValue: false },
       mustChangePassword: { type: "boolean", required: false, defaultValue: false },
       inviteExpiresAt: { type: "date", required: false },
+      membershipType: { type: "string", required: false },
+      membershipStartDate: { type: "date", required: false },
+      membershipEndDate: { type: "date", required: false },
+      membershipNotifiedAt: { type: "date", required: false },
     },
   },
   session: {

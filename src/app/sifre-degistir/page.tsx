@@ -39,7 +39,7 @@ export default function SifreDegistirPage() {
     setLoading(true);
     try {
       await forceChangePassword(newPassword);
-      router.push("/");
+      router.push("/profil-tamamla");
       router.refresh();
     } catch {
       setError("Bir hata oluştu. Tekrar deneyin.");

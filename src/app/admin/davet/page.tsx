@@ -2,13 +2,25 @@
 
 import { useState } from "react";
 import { inviteUser } from "@/actions/admin";
+import type { MembershipType } from "@/actions/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserPlus, Loader2, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
+const MEMBERSHIP_OPTIONS: { value: MembershipType; label: string }[] = [
+  { value: "1-month", label: "1 Ay" },
+  { value: "3-month", label: "3 Ay" },
+  { value: "6-month", label: "6 Ay" },
+  { value: "1-year", label: "1 Yıl" },
+  { value: "unlimited", label: "Sınırsız" },
+  { value: "custom", label: "Özel Tarih" },
+];
+
 export default function DavetPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [membershipType, setMembershipType] = useState<MembershipType>("1-month");
+  const [customEndDate, setCustomEndDate] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -16,10 +28,23 @@ export default function DavetPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (membershipType === "custom" && !customEndDate) {
+      setError("Özel tarih için bitiş tarihi seçin.");
+      return;
+    }
+    if (membershipType === "custom" && new Date(customEndDate) <= new Date()) {
+      setError("Bitiş tarihi bugünden sonra olmalı.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await inviteUser(email, name);
+      await inviteUser(email, name, {
+        type: membershipType,
+        ...(membershipType === "custom" ? { customEndDate } : {}),
+      });
       setSuccess(true);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "";
@@ -52,6 +77,8 @@ export default function DavetPage() {
                   setSuccess(false);
                   setName("");
                   setEmail("");
+                  setMembershipType("1-month");
+                  setCustomEndDate("");
                 }}
                 className="flex-1 h-10 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors"
               >
@@ -120,6 +147,46 @@ export default function DavetPage() {
                 placeholder="ornek@mail.com"
               />
             </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="membership"
+                className="text-sm font-medium leading-none"
+              >
+                Üyelik Süresi
+              </label>
+              <select
+                id="membership"
+                value={membershipType}
+                onChange={(e) => setMembershipType(e.target.value as MembershipType)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                {MEMBERSHIP_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {membershipType === "custom" && (
+              <div className="space-y-2">
+                <label
+                  htmlFor="customEndDate"
+                  className="text-sm font-medium leading-none"
+                >
+                  Bitiş Tarihi
+                </label>
+                <input
+                  id="customEndDate"
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              </div>
+            )}
 
             {error && (
               <p className="text-sm text-destructive text-center">{error}</p>

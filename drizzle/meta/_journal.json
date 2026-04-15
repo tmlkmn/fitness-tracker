@@ -43,6 +43,13 @@
       "when": 1776244702498,
       "tag": "0005_minor_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776252225875,
+      "tag": "0006_broken_spyke",
+      "breakpoints": true
     }
   ]
 }

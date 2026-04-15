@@ -39,7 +39,13 @@ export default function GirisPage() {
           }
           router.push("/sifre-degistir");
         } else if (user?.isApproved) {
-          router.push("/");
+          if (user.membershipEndDate && new Date(user.membershipEndDate) < new Date()) {
+            router.push("/uyelik-doldu");
+          } else if (!user.height || !user.weight) {
+            router.push("/profil-tamamla");
+          } else {
+            router.push("/");
+          }
         } else {
           router.push("/bekliyor");
         }

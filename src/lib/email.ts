@@ -133,3 +133,51 @@ export async function sendNotificationEmail(
 
   await getResend().emails.send({ from, to, subject: `FitTrack — ${subject}`, html });
 }
+
+export async function sendMembershipExpiryEmail(
+  to: string,
+  userName: string,
+  daysLeft: number,
+  endDateStr: string
+) {
+  const isExpired = daysLeft <= 0;
+  const borderColor = isExpired ? "#ef4444" : daysLeft <= 1 ? "#ef4444" : "#f59e0b";
+  const countdownColor = isExpired ? "#ef4444" : daysLeft <= 1 ? "#ef4444" : "#f59e0b";
+
+  const subject = isExpired
+    ? "Üyelik Süreniz Doldu"
+    : `Üyeliğiniz ${daysLeft} Gün İçinde Doluyor`;
+
+  const html = emailLayout(`
+    <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">
+      ${isExpired ? "Üyelik Süreniz Doldu" : "Üyelik Hatırlatması"}
+    </h2>
+    <p style="color:#a3a3a3;font-size:14px;line-height:22px;margin:0 0 20px 0;">
+      Merhaba ${userName},
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+           style="background-color:#0a0a0b;border-radius:8px;border:1px solid ${borderColor};margin:0 0 20px 0;">
+      <tr>
+        <td style="padding:16px;text-align:center;">
+          <p style="color:${countdownColor};font-size:32px;font-weight:700;margin:0;">
+            ${isExpired ? "Süresi Doldu" : `${daysLeft} Gün`}
+          </p>
+          <p style="color:#a3a3a3;font-size:13px;margin:4px 0 0 0;">
+            ${isExpired ? `Üyeliğiniz ${endDateStr} tarihinde sona erdi` : `Üyeliğiniz ${endDateStr} tarihinde sona erecek`}
+          </p>
+        </td>
+      </tr>
+    </table>
+    <p style="color:#d4d4d4;font-size:14px;line-height:22px;margin:0 0 8px 0;">
+      ${isExpired
+        ? "Hesabınıza erişim için üyeliğinizin yenilenmesi gerekmektedir."
+        : "Kesintisiz erişim için üyeliğinizi yenilemeyi unutmayın!"}
+    </p>
+    <p style="color:#a3a3a3;font-size:13px;line-height:20px;margin:0;">
+      Yenilemek için yöneticinizle iletişime geçin.
+    </p>
+    ${emailButton(`${appUrl}/ayarlar`, "Hesabıma Git →")}
+  `);
+
+  await getResend().emails.send({ from, to, subject: `FitTrack — ${subject}`, html });
+}
