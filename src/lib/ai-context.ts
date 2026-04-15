@@ -17,6 +17,11 @@ export async function buildUserContext(userId: string): Promise<string> {
       weight: users.weight,
       targetWeight: users.targetWeight,
       healthNotes: users.healthNotes,
+      dailyRoutine: users.dailyRoutine,
+      fitnessLevel: users.fitnessLevel,
+      sportHistory: users.sportHistory,
+      currentMedications: users.currentMedications,
+      serviceType: users.serviceType,
     })
     .from(users)
     .where(eq(users.id, userId));
@@ -43,6 +48,38 @@ export async function buildUserContext(userId: string): Promise<string> {
       lines.push(`Sağlık notları: ${user.healthNotes}`);
     }
   }
+
+  // Daily routine
+  if (user.dailyRoutine && Array.isArray(user.dailyRoutine) && user.dailyRoutine.length > 0) {
+    const routineStr = (user.dailyRoutine as { time: string; event: string }[])
+      .map((r) => `${r.time} ${r.event}`)
+      .join(", ");
+    lines.push(`Günlük program: ${routineStr}`);
+  }
+
+  // Fitness level
+  const fitnessLabels: Record<string, string> = {
+    beginner: "Yeni başlayan",
+    returning: "Ara vermiş, tekrar başlayan",
+    intermediate: "Orta düzey",
+    advanced: "İleri düzey",
+  };
+  if (user.fitnessLevel) {
+    lines.push(`Fitness seviyesi: ${fitnessLabels[user.fitnessLevel] ?? user.fitnessLevel}`);
+  }
+
+  // Sport history
+  if (user.sportHistory) {
+    lines.push(`Spor geçmişi: ${user.sportHistory}`);
+  }
+
+  // Medications
+  if (user.currentMedications) {
+    lines.push(`İlaçlar/supplementler: ${user.currentMedications}`);
+  }
+
+  // Service type
+  lines.push(`Hizmet tipi: ${user.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program (Antrenman + Beslenme)"}`);
 
   // Current phase
   const today = new Date().toISOString().split("T")[0];

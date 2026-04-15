@@ -54,9 +54,9 @@ export function ExerciseCard({
   const generate = useGenerateExerciseVariation();
   const apply = useApplyExerciseVariation();
 
-  const handleGenerate = () => {
+  const handleGenerate = (userNote?: string) => {
     if (!dailyPlanId) return;
-    generate.mutate({ exerciseId: id, dailyPlanId });
+    generate.mutate({ exerciseId: id, dailyPlanId, userNote });
   };
 
   const handleApply = () => {
@@ -74,9 +74,6 @@ export function ExerciseCard({
 
   const handleOpenChange = (open: boolean) => {
     setModalOpen(open);
-    if (open && !generate.data) {
-      handleGenerate();
-    }
     if (!open) {
       generate.reset();
     }

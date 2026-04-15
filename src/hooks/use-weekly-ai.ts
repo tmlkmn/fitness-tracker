@@ -7,7 +7,8 @@ import {
 
 export function useGenerateWeeklyPlan() {
   return useMutation({
-    mutationFn: (dateStr: string) => generateWeeklyPlan(dateStr),
+    mutationFn: ({ dateStr, userNote }: { dateStr: string; userNote?: string }) =>
+      generateWeeklyPlan(dateStr, userNote),
   });
 }
 

@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "service_type" text DEFAULT 'full';

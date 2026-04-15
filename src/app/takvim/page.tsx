@@ -24,6 +24,7 @@ import {
   Info,
   Sparkles,
   Plus,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { formatDateStr } from "@/lib/utils";
@@ -34,6 +35,7 @@ const planTypeConfig = {
   workout: { icon: Dumbbell, label: "Antrenman", badge: "default" as const },
   swimming: { icon: Waves, label: "Yüzme", badge: "secondary" as const },
   rest: { icon: Moon, label: "Dinlenme", badge: "outline" as const },
+  nutrition: { icon: UtensilsCrossed, label: "Beslenme", badge: "default" as const },
 };
 
 function formatTurkishDate(dateStr: string): string {
@@ -133,8 +135,8 @@ export default function TakvimPage() {
   }, []);
 
   // AI Weekly Plan handlers
-  const handleGenerateWeekly = () => {
-    generateWeekly.mutate(selectedDate);
+  const handleGenerateWeekly = (userNote?: string) => {
+    generateWeekly.mutate({ dateStr: selectedDate, userNote });
   };
 
   const handleApplyWeekly = () => {
@@ -152,9 +154,6 @@ export default function TakvimPage() {
 
   const handleWeeklyModalOpenChange = (open: boolean) => {
     setWeeklyModalOpen(open);
-    if (open && !generateWeekly.data) {
-      handleGenerateWeekly();
-    }
     if (!open) {
       generateWeekly.reset();
     }

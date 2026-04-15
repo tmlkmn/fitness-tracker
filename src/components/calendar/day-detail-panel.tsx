@@ -8,6 +8,7 @@ import { WorkoutList } from "@/components/workout/workout-list";
 import { AiMealModal } from "@/components/meals/ai-meal-modal";
 import { UtensilsCrossed, Clock, Dumbbell } from "lucide-react";
 import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
+import { useUserProfile } from "@/hooks/use-user";
 
 interface DayDetailPanelProps {
   dailyPlan: {
@@ -24,9 +25,11 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
   const [mealModalOpen, setMealModalOpen] = useState(false);
   const generateMeals = useGenerateDailyMeals();
   const applyMeals = useApplyDailyMeals();
+  const { data: profile } = useUserProfile();
+  const isNutritionOnly = profile?.serviceType === "nutrition";
 
-  const handleGenerateMeals = () => {
-    generateMeals.mutate(dailyPlan.id);
+  const handleGenerateMeals = (userNote?: string) => {
+    generateMeals.mutate({ dailyPlanId: dailyPlan.id, userNote });
   };
 
   const handleApplyMeals = () => {
@@ -44,9 +47,6 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
 
   const handleMealModalOpenChange = (open: boolean) => {
     setMealModalOpen(open);
-    if (open && !generateMeals.data) {
-      handleGenerateMeals();
-    }
     if (!open) {
       generateMeals.reset();
     }
@@ -61,7 +61,7 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
   return (
     <>
       <Tabs defaultValue="meals">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className={`grid w-full ${isNutritionOnly ? "grid-cols-2" : "grid-cols-3"}`}>
           <TabsTrigger value="meals" className="gap-1.5 text-xs">
             <UtensilsCrossed className="h-3.5 w-3.5" />
             Öğünler
@@ -70,10 +70,12 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
             <Clock className="h-3.5 w-3.5" />
             Ajanda
           </TabsTrigger>
-          <TabsTrigger value="workout" className="gap-1.5 text-xs">
-            <Dumbbell className="h-3.5 w-3.5" />
-            Antrenman
-          </TabsTrigger>
+          {!isNutritionOnly && (
+            <TabsTrigger value="workout" className="gap-1.5 text-xs">
+              <Dumbbell className="h-3.5 w-3.5" />
+              Antrenman
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="meals">
           <MealList
@@ -85,12 +87,14 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
         <TabsContent value="agenda">
           <MealAgenda dailyPlanId={dailyPlan.id} />
         </TabsContent>
-        <TabsContent value="workout">
-          <WorkoutList
-            dailyPlanId={dailyPlan.id}
-            readOnly={readOnly}
-          />
-        </TabsContent>
+        {!isNutritionOnly && (
+          <TabsContent value="workout">
+            <WorkoutList
+              dailyPlanId={dailyPlan.id}
+              readOnly={readOnly}
+            />
+          </TabsContent>
+        )}
       </Tabs>
 
       {mealModalOpen && (

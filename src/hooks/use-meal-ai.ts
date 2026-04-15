@@ -7,7 +7,8 @@ import {
 
 export function useGenerateDailyMeals() {
   return useMutation({
-    mutationFn: (dailyPlanId: number) => generateDailyMeals(dailyPlanId),
+    mutationFn: ({ dailyPlanId, userNote }: { dailyPlanId: number; userNote?: string }) =>
+      generateDailyMeals(dailyPlanId, userNote),
   });
 }
 

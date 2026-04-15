@@ -9,8 +9,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, RefreshCw, Check, AlertCircle } from "lucide-react";
+import { Sparkles, RefreshCw, Check, AlertCircle, MessageSquare } from "lucide-react";
 import type { AIMeal } from "@/actions/ai-meals";
+import { useState } from "react";
 
 interface AiMealModalProps {
   open: boolean;
@@ -19,7 +20,7 @@ interface AiMealModalProps {
   loading: boolean;
   applying: boolean;
   error: string | null;
-  onGenerate: () => void;
+  onGenerate: (userNote?: string) => void;
   onApply: () => void;
 }
 
@@ -54,10 +55,16 @@ export function AiMealModal({
   onGenerate,
   onApply,
 }: AiMealModalProps) {
+  const [userNote, setUserNote] = useState("");
+
   const totalCalories = suggestedMeals?.reduce(
     (sum, m) => sum + (m.calories ?? 0),
     0,
   );
+
+  const handleGenerate = () => {
+    onGenerate(userNote.trim() || undefined);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,6 +84,34 @@ export function AiMealModal({
             </div>
           )}
 
+          {/* Phase 1: User input */}
+          {!loading && !suggestedMeals && (
+            <div className="space-y-3">
+              <div className="flex items-start gap-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">
+                  Beslenme planı için özel bir isteğin var mı?
+                </p>
+              </div>
+              <textarea
+                value={userNote}
+                onChange={(e) => setUserNote(e.target.value)}
+                rows={3}
+                placeholder="Örn: Bugün düşük karbonhidrat istiyorum, süt ürünleri olmasın, daha fazla protein..."
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+              />
+              <Button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="w-full"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Öneri Al
+              </Button>
+            </div>
+          )}
+
+          {/* Loading */}
           {loading && (
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
               <p className="text-xs text-primary mb-2 font-medium">
@@ -88,6 +123,7 @@ export function AiMealModal({
             </div>
           )}
 
+          {/* Phase 2: Results */}
           {!loading && suggestedMeals && (
             <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
               <div className="flex items-center justify-between mb-2">
@@ -108,21 +144,18 @@ export function AiMealModal({
             </div>
           )}
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={onGenerate}
-              disabled={loading || applying}
-              className="flex-1"
-            >
-              {loading ? (
-                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              ) : (
+          {/* Phase 2 buttons */}
+          {!loading && suggestedMeals && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleGenerate}
+                disabled={loading || applying}
+                className="flex-1"
+              >
                 <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              {suggestedMeals ? "Yeni Öneri" : "Öneri Al"}
-            </Button>
-            {suggestedMeals && (
+                Yeni Öneri
+              </Button>
               <Button
                 onClick={onApply}
                 disabled={loading || applying}
@@ -135,8 +168,8 @@ export function AiMealModal({
                 )}
                 Onayla
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -19,6 +19,7 @@ import {
   Moon,
   Waves,
   UtensilsCrossed,
+  MessageSquare,
 } from "lucide-react";
 import {
   Collapsible,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import type { AIWeeklyPlan, AIWeeklyDay } from "@/actions/ai-weekly";
+import { useState } from "react";
 
 interface AiWeeklyPlanModalProps {
   open: boolean;
@@ -35,7 +37,7 @@ interface AiWeeklyPlanModalProps {
   loading: boolean;
   applying: boolean;
   error: string | null;
-  onGenerate: () => void;
+  onGenerate: (userNote?: string) => void;
   onApply: () => void;
   hasExistingPlan: boolean;
 }
@@ -140,6 +142,16 @@ export function AiWeeklyPlanModal({
   onApply,
   hasExistingPlan,
 }: AiWeeklyPlanModalProps) {
+  const [userNote, setUserNote] = useState("");
+
+  const handleGenerate = () => {
+    onGenerate(userNote.trim() || undefined);
+  };
+
+  const handleNewSuggestion = () => {
+    onGenerate(userNote.trim() || undefined);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto overflow-x-hidden">
@@ -168,6 +180,34 @@ export function AiWeeklyPlanModal({
             </div>
           )}
 
+          {/* Phase 1: User input */}
+          {!loading && !suggestedPlan && (
+            <div className="space-y-3">
+              <div className="flex items-start gap-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">
+                  Bu hafta için özel bir durumun veya isteğin var mı?
+                </p>
+              </div>
+              <textarea
+                value={userNote}
+                onChange={(e) => setUserNote(e.target.value)}
+                rows={3}
+                placeholder="Örn: Bu hafta ağırlıkları artırmak istiyorum, sadece 3 gün antrenman yapabilirim, omzum ağrıyor..."
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+              />
+              <Button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="w-full"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Öneri Al
+              </Button>
+            </div>
+          )}
+
+          {/* Loading state */}
           {loading && (
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
               <p className="text-xs text-primary mb-2 font-medium">
@@ -179,6 +219,7 @@ export function AiWeeklyPlanModal({
             </div>
           )}
 
+          {/* Phase 2: Plan result */}
           {!loading && suggestedPlan && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -202,21 +243,18 @@ export function AiWeeklyPlanModal({
             </div>
           )}
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={onGenerate}
-              disabled={loading || applying}
-              className="flex-1"
-            >
-              {loading ? (
-                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              ) : (
+          {/* Phase 2 buttons */}
+          {!loading && suggestedPlan && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleNewSuggestion}
+                disabled={loading || applying}
+                className="flex-1"
+              >
                 <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              {suggestedPlan ? "Yeni Öneri" : "Öneri Al"}
-            </Button>
-            {suggestedPlan && (
+                Yeni Öneri
+              </Button>
               <Button
                 onClick={onApply}
                 disabled={loading || applying}
@@ -229,8 +267,8 @@ export function AiWeeklyPlanModal({
                 )}
                 Onayla
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

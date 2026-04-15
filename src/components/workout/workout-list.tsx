@@ -29,8 +29,8 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
   const generate = useGenerateWorkoutReplacement();
   const apply = useApplyWorkoutReplacement();
 
-  const handleGenerate = () => {
-    generate.mutate(dailyPlanId);
+  const handleGenerate = (userNote?: string) => {
+    generate.mutate({ dailyPlanId, userNote });
   };
 
   const handleApply = () => {
@@ -48,9 +48,6 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
 
   const handleOpenChange = (open: boolean) => {
     setModalOpen(open);
-    if (open && !generate.data) {
-      handleGenerate();
-    }
     if (!open) {
       generate.reset();
     }

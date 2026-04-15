@@ -43,6 +43,7 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
       weight: users.weight,
       targetWeight: users.targetWeight,
       healthNotes: users.healthNotes,
+      serviceType: users.serviceType,
     })
     .from(users)
     .where(eq(users.id, userId));
@@ -154,60 +155,69 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
     }
   }
 
-  // ─── 3. Today's workout program ────────────────────────────────────
+  // ─── 3. Today's workout program (skip for nutrition-only users) ─────
 
-  lines.push("");
-  lines.push("═══ BUGÜNÜN ANTRENMAN PROGRAMI ═══");
-  lines.push(
-    `Gün: ${currentDay.dayName} (${currentDay.date ?? ""}) — ${currentDay.planType === "rest" ? "DİNLENME GÜNÜ" : currentDay.planType === "swimming" ? "YÜZME GÜNÜ" : "ANTRENMAN GÜNÜ"}`,
-  );
-  if (currentDay.workoutTitle) {
-    lines.push(`Antrenman: ${currentDay.workoutTitle}`);
-  }
-
-  const todayExercises = await db
-    .select({
-      name: exercises.name,
-      section: exercises.section,
-      sectionLabel: exercises.sectionLabel,
-      sets: exercises.sets,
-      reps: exercises.reps,
-      durationMinutes: exercises.durationMinutes,
-    })
-    .from(exercises)
-    .where(eq(exercises.dailyPlanId, currentDay.id))
-    .orderBy(asc(exercises.sortOrder));
-
-  if (todayExercises.length > 0) {
-    // Group by section
-    const sections: Record<string, string[]> = {};
-    for (const ex of todayExercises) {
-      if (!sections[ex.sectionLabel]) sections[ex.sectionLabel] = [];
-      const detail =
-        ex.sets && ex.reps
-          ? `${ex.name} ${ex.sets}x${ex.reps}`
-          : ex.durationMinutes
-            ? `${ex.name} ${ex.durationMinutes}dk`
-            : ex.name;
-      sections[ex.sectionLabel].push(detail);
-    }
-    for (const [label, exs] of Object.entries(sections)) {
-      lines.push(`  ${label}: ${exs.join(", ")}`);
-    }
-
-    // Estimate workout intensity
-    const mainExercises = todayExercises.filter(
-      (e) => e.section === "main",
-    );
-    const totalSets = mainExercises.reduce(
-      (sum, e) => sum + (e.sets ?? 0),
-      0,
-    );
+  if (user?.serviceType === "nutrition") {
+    lines.push("");
+    lines.push("═══ BUGÜNÜN PLANI ═══");
     lines.push(
-      `  Tahmini yoğunluk: ${totalSets} ana set (${totalSets >= 20 ? "yüksek" : totalSets >= 12 ? "orta" : "düşük"} hacim)`,
+      `Gün: ${currentDay.dayName} (${currentDay.date ?? ""})`,
     );
-  } else if (currentDay.planType !== "rest") {
-    lines.push("  Henüz antrenman programı atanmamış");
+    lines.push("Not: Bu kullanıcı sadece beslenme hizmeti alıyor, antrenman programı yok.");
+  } else {
+    lines.push("");
+    lines.push("═══ BUGÜNÜN ANTRENMAN PROGRAMI ═══");
+    lines.push(
+      `Gün: ${currentDay.dayName} (${currentDay.date ?? ""}) — ${currentDay.planType === "rest" ? "DİNLENME GÜNÜ" : currentDay.planType === "swimming" ? "YÜZME GÜNÜ" : "ANTRENMAN GÜNÜ"}`,
+    );
+    if (currentDay.workoutTitle) {
+      lines.push(`Antrenman: ${currentDay.workoutTitle}`);
+    }
+
+    const todayExercises = await db
+      .select({
+        name: exercises.name,
+        section: exercises.section,
+        sectionLabel: exercises.sectionLabel,
+        sets: exercises.sets,
+        reps: exercises.reps,
+        durationMinutes: exercises.durationMinutes,
+      })
+      .from(exercises)
+      .where(eq(exercises.dailyPlanId, currentDay.id))
+      .orderBy(asc(exercises.sortOrder));
+
+    if (todayExercises.length > 0) {
+      // Group by section
+      const sections: Record<string, string[]> = {};
+      for (const ex of todayExercises) {
+        if (!sections[ex.sectionLabel]) sections[ex.sectionLabel] = [];
+        const detail =
+          ex.sets && ex.reps
+            ? `${ex.name} ${ex.sets}x${ex.reps}`
+            : ex.durationMinutes
+              ? `${ex.name} ${ex.durationMinutes}dk`
+              : ex.name;
+        sections[ex.sectionLabel].push(detail);
+      }
+      for (const [label, exs] of Object.entries(sections)) {
+        lines.push(`  ${label}: ${exs.join(", ")}`);
+      }
+
+      // Estimate workout intensity
+      const mainExercises = todayExercises.filter(
+        (e) => e.section === "main",
+      );
+      const totalSets = mainExercises.reduce(
+        (sum, e) => sum + (e.sets ?? 0),
+        0,
+      );
+      lines.push(
+        `  Tahmini yoğunluk: ${totalSets} ana set (${totalSets >= 20 ? "yüksek" : totalSets >= 12 ? "orta" : "düşük"} hacim)`,
+      );
+    } else if (currentDay.planType !== "rest") {
+      lines.push("  Henüz antrenman programı atanmamış");
+    }
   }
 
   // ─── 4. This week's other days' meal programs ─────────────────────

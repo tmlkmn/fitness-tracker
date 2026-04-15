@@ -457,6 +457,12 @@ export default function AyarlarPage() {
                 {profile?.height ? `${profile.height} cm` : "—"}
               </span>
             </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Hizmet Tipi</span>
+              <span className="text-sm font-medium">
+                {profile?.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program"}
+              </span>
+            </div>
             {/* Membership info */}
             {profile?.membershipType && (
               <>

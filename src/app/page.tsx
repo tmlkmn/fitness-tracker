@@ -34,6 +34,7 @@ const PLAN_TYPE_CONFIG: Record<string, { icon: typeof Dumbbell; label: string; c
   workout: { icon: Dumbbell, label: "Antrenman", color: "text-green-400 bg-green-400/10" },
   swimming: { icon: Waves, label: "Yüzme", color: "text-blue-400 bg-blue-400/10" },
   rest: { icon: Moon, label: "Dinlenme", color: "text-yellow-400 bg-yellow-400/10" },
+  nutrition: { icon: Utensils, label: "Beslenme", color: "text-emerald-400 bg-emerald-400/10" },
 };
 
 const DAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
@@ -231,6 +232,7 @@ export default function HomePage() {
                     </div>
                     <ProgressBar completed={mealsDone} total={mealsTotal} color="bg-primary" />
                   </div>
+                  {profile?.serviceType !== "nutrition" && (
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
@@ -238,6 +240,7 @@ export default function HomePage() {
                     </div>
                     <ProgressBar completed={exercisesDone} total={exercisesTotal} color="bg-green-500" />
                   </div>
+                  )}
                 </div>
                 <Link
                   href={`/gun/${today.dailyPlan.id}`}
@@ -348,13 +351,26 @@ export default function HomePage() {
           <Card>
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Bugün</span>
+                {profile?.serviceType === "nutrition" ? (
+                  <>
+                    <Utensils className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Bugün</span>
+                  </>
+                ) : (
+                  <>
+                    <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Bugün</span>
+                  </>
+                )}
               </div>
               <p className="text-lg font-bold">
-                {exercisesTotal > 0
-                  ? `${Math.round((exercisesDone / exercisesTotal) * 100)}%`
-                  : "—"}
+                {profile?.serviceType === "nutrition"
+                  ? (mealsTotal > 0
+                      ? `${Math.round((mealsDone / mealsTotal) * 100)}%`
+                      : "—")
+                  : (exercisesTotal > 0
+                      ? `${Math.round((exercisesDone / exercisesTotal) * 100)}%`
+                      : "—")}
               </p>
             </CardContent>
           </Card>

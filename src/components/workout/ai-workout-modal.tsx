@@ -9,8 +9,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, RefreshCw, Check, AlertCircle, Timer } from "lucide-react";
+import { Sparkles, RefreshCw, Check, AlertCircle, Timer, MessageSquare } from "lucide-react";
 import type { AIExercise } from "@/actions/ai-workout";
+import { useState } from "react";
 
 interface ExerciseDisplay {
   name: string;
@@ -32,7 +33,7 @@ interface AiWorkoutModalProps {
   loading: boolean;
   applying: boolean;
   error: string | null;
-  onGenerate: () => void;
+  onGenerate: (userNote?: string) => void;
   onApply: () => void;
 }
 
@@ -117,9 +118,15 @@ export function AiWorkoutModal({
   onGenerate,
   onApply,
 }: AiWorkoutModalProps) {
+  const [userNote, setUserNote] = useState("");
+
   const hasMultipleSections =
     suggestedExercises &&
     new Set(suggestedExercises.map((e) => e.sectionLabel)).size > 1;
+
+  const handleGenerate = () => {
+    onGenerate(userNote.trim() || undefined);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,7 +139,7 @@ export function AiWorkoutModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Current program */}
+          {/* Current program — always show */}
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs text-muted-foreground mb-2 font-medium">
               Mevcut Program
@@ -157,6 +164,33 @@ export function AiWorkoutModal({
             </div>
           )}
 
+          {/* Phase 1: User input */}
+          {!loading && !suggestedExercises && (
+            <div className="space-y-3">
+              <div className="flex items-start gap-2">
+                <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">
+                  Bu antrenman için özel bir isteğin var mı?
+                </p>
+              </div>
+              <textarea
+                value={userNote}
+                onChange={(e) => setUserNote(e.target.value)}
+                rows={3}
+                placeholder="Örn: Ağırlıkları artır, daha fazla süperset ekle, omuz hareketlerini değiştir..."
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+              />
+              <Button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="w-full"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Öneri Al
+              </Button>
+            </div>
+          )}
+
           {/* Loading state */}
           {loading && (
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
@@ -169,7 +203,7 @@ export function AiWorkoutModal({
             </div>
           )}
 
-          {/* Suggested program */}
+          {/* Phase 2: Suggested program */}
           {!loading && suggestedExercises && (
             <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
               <p className="text-xs text-primary mb-2 font-medium">
@@ -182,22 +216,18 @@ export function AiWorkoutModal({
             </div>
           )}
 
-          {/* Action buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={onGenerate}
-              disabled={loading || applying}
-              className="flex-1"
-            >
-              {loading ? (
-                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              ) : (
+          {/* Phase 2 buttons */}
+          {!loading && suggestedExercises && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleGenerate}
+                disabled={loading || applying}
+                className="flex-1"
+              >
                 <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              {suggestedExercises ? "Yeni Öneri" : "Öneri Al"}
-            </Button>
-            {suggestedExercises && (
+                Yeni Öneri
+              </Button>
               <Button
                 onClick={onApply}
                 disabled={loading || applying}
@@ -210,8 +240,8 @@ export function AiWorkoutModal({
                 )}
                 Onayla
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

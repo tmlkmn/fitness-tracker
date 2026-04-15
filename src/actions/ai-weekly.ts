@@ -6,7 +6,7 @@ import { eq, and, sql, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
-import { WEEKLY_PLAN_PROMPT } from "@/lib/ai-prompts";
+import { WEEKLY_PLAN_PROMPT, NUTRITION_ONLY_WEEKLY_PROMPT } from "@/lib/ai-prompts";
 
 interface AIMealItem {
   mealTime: string;
@@ -126,6 +126,11 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
       weight: users.weight,
       targetWeight: users.targetWeight,
       healthNotes: users.healthNotes,
+      dailyRoutine: users.dailyRoutine,
+      fitnessLevel: users.fitnessLevel,
+      sportHistory: users.sportHistory,
+      currentMedications: users.currentMedications,
+      serviceType: users.serviceType,
     })
     .from(users)
     .where(eq(users.id, userId));
@@ -146,6 +151,27 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
       } catch {
         lines.push(`Sağlık notları: ${user.healthNotes}`);
       }
+    }
+    if (user.dailyRoutine && Array.isArray(user.dailyRoutine) && user.dailyRoutine.length > 0) {
+      const routineStr = (user.dailyRoutine as { time: string; event: string }[])
+        .map((r) => `${r.time} ${r.event}`)
+        .join(", ");
+      lines.push(`Günlük program: ${routineStr}`);
+    }
+    const fitnessLabels: Record<string, string> = {
+      beginner: "Yeni başlayan",
+      returning: "Ara vermiş, tekrar başlayan",
+      intermediate: "Orta düzey",
+      advanced: "İleri düzey",
+    };
+    if (user.fitnessLevel) {
+      lines.push(`Fitness seviyesi: ${fitnessLabels[user.fitnessLevel] ?? user.fitnessLevel}`);
+    }
+    if (user.sportHistory) {
+      lines.push(`Spor geçmişi: ${user.sportHistory}`);
+    }
+    if (user.currentMedications) {
+      lines.push(`İlaçlar/supplementler: ${user.currentMedications}`);
     }
   }
 
@@ -198,8 +224,9 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
     }
   }
 
-  // ─── 3. Previous weeks' programs ──────────────────────────────────────
-  const prevWeeks = await db
+  // ─── 3. Previous weeks' programs (skip workout details for nutrition-only) ──
+  if (user?.serviceType !== "nutrition") {
+    const prevWeeks = await db
     .select({
       id: weeklyPlans.id,
       weekNumber: weeklyPlans.weekNumber,
@@ -275,18 +302,33 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
       }
     }
   }
+  }
 
   return lines.join("\n");
 }
 
-export async function generateWeeklyPlan(dateStr: string) {
+export async function generateWeeklyPlan(dateStr: string, userNote?: string) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "weekly");
+
+  // Get user's service type
+  const [userRow] = await db
+    .select({ serviceType: users.serviceType })
+    .from(users)
+    .where(eq(users.id, user.id));
+  const isNutritionOnly = userRow?.serviceType === "nutrition";
+  const systemPrompt = isNutritionOnly ? NUTRITION_ONLY_WEEKLY_PROMPT : WEEKLY_PLAN_PROMPT;
 
   const monday = getMondayStr(dateStr);
   const weeklyContext = await buildWeeklyPlanContext(user.id);
 
-  const userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
+  let userMessage = isNutritionOnly
+    ? `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`
+    : `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
+
+  if (userNote?.trim()) {
+    userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu hafta için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
+  }
 
   try {
     const client = getAIClient();
@@ -296,7 +338,7 @@ export async function generateWeeklyPlan(dateStr: string) {
       system: [
         {
           type: "text",
-          text: WEEKLY_PLAN_PROMPT,
+          text: systemPrompt,
           cache_control: { type: "ephemeral" },
         },
       ],
@@ -320,7 +362,7 @@ export async function generateWeeklyPlan(dateStr: string) {
         system: [
           {
             type: "text",
-            text: WEEKLY_PLAN_PROMPT,
+            text: systemPrompt,
             cache_control: { type: "ephemeral" },
           },
         ],

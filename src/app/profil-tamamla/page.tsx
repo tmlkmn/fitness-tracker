@@ -7,8 +7,9 @@ import { updateUserOnboarding } from "@/actions/user";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dumbbell, Loader2, Ruler, Scale, Target, Heart } from "lucide-react";
+import { Dumbbell, Loader2, Ruler, Scale, Target, Heart, Sunrise, Briefcase, UtensilsCrossed, Home, Moon, Pill } from "lucide-react";
 
 export default function ProfilTamamlaPage() {
   const { data: session, isPending: sessionPending } = useSession();
@@ -25,6 +26,22 @@ export default function ProfilTamamlaPage() {
   const [saving, setSaving] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
 
+  // Daily routine
+  const [wakeTime, setWakeTime] = useState("");
+  const [workStartTime, setWorkStartTime] = useState("");
+  const [lunchTime, setLunchTime] = useState("");
+  const [workEndTime, setWorkEndTime] = useState("");
+  const [workoutTime, setWorkoutTime] = useState("");
+  const [sleepTime, setSleepTime] = useState("");
+
+  // Fitness background
+  const [fitnessLevel, setFitnessLevel] = useState("");
+  const [sportHistory, setSportHistory] = useState("");
+  const [currentMedications, setCurrentMedications] = useState("");
+
+  // Service type
+  const [serviceType, setServiceType] = useState("full");
+
   useEffect(() => {
     if (!sessionPending && !user) router.push("/giris");
   }, [sessionPending, user, router]);
@@ -36,6 +53,24 @@ export default function ProfilTamamlaPage() {
       if (profile.weight) setWeight(profile.weight);
       if (profile.targetWeight) setTargetWeight(profile.targetWeight);
       if (profile.healthNotes) setHealthNotes(profile.healthNotes);
+      if (profile.fitnessLevel) setFitnessLevel(profile.fitnessLevel);
+      if (profile.sportHistory) setSportHistory(profile.sportHistory);
+      if (profile.currentMedications) setCurrentMedications(profile.currentMedications);
+      if (profile.serviceType) setServiceType(profile.serviceType);
+      if (profile.dailyRoutine && Array.isArray(profile.dailyRoutine)) {
+        const routine = profile.dailyRoutine as { time: string; event: string }[];
+        const eventMap: Record<string, (v: string) => void> = {
+          "Uyanış": setWakeTime,
+          "İşe gidiş": setWorkStartTime,
+          "Öğle yemeği": setLunchTime,
+          "İşten çıkış": setWorkEndTime,
+          "Antrenman": setWorkoutTime,
+          "Uyku": setSleepTime,
+        };
+        for (const item of routine) {
+          eventMap[item.event]?.(item.time);
+        }
+      }
       setPrefilled(true);
     }
   }, [profile, prefilled]);
@@ -64,11 +99,25 @@ export default function ProfilTamamlaPage() {
 
     setSaving(true);
     try {
+      // Build daily routine array from filled time inputs
+      const routineEntries: { time: string; event: string }[] = [];
+      if (wakeTime) routineEntries.push({ time: wakeTime, event: "Uyanış" });
+      if (workStartTime) routineEntries.push({ time: workStartTime, event: "İşe gidiş" });
+      if (lunchTime) routineEntries.push({ time: lunchTime, event: "Öğle yemeği" });
+      if (workEndTime) routineEntries.push({ time: workEndTime, event: "İşten çıkış" });
+      if (workoutTime) routineEntries.push({ time: workoutTime, event: "Antrenman" });
+      if (sleepTime) routineEntries.push({ time: sleepTime, event: "Uyku" });
+
       await updateUserOnboarding({
         height: h,
         weight: weight,
         targetWeight: targetWeight,
         healthNotes: healthNotes.trim() || undefined,
+        dailyRoutine: routineEntries.length > 0 ? routineEntries : undefined,
+        fitnessLevel: fitnessLevel || undefined,
+        sportHistory: sportHistory.trim() || undefined,
+        currentMedications: currentMedications.trim() || undefined,
+        serviceType,
       });
       await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       router.push("/");
@@ -113,6 +162,40 @@ export default function ProfilTamamlaPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Service Type Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">Hizmet Tipi</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setServiceType("full")}
+                  className={`p-3 rounded-lg border text-center transition-all ${
+                    serviceType === "full"
+                      ? "ring-2 ring-primary border-primary bg-primary/5"
+                      : "border-input hover:bg-accent"
+                  }`}
+                >
+                  <Dumbbell className="h-5 w-5 mx-auto mb-1.5 text-primary" />
+                  <p className="text-xs font-medium">Tam Program</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Antrenman + Beslenme</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setServiceType("nutrition")}
+                  className={`p-3 rounded-lg border text-center transition-all ${
+                    serviceType === "nutrition"
+                      ? "ring-2 ring-primary border-primary bg-primary/5"
+                      : "border-input hover:bg-accent"
+                  }`}
+                >
+                  <UtensilsCrossed className="h-5 w-5 mx-auto mb-1.5 text-primary" />
+                  <p className="text-xs font-medium">Sadece Beslenme</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Kişiye özel beslenme</p>
+                </button>
+              </div>
+            </div>
+
+            <Separator />
             <div className="space-y-2">
               <label htmlFor="height" className="text-sm font-medium leading-none flex items-center gap-2">
                 <Ruler className="h-4 w-4 text-muted-foreground" />
@@ -184,6 +267,129 @@ export default function ProfilTamamlaPage() {
                 placeholder="Yaralanmalar, alerjiler, diyet kısıtlamaları..."
               />
             </div>
+
+            <Separator />
+
+            {/* Daily Routine Section */}
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                Günlük Programın
+                <span className="text-xs text-muted-foreground font-normal">(opsiyonel)</span>
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label htmlFor="wakeTime" className="text-xs font-medium flex items-center gap-1.5">
+                    <Sunrise className="h-3.5 w-3.5 text-muted-foreground" />
+                    Kaçta kalkıyorsun?
+                  </label>
+                  <input id="wakeTime" type="time" value={wakeTime} onChange={(e) => setWakeTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="workStartTime" className="text-xs font-medium flex items-center gap-1.5">
+                    <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                    Kaçta işe gidiyorsun?
+                  </label>
+                  <input id="workStartTime" type="time" value={workStartTime} onChange={(e) => setWorkStartTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="lunchTime" className="text-xs font-medium flex items-center gap-1.5">
+                    <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground" />
+                    Öğle yemeği saatin?
+                  </label>
+                  <input id="lunchTime" type="time" value={lunchTime} onChange={(e) => setLunchTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="workEndTime" className="text-xs font-medium flex items-center gap-1.5">
+                    <Home className="h-3.5 w-3.5 text-muted-foreground" />
+                    Kaçta işten çıkıyorsun?
+                  </label>
+                  <input id="workEndTime" type="time" value={workEndTime} onChange={(e) => setWorkEndTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                </div>
+                {serviceType === "full" && (
+                  <div className="space-y-1.5">
+                    <label htmlFor="workoutTime" className="text-xs font-medium flex items-center gap-1.5">
+                      <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
+                      Kaçta antrenman yapabilirsin?
+                    </label>
+                    <input id="workoutTime" type="time" value={workoutTime} onChange={(e) => setWorkoutTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <label htmlFor="sleepTime" className="text-xs font-medium flex items-center gap-1.5">
+                    <Moon className="h-3.5 w-3.5 text-muted-foreground" />
+                    Kaçta yatıyorsun?
+                  </label>
+                  <input id="sleepTime" type="time" value={sleepTime} onChange={(e) => setSleepTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Fitness Background Section — only for full program users */}
+            {serviceType === "full" && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                Fitness Geçmişin
+                <span className="text-xs text-muted-foreground font-normal">(opsiyonel)</span>
+              </h2>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">Deneyim Seviyesi</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "beginner", label: "Yeni Başlayan" },
+                    { value: "returning", label: "Ara Vermiş, Tekrar Başlayan" },
+                    { value: "intermediate", label: "Orta Düzey" },
+                    { value: "advanced", label: "İleri Düzey" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFitnessLevel(fitnessLevel === opt.value ? "" : opt.value)}
+                      className={`p-2.5 rounded-lg border text-xs font-medium text-center transition-all ${
+                        fitnessLevel === opt.value
+                          ? "ring-2 ring-primary border-primary bg-primary/5"
+                          : "border-input hover:bg-accent"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="sportHistory" className="text-xs font-medium flex items-center gap-1.5">
+                  <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
+                  Spor Geçmişi
+                </label>
+                <textarea
+                  id="sportHistory"
+                  value={sportHistory}
+                  onChange={(e) => setSportHistory(e.target.value)}
+                  rows={2}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                  placeholder="Daha önce hangi sporları yaptın, ne kadar süre?"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="currentMedications" className="text-xs font-medium flex items-center gap-1.5">
+                  <Pill className="h-3.5 w-3.5 text-muted-foreground" />
+                  İlaçlar / Supplementler
+                </label>
+                <textarea
+                  id="currentMedications"
+                  value={currentMedications}
+                  onChange={(e) => setCurrentMedications(e.target.value)}
+                  rows={2}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                  placeholder="Kullandığın ilaçlar veya supplementler"
+                />
+              </div>
+            </div>
+            )}
 
             {error && (
               <p className="text-sm text-destructive text-center">{error}</p>

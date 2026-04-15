@@ -103,7 +103,7 @@ async function callAI(
 
 // ─── Feature 1: Full Workout Replacement ────────────────────────────────────
 
-export async function generateWorkoutReplacement(dailyPlanId: number) {
+export async function generateWorkoutReplacement(dailyPlanId: number, userNote?: string) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
@@ -114,7 +114,11 @@ export async function generateWorkoutReplacement(dailyPlanId: number) {
       buildWeeklyWorkoutContext(dailyPlanId),
     ]);
 
-  const userMessage = `${userContext}\n\n${workoutContext}\n\nBu günün antrenman programını yeniden oluştur. Önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
+  let userMessage = `${userContext}\n\n${workoutContext}\n\nBu günün antrenman programını yeniden oluştur. Önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
+
+  if (userNote?.trim()) {
+    userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu antrenman için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
+  }
 
   try {
     let text = await callAI(WORKOUT_REPLACE_PROMPT, userMessage, 2500, true);
@@ -178,6 +182,7 @@ export async function generateSectionReplacement(
   dailyPlanId: number,
   section: string,
   sectionLabel: string,
+  userNote?: string,
 ) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "workout");
@@ -193,7 +198,11 @@ export async function generateSectionReplacement(
     (e) => e.section === section,
   );
 
-  const userMessage = `${userContext}\n\n${workoutContext}\n\nSadece "${sectionLabel}" bölümü için yeni egzersizler oluştur. section="${section}", sectionLabel="${sectionLabel}" değerlerini koru. Önceki haftalara göre progresif yüklenme uygula.`;
+  let userMessage = `${userContext}\n\n${workoutContext}\n\nSadece "${sectionLabel}" bölümü için yeni egzersizler oluştur. section="${section}", sectionLabel="${sectionLabel}" değerlerini koru. Önceki haftalara göre progresif yüklenme uygula.`;
+
+  if (userNote?.trim()) {
+    userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu bölüm için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
+  }
 
   try {
     let text = await callAI(SECTION_REPLACE_PROMPT, userMessage, 1500, true);
@@ -265,6 +274,7 @@ export async function applySectionReplacement(
 export async function generateExerciseVariation(
   exerciseId: number,
   dailyPlanId: number,
+  userNote?: string,
 ) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "workout");
@@ -300,7 +310,7 @@ export async function generateExerciseVariation(
     .filter(Boolean)
     .join(", ");
 
-  const userMessage = `${userContext}\n\n${workoutContext}\n\n"${exerciseDetail}" egzersizi yerine alternatif bir egzersiz öner.`;
+  const userMessage = `${userContext}\n\n${workoutContext}\n\n"${exerciseDetail}" egzersizi yerine alternatif bir egzersiz öner.${userNote?.trim() ? `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu egzersiz için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.` : ""}`;
 
   try {
     let text = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 500);

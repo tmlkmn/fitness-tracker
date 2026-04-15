@@ -13,8 +13,8 @@ import {
 
 export function useGenerateWorkoutReplacement() {
   return useMutation({
-    mutationFn: (dailyPlanId: number) =>
-      generateWorkoutReplacement(dailyPlanId),
+    mutationFn: ({ dailyPlanId, userNote }: { dailyPlanId: number; userNote?: string }) =>
+      generateWorkoutReplacement(dailyPlanId, userNote),
   });
 }
 
@@ -42,11 +42,13 @@ export function useGenerateSectionReplacement() {
       dailyPlanId,
       section,
       sectionLabel,
+      userNote,
     }: {
       dailyPlanId: number;
       section: string;
       sectionLabel: string;
-    }) => generateSectionReplacement(dailyPlanId, section, sectionLabel),
+      userNote?: string;
+    }) => generateSectionReplacement(dailyPlanId, section, sectionLabel, userNote),
   });
 }
 
@@ -75,10 +77,12 @@ export function useGenerateExerciseVariation() {
     mutationFn: ({
       exerciseId,
       dailyPlanId,
+      userNote,
     }: {
       exerciseId: number;
       dailyPlanId: number;
-    }) => generateExerciseVariation(exerciseId, dailyPlanId),
+      userNote?: string;
+    }) => generateExerciseVariation(exerciseId, dailyPlanId, userNote),
   });
 }
 

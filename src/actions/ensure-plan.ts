@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { weeklyPlans, dailyPlans } from "@/db/schema";
+import { weeklyPlans, dailyPlans, users } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 
@@ -96,13 +96,20 @@ export async function ensureDailyPlan(
   const dayOfWeek = getDayOfWeek(dateStr);
   const dayName = TURKISH_DAY_NAMES[dayOfWeek];
 
+  // Determine default planType based on user's service type
+  const [userRow] = await db
+    .select({ serviceType: users.serviceType })
+    .from(users)
+    .where(eq(users.id, userId));
+  const defaultPlanType = userRow?.serviceType === "nutrition" ? "nutrition" : "workout";
+
   const [newDay] = await db
     .insert(dailyPlans)
     .values({
       weeklyPlanId: weeklyPlanId,
       dayOfWeek,
       dayName,
-      planType: "workout",
+      planType: defaultPlanType,
       date: dateStr,
     })
     .returning({ id: dailyPlans.id });

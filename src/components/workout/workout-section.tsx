@@ -47,8 +47,8 @@ export function WorkoutSection({
   const generate = useGenerateSectionReplacement();
   const apply = useApplySectionReplacement();
 
-  const handleGenerate = () => {
-    generate.mutate({ dailyPlanId, section, sectionLabel });
+  const handleGenerate = (userNote?: string) => {
+    generate.mutate({ dailyPlanId, section, sectionLabel, userNote });
   };
 
   const handleApply = () => {
@@ -66,9 +66,6 @@ export function WorkoutSection({
 
   const handleOpenChange = (open: boolean) => {
     setModalOpen(open);
-    if (open && !generate.data) {
-      handleGenerate();
-    }
     if (!open) {
       generate.reset();
     }
