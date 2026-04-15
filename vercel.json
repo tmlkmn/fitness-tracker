@@ -1,4 +1,12 @@
 {
+  "functions": {
+    "src/actions/ai*.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/ai/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/reminders",

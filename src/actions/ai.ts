@@ -25,7 +25,6 @@ export async function generateMealVariation(
   checkRateLimit(user.id, "meal");
 
   const userContext = await buildUserContext(user.id);
-  const client = getAIClient();
 
   const macroInfo = [
     calories ? `${calories} kcal` : null,
@@ -36,27 +35,33 @@ export async function generateMealVariation(
     .filter(Boolean)
     .join(", ");
 
-  const message = await client.messages.create({
-    model: AI_MODELS.fast,
-    max_tokens: 300,
-    system: [
-      {
-        type: "text",
-        text: MEAL_VARIATION_PROMPT,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: [
-      {
-        role: "user",
-        content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}\n\nBu öğüne benzer makrolarla alternatif bir öğün öner.`,
-      },
-    ],
-  });
+  try {
+    const client = getAIClient();
+    const message = await client.messages.create({
+      model: AI_MODELS.fast,
+      max_tokens: 300,
+      system: [
+        {
+          type: "text",
+          text: MEAL_VARIATION_PROMPT,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [
+        {
+          role: "user",
+          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}\n\nBu öğüne benzer makrolarla alternatif bir öğün öner.`,
+        },
+      ],
+    });
 
-  const text =
-    message.content[0].type === "text" ? message.content[0].text : "";
-  return { suggestion: text };
+    const text =
+      message.content[0].type === "text" ? message.content[0].text : "";
+    return { suggestion: text };
+  } catch (error) {
+    console.error("[AI] Error generating meal variation:", error);
+    throw new Error("AI_UNAVAILABLE");
+  }
 }
 
 async function callAIForTips(
@@ -137,12 +142,17 @@ export async function getExerciseFormTips(
   // Rate limit before AI call
   checkRateLimit(user.id, "exercise");
 
-  const userContext = await buildUserContext(user.id);
-  const text = await callAIForTips(exerciseName, exerciseNotes, userContext);
+  try {
+    const userContext = await buildUserContext(user.id);
+    const text = await callAIForTips(exerciseName, exerciseNotes, userContext);
 
-  await upsertTips(user.id, nameNorm, notesNorm, text);
+    await upsertTips(user.id, nameNorm, notesNorm, text);
 
-  return { tips: text };
+    return { tips: text };
+  } catch (error) {
+    console.error("[AI] Error generating exercise tips:", error);
+    throw new Error("AI_UNAVAILABLE");
+  }
 }
 
 export async function regenerateExerciseFormTips(
@@ -155,10 +165,15 @@ export async function regenerateExerciseFormTips(
   const nameNorm = exerciseName.toLowerCase().trim();
   const notesNorm = (exerciseNotes ?? "").trim();
 
-  const userContext = await buildUserContext(user.id);
-  const text = await callAIForTips(exerciseName, exerciseNotes, userContext);
+  try {
+    const userContext = await buildUserContext(user.id);
+    const text = await callAIForTips(exerciseName, exerciseNotes, userContext);
 
-  await upsertTips(user.id, nameNorm, notesNorm, text);
+    await upsertTips(user.id, nameNorm, notesNorm, text);
 
-  return { tips: text };
+    return { tips: text };
+  } catch (error) {
+    console.error("[AI] Error regenerating exercise tips:", error);
+    throw new Error("AI_UNAVAILABLE");
+  }
 }

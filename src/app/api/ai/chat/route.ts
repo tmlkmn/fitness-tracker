@@ -5,6 +5,8 @@ import { buildUserContext } from "@/lib/ai-context";
 import { COACH_CHAT_PROMPT } from "@/lib/ai-prompts";
 import type Anthropic from "@anthropic-ai/sdk";
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {

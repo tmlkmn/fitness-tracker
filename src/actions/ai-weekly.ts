@@ -288,32 +288,9 @@ export async function generateWeeklyPlan(dateStr: string) {
 
   const userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
 
-  const client = getAIClient();
-  const message = await client.messages.create({
-    model: AI_MODELS.smart,
-    max_tokens: 5000,
-    system: [
-      {
-        type: "text",
-        text: WEEKLY_PLAN_PROMPT,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: [
-      {
-        role: "user",
-        content: userMessage,
-      },
-    ],
-  });
-
-  let text = message.content[0].type === "text" ? message.content[0].text : "";
-
-  let suggestedPlan: AIWeeklyPlan;
   try {
-    suggestedPlan = validateWeeklyPlan(parseJSON(text));
-  } catch {
-    const retry = await client.messages.create({
+    const client = getAIClient();
+    const message = await client.messages.create({
       model: AI_MODELS.smart,
       max_tokens: 5000,
       system: [
@@ -326,15 +303,43 @@ export async function generateWeeklyPlan(dateStr: string) {
       messages: [
         {
           role: "user",
-          content: `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver.`,
+          content: userMessage,
         },
       ],
     });
-    text = retry.content[0].type === "text" ? retry.content[0].text : "";
-    suggestedPlan = validateWeeklyPlan(parseJSON(text));
-  }
 
-  return { suggestedPlan };
+    let text = message.content[0].type === "text" ? message.content[0].text : "";
+
+    let suggestedPlan: AIWeeklyPlan;
+    try {
+      suggestedPlan = validateWeeklyPlan(parseJSON(text));
+    } catch {
+      const retry = await client.messages.create({
+        model: AI_MODELS.smart,
+        max_tokens: 5000,
+        system: [
+          {
+            type: "text",
+            text: WEEKLY_PLAN_PROMPT,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+        messages: [
+          {
+            role: "user",
+            content: `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver.`,
+          },
+        ],
+      });
+      text = retry.content[0].type === "text" ? retry.content[0].text : "";
+      suggestedPlan = validateWeeklyPlan(parseJSON(text));
+    }
+
+    return { suggestedPlan };
+  } catch (error) {
+    console.error("[AI Weekly] Error generating plan:", error);
+    throw new Error("AI_UNAVAILABLE");
+  }
 }
 
 export async function applyWeeklyPlan(

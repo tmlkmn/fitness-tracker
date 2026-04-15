@@ -51,32 +51,9 @@ export async function generateDailyMeals(dailyPlanId: number) {
 
   const { context: mealContext } = await buildMealContext(dailyPlanId, user.id);
 
-  const client = getAIClient();
-  const message = await client.messages.create({
-    model: AI_MODELS.smart,
-    max_tokens: 2500,
-    system: [
-      {
-        type: "text",
-        text: DAILY_MEALS_PROMPT,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: [
-      {
-        role: "user",
-        content: `${mealContext}\n\nBu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.`,
-      },
-    ],
-  });
-
-  let text = message.content[0].type === "text" ? message.content[0].text : "";
-
-  let suggestedMeals: AIMeal[];
   try {
-    suggestedMeals = validateMealArray(parseJSON(text));
-  } catch {
-    const retry = await client.messages.create({
+    const client = getAIClient();
+    const message = await client.messages.create({
       model: AI_MODELS.smart,
       max_tokens: 2500,
       system: [
@@ -89,15 +66,43 @@ export async function generateDailyMeals(dailyPlanId: number) {
       messages: [
         {
           role: "user",
-          content: `${mealContext}\n\nBu gün için beslenme programı oluştur. Antrenman yoğunluğunu ve vücut kompozisyonunu dikkate al.\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "meals": [...] }`,
+          content: `${mealContext}\n\nBu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.`,
         },
       ],
     });
-    text = retry.content[0].type === "text" ? retry.content[0].text : "";
-    suggestedMeals = validateMealArray(parseJSON(text));
-  }
 
-  return { suggestedMeals };
+    let text = message.content[0].type === "text" ? message.content[0].text : "";
+
+    let suggestedMeals: AIMeal[];
+    try {
+      suggestedMeals = validateMealArray(parseJSON(text));
+    } catch {
+      const retry = await client.messages.create({
+        model: AI_MODELS.smart,
+        max_tokens: 2500,
+        system: [
+          {
+            type: "text",
+            text: DAILY_MEALS_PROMPT,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+        messages: [
+          {
+            role: "user",
+            content: `${mealContext}\n\nBu gün için beslenme programı oluştur. Antrenman yoğunluğunu ve vücut kompozisyonunu dikkate al.\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "meals": [...] }`,
+          },
+        ],
+      });
+      text = retry.content[0].type === "text" ? retry.content[0].text : "";
+      suggestedMeals = validateMealArray(parseJSON(text));
+    }
+
+    return { suggestedMeals };
+  } catch (error) {
+    console.error("[AI Meals] Error generating daily meals:", error);
+    throw new Error("AI_UNAVAILABLE");
+  }
 }
 
 export async function applyDailyMeals(

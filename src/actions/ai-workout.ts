@@ -116,23 +116,28 @@ export async function generateWorkoutReplacement(dailyPlanId: number) {
 
   const userMessage = `${userContext}\n\n${workoutContext}\n\nBu günün antrenman programını yeniden oluştur. Önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
 
-  let text = await callAI(WORKOUT_REPLACE_PROMPT, userMessage, 2500, true);
-
-  let suggestedExercises: AIExercise[];
   try {
-    suggestedExercises = validateExerciseArray(parseJSON(text));
-  } catch {
-    // Retry once with error feedback
-    text = await callAI(
-      WORKOUT_REPLACE_PROMPT,
-      `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
-      2500,
-      true,
-    );
-    suggestedExercises = validateExerciseArray(parseJSON(text));
-  }
+    let text = await callAI(WORKOUT_REPLACE_PROMPT, userMessage, 2500, true);
 
-  return { currentExercises: currentDayExercises, suggestedExercises };
+    let suggestedExercises: AIExercise[];
+    try {
+      suggestedExercises = validateExerciseArray(parseJSON(text));
+    } catch {
+      // Retry once with error feedback
+      text = await callAI(
+        WORKOUT_REPLACE_PROMPT,
+        `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
+        2500,
+        true,
+      );
+      suggestedExercises = validateExerciseArray(parseJSON(text));
+    }
+
+    return { currentExercises: currentDayExercises, suggestedExercises };
+  } catch (error) {
+    console.error("[AI Workout] Error generating workout replacement:", error);
+    throw new Error("AI_UNAVAILABLE");
+  }
 }
 
 export async function applyWorkoutReplacement(
@@ -190,22 +195,27 @@ export async function generateSectionReplacement(
 
   const userMessage = `${userContext}\n\n${workoutContext}\n\nSadece "${sectionLabel}" bölümü için yeni egzersizler oluştur. section="${section}", sectionLabel="${sectionLabel}" değerlerini koru. Önceki haftalara göre progresif yüklenme uygula.`;
 
-  let text = await callAI(SECTION_REPLACE_PROMPT, userMessage, 1500, true);
-
-  let suggestedExercises: AIExercise[];
   try {
-    suggestedExercises = validateExerciseArray(parseJSON(text));
-  } catch {
-    text = await callAI(
-      SECTION_REPLACE_PROMPT,
-      `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
-      1500,
-      true,
-    );
-    suggestedExercises = validateExerciseArray(parseJSON(text));
-  }
+    let text = await callAI(SECTION_REPLACE_PROMPT, userMessage, 1500, true);
 
-  return { currentExercises: sectionExercises, suggestedExercises };
+    let suggestedExercises: AIExercise[];
+    try {
+      suggestedExercises = validateExerciseArray(parseJSON(text));
+    } catch {
+      text = await callAI(
+        SECTION_REPLACE_PROMPT,
+        `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
+        1500,
+        true,
+      );
+      suggestedExercises = validateExerciseArray(parseJSON(text));
+    }
+
+    return { currentExercises: sectionExercises, suggestedExercises };
+  } catch (error) {
+    console.error("[AI Workout] Error generating section replacement:", error);
+    throw new Error("AI_UNAVAILABLE");
+  }
 }
 
 export async function applySectionReplacement(
@@ -292,21 +302,26 @@ export async function generateExerciseVariation(
 
   const userMessage = `${userContext}\n\n${workoutContext}\n\n"${exerciseDetail}" egzersizi yerine alternatif bir egzersiz öner.`;
 
-  let text = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 500);
-
-  let suggestedExercise: AIExerciseVariation;
   try {
-    suggestedExercise = validateSingleExercise(parseJSON(text));
-  } catch {
-    text = await callAI(
-      EXERCISE_VARIATION_PROMPT,
-      `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "name": "...", ... }`,
-      500,
-    );
-    suggestedExercise = validateSingleExercise(parseJSON(text));
-  }
+    let text = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 500);
 
-  return { currentExercise, suggestedExercise };
+    let suggestedExercise: AIExerciseVariation;
+    try {
+      suggestedExercise = validateSingleExercise(parseJSON(text));
+    } catch {
+      text = await callAI(
+        EXERCISE_VARIATION_PROMPT,
+        `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "name": "...", ... }`,
+        500,
+      );
+      suggestedExercise = validateSingleExercise(parseJSON(text));
+    }
+
+    return { currentExercise, suggestedExercise };
+  } catch (error) {
+    console.error("[AI Workout] Error generating exercise variation:", error);
+    throw new Error("AI_UNAVAILABLE");
+  }
 }
 
 export async function applyExerciseVariation(

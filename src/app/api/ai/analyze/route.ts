@@ -7,6 +7,8 @@ import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { PROGRESS_ANALYSIS_PROMPT } from "@/lib/ai-prompts";
 
+export const maxDuration = 60;
+
 export async function POST() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
