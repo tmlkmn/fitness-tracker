@@ -19,14 +19,22 @@ export default function GirisPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
     const trimmed = email.trim();
-    if (!EMAIL_REGEX.test(trimmed)) {
-      setError("Geçerli bir e-posta adresi girin.");
-      setLoading(false);
+    if (!trimmed) {
+      setError("E-posta adresi gereklidir.");
       return;
     }
+    if (!EMAIL_REGEX.test(trimmed)) {
+      setError("Geçerli bir e-posta adresi girin.");
+      return;
+    }
+    if (!password) {
+      setError("Şifre gereklidir.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const result = await signIn.email({ email: trimmed, password });

@@ -21,6 +21,10 @@ function SifremiUnuttumForm() {
     setError("");
 
     const trimmed = email.trim();
+    if (!trimmed) {
+      setError("E-posta adresi gereklidir.");
+      return;
+    }
     if (!EMAIL_REGEX.test(trimmed)) {
       setError("Geçerli bir e-posta adresi girin.");
       return;
@@ -29,14 +33,14 @@ function SifremiUnuttumForm() {
     setLoading(true);
 
     try {
-      await requestPasswordReset(trimmed);
-      setSent(true);
-    } catch (err) {
-      if (err instanceof Error && err.message === "UserNotFound") {
+      const result = await requestPasswordReset(trimmed);
+      if (result.error === "UserNotFound") {
         setError("Bu e-posta adresi sistemde kayıtlı değil.");
       } else {
-        setError("Bir hata oluştu. Tekrar deneyin.");
+        setSent(true);
       }
+    } catch {
+      setError("Bir hata oluştu. Tekrar deneyin.");
     } finally {
       setLoading(false);
     }

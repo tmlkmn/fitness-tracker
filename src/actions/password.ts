@@ -73,12 +73,12 @@ export async function requestPasswordReset(email: string) {
     .where(eq(users.email, email));
 
   if (!existingUser) {
-    throw new Error("UserNotFound");
+    return { success: false, error: "UserNotFound" };
   }
 
   await auth.api.requestPasswordReset({
     body: { email, redirectTo: "/sifre-sifirla" },
   });
 
-  return { success: true };
+  return { success: true, error: null };
 }
