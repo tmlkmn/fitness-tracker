@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dumbbell, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function GirisPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -19,8 +21,15 @@ export default function GirisPage() {
     setError("");
     setLoading(true);
 
+    const trimmed = email.trim();
+    if (!EMAIL_REGEX.test(trimmed)) {
+      setError("Geçerli bir e-posta adresi girin.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const result = await signIn.email({ email, password });
+      const result = await signIn.email({ email: trimmed, password });
       if (result.error) {
         setError("E-posta veya şifre hatalı.");
       } else {
@@ -130,7 +139,7 @@ export default function GirisPage() {
 
           <div className="text-center">
             <Link
-              href="/sifremi-unuttum"
+              href={email.trim() ? `/sifremi-unuttum?email=${encodeURIComponent(email.trim())}` : "/sifremi-unuttum"}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               Şifremi Unuttum

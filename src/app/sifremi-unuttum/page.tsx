@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { requestPasswordReset } from "@/actions/password";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Loader2, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
-export default function SifremiUnuttumPage() {
-  const [email, setEmail] = useState("");
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function SifremiUnuttumForm() {
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -15,13 +19,24 @@ export default function SifremiUnuttumPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    const trimmed = email.trim();
+    if (!EMAIL_REGEX.test(trimmed)) {
+      setError("Geçerli bir e-posta adresi girin.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await requestPasswordReset(email);
+      await requestPasswordReset(trimmed);
       setSent(true);
-    } catch {
-      setError("Bir hata oluştu. Tekrar deneyin.");
+    } catch (err) {
+      if (err instanceof Error && err.message === "UserNotFound") {
+        setError("Bu e-posta adresi sistemde kayıtlı değil.");
+      } else {
+        setError("Bir hata oluştu. Tekrar deneyin.");
+      }
     } finally {
       setLoading(false);
     }
@@ -115,5 +130,13 @@ export default function SifremiUnuttumPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SifremiUnuttumPage() {
+  return (
+    <Suspense>
+      <SifremiUnuttumForm />
+    </Suspense>
   );
 }

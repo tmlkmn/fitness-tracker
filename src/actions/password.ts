@@ -66,6 +66,16 @@ export async function forceChangePassword(newPassword: string) {
 }
 
 export async function requestPasswordReset(email: string) {
+  // Check if user exists before attempting reset
+  const [existingUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, email));
+
+  if (!existingUser) {
+    throw new Error("UserNotFound");
+  }
+
   await auth.api.requestPasswordReset({
     body: { email, redirectTo: "/sifre-sifirla" },
   });
