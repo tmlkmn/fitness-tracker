@@ -142,11 +142,18 @@ export default function HomePage() {
               <div>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <p className="text-lg font-bold">Hoş geldin, {(user as any).name?.split(" ")[0] ?? ""}!</p>
-                {(profile?.weight || profile?.targetWeight) && (
+                {(profile?.weight || profile?.targetWeight || profile?.height) && (
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    {profile.weight ? `${profile.weight} kg` : ""}
-                    {profile.weight && profile.targetWeight ? " → " : ""}
-                    {profile.targetWeight ? `Hedef: ${profile.targetWeight} kg` : ""}
+                    {[
+                      profile.height ? `${profile.height} cm` : "",
+                      profile.weight ? `${profile.weight} kg` : "",
+                      profile.targetWeight ? `Hedef: ${profile.targetWeight} kg` : "",
+                    ].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {profile?.healthNotes && (
+                  <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-1">
+                    {profile.healthNotes}
                   </p>
                 )}
               </div>
