@@ -11,7 +11,7 @@ export function getAIClient(): Anthropic {
 
 export const AI_MODELS = {
   fast: "claude-haiku-4-5-20251001",
-  smart: "claude-sonnet-4-6-20250514",
+  smart: "claude-sonnet-4-20250514",
 } as const;
 
 // Feature-based daily rate limits

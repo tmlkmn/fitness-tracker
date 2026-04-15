@@ -168,6 +168,9 @@ export function AddReminderDialog() {
                   />
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Bu hatırlatıcı her gün belirlenen saatler arasında otomatik tekrarlanır.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">

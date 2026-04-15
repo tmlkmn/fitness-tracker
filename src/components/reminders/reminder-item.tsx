@@ -19,12 +19,12 @@ interface ReminderItemProps {
 }
 
 const recurrenceLabels: Record<string, string> = {
-  daily: "Her gün",
-  weekdays: "Hafta içi",
-  weekends: "Hafta sonu",
+  daily: "Her gün tekrarlanır",
+  weekdays: "Hafta içi tekrarlanır",
+  weekends: "Hafta sonu tekrarlanır",
   once: "Tek seferlik",
   custom: "Özel günler",
-  interval: "Aralıklı",
+  interval: "Her gün tekrarlanır",
 };
 
 export function ReminderItem({
@@ -49,10 +49,10 @@ export function ReminderItem({
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {type === "custom" && recurrence === "interval" && intervalMinutes && (
             <span className="font-mono">
-              {intervalMinutes >= 60
+              Her {intervalMinutes >= 60
                 ? `${intervalMinutes / 60} sa`
                 : `${intervalMinutes} dk`}
-              {intervalStart && intervalEnd && ` (${intervalStart}-${intervalEnd})`}
+              {intervalStart && intervalEnd && ` · ${intervalStart}-${intervalEnd}`}
             </span>
           )}
           {type === "custom" && recurrence !== "interval" && time && (

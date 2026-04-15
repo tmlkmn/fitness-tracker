@@ -248,14 +248,15 @@ export function ReminderSettingsCard() {
                   />
                 </div>
                 {isActive && existingReminder && (
-                  <div className="flex items-center gap-2 pl-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 pl-1 text-xs text-muted-foreground">
                     <span className="font-mono">
                       {existingReminder.time ?? t.defaultTime}
                     </span>
+                    <span>·</span>
                     <span>
                       {existingReminder.recurrence === "daily"
-                        ? "Her gün"
-                        : "Hafta içi"}
+                        ? "Her gün tekrarlanır"
+                        : "Hafta içi tekrarlanır"}
                     </span>
                   </div>
                 )}
