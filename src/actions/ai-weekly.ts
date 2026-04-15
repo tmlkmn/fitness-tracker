@@ -1,12 +1,11 @@
 "use server";
 
 import { db } from "@/db";
-import { weeklyPlans, dailyPlans, meals, exercises } from "@/db/schema";
+import { weeklyPlans, dailyPlans, meals, exercises, progressLogs, users } from "@/db/schema";
 import { eq, and, sql, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
-import { buildUserContext } from "@/lib/ai-context";
 import { WEEKLY_PLAN_PROMPT } from "@/lib/ai-prompts";
 
 interface AIMealItem {
@@ -117,8 +116,89 @@ function addDays(dateStr: string, days: number): string {
   return `${y}-${m}-${dd}`;
 }
 
-async function buildPreviousWeeksContext(userId: string): Promise<string> {
-  // Get last 4 weeks of program history
+async function buildWeeklyPlanContext(userId: string): Promise<string> {
+  const lines: string[] = [];
+
+  // ─── 1. User profile ──────────────────────────────────────────────────
+  const [user] = await db
+    .select({
+      height: users.height,
+      weight: users.weight,
+      targetWeight: users.targetWeight,
+      healthNotes: users.healthNotes,
+    })
+    .from(users)
+    .where(eq(users.id, userId));
+
+  if (user) {
+    lines.push("═══ KULLANICI PROFİLİ ═══");
+    const parts: string[] = [];
+    if (user.height) parts.push(`Boy: ${user.height}cm`);
+    if (user.weight) parts.push(`Başlangıç kilo: ${user.weight}kg`);
+    if (user.targetWeight) parts.push(`Hedef kilo: ${user.targetWeight}kg`);
+    if (parts.length > 0) lines.push(parts.join(" | "));
+    if (user.healthNotes) {
+      try {
+        const notes = JSON.parse(user.healthNotes);
+        if (Array.isArray(notes) && notes.length > 0) {
+          lines.push(`Sağlık notları/kısıtlamalar: ${notes.join(". ")}`);
+        }
+      } catch {
+        lines.push(`Sağlık notları: ${user.healthNotes}`);
+      }
+    }
+  }
+
+  // ─── 2. Body composition trend ────────────────────────────────────────
+  const recentLogs = await db
+    .select({
+      logDate: progressLogs.logDate,
+      weight: progressLogs.weight,
+      fatPercent: progressLogs.fatPercent,
+      fatKg: progressLogs.fatKg,
+      bmi: progressLogs.bmi,
+      waistCm: progressLogs.waistCm,
+      torsoMuscleKg: progressLogs.torsoMuscleKg,
+      leftArmMuscleKg: progressLogs.leftArmMuscleKg,
+      rightArmMuscleKg: progressLogs.rightArmMuscleKg,
+      leftLegMuscleKg: progressLogs.leftLegMuscleKg,
+      rightLegMuscleKg: progressLogs.rightLegMuscleKg,
+    })
+    .from(progressLogs)
+    .where(eq(progressLogs.userId, userId))
+    .orderBy(desc(progressLogs.logDate))
+    .limit(5);
+
+  if (recentLogs.length > 0) {
+    lines.push("");
+    lines.push("═══ VÜCUT KOMPOZİSYONU İLERLEME ═══");
+    for (const log of recentLogs.reverse()) {
+      const p: string[] = [`${log.logDate}:`];
+      if (log.weight) p.push(`${log.weight}kg`);
+      if (log.fatPercent) p.push(`%${log.fatPercent} yağ`);
+      if (log.bmi) p.push(`BMI ${log.bmi}`);
+      if (log.waistCm) p.push(`bel: ${log.waistCm}cm`);
+      lines.push(p.join(" | "));
+    }
+    const latest = recentLogs[0];
+    const muscleParts: string[] = [];
+    if (latest.torsoMuscleKg) muscleParts.push(`Gövde: ${latest.torsoMuscleKg}kg`);
+    if (latest.leftArmMuscleKg) muscleParts.push(`Sol kol: ${latest.leftArmMuscleKg}kg`);
+    if (latest.rightArmMuscleKg) muscleParts.push(`Sağ kol: ${latest.rightArmMuscleKg}kg`);
+    if (latest.leftLegMuscleKg) muscleParts.push(`Sol bacak: ${latest.leftLegMuscleKg}kg`);
+    if (latest.rightLegMuscleKg) muscleParts.push(`Sağ bacak: ${latest.rightLegMuscleKg}kg`);
+    if (muscleParts.length > 0) lines.push(`Kas dağılımı: ${muscleParts.join(" | ")}`);
+
+    if (recentLogs.length >= 2) {
+      const oldest = recentLogs[recentLogs.length - 1];
+      if (oldest.weight && latest.weight) {
+        const diff = parseFloat(String(latest.weight)) - parseFloat(String(oldest.weight));
+        lines.push(`Kilo trendi: ${Math.abs(diff).toFixed(1)}kg ${diff > 0 ? "artış" : diff < 0 ? "düşüş" : "sabit"} (${oldest.logDate} → ${latest.logDate})`);
+      }
+    }
+  }
+
+  // ─── 3. Previous weeks' programs ──────────────────────────────────────
   const prevWeeks = await db
     .select({
       id: weeklyPlans.id,
@@ -132,74 +212,67 @@ async function buildPreviousWeeksContext(userId: string): Promise<string> {
     .orderBy(desc(weeklyPlans.weekNumber))
     .limit(4);
 
-  if (prevWeeks.length === 0) return "";
-
-  const lines: string[] = [
-    "═══ ANTRENMAN GEÇMİŞİ (Önceki Haftalar — progresif yüklenme için referans) ═══",
-  ];
-
-  for (const week of prevWeeks.reverse()) {
+  if (prevWeeks.length > 0) {
     lines.push("");
-    lines.push(
-      `── Hafta ${week.weekNumber}: ${week.title} (${week.phase} fazı, ${week.startDate ?? ""}) ──`,
-    );
+    lines.push("═══ ANTRENMAN GEÇMİŞİ (Önceki Haftalar — progresif yüklenme için referans) ═══");
 
-    const days = await db
-      .select({
-        id: dailyPlans.id,
-        dayName: dailyPlans.dayName,
-        workoutTitle: dailyPlans.workoutTitle,
-        planType: dailyPlans.planType,
-        dayOfWeek: dailyPlans.dayOfWeek,
-      })
-      .from(dailyPlans)
-      .where(eq(dailyPlans.weeklyPlanId, week.id))
-      .orderBy(asc(dailyPlans.dayOfWeek));
+    for (const week of prevWeeks.reverse()) {
+      lines.push("");
+      lines.push(`── Hafta ${week.weekNumber}: ${week.title} (${week.phase} fazı, ${week.startDate ?? ""}) ──`);
 
-    for (const day of days) {
-      if (day.planType === "rest") {
-        lines.push(`${day.dayName}: Dinlenme`);
-        continue;
-      }
-
-      const dayExs = await db
+      const days = await db
         .select({
-          name: exercises.name,
-          sectionLabel: exercises.sectionLabel,
-          sets: exercises.sets,
-          reps: exercises.reps,
-          restSeconds: exercises.restSeconds,
-          durationMinutes: exercises.durationMinutes,
-          notes: exercises.notes,
+          id: dailyPlans.id,
+          dayName: dailyPlans.dayName,
+          workoutTitle: dailyPlans.workoutTitle,
+          planType: dailyPlans.planType,
+          dayOfWeek: dailyPlans.dayOfWeek,
         })
-        .from(exercises)
-        .where(eq(exercises.dailyPlanId, day.id))
-        .orderBy(asc(exercises.sortOrder));
+        .from(dailyPlans)
+        .where(eq(dailyPlans.weeklyPlanId, week.id))
+        .orderBy(asc(dailyPlans.dayOfWeek));
 
-      if (dayExs.length === 0) {
-        lines.push(`${day.dayName} (${day.workoutTitle ?? ""}): Program yok`);
-        continue;
-      }
+      for (const day of days) {
+        if (day.planType === "rest") {
+          lines.push(`${day.dayName}: Dinlenme`);
+          continue;
+        }
 
-      const sections: Record<string, string[]> = {};
-      for (const ex of dayExs) {
-        if (!sections[ex.sectionLabel]) sections[ex.sectionLabel] = [];
-        const detail =
-          ex.sets && ex.reps
+        const dayExs = await db
+          .select({
+            name: exercises.name,
+            sectionLabel: exercises.sectionLabel,
+            sets: exercises.sets,
+            reps: exercises.reps,
+            restSeconds: exercises.restSeconds,
+            durationMinutes: exercises.durationMinutes,
+          })
+          .from(exercises)
+          .where(eq(exercises.dailyPlanId, day.id))
+          .orderBy(asc(exercises.sortOrder));
+
+        if (dayExs.length === 0) {
+          lines.push(`${day.dayName} (${day.workoutTitle ?? ""}): Program yok`);
+          continue;
+        }
+
+        const sections: Record<string, string[]> = {};
+        for (const ex of dayExs) {
+          if (!sections[ex.sectionLabel]) sections[ex.sectionLabel] = [];
+          const detail = ex.sets && ex.reps
             ? `${ex.name} ${ex.sets}x${ex.reps}${ex.restSeconds ? ` (${ex.restSeconds}sn)` : ""}`
             : ex.durationMinutes
               ? `${ex.name} ${ex.durationMinutes}dk`
               : ex.name;
-        sections[ex.sectionLabel].push(detail);
+          sections[ex.sectionLabel].push(detail);
+        }
+
+        const sectionSummary = Object.entries(sections)
+          .map(([label, exs]) => `${label}: ${exs.join(", ")}`)
+          .join(" | ");
+
+        lines.push(`${day.dayName} (${day.workoutTitle ?? ""}): ${sectionSummary}`);
       }
-
-      const sectionSummary = Object.entries(sections)
-        .map(([label, exs]) => `${label}: ${exs.join(", ")}`)
-        .join(" | ");
-
-      lines.push(
-        `${day.dayName} (${day.workoutTitle ?? ""}): ${sectionSummary}`,
-      );
     }
   }
 
@@ -210,16 +283,10 @@ export async function generateWeeklyPlan(dateStr: string) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "weekly");
 
-  const [userContext, prevWeeksContext] = await Promise.all([
-    buildUserContext(user.id),
-    buildPreviousWeeksContext(user.id),
-  ]);
-
   const monday = getMondayStr(dateStr);
+  const weeklyContext = await buildWeeklyPlanContext(user.id);
 
-  const fullContext = [userContext, prevWeeksContext]
-    .filter(Boolean)
-    .join("\n\n");
+  const userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
 
   const client = getAIClient();
   const message = await client.messages.create({
@@ -235,7 +302,7 @@ export async function generateWeeklyPlan(dateStr: string) {
     messages: [
       {
         role: "user",
-        content: `${fullContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`,
+        content: userMessage,
       },
     ],
   });
@@ -259,7 +326,7 @@ export async function generateWeeklyPlan(dateStr: string) {
       messages: [
         {
           role: "user",
-          content: `${fullContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için program oluştur.\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver.`,
+          content: `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver.`,
         },
       ],
     });

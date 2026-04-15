@@ -6,7 +6,7 @@ import { MealList } from "@/components/meals/meal-list";
 import { MealAgenda } from "@/components/meals/meal-agenda";
 import { WorkoutList } from "@/components/workout/workout-list";
 import { AiMealModal } from "@/components/meals/ai-meal-modal";
-import { List, Clock, Dumbbell } from "lucide-react";
+import { UtensilsCrossed, Clock, Dumbbell } from "lucide-react";
 import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
 
 interface DayDetailPanelProps {
@@ -63,7 +63,7 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
       <Tabs defaultValue="meals">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="meals" className="gap-1.5 text-xs">
-            <List className="h-3.5 w-3.5" />
+            <UtensilsCrossed className="h-3.5 w-3.5" />
             Öğünler
           </TabsTrigger>
           <TabsTrigger value="agenda" className="gap-1.5 text-xs">

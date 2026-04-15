@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { stripEmoji } from "@/lib/icon-map";
+import { stripEmoji, getMealIcon, DynamicIcon } from "@/lib/icon-map";
 
 interface MealAgendaProps {
   dailyPlanId: number;
@@ -41,6 +41,7 @@ export function MealAgenda({ dailyPlanId }: MealAgendaProps) {
       {meals.map((meal, index) => {
         const isLast = index === meals.length - 1;
         const isCompleted = meal.isCompleted ?? false;
+        const mealIcon = getMealIcon(meal.mealLabel);
 
         return (
           <div key={meal.id} className="flex gap-3">
@@ -79,6 +80,7 @@ export function MealAgenda({ dailyPlanId }: MealAgendaProps) {
                   }
                   className="h-4 w-4"
                 />
+                <DynamicIcon icon={mealIcon} className="h-3.5 w-3.5 text-primary shrink-0" />
                 <span
                   className={cn(
                     "text-sm font-medium",

@@ -15,7 +15,7 @@ export const AI_MODELS = {
 } as const;
 
 // Feature-based daily rate limits
-export type AIFeature = "meal" | "exercise" | "analyze" | "chat" | "workout" | "daily-meal" | "weekly";
+export type AIFeature = "meal" | "exercise" | "analyze" | "chat" | "workout" | "daily-meal" | "weekly" | "exercise-demo";
 
 const DAILY_LIMITS: Record<AIFeature, number> = {
   meal: 10,
@@ -25,6 +25,7 @@ const DAILY_LIMITS: Record<AIFeature, number> = {
   workout: 10,
   "daily-meal": 5,
   weekly: 3,
+  "exercise-demo": 30,
 } as const;
 
 // Map<userId, Map<feature, timestamps[]>>

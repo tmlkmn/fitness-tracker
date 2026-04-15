@@ -29,6 +29,20 @@
       "when": 1776186106844,
       "tag": "0003_lyrical_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776242252297,
+      "tag": "0004_perpetual_sunfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776244702498,
+      "tag": "0005_minor_siren",
+      "breakpoints": true
     }
   ]
 }

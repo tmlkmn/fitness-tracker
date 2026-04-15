@@ -5,6 +5,7 @@ import { ExerciseCard } from "./exercise-card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
+import { getSectionIcon, DynamicIcon } from "@/lib/icon-map";
 import { AiWorkoutModal } from "./ai-workout-modal";
 import {
   useGenerateSectionReplacement,
@@ -79,10 +80,13 @@ export function WorkoutSection({
       : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
     : null;
 
+  const sectionIcon = getSectionIcon(section);
+
   return (
     <>
       <div>
         <div className="flex items-center gap-2 mb-3">
+          <DynamicIcon icon={sectionIcon} className="h-3.5 w-3.5 text-primary shrink-0" />
           <span className="text-xs font-bold text-primary uppercase tracking-wider">
             {sectionLabel}
           </span>

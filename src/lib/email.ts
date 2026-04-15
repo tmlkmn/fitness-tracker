@@ -30,8 +30,8 @@ function emailLayout(content: string) {
             <td style="padding:0 0 24px 0;">
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background-color:#22c55e;width:32px;height:32px;border-radius:8px;text-align:center;vertical-align:middle;">
-                    <span style="color:#fff;font-size:16px;font-weight:700;line-height:32px;">F</span>
+                  <td style="width:32px;height:32px;vertical-align:middle;">
+                    <img src="${appUrl}/icon-192.png" alt="FitTrack" width="32" height="32" style="display:block;border-radius:8px;" />
                   </td>
                   <td style="padding-left:10px;">
                     <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.5px;">FitTrack</span>

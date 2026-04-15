@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Timer, Sparkles, Pencil, Trash2 } from "lucide-react";
 import { ExerciseFormTips } from "./exercise-form-tips";
+import { ExerciseDemoModal } from "./exercise-demo-modal";
 import { AiWorkoutModal } from "./ai-workout-modal";
 import { ExerciseFormDialog } from "./exercise-form-dialog";
 import { ExerciseDeleteDialog } from "./exercise-delete-dialog";
@@ -104,6 +105,7 @@ export function ExerciseCard({
                 <p className={cn("font-medium text-sm", isCompleted && "line-through")}>
                   {name}
                 </p>
+                <ExerciseDemoModal name={name} />
                 {!readOnly && <ExerciseFormTips name={name} notes={notes} />}
               </div>
               <div className="flex flex-wrap gap-1.5 mt-1">

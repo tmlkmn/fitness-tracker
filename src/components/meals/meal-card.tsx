@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { stripEmoji } from "@/lib/icon-map";
+import { stripEmoji, getMealIcon, DynamicIcon } from "@/lib/icon-map";
 import { AiSuggestButton } from "@/components/ai/ai-suggest-button";
 import { MealFormDialog } from "./meal-form-dialog";
 import { MealDeleteDialog } from "./meal-delete-dialog";
@@ -44,6 +44,8 @@ export function MealCard({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  const mealIcon = getMealIcon(mealLabel);
+
   return (
     <>
       <Card
@@ -61,6 +63,9 @@ export function MealCard({
                 className="mt-1 h-5 w-5"
               />
             )}
+            <div className="mt-0.5 shrink-0">
+              <DynamicIcon icon={mealIcon} className="h-4 w-4 text-primary" />
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">

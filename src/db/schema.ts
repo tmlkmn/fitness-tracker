@@ -8,6 +8,7 @@ import {
   timestamp,
   date,
   jsonb,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ── Auth tables (better-auth) ──
@@ -278,4 +279,34 @@ export const reminders = pgTable("reminders", {
   skipEmail: boolean("skip_email").default(true),
   lastFiredAt: timestamp("last_fired_at"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const exerciseTips = pgTable("exercise_tips", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  exerciseNameNorm: text("exercise_name_norm").notNull(),
+  exerciseNotes: text("exercise_notes").notNull().default(""),
+  tips: text("tips").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("exercise_tips_user_exercise_idx").on(
+    table.userId,
+    table.exerciseNameNorm,
+    table.exerciseNotes,
+  ),
+]);
+
+export const exerciseDemos = pgTable("exercise_demos", {
+  id: serial("id").primaryKey(),
+  exerciseNameNorm: text("exercise_name_norm").notNull().unique(),
+  externalId: text("external_id"),
+  images: jsonb("images"),
+  primaryMuscles: jsonb("primary_muscles"),
+  secondaryMuscles: jsonb("secondary_muscles"),
+  equipment: text("equipment"),
+  instructions: jsonb("instructions"),
+  notFound: boolean("not_found").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
