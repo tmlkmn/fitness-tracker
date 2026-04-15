@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProgressLogs, addProgressLog } from "@/actions/progress";
 
-export function useProgressLogs(userId: number) {
+export function useProgressLogs() {
   return useQuery({
-    queryKey: ["progress", userId],
-    queryFn: () => getProgressLogs(userId),
+    queryKey: ["progress"],
+    queryFn: () => getProgressLogs(),
   });
 }
 

@@ -4,6 +4,10 @@ import {
   getWeeklyPlan,
   getDailyPlansByWeek,
   getSupplementsByWeek,
+  getDailyPlanByDate,
+  getDailyPlansForWeekByDate,
+  getWeeklyPlanById,
+  getDatesWithPlansForMonth,
 } from "@/actions/plans";
 
 export function useAllWeeks() {
@@ -21,6 +25,14 @@ export function useWeeklyPlan(weekNumber: number) {
   });
 }
 
+export function useWeeklyPlanById(id: number) {
+  return useQuery({
+    queryKey: ["weekly-plan-id", id],
+    queryFn: () => getWeeklyPlanById(id),
+    enabled: !!id,
+  });
+}
+
 export function useDailyPlansByWeek(weeklyPlanId: number) {
   return useQuery({
     queryKey: ["daily-plans", weeklyPlanId],
@@ -34,5 +46,29 @@ export function useSupplementsByWeek(weeklyPlanId: number) {
     queryKey: ["supplements", weeklyPlanId],
     queryFn: () => getSupplementsByWeek(weeklyPlanId),
     enabled: !!weeklyPlanId,
+  });
+}
+
+export function useDailyPlanByDate(dateStr: string) {
+  return useQuery({
+    queryKey: ["daily-plan-date", dateStr],
+    queryFn: () => getDailyPlanByDate(dateStr),
+    enabled: !!dateStr,
+  });
+}
+
+export function useWeekPlansByDate(dateStr: string) {
+  return useQuery({
+    queryKey: ["week-plans-date", dateStr],
+    queryFn: () => getDailyPlansForWeekByDate(dateStr),
+    enabled: !!dateStr,
+  });
+}
+
+export function useDatesWithPlans(year: number, month: number) {
+  return useQuery({
+    queryKey: ["dates-with-plans", year, month],
+    queryFn: () => getDatesWithPlansForMonth(year, month),
+    enabled: !!year && !!month,
   });
 }

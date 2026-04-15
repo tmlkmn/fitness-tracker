@@ -1,64 +1,135 @@
 import { Header } from "@/components/layout/header";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Utensils, Calendar, TrendingUp, Clock } from "lucide-react";
+import {
+  Dumbbell,
+  Utensils,
+  Calendar,
+  TrendingUp,
+  Users,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getAuthSession } from "@/lib/auth-utils";
+import { getUserProfile } from "@/actions/user";
+import { getAllWeeks } from "@/actions/plans";
 
-export default function HomePage() {
+export default async function HomePage() {
+  let user;
+  try {
+    user = await getAuthSession();
+  } catch {
+    redirect("/giris");
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!(user as any).isApproved) {
+    redirect("/bekliyor");
+  }
+
+  const [profile, weeks] = await Promise.all([
+    getUserProfile(),
+    getAllWeeks(),
+  ]);
+
   const currentDay = new Date().toLocaleDateString("tr-TR", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
 
+  // Parse health notes — support JSON array or plain string
+  let healthBadges: string[] = [];
+  if (profile.healthNotes) {
+    try {
+      const parsed = JSON.parse(profile.healthNotes);
+      if (Array.isArray(parsed)) healthBadges = parsed;
+      else healthBadges = [profile.healthNotes];
+    } catch {
+      healthBadges = profile.healthNotes
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter(Boolean);
+    }
+  }
+
+  const hasWeeks = weeks.length > 0;
+
   return (
-    <div>
-      <Header title="FitTrack" subtitle={currentDay} />
+    <div className="animate-fade-in">
+      <Header title="FitTrack" subtitle={currentDay} rightSlot={<NotificationBell />} />
       <div className="p-4 space-y-4">
+        {/* Hero Card */}
         <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-transparent">
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Hoş geldin! 💪</p>
-            <h2 className="text-xl font-bold mt-1">4 Haftalık Program</h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              96 kg → Hedef: Yağ yakımı + Kas tonusu
+            <p className="text-sm text-muted-foreground">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              Hoş geldin, {(user as any).name ?? ""}!
             </p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              <Badge variant="secondary">🦵 Sağ diz menisküs</Badge>
-              <Badge variant="secondary">🤚 Sol bilek</Badge>
-            </div>
+            {hasWeeks ? (
+              <>
+                <h2 className="text-xl font-bold mt-1">
+                  {weeks.length} Haftalık Program
+                </h2>
+                {(profile.weight || profile.targetWeight) && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {profile.weight ? `${profile.weight} kg` : ""}
+                    {profile.weight && profile.targetWeight ? " \u2192 " : ""}
+                    {profile.targetWeight
+                      ? `Hedef: ${profile.targetWeight} kg`
+                      : ""}
+                  </p>
+                )}
+              </>
+            ) : (
+              <h2 className="text-xl font-bold mt-1">
+                Henüz program oluşturulmadı
+              </h2>
+            )}
+            {healthBadges.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {healthBadges.map((note) => (
+                  <Badge key={note} variant="secondary" className="gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {note}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-3 gap-3">
-          <Card>
-            <CardContent className="p-3 text-center">
-              <Dumbbell className="h-5 w-5 text-primary mx-auto mb-1" />
-              <p className="text-lg font-bold">4</p>
-              <p className="text-xs text-muted-foreground">Hafta</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 text-center">
-              <Utensils className="h-5 w-5 text-primary mx-auto mb-1" />
-              <p className="text-lg font-bold">~2.200</p>
-              <p className="text-xs text-muted-foreground">kcal/gün</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 text-center">
-              <Clock className="h-5 w-5 text-primary mx-auto mb-1" />
-              <p className="text-lg font-bold">19:00</p>
-              <p className="text-xs text-muted-foreground">Antrenman</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Stats Grid */}
+        {hasWeeks && (
+          <div className="grid grid-cols-2 gap-3">
+            <Card>
+              <CardContent className="p-3 text-center">
+                <Dumbbell className="h-5 w-5 text-primary mx-auto mb-1" />
+                <p className="text-lg font-bold">{weeks.length}</p>
+                <p className="text-xs text-muted-foreground">Hafta</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 text-center">
+                <Utensils className="h-5 w-5 text-primary mx-auto mb-1" />
+                <p className="text-lg font-bold">
+                  {profile.weight ? `${profile.weight} kg` : "-"}
+                </p>
+                <p className="text-xs text-muted-foreground">Mevcut Kilo</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
+        {/* Hizli Erisim */}
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             Hızlı Erişim
           </h3>
           <Link href="/takvim">
-            <Card className="hover:bg-accent transition-colors cursor-pointer">
+            <Card className="hover:bg-accent hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer">
               <CardContent className="p-3 flex items-center gap-3">
                 <Calendar className="h-5 w-5 text-primary" />
                 <div>
@@ -71,7 +142,7 @@ export default function HomePage() {
             </Card>
           </Link>
           <Link href="/ilerleme">
-            <Card className="hover:bg-accent transition-colors cursor-pointer">
+            <Card className="hover:bg-accent hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer">
               <CardContent className="p-3 flex items-center gap-3">
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <div>
@@ -83,39 +154,41 @@ export default function HomePage() {
               </CardContent>
             </Card>
           </Link>
+          <Link href="/paylasilan">
+            <Card className="hover:bg-accent hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer">
+              <CardContent className="p-3 flex items-center gap-3">
+                <Users className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Paylaşılan Planlar</p>
+                  <p className="text-xs text-muted-foreground">
+                    Sizinle paylaşılan programlar
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
-        <Card>
-          <CardHeader className="p-3 pb-0">
-            <CardTitle className="text-sm">Program Özeti</CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-2 space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Hafta 1-2:</span>
-              <span className="font-medium">Full Body (Adaptasyon)</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Hafta 3-4:</span>
-              <span className="font-medium">Split (Bölgesel)</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Antrenman saati:</span>
-              <span className="font-medium">19:00 - 20:30</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">İlk öğün:</span>
-              <span className="font-medium">10:30 - 11:00</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Yüzme:</span>
-              <span className="font-medium">Sal, Per, Cmt (Hf 1-2)</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Not:</span>
-              <span className="font-medium text-yellow-500">Süt yok! 🚫🥛</span>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Program Ozeti */}
+        {hasWeeks && (
+          <Card>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Program Özeti</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-2 space-y-2">
+              {weeks.map((week) => (
+                <div key={week.id} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Hafta {week.weekNumber}:
+                  </span>
+                  <span className="font-medium">
+                    {week.title} ({week.phase})
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

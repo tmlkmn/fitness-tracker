@@ -8,11 +8,19 @@ import { AiSuggestionModal } from "./ai-suggestion-modal";
 interface AiSuggestButtonProps {
   mealLabel: string;
   currentContent: string;
+  calories?: number | null;
+  proteinG?: string | null;
+  carbsG?: string | null;
+  fatG?: string | null;
 }
 
 export function AiSuggestButton({
   mealLabel,
   currentContent,
+  calories,
+  proteinG,
+  carbsG,
+  fatG,
 }: AiSuggestButtonProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -31,6 +39,10 @@ export function AiSuggestButton({
         onOpenChange={setOpen}
         mealLabel={mealLabel}
         currentContent={currentContent}
+        calories={calories}
+        proteinG={proteinG}
+        carbsG={carbsG}
+        fatG={fatG}
       />
     </>
   );

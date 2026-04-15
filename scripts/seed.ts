@@ -1,6 +1,11 @@
+import "dotenv/config";
+import { config } from "dotenv";
+config({ path: ".env.local", override: true });
+
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "../src/db/schema";
+import { hashPassword } from "better-auth/crypto";
 
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
@@ -11,6 +16,19 @@ const db = drizzle(sql, { schema });
 
 type NewMeal = typeof schema.meals.$inferInsert;
 type NewExercise = typeof schema.exercises.$inferInsert;
+
+// Program start date (Monday)
+const PROGRAM_START_DATE = "2026-04-13";
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
+function weekStartDate(weekNumber: number): string {
+  return addDays(PROGRAM_START_DATE, (weekNumber - 1) * 7);
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // MEAL DATA GENERATORS
@@ -962,19 +980,72 @@ function splitExercises(
 async function seed() {
   console.log("🌱 Seeding database...");
 
-  // 1. Create user
-  console.log("Creating user...");
+  // 0. Clean existing data (order matters for foreign keys)
+  console.log("Clearing existing data...");
+  await db.delete(schema.shoppingLists);
+  await db.delete(schema.supplements);
+  await db.delete(schema.exercises);
+  await db.delete(schema.meals);
+  await db.delete(schema.progressLogs);
+  await db.delete(schema.dailyPlans);
+  await db.delete(schema.weeklyPlans);
+  await db.delete(schema.sessions);
+  await db.delete(schema.accounts);
+  await db.delete(schema.verifications);
+  await db.delete(schema.users);
+
+  // 1. Create user with auth account
+  console.log("Creating users...");
+  const userId = crypto.randomUUID();
   const [user] = await db
     .insert(schema.users)
     .values({
+      id: userId,
       name: "Fitness User",
       email: "user@fittrack.app",
+      emailVerified: true,
       height: 178,
       weight: "96",
       targetWeight: "85",
       healthNotes: "Sağ diz menisküs, sol el bileği hafif ağrısı. Süt kullanılmıyor.",
+      isApproved: true,
+      role: "user",
+      mustChangePassword: false,
     })
     .returning();
+
+  // Create credential account for login
+  const hashedPw = await hashPassword("fittrack123");
+  await db.insert(schema.accounts).values({
+    id: crypto.randomUUID(),
+    userId: user.id,
+    accountId: user.id,
+    providerId: "credential",
+    password: hashedPw,
+  });
+
+  // 1b. Create admin user
+  const adminId = crypto.randomUUID();
+  await db
+    .insert(schema.users)
+    .values({
+      id: adminId,
+      name: "Admin",
+      email: "temel.ekmen28@gmail.com",
+      emailVerified: true,
+      isApproved: true,
+      role: "admin",
+      mustChangePassword: false,
+    });
+
+  const adminHash = await hashPassword("Admin123");
+  await db.insert(schema.accounts).values({
+    id: crypto.randomUUID(),
+    userId: adminId,
+    accountId: adminId,
+    providerId: "credential",
+    password: adminHash,
+  });
 
   // ──────────────────────────────────────────────────────────────────────────
   // WEEK 1 — Full Body Adaptasyon
@@ -983,11 +1054,12 @@ async function seed() {
   const [week1] = await db
     .insert(schema.weeklyPlans)
     .values({
-      userId: user.id,
+      userId: adminId,
       weekNumber: 1,
       title: "Hafta 1 — Full Body Adaptasyon",
       phase: "adaptation",
       notes: "Ağırlıklar çok hafif başla, tekniğe odaklan. Menisküs egzersizlerinde yarım ROM uygula.",
+      startDate: weekStartDate(1),
     })
     .returning();
 
@@ -1005,7 +1077,7 @@ async function seed() {
   for (const day of w1Days) {
     const [dailyPlan] = await db
       .insert(schema.dailyPlans)
-      .values({ weeklyPlanId: week1.id, ...day })
+      .values({ weeklyPlanId: week1.id, ...day, date: addDays(weekStartDate(1), day.dayOfWeek) })
       .returning();
 
     if (day.planType === "workout") {
@@ -1032,18 +1104,19 @@ async function seed() {
   const [week2] = await db
     .insert(schema.weeklyPlans)
     .values({
-      userId: user.id,
+      userId: adminId,
       weekNumber: 2,
       title: "Hafta 2 — Full Body İlerleme",
       phase: "adaptation",
       notes: "Ağırlıkları hafifçe artır. Form hâlâ öncelikli. Yüzme sürelerini uzatabilirsin.",
+      startDate: weekStartDate(2),
     })
     .returning();
 
   for (const day of w1Days) {
     const [dailyPlan] = await db
       .insert(schema.dailyPlans)
-      .values({ weeklyPlanId: week2.id, ...day })
+      .values({ weeklyPlanId: week2.id, ...day, date: addDays(weekStartDate(2), day.dayOfWeek) })
       .returning();
 
     if (day.planType === "workout") {
@@ -1070,11 +1143,12 @@ async function seed() {
   const [week3] = await db
     .insert(schema.weeklyPlans)
     .values({
-      userId: user.id,
+      userId: adminId,
       weekNumber: 3,
       title: "Hafta 3 — Bölgesel Split Başlangıç",
       phase: "split",
       notes: "Artık her gün salon. Whey protein SU ile başlıyor. Her bölgeye özel odak.",
+      startDate: weekStartDate(3),
     })
     .returning();
 
@@ -1091,7 +1165,7 @@ async function seed() {
   for (const day of w3Days) {
     const [dailyPlan] = await db
       .insert(schema.dailyPlans)
-      .values({ weeklyPlanId: week3.id, dayOfWeek: day.dayOfWeek, dayName: day.dayName, planType: day.planType, workoutTitle: day.workoutTitle })
+      .values({ weeklyPlanId: week3.id, dayOfWeek: day.dayOfWeek, dayName: day.dayName, planType: day.planType, workoutTitle: day.workoutTitle, date: addDays(weekStartDate(3), day.dayOfWeek) })
       .returning();
 
     if (day.planType === "workout") {
@@ -1117,18 +1191,19 @@ async function seed() {
   const [week4] = await db
     .insert(schema.weeklyPlans)
     .values({
-      userId: user.id,
+      userId: adminId,
       weekNumber: 4,
       title: "Hafta 4 — Bölgesel Split İlerleme",
       phase: "split",
       notes: "Ağırlıkları artır. Omega-3 ve Magnezyum ekleniyor. Dört haftanın doruk noktası!",
+      startDate: weekStartDate(4),
     })
     .returning();
 
   for (const day of w3Days) {
     const [dailyPlan] = await db
       .insert(schema.dailyPlans)
-      .values({ weeklyPlanId: week4.id, dayOfWeek: day.dayOfWeek, dayName: day.dayName, planType: day.planType, workoutTitle: day.workoutTitle })
+      .values({ weeklyPlanId: week4.id, dayOfWeek: day.dayOfWeek, dayName: day.dayName, planType: day.planType, workoutTitle: day.workoutTitle, date: addDays(weekStartDate(4), day.dayOfWeek) })
       .returning();
 
     if (day.planType === "workout") {
@@ -1274,6 +1349,7 @@ async function seed() {
 
   console.log("✅ Seed complete!");
   console.log(`  ✔ User created: ${user.id}`);
+  console.log(`  ✔ Admin created: ${adminId}`);
   console.log("  ✔ 4 weekly plans created");
   console.log("  ✔ 28 daily plans created");
   console.log("  ✔ Meals, exercises seeded");

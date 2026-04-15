@@ -1,50 +1,102 @@
 "use server";
 
-const mealVariations: Record<string, string[]> = {
-  kahvaltı: [
-    "Menemen (3 yumurta + domates + biber) + 2 dilim çavdar ekmeği + beyaz peynir",
-    "Peynirli omlet (3 yumurta + kaşar + mantar) + 2 dilim tam buğday ekmeği",
-    "Shakshuka (2 yumurta + domates sosu + pul biber) + ekmek + zeytin",
-    "Yumurtalı avokado toast + 2 haşlanmış yumurta + yeşillik",
-    "Yulaf lapası (su ile) + 1 muz + bal + tarçın + 5 badem",
-  ],
-  "ara öğün": [
-    "200g yoğurt + 1 yemek kaşığı bal + chia tohumu + çilek",
-    "Ton sandviç (1 kutu ton + marul + domates + tam buğday ekmek)",
-    "1 elma + 30g ceviz + 1 bardak ayran",
-    "200g lor peyniri + 5 ceviz + 1 armut",
-    "Granola + yoğurt + taze meyve",
-  ],
-  "ana öğün": [
-    "150g ızgara tavuk göğsü + 80g bulgur pilavı + mevsim salatası",
-    "150g somon fileto + buharda brokoli + yeşil mercimek çorbası",
-    "150g hindi göğsü + kinoa salatası + zeytinyağlı fasulye",
-    "150g kırmızı et (yağsız) + sebze kavurma + salata",
-    "2 adet köfte + ızgara sebze + yarım avokado",
-  ],
-};
+import { getAuthUser } from "@/lib/auth-utils";
+import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
+import { buildUserContext } from "@/lib/ai-context";
+import {
+  MEAL_VARIATION_PROMPT,
+  EXERCISE_TIPS_PROMPT,
+} from "@/lib/ai-prompts";
 
-export async function generateMealVariation(mealLabel: string, currentContent: string) {
-  const labelLower = mealLabel.toLowerCase();
-  let category = "ana öğün";
+// Server-side cache for exercise form tips (exercise name → tips text)
+const exerciseTipsCache = new Map<string, string>();
 
-  if (
-    labelLower.includes("kahvaltı") ||
-    labelLower.includes("omlet") ||
-    labelLower.includes("menemen")
-  ) {
-    category = "kahvaltı";
-  } else if (
-    labelLower.includes("ara") ||
-    labelLower.includes("atıştırma") ||
-    labelLower.includes("snack")
-  ) {
-    category = "ara öğün";
+export async function generateMealVariation(
+  mealLabel: string,
+  currentContent: string,
+  calories?: number | null,
+  proteinG?: string | null,
+  carbsG?: string | null,
+  fatG?: string | null
+) {
+  const user = await getAuthUser();
+  checkRateLimit(user.id, "meal");
+
+  const userContext = await buildUserContext(user.id);
+  const client = getAIClient();
+
+  const macroInfo = [
+    calories ? `${calories} kcal` : null,
+    proteinG ? `Protein: ${proteinG}g` : null,
+    carbsG ? `Karb: ${carbsG}g` : null,
+    fatG ? `Yağ: ${fatG}g` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const message = await client.messages.create({
+    model: AI_MODELS.fast,
+    max_tokens: 300,
+    system: [
+      {
+        type: "text",
+        text: MEAL_VARIATION_PROMPT,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
+    messages: [
+      {
+        role: "user",
+        content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}\n\nBu öğüne benzer makrolarla alternatif bir öğün öner.`,
+      },
+    ],
+  });
+
+  const text =
+    message.content[0].type === "text" ? message.content[0].text : "";
+  return { suggestion: text };
+}
+
+export async function getExerciseFormTips(
+  exerciseName: string,
+  exerciseNotes: string | null
+) {
+  // Check server-side cache first
+  const cacheKey = exerciseName.toLowerCase().trim();
+  const cached = exerciseTipsCache.get(cacheKey);
+  if (cached) {
+    return { tips: cached };
   }
 
-  const variations = mealVariations[category];
-  const filtered = variations.filter((v) => v !== currentContent);
-  const suggestion = filtered[Math.floor(Math.random() * filtered.length)];
+  const user = await getAuthUser();
+  checkRateLimit(user.id, "exercise");
 
-  return { suggestion };
+  const userContext = await buildUserContext(user.id);
+  const client = getAIClient();
+
+  const message = await client.messages.create({
+    model: AI_MODELS.fast,
+    max_tokens: 400,
+    system: [
+      {
+        type: "text",
+        text: EXERCISE_TIPS_PROMPT,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
+    messages: [
+      {
+        role: "user",
+        content: `${userContext}\n\nEgzersiz: ${exerciseName}${exerciseNotes ? `\nNotlar: ${exerciseNotes}` : ""}\n\nBu egzersiz için form ipuçları ver.`,
+      },
+    ],
+  });
+
+  const text =
+    message.content[0].type === "text" ? message.content[0].text : "";
+
+  // Cache the result
+  exerciseTipsCache.set(cacheKey, text);
+
+  return { tips: text };
 }

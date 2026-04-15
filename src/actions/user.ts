@@ -1,0 +1,36 @@
+"use server";
+
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { getAuthUser } from "@/lib/auth-utils";
+
+export async function getUserProfile() {
+  const user = await getAuthUser();
+  const rows = await db
+    .select({
+      weight: users.weight,
+      targetWeight: users.targetWeight,
+      height: users.height,
+      healthNotes: users.healthNotes,
+    })
+    .from(users)
+    .where(eq(users.id, user.id));
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, healthNotes: null };
+}
+
+export async function updateUserWeightTargets(data: {
+  weight?: string;
+  targetWeight?: string;
+}) {
+  const user = await getAuthUser();
+  await db
+    .update(users)
+    .set({
+      weight: data.weight ?? null,
+      targetWeight: data.targetWeight ?? null,
+    })
+    .where(eq(users.id, user.id));
+  revalidatePath("/ilerleme");
+}

@@ -1,29 +1,47 @@
 "use client";
 
 import { Header } from "@/components/layout/header";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ProgressForm } from "@/components/progress/progress-form";
-import { WeightChart } from "@/components/progress/weight-chart";
+import { ProgressAiAnalysis } from "@/components/progress/progress-ai-analysis";
+import { ChartSelector } from "@/components/progress/chart-selector";
+import { WeightTargetEditor } from "@/components/progress/weight-target-editor";
 import { useProgressLogs } from "@/hooks/use-progress";
+import { useUserProfile } from "@/hooks/use-user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp } from "lucide-react";
 
 export default function IlerlemePage() {
-  const { data: logs } = useProgressLogs(1);
+  const { data: logs } = useProgressLogs();
+  const { data: profile } = useUserProfile();
 
-  const latestWeight = logs?.find((l) => l.weight)?.weight;
-  const startingWeight = 96;
-  const targetWeight = 85;
-  const diff = latestWeight
-    ? (parseFloat(latestWeight) - startingWeight).toFixed(1)
-    : null;
+  const latestLog = logs?.find((l) => l.weight);
+  const latestWeight = latestLog?.weight;
+  const startingWeight = profile?.weight;
+  const targetWeight = profile?.targetWeight;
+
+  const diff =
+    latestWeight && startingWeight
+      ? (parseFloat(latestWeight) - parseFloat(startingWeight)).toFixed(1)
+      : null;
 
   return (
-    <div>
-      <Header title="İlerleme" subtitle="Kilo ve ölçüm takibi" />
+    <div className="animate-fade-in">
+      <Header
+        title="İlerleme"
+        subtitle="Kilo ve ölçüm takibi"
+        icon={TrendingUp}
+        rightSlot={<NotificationBell />}
+      />
       <div className="p-4 space-y-4">
+        {/* Summary cards */}
         <div className="grid grid-cols-3 gap-3">
           <Card>
             <CardContent className="p-3 text-center">
-              <p className="text-lg font-bold">{latestWeight ?? "96"}</p>
+              <p className="text-lg font-bold">
+                {latestWeight ?? startingWeight ?? "—"}
+              </p>
               <p className="text-xs text-muted-foreground">kg (şimdi)</p>
             </CardContent>
           </Card>
@@ -36,30 +54,37 @@ export default function IlerlemePage() {
                     : "text-muted-foreground"
                 }`}
               >
-                {diff ? diff : "0"}
+                {diff ?? "0"}
               </p>
               <p className="text-xs text-muted-foreground">kg fark</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 text-center">
-              <p className="text-lg font-bold text-primary">{targetWeight}</p>
+            <CardContent className="p-3 text-center relative">
+              <div className="absolute top-1 right-1">
+                <WeightTargetEditor
+                  currentWeight={startingWeight}
+                  currentTarget={targetWeight}
+                />
+              </div>
+              <p className="text-lg font-bold text-primary">
+                {targetWeight ?? "—"}
+              </p>
               <p className="text-xs text-muted-foreground">kg hedef</p>
             </CardContent>
           </Card>
         </div>
 
-        <Card>
-          <CardHeader className="p-3 pb-0">
-            <CardTitle className="text-sm">Kilo Grafiği</CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-2">
-            <WeightChart data={logs ?? []} />
-          </CardContent>
-        </Card>
+        {/* Dynamic chart */}
+        <ChartSelector data={logs ?? []} />
 
+        {/* AI Analysis */}
+        <ProgressAiAnalysis />
+
+        {/* Expanded form */}
         <ProgressForm />
 
+        {/* History */}
         {logs && logs.length > 0 && (
           <Card>
             <CardHeader className="p-3 pb-0">
@@ -70,19 +95,31 @@ export default function IlerlemePage() {
                 {logs.slice(0, 10).map((log) => (
                   <div
                     key={log.id}
-                    className="flex justify-between items-center py-1 border-b border-border last:border-0"
+                    className="flex justify-between items-center py-1.5 border-b border-border last:border-0"
                   >
                     <span className="text-xs text-muted-foreground">
                       {log.logDate}
                     </span>
-                    <div className="flex gap-3 text-xs">
+                    <div className="flex flex-wrap gap-1.5 justify-end">
                       {log.weight && (
-                        <span className="font-medium">{log.weight} kg</span>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {log.weight} kg
+                        </Badge>
+                      )}
+                      {log.fatPercent && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          %{log.fatPercent} yağ
+                        </Badge>
+                      )}
+                      {log.bmi && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          BMI {log.bmi}
+                        </Badge>
                       )}
                       {log.waistCm && (
-                        <span className="text-muted-foreground">
+                        <Badge variant="outline" className="text-[10px]">
                           bel: {log.waistCm} cm
-                        </span>
+                        </Badge>
                       )}
                     </div>
                   </div>

@@ -1,18 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Header } from "@/components/layout/header";
-import {
-  useAllWeeks,
-  useDailyPlansByWeek,
-  useWeeklyPlan,
-} from "@/hooks/use-plans";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { WeekStrip } from "@/components/calendar/week-strip";
+import { MonthCalendar } from "@/components/calendar/month-calendar";
+import { DayDetailPanel } from "@/components/calendar/day-detail-panel";
+import { AiWeeklyPlanModal } from "@/components/calendar/ai-weekly-plan-modal";
+import { useWeekPlansByDate, useDatesWithPlans } from "@/hooks/use-plans";
+import { useGenerateWeeklyPlan, useApplyWeeklyPlan } from "@/hooks/use-weekly-ai";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dumbbell, Waves, Moon } from "lucide-react";
-import Link from "next/link";
+import {
+  Dumbbell,
+  Waves,
+  Moon,
+  Calendar,
+  CalendarDays,
+  ChevronUp,
+  CircleDot,
+  ChevronDown,
+  Info,
+  Sparkles,
+  Plus,
+} from "lucide-react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { formatDateStr } from "@/lib/utils";
+import { ensureDailyPlan } from "@/actions/ensure-plan";
+import { useQueryClient } from "@tanstack/react-query";
 
 const planTypeConfig = {
   workout: { icon: Dumbbell, label: "Antrenman", badge: "default" as const },
@@ -20,104 +36,379 @@ const planTypeConfig = {
   rest: { icon: Moon, label: "Dinlenme", badge: "outline" as const },
 };
 
+function formatTurkishDate(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    weekday: "long",
+  });
+}
+
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function TakvimPage() {
-  const [selectedWeek, setSelectedWeek] = useState(1);
-  const { data: weeklyPlan } = useWeeklyPlan(selectedWeek);
-  const { data: dailyPlans, isLoading: daysLoading } = useDailyPlansByWeek(
-    weeklyPlan?.id ?? 0
+  const today = useMemo(() => new Date(), []);
+  const [selectedDate, setSelectedDate] = useState(() => formatDateStr(today));
+  const [weekStart, setWeekStart] = useState(() => getMonday(today));
+  const [showFullCalendar, setShowFullCalendar] = useState(false);
+  const [viewYear, setViewYear] = useState(() => today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => today.getMonth() + 1);
+  const [weeklyModalOpen, setWeeklyModalOpen] = useState(false);
+  const [creatingPlan, setCreatingPlan] = useState(false);
+  const [createdDailyPlanId, setCreatedDailyPlanId] = useState<number | null>(null);
+
+  const { data, isLoading } = useWeekPlansByDate(selectedDate);
+  const { data: planDates } = useDatesWithPlans(viewYear, viewMonth);
+  const queryClient = useQueryClient();
+
+  const generateWeekly = useGenerateWeeklyPlan();
+  const applyWeekly = useApplyWeeklyPlan();
+
+  // Also fetch plan dates for the week strip's month (may differ from viewMonth)
+  const weekMonth = weekStart.getMonth() + 1;
+  const weekYear = weekStart.getFullYear();
+  const { data: weekPlanDates } = useDatesWithPlans(weekYear, weekMonth);
+
+  const datesWithPlans = useMemo(() => {
+    const set = new Set(planDates ?? []);
+    if (weekPlanDates) {
+      for (const d of weekPlanDates) set.add(d);
+    }
+    return set;
+  }, [planDates, weekPlanDates]);
+
+  const selectedDayPlan = data?.dailyPlans.find(
+    (d) => d.date === selectedDate
   );
-  const { data: weeks, isLoading: weeksLoading } = useAllWeeks();
+
+  const handlePrevWeek = useCallback(() => {
+    setWeekStart((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() - 7);
+      return d;
+    });
+  }, []);
+
+  const handleNextWeek = useCallback(() => {
+    setWeekStart((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + 7);
+      return d;
+    });
+  }, []);
+
+  const handleSelectDate = useCallback((dateStr: string) => {
+    setSelectedDate(dateStr);
+    setCreatedDailyPlanId(null);
+    const d = new Date(dateStr + "T00:00:00");
+    setWeekStart(getMonday(d));
+  }, []);
+
+  const handleMonthSelectDate = useCallback((dateStr: string) => {
+    setSelectedDate(dateStr);
+    setCreatedDailyPlanId(null);
+    const d = new Date(dateStr + "T00:00:00");
+    setWeekStart(getMonday(d));
+    setShowFullCalendar(false);
+  }, []);
+
+  const todayStr = useMemo(() => formatDateStr(today), [today]);
+  const isToday = selectedDate === todayStr;
+
+  const handleGoToToday = useCallback(() => {
+    const now = new Date();
+    const todayDate = formatDateStr(now);
+    setSelectedDate(todayDate);
+    setCreatedDailyPlanId(null);
+    setWeekStart(getMonday(now));
+    setShowFullCalendar(false);
+  }, []);
+
+  // AI Weekly Plan handlers
+  const handleGenerateWeekly = () => {
+    generateWeekly.mutate(selectedDate);
+  };
+
+  const handleApplyWeekly = () => {
+    if (!generateWeekly.data?.suggestedPlan) return;
+    applyWeekly.mutate(
+      { dateStr: selectedDate, plan: generateWeekly.data.suggestedPlan },
+      {
+        onSuccess: () => {
+          setWeeklyModalOpen(false);
+          generateWeekly.reset();
+        },
+      },
+    );
+  };
+
+  const handleWeeklyModalOpenChange = (open: boolean) => {
+    setWeeklyModalOpen(open);
+    if (open && !generateWeekly.data) {
+      handleGenerateWeekly();
+    }
+    if (!open) {
+      generateWeekly.reset();
+    }
+  };
+
+  const weeklyError = generateWeekly.error
+    ? generateWeekly.error.message === "RATE_LIMITED"
+      ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
+      : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
+    : null;
+
+  // Create a plan on demand for empty days
+  const handleCreatePlanForDate = async () => {
+    setCreatingPlan(true);
+    try {
+      const dailyPlanId = await ensureDailyPlan(selectedDate);
+      setCreatedDailyPlanId(dailyPlanId);
+      queryClient.invalidateQueries({ queryKey: ["plans"] });
+    } catch {
+      // Error creating plan
+    } finally {
+      setCreatingPlan(false);
+    }
+  };
+
+  // Determine the dailyPlanId to use for the detail panel
+  const activeDailyPlanId = selectedDayPlan?.id ?? createdDailyPlanId;
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <Header
-        title="Haftalık Program"
-        subtitle="Antrenman & Beslenme Takvimi"
+        title="Takvim"
+        subtitle="Antrenman & Beslenme Programı"
+        icon={Calendar}
+        rightSlot={<NotificationBell />}
       />
       <div className="p-4 space-y-4">
-        <Tabs
-          value={String(selectedWeek)}
-          onValueChange={(v) => setSelectedWeek(Number(v))}
-        >
-          <TabsList className="grid grid-cols-4 w-full">
-            {[1, 2, 3, 4].map((week) => (
-              <TabsTrigger key={week} value={String(week)}>
-                Hf {week}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-
-        {weeklyPlan && (
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-3">
-              <p className="font-semibold text-sm">{weeklyPlan.title}</p>
-              <Badge variant="outline" className="text-xs mt-1">
-                {weeklyPlan.phase === "adaptation" ? "Adaptasyon" : "Split"}
-              </Badge>
-              {weeklyPlan.notes && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  {weeklyPlan.notes}
-                </p>
+        {showFullCalendar ? (
+          <>
+            <MonthCalendar
+              selectedDate={selectedDate}
+              onSelectDate={handleMonthSelectDate}
+              viewYear={viewYear}
+              viewMonth={viewMonth}
+              onChangeMonth={(y, m) => {
+                setViewYear(y);
+                setViewMonth(m);
+              }}
+              datesWithPlans={datesWithPlans}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full gap-1.5 text-muted-foreground"
+              onClick={() => setShowFullCalendar(false)}
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+              Haftalık Görünüm
+            </Button>
+            {!isToday && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full gap-1.5 text-muted-foreground"
+                onClick={handleGoToToday}
+              >
+                <CircleDot className="h-3.5 w-3.5" />
+                Bugün
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            <WeekStrip
+              weekStartDate={weekStart}
+              selectedDate={selectedDate}
+              onSelectDate={handleSelectDate}
+              onPrevWeek={handlePrevWeek}
+              onNextWeek={handleNextWeek}
+              datesWithPlans={datesWithPlans}
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 gap-1.5 text-muted-foreground"
+                onClick={() => {
+                  const d = new Date(selectedDate + "T00:00:00");
+                  setViewYear(d.getFullYear());
+                  setViewMonth(d.getMonth() + 1);
+                  setShowFullCalendar(true);
+                }}
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                Tüm Takvim
+              </Button>
+              {!isToday && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 gap-1.5 text-muted-foreground"
+                  onClick={handleGoToToday}
+                >
+                  <CircleDot className="h-3.5 w-3.5" />
+                  Bugün
+                </Button>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </>
         )}
 
-        {daysLoading ? (
+        {data?.weeklyPlan && (
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/20 text-left transition-colors hover:bg-primary/10">
+                <Info className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-sm font-semibold flex-1 truncate">
+                  {data.weeklyPlan.title}
+                </span>
+                <Badge variant="outline" className="text-[10px] shrink-0">
+                  {data.weeklyPlan.phase === "adaptation"
+                    ? "Adaptasyon"
+                    : data.weeklyPlan.phase === "custom"
+                    ? "Özel"
+                    : "Split"}
+                </Badge>
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              </button>
+            </CollapsibleTrigger>
+            {data.weeklyPlan.notes && (
+              <CollapsibleContent>
+                <p className="text-xs text-muted-foreground px-2.5 pt-2">
+                  {data.weeklyPlan.notes}
+                </p>
+              </CollapsibleContent>
+            )}
+          </Collapsible>
+        )}
+
+        {/* AI Weekly Plan Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-1.5"
+          onClick={() => handleWeeklyModalOpenChange(true)}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          AI ile Haftalık Plan {data?.weeklyPlan ? "Değiştir" : "Oluştur"}
+        </Button>
+
+        <p className="text-sm text-muted-foreground">
+          {formatTurkishDate(selectedDate)}
+        </p>
+
+        {isLoading ? (
           <div className="space-y-2">
-            {[...Array(7)].map((_, i) => (
+            {[...Array(3)].map((_, i) => (
               <Skeleton key={i} className="h-16 w-full" />
             ))}
           </div>
+        ) : activeDailyPlanId ? (
+          <DayDetailPanel
+            dailyPlan={
+              selectedDayPlan ?? {
+                id: activeDailyPlanId,
+                dayName: formatTurkishDate(selectedDate),
+                planType: "workout",
+              }
+            }
+          />
         ) : (
-          <div className="space-y-2">
-            {dailyPlans?.map((day) => {
-              const config =
-                planTypeConfig[day.planType as keyof typeof planTypeConfig] ??
-                planTypeConfig.workout;
-              const Icon = config.icon;
-              return (
-                <Link key={day.id} href={`/gun/${day.id}`}>
-                  <Card className="hover:bg-accent transition-colors cursor-pointer active:opacity-80">
-                    <CardContent className="p-3 flex items-center gap-3">
-                      <Icon className="h-5 w-5 text-primary shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">
-                            {day.dayName}
-                          </span>
-                          <Badge
-                            variant={config.badge}
-                            className="text-xs"
-                          >
-                            {config.label}
-                          </Badge>
-                        </div>
-                        {day.workoutTitle && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {day.workoutTitle}
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
+          <div className="text-center py-8 space-y-3">
+            <Dumbbell className="h-12 w-12 mx-auto opacity-20 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Bu tarih için plan bulunamadı.
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => handleWeeklyModalOpenChange(true)}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                AI ile Haftalık Plan
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={handleCreatePlanForDate}
+                disabled={creatingPlan}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {creatingPlan ? "Oluşturuluyor..." : "Manuel Ekle"}
+              </Button>
+            </div>
           </div>
         )}
 
-        {!weeksLoading && !weeks?.length && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Dumbbell className="h-12 w-12 mx-auto mb-3 opacity-20" />
-            <p className="text-sm">Henüz program yüklenmemiş.</p>
-            <p className="text-xs mt-1 font-mono">
-              npm run db:seed çalıştırın
-            </p>
+        {data?.dailyPlans && data.dailyPlans.length > 0 && (
+          <div className="space-y-1.5">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Bu Haftanın Programı
+            </h3>
+            <div className="space-y-1.5">
+              {data.dailyPlans.map((day) => {
+                const config =
+                  planTypeConfig[
+                    day.planType as keyof typeof planTypeConfig
+                  ] ?? planTypeConfig.workout;
+                const Icon = config.icon;
+                const isSelected = day.date === selectedDate;
+                return (
+                  <button
+                    key={day.id}
+                    onClick={() => day.date && handleSelectDate(day.date)}
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-all text-left ${
+                      isSelected
+                        ? "bg-primary/10 border border-primary/20"
+                        : "hover:bg-accent"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-sm font-medium flex-1">
+                      {day.dayName}
+                    </span>
+                    <Badge
+                      variant={config.badge}
+                      className="text-[10px] px-1.5"
+                    >
+                      {config.label}
+                    </Badge>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
+
+      {weeklyModalOpen && (
+        <AiWeeklyPlanModal
+          open={weeklyModalOpen}
+          onOpenChange={handleWeeklyModalOpenChange}
+          suggestedPlan={generateWeekly.data?.suggestedPlan ?? null}
+          loading={generateWeekly.isPending}
+          applying={applyWeekly.isPending}
+          error={weeklyError}
+          onGenerate={handleGenerateWeekly}
+          onApply={handleApplyWeekly}
+          hasExistingPlan={!!data?.weeklyPlan}
+        />
+      )}
     </div>
   );
 }

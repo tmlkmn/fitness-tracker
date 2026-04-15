@@ -3,6 +3,7 @@ import "./globals.css";
 import { QueryProvider } from "@/lib/query-client";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Toaster } from "@/components/ui/sonner";
+import { SwRegister } from "./sw-register";
 
 export const metadata: Metadata = {
   title: "Fitness Tracker",
@@ -31,9 +32,10 @@ export default function RootLayout({
     <html lang="tr" className="dark">
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         <QueryProvider>
-          <main className="pb-20 max-w-lg mx-auto">{children}</main>
+          <main className="pb-24 max-w-lg mx-auto">{children}</main>
           <BottomNav />
           <Toaster />
+          <SwRegister />
         </QueryProvider>
       </body>
     </html>

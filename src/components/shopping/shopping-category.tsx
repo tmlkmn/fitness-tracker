@@ -2,6 +2,7 @@
 
 import { ShoppingItem } from "./shopping-item";
 import { Separator } from "@/components/ui/separator";
+import { stripEmoji } from "@/lib/icon-map";
 
 interface Item {
   id: number;
@@ -14,19 +15,23 @@ interface Item {
 interface ShoppingCategoryProps {
   category: string;
   items: Item[];
-  onToggle: (id: number, isPurchased: boolean) => void;
+  onToggle?: (id: number, isPurchased: boolean) => void;
+  readOnly?: boolean;
 }
 
 export function ShoppingCategory({
   category,
   items,
   onToggle,
+  readOnly,
 }: ShoppingCategoryProps) {
   const purchasedCount = items.filter((i) => i.isPurchased).length;
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-primary">{category}</h3>
+        <h3 className="text-sm font-semibold text-primary">
+          {stripEmoji(category)}
+        </h3>
         <span className="text-xs text-muted-foreground">
           {purchasedCount}/{items.length}
         </span>
@@ -38,6 +43,7 @@ export function ShoppingCategory({
             {...item}
             isPurchased={item.isPurchased ?? false}
             onToggle={onToggle}
+            readOnly={readOnly}
           />
         ))}
       </div>

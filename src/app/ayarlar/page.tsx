@@ -1,13 +1,99 @@
+"use client";
+
 import { Header } from "@/components/layout/header";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Scale, Ruler, Heart, Info } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import {
+  User,
+  Scale,
+  Ruler,
+  Heart,
+  Info,
+  Settings,
+  LogOut,
+  Loader2,
+  Shield,
+  ChevronDown,
+} from "lucide-react";
+import { useSession, signOut } from "@/lib/auth-client";
+import { useUserProfile } from "@/hooks/use-user";
+import { ShareManager } from "@/components/sharing/share-manager";
+import { NotificationPreferencesCard } from "@/components/notifications/notification-preferences-card";
+import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
+
+function CollapsibleCard({
+  title,
+  icon: Icon,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <Collapsible defaultOpen={defaultOpen}>
+      <Card>
+        <CollapsibleTrigger className="w-full">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Icon className="h-4 w-4" />
+              <span className="flex-1 text-left">{title}</span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+            </CardTitle>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="p-4 pt-2">{children}</CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}
 
 export default function AyarlarPage() {
+  const { data: session } = useSession();
+  const { data: profile } = useUserProfile();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const user = session?.user;
+
+  let healthNotes: string[] = [];
+  if (profile?.healthNotes) {
+    try {
+      healthNotes = JSON.parse(profile.healthNotes);
+    } catch {
+      healthNotes = [profile.healthNotes];
+    }
+  }
+
+  const handleSignOut = async () => {
+    setLoggingOut(true);
+    await signOut();
+    router.push("/giris");
+    router.refresh();
+  };
+
   return (
-    <div>
-      <Header title="Ayarlar" subtitle="Profil ve sağlık bilgileri" />
+    <div className="animate-fade-in">
+      <Header
+        title="Ayarlar"
+        subtitle="Profil ve sağlık bilgileri"
+        icon={Settings}
+        rightSlot={<NotificationBell />}
+      />
       <div className="p-4 space-y-4">
+        {/* Profile — always open, not collapsible */}
         <Card>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -16,67 +102,67 @@ export default function AyarlarPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-2 space-y-3">
+            {user && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">E-posta</span>
+                <span className="text-sm font-medium">{user.email}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Scale className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Başlangıç kilosu</span>
+                <span className="text-sm text-muted-foreground">
+                  Başlangıç kilosu
+                </span>
               </div>
-              <span className="text-sm font-medium">96 kg</span>
+              <span className="text-sm font-medium">
+                {profile?.weight ? `${profile.weight} kg` : "—"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Scale className="h-4 w-4 text-primary" />
-                <span className="text-sm text-muted-foreground">Hedef kilo</span>
+                <span className="text-sm text-muted-foreground">
+                  Hedef kilo
+                </span>
               </div>
-              <span className="text-sm font-medium text-primary">85 kg</span>
+              <span className="text-sm font-medium text-primary">
+                {profile?.targetWeight ? `${profile.targetWeight} kg` : "—"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Ruler className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Boy</span>
               </div>
-              <span className="text-sm font-medium">178 cm</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">BMI</span>
-              </div>
-              <span className="text-sm font-medium">30.3 (Obez sınırı)</span>
+              <span className="text-sm font-medium">
+                {profile?.height ? `${profile.height} cm` : "—"}
+              </span>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Heart className="h-4 w-4 text-red-500" />
-              Sağlık Notları
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 space-y-2">
-            <div className="flex items-start gap-2">
-              <Badge variant="secondary" className="shrink-0">🦵</Badge>
-              <p className="text-sm">Sağ diz menisküs — Tam ROM gerektiren egzersizlerde dikkat</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <Badge variant="secondary" className="shrink-0">🤚</Badge>
-              <p className="text-sm">Sol el bileği hafif ağrı — Bilek baskısı olan hareketlerde dikkat</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <Badge variant="secondary" className="shrink-0">🚫🥛</Badge>
-              <p className="text-sm">Süt kullanılmıyor (gaz yapıyor) — Ayran, su, badem sütü kullanılıyor</p>
-            </div>
-          </CardContent>
-        </Card>
+        <CollapsibleCard title="Sağlık Notları" icon={Heart}>
+          <div className="space-y-2">
+            {healthNotes.length > 0 ? (
+              healthNotes.map((note, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <Badge variant="secondary" className="shrink-0 gap-1">
+                    <Info className="h-3 w-3" />
+                  </Badge>
+                  <p className="text-sm">{note}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Sağlık notu bulunmuyor.
+              </p>
+            )}
+          </div>
+        </CollapsibleCard>
 
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Info className="h-4 w-4" />
-              Günlük Akış
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 space-y-2">
+        <CollapsibleCard title="Günlük Akış" icon={Info}>
+          <div className="space-y-2">
             {[
               { time: "08:30", event: "Uyanış" },
               { time: "08:30-11:00", event: "Çocuk okula, toplantılar" },
@@ -86,33 +172,62 @@ export default function AyarlarPage() {
               { time: "21:00", event: "Antrenman sonrası beslenme" },
               { time: "24:00", event: "Uyku" },
             ].map(({ time, event }) => (
-              <div key={time} className="flex justify-between text-xs">
+              <div key={time} className="flex justify-between text-sm">
                 <span className="text-muted-foreground font-mono">{time}</span>
                 <span>{event}</span>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
 
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm">Supplement Takvimi</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 space-y-2">
-            <div className="flex justify-between text-xs">
+        <CollapsibleCard title="Supplement Takvimi" icon={Info}>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Hafta 1-2:</span>
               <span className="font-medium">Supplement yok</span>
             </div>
-            <div className="flex justify-between text-xs">
+            <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Hafta 3:</span>
               <span className="font-medium">Whey Protein (su ile)</span>
             </div>
-            <div className="flex justify-between text-xs">
+            <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Hafta 4:</span>
               <span className="font-medium">Whey + Omega-3 + Magnezyum</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
+
+        <NotificationPreferencesCard />
+
+        <ReminderSettingsCard />
+
+        <ShareManager />
+
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {(user as any)?.role === "admin" && (
+          <Link
+            href="/admin"
+            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md border border-primary/50 text-primary text-sm font-medium hover:bg-primary/10 transition-colors"
+          >
+            <Shield className="h-4 w-4" />
+            Admin Paneli
+          </Link>
+        )}
+
+        <button
+          onClick={handleSignOut}
+          disabled={loggingOut}
+          className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md border border-destructive/50 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+        >
+          {loggingOut ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <LogOut className="h-4 w-4" />
+              Çıkış Yap
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

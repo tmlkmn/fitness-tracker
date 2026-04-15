@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCw } from "lucide-react";
+import { Sparkles, RefreshCw, AlertCircle } from "lucide-react";
 import { generateMealVariation } from "@/actions/ai";
 
 interface AiSuggestionModalProps {
@@ -16,6 +16,10 @@ interface AiSuggestionModalProps {
   onOpenChange: (open: boolean) => void;
   mealLabel: string;
   currentContent: string;
+  calories?: number | null;
+  proteinG?: string | null;
+  carbsG?: string | null;
+  fatG?: string | null;
 }
 
 export function AiSuggestionModal({
@@ -23,15 +27,34 @@ export function AiSuggestionModal({
   onOpenChange,
   mealLabel,
   currentContent,
+  calories,
+  proteinG,
+  carbsG,
+  fatG,
 }: AiSuggestionModalProps) {
   const [suggestion, setSuggestion] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const generateSuggestion = async () => {
     setLoading(true);
+    setError("");
     try {
-      const result = await generateMealVariation(mealLabel, currentContent);
+      const result = await generateMealVariation(
+        mealLabel,
+        currentContent,
+        calories,
+        proteinG,
+        carbsG,
+        fatG
+      );
       setSuggestion(result.suggestion);
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message === "RATE_LIMITED"
+          ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
+          : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -56,9 +79,15 @@ export function AiSuggestionModal({
               {currentContent}
             </p>
           </div>
+          {error && (
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
           {suggestion && (
             <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-              <p className="text-xs text-primary mb-1">✨ Öneri:</p>
+              <p className="text-xs text-primary mb-1">Öneri:</p>
               <p className="text-sm">{suggestion}</p>
             </div>
           )}

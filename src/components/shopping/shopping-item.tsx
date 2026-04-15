@@ -9,7 +9,8 @@ interface ShoppingItemProps {
   quantity: string;
   notes?: string | null;
   isPurchased: boolean;
-  onToggle: (id: number, isPurchased: boolean) => void;
+  onToggle?: (id: number, isPurchased: boolean) => void;
+  readOnly?: boolean;
 }
 
 export function ShoppingItem({
@@ -19,13 +20,16 @@ export function ShoppingItem({
   notes,
   isPurchased,
   onToggle,
+  readOnly,
 }: ShoppingItemProps) {
   return (
     <div className="flex items-center gap-3 py-2">
-      <Checkbox
-        checked={isPurchased}
-        onCheckedChange={(checked) => onToggle(id, !!checked)}
-      />
+      {!readOnly && (
+        <Checkbox
+          checked={isPurchased}
+          onCheckedChange={(checked) => onToggle?.(id, !!checked)}
+        />
+      )}
       <div className="flex-1">
         <span
           className={cn(

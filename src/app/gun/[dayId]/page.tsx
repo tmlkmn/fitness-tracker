@@ -1,9 +1,11 @@
 import { Header } from "@/components/layout/header";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDailyPlan } from "@/actions/plans";
 import { MealList } from "@/components/meals/meal-list";
 import { WorkoutList } from "@/components/workout/workout-list";
 import { notFound } from "next/navigation";
+import { Utensils, Dumbbell } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +14,9 @@ interface PageProps {
 }
 
 const planTypeLabel: Record<string, string> = {
-  workout: "🏋️ Antrenman Günü",
-  swimming: "🏊 Yüzme Günü",
-  rest: "😴 Dinlenme Günü",
+  workout: "Antrenman Günü",
+  swimming: "Yüzme Günü",
+  rest: "Dinlenme Günü",
 };
 
 export default async function GunPage({ params }: PageProps) {
@@ -24,19 +26,41 @@ export default async function GunPage({ params }: PageProps) {
 
   if (!dailyPlan) notFound();
 
-  const subtitle =
-    dailyPlan.workoutTitle ??
-    planTypeLabel[dailyPlan.planType] ??
-    dailyPlan.planType;
+  const dateLabel = dailyPlan.date
+    ? new Date(dailyPlan.date + "T00:00:00").toLocaleDateString("tr-TR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        weekday: "long",
+      })
+    : null;
+
+  const subtitle = dateLabel
+    ? `${dateLabel} — ${dailyPlan.workoutTitle ?? planTypeLabel[dailyPlan.planType] ?? dailyPlan.planType}`
+    : (dailyPlan.workoutTitle ??
+      planTypeLabel[dailyPlan.planType] ??
+      dailyPlan.planType);
 
   return (
-    <div>
-      <Header title={dailyPlan.dayName} subtitle={subtitle} />
+    <div className="animate-fade-in">
+      <Header
+        title={dailyPlan.dayName}
+        subtitle={subtitle}
+        showBack
+        backHref="/takvim"
+        rightSlot={<NotificationBell />}
+      />
       <div className="p-4">
         <Tabs defaultValue="meals">
           <TabsList className="grid grid-cols-2 w-full mb-4">
-            <TabsTrigger value="meals">🍽️ Beslenme</TabsTrigger>
-            <TabsTrigger value="workout">💪 Antrenman</TabsTrigger>
+            <TabsTrigger value="meals" className="gap-1.5">
+              <Utensils className="h-4 w-4" />
+              Beslenme
+            </TabsTrigger>
+            <TabsTrigger value="workout" className="gap-1.5">
+              <Dumbbell className="h-4 w-4" />
+              Antrenman
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="meals">
             <MealList dailyPlanId={id} />
