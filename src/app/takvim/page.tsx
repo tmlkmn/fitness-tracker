@@ -7,6 +7,8 @@ import { WeekStrip } from "@/components/calendar/week-strip";
 import { MonthCalendar } from "@/components/calendar/month-calendar";
 import { DayDetailPanel } from "@/components/calendar/day-detail-panel";
 import { AiWeeklyPlanModal } from "@/components/calendar/ai-weekly-plan-modal";
+import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
+import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans } from "@/hooks/use-plans";
 import { useGenerateWeeklyPlan, useApplyWeeklyPlan } from "@/hooks/use-weekly-ai";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +66,7 @@ export default function TakvimPage() {
   const [viewYear, setViewYear] = useState(() => today.getFullYear());
   const [viewMonth, setViewMonth] = useState(() => today.getMonth() + 1);
   const [weeklyModalOpen, setWeeklyModalOpen] = useState(false);
+  const [profileWarningOpen, setProfileWarningOpen] = useState(false);
   const [creatingPlan, setCreatingPlan] = useState(false);
   const [createdDailyPlanId, setCreatedDailyPlanId] = useState<number | null>(null);
 
@@ -73,6 +76,7 @@ export default function TakvimPage() {
 
   const generateWeekly = useGenerateWeeklyPlan();
   const applyWeekly = useApplyWeeklyPlan();
+  const { missingFields } = useProfileCheck();
 
   // Also fetch plan dates for the week strip's month (may differ from viewMonth)
   const weekMonth = weekStart.getMonth() + 1;
@@ -153,6 +157,10 @@ export default function TakvimPage() {
   };
 
   const handleWeeklyModalOpenChange = (open: boolean) => {
+    if (open && missingFields.length > 0) {
+      setProfileWarningOpen(true);
+      return;
+    }
     setWeeklyModalOpen(open);
     if (!open) {
       generateWeekly.reset();
@@ -408,6 +416,12 @@ export default function TakvimPage() {
           hasExistingPlan={!!data?.weeklyPlan}
         />
       )}
+
+      <ProfileMissingWarning
+        open={profileWarningOpen}
+        onOpenChange={setProfileWarningOpen}
+        missingFields={missingFields}
+      />
     </div>
   );
 }

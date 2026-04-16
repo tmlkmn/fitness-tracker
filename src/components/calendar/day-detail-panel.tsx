@@ -6,9 +6,11 @@ import { MealList } from "@/components/meals/meal-list";
 import { MealAgenda } from "@/components/meals/meal-agenda";
 import { WorkoutList } from "@/components/workout/workout-list";
 import { AiMealModal } from "@/components/meals/ai-meal-modal";
+import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
 import { UtensilsCrossed, Clock, Dumbbell } from "lucide-react";
 import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
 import { useUserProfile } from "@/hooks/use-user";
+import { useProfileCheck } from "@/hooks/use-profile-check";
 
 interface DayDetailPanelProps {
   dailyPlan: {
@@ -23,9 +25,11 @@ interface DayDetailPanelProps {
 
 export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
   const [mealModalOpen, setMealModalOpen] = useState(false);
+  const [profileWarningOpen, setProfileWarningOpen] = useState(false);
   const generateMeals = useGenerateDailyMeals();
   const applyMeals = useApplyDailyMeals();
   const { data: profile } = useUserProfile();
+  const { missingFields } = useProfileCheck();
   const isNutritionOnly = profile?.serviceType === "nutrition";
 
   const handleGenerateMeals = (userNote?: string) => {
@@ -46,6 +50,10 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
   };
 
   const handleMealModalOpenChange = (open: boolean) => {
+    if (open && missingFields.length > 0) {
+      setProfileWarningOpen(true);
+      return;
+    }
     setMealModalOpen(open);
     if (!open) {
       generateMeals.reset();
@@ -109,6 +117,12 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
           onApply={handleApplyMeals}
         />
       )}
+
+      <ProfileMissingWarning
+        open={profileWarningOpen}
+        onOpenChange={setProfileWarningOpen}
+        missingFields={missingFields}
+      />
     </>
   );
 }

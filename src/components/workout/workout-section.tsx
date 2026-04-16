@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { getSectionIcon, DynamicIcon } from "@/lib/icon-map";
 import { AiWorkoutModal } from "./ai-workout-modal";
+import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
 import {
   useGenerateSectionReplacement,
   useApplySectionReplacement,
 } from "@/hooks/use-workout-ai";
+import { useProfileCheck } from "@/hooks/use-profile-check";
 
 interface Exercise {
   id: number;
@@ -44,8 +46,10 @@ export function WorkoutSection({
   readOnly,
 }: WorkoutSectionProps) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [profileWarningOpen, setProfileWarningOpen] = useState(false);
   const generate = useGenerateSectionReplacement();
   const apply = useApplySectionReplacement();
+  const { missingFields } = useProfileCheck();
 
   const handleGenerate = (userNote?: string) => {
     generate.mutate({ dailyPlanId, section, sectionLabel, userNote });
@@ -65,6 +69,10 @@ export function WorkoutSection({
   };
 
   const handleOpenChange = (open: boolean) => {
+    if (open && missingFields.length > 0) {
+      setProfileWarningOpen(true);
+      return;
+    }
     setModalOpen(open);
     if (!open) {
       generate.reset();
@@ -127,6 +135,12 @@ export function WorkoutSection({
           onApply={handleApply}
         />
       )}
+
+      <ProfileMissingWarning
+        open={profileWarningOpen}
+        onOpenChange={setProfileWarningOpen}
+        missingFields={missingFields}
+      />
     </>
   );
 }

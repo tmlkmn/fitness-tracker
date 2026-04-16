@@ -30,6 +30,9 @@ import {
   Calendar,
   Sparkles,
   X,
+  AlertTriangle,
+  Share2,
+  Bell,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
@@ -131,11 +134,13 @@ function CollapsibleCard({
   icon: Icon,
   children,
   defaultOpen = false,
+  warning = false,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  warning?: boolean;
 }) {
   return (
     <Collapsible defaultOpen={defaultOpen}>
@@ -145,6 +150,7 @@ function CollapsibleCard({
             <CardTitle className="text-sm flex items-center gap-2">
               <Icon className="h-4 w-4" />
               <span className="flex-1 text-left">{title}</span>
+              {warning && <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />}
               <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
             </CardTitle>
           </CardHeader>
@@ -194,7 +200,24 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
             </div>
           ))
         ) : (
-          <p className="text-sm text-muted-foreground">Henüz günlük akış eklenmemiş.</p>
+          <div className="space-y-1.5">
+            <p className="text-sm text-muted-foreground">Henüz günlük akış eklenmemiş.</p>
+            <div className="opacity-40 space-y-1">
+              {[
+                { time: "07:00", event: "Uyanış" },
+                { time: "08:00", event: "Kahvaltı" },
+                { time: "12:30", event: "Öğle yemeği" },
+                { time: "17:00", event: "Antrenman" },
+                { time: "19:00", event: "Akşam yemeği" },
+                { time: "23:00", event: "Uyku" },
+              ].map((item, i) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <span className="font-mono">{item.time}</span>
+                  <span>{item.event}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
         <button
           onClick={() => setEditing(true)}
@@ -305,7 +328,21 @@ function SupplementScheduleEditor({ profile }: { profile: ReturnType<typeof useU
             </div>
           ))
         ) : (
-          <p className="text-sm text-muted-foreground">Henüz supplement takvimi eklenmemiş.</p>
+          <div className="space-y-1.5">
+            <p className="text-sm text-muted-foreground">Henüz supplement takvimi eklenmemiş.</p>
+            <div className="opacity-40 space-y-1">
+              {[
+                { period: "Sabah", supplements: "Omega-3, Vitamin D" },
+                { period: "Antrenman öncesi", supplements: "Kreatin, Kafein" },
+                { period: "Akşam", supplements: "Magnezyum, ZMA" },
+              ].map((item, i) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <span>{item.period}:</span>
+                  <span>{item.supplements}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
         <button
           onClick={() => setEditing(true)}
@@ -494,36 +531,48 @@ function ProfileEditor({
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Yaş</span>
             </div>
-            <span className="text-sm font-medium">
-              {profile?.age ?? "—"}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {!profile?.age && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
+              <span className="text-sm font-medium">
+                {profile?.age ?? "—"}
+              </span>
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Ruler className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Boy</span>
             </div>
-            <span className="text-sm font-medium">
-              {profile?.height ? `${profile.height} cm` : "—"}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {!profile?.height && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
+              <span className="text-sm font-medium">
+                {profile?.height ? `${profile.height} cm` : "—"}
+              </span>
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Scale className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Başlangıç kilosu</span>
             </div>
-            <span className="text-sm font-medium">
-              {profile?.weight ? `${profile.weight} kg` : "—"}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {!profile?.weight && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
+              <span className="text-sm font-medium">
+                {profile?.weight ? `${profile.weight} kg` : "—"}
+              </span>
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Scale className="h-4 w-4 text-primary" />
               <span className="text-sm text-muted-foreground">Hedef kilo</span>
             </div>
-            <span className="text-sm font-medium text-primary">
-              {profile?.targetWeight ? `${profile.targetWeight} kg` : "—"}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {!profile?.targetWeight && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
+              <span className="text-sm font-medium text-primary">
+                {profile?.targetWeight ? `${profile.targetWeight} kg` : "—"}
+              </span>
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Hizmet Tipi</span>
@@ -531,45 +580,57 @@ function ProfileEditor({
               {profile?.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program"}
             </span>
           </div>
-          {profile?.fitnessLevel && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Fitness Seviyesi</span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Fitness Seviyesi</span>
+            <div className="flex items-center gap-1.5">
+              {!profile?.fitnessLevel && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
               <span className="text-sm font-medium">
-                {FITNESS_LEVEL_OPTIONS.find((o) => o.value === profile.fitnessLevel)?.label ?? profile.fitnessLevel}
+                {profile?.fitnessLevel
+                  ? FITNESS_LEVEL_OPTIONS.find((o) => o.value === profile.fitnessLevel)?.label ?? profile.fitnessLevel
+                  : "—"}
               </span>
             </div>
-          )}
-          {profile?.sportHistory && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Spor Geçmişi</span>
-              <span className="text-sm font-medium text-right max-w-[60%] truncate">{profile.sportHistory}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Spor Geçmişi</span>
+            <div className="flex items-center gap-1.5">
+              {!profile?.sportHistory && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
+              <span className="text-sm font-medium text-right max-w-[60%] truncate">
+                {profile?.sportHistory || "—"}
+              </span>
             </div>
-          )}
-          {profile?.currentMedications && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">İlaçlar</span>
-              <span className="text-sm font-medium text-right max-w-[60%] truncate">{profile.currentMedications}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">İlaçlar</span>
+            <div className="flex items-center gap-1.5">
+              {!profile?.currentMedications && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
+              <span className="text-sm font-medium text-right max-w-[60%] truncate">
+                {profile?.currentMedications || "—"}
+              </span>
             </div>
-          )}
-          {healthNotesArr.length > 0 && (
-            <>
-              <div className="border-t border-border my-1" />
-              <div className="space-y-1.5">
-                <span className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Heart className="h-4 w-4" />
-                  Sağlık Notları
-                </span>
-                {healthNotesArr.map((note, i) => (
+          </div>
+          <>
+            <div className="border-t border-border my-1" />
+            <div className="space-y-1.5">
+              <span className="text-sm text-muted-foreground flex items-center gap-2">
+                <Heart className="h-4 w-4" />
+                Sağlık Notları
+                {healthNotesArr.length === 0 && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
+              </span>
+              {healthNotesArr.length > 0 ? (
+                healthNotesArr.map((note, i) => (
                   <div key={i} className="flex items-start gap-2 pl-6">
                     <Badge variant="secondary" className="shrink-0 gap-1">
                       <Info className="h-3 w-3" />
                     </Badge>
                     <p className="text-sm">{note}</p>
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground pl-6">Henüz sağlık notu eklenmemiş.</p>
+              )}
+            </div>
+          </>
           {profile?.membershipType && (
             <>
               <div className="border-t border-border my-2" />
@@ -750,21 +811,51 @@ function AyarlarContent() {
 
         <ProfileEditor profile={profile} userEmail={user?.email} />
 
+        <NotificationPreferencesCard />
+
         <PwaInstallCard />
 
-        <CollapsibleCard title="Günlük Akış" icon={Clock}>
+        <CollapsibleCard title="Günlük Akış" icon={Clock} defaultOpen warning={!profile?.dailyRoutine || !Array.isArray(profile.dailyRoutine) || (profile.dailyRoutine as unknown[]).length === 0}>
           <DailyRoutineEditor profile={profile} />
         </CollapsibleCard>
 
-        <CollapsibleCard title="Supplement Takvimi" icon={Pill}>
+        <CollapsibleCard title="Supplement Takvimi" icon={Pill} defaultOpen>
           <SupplementScheduleEditor profile={profile} />
         </CollapsibleCard>
 
-        <NotificationPreferencesCard />
+        <Collapsible>
+          <CollapsibleTrigger className="w-full">
+            <Card>
+              <CardHeader className="p-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  <span className="flex-1 text-left">Hatırlatıcılar</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2">
+            <ReminderSettingsCard />
+          </CollapsibleContent>
+        </Collapsible>
 
-        <ReminderSettingsCard />
-
-        <ShareManager />
+        <Collapsible>
+          <CollapsibleTrigger className="w-full">
+            <Card>
+              <CardHeader className="p-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Share2 className="h-4 w-4" />
+                  <span className="flex-1 text-left">Plan Paylaşımı</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2">
+            <ShareManager />
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {(user as any)?.role === "admin" && (
