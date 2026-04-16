@@ -106,7 +106,6 @@ export default function GirisPage() {
                 required
                 autoComplete="email"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                placeholder="ornek@mail.com"
               />
             </div>
 
@@ -126,7 +125,6 @@ export default function GirisPage() {
                   required
                   autoComplete="current-password"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  placeholder="••••••••"
                 />
                 <button
                   type="button"

@@ -42,6 +42,13 @@ import { NotificationPreferencesCard } from "@/components/notifications/notifica
 import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
 import { PwaInstallCard } from "@/components/layout/pwa-install-card";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -234,13 +241,13 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
       {items.map((item, i) => (
         <div key={i} className="flex items-center gap-2">
           <input
+            type="time"
             value={item.time}
             onChange={(e) => {
               const copy = [...items];
               copy[i] = { ...copy[i], time: e.target.value };
               setItems(copy);
             }}
-            placeholder="08:30"
             className="flex h-8 w-24 rounded-md border border-input bg-background px-2 text-xs font-mono"
           />
           <input
@@ -293,6 +300,16 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
 
 type SupplementItem = { period: string; supplements: string };
 
+const SUPPLEMENT_PERIOD_OPTIONS = [
+  { value: "Sabah", label: "Sabah (uyanınca)" },
+  { value: "Kahvaltı ile", label: "Kahvaltı ile" },
+  { value: "Öğle", label: "Öğle" },
+  { value: "Antrenman öncesi", label: "Antrenman öncesi" },
+  { value: "Antrenman sonrası", label: "Antrenman sonrası" },
+  { value: "Akşam yemeği ile", label: "Akşam yemeği ile" },
+  { value: "Yatmadan önce", label: "Yatmadan önce" },
+];
+
 function SupplementScheduleEditor({ profile }: { profile: ReturnType<typeof useUserProfile>["data"] }) {
   const queryClient = useQueryClient();
   const [items, setItems] = useState<SupplementItem[]>([]);
@@ -334,7 +351,7 @@ function SupplementScheduleEditor({ profile }: { profile: ReturnType<typeof useU
               {[
                 { period: "Sabah", supplements: "Omega-3, Vitamin D" },
                 { period: "Antrenman öncesi", supplements: "Kreatin, Kafein" },
-                { period: "Akşam", supplements: "Magnezyum, ZMA" },
+                { period: "Yatmadan önce", supplements: "Magnezyum, ZMA" },
               ].map((item, i) => (
                 <div key={i} className="flex justify-between text-xs">
                   <span>{item.period}:</span>
@@ -356,36 +373,53 @@ function SupplementScheduleEditor({ profile }: { profile: ReturnType<typeof useU
 
   return (
     <div className="space-y-3">
-      {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <input
-            value={item.period}
-            onChange={(e) => {
-              const copy = [...items];
-              copy[i] = { ...copy[i], period: e.target.value };
-              setItems(copy);
-            }}
-            placeholder="Hafta 1-2"
-            className="flex h-8 w-24 rounded-md border border-input bg-background px-2 text-xs"
-          />
-          <input
-            value={item.supplements}
-            onChange={(e) => {
-              const copy = [...items];
-              copy[i] = { ...copy[i], supplements: e.target.value };
-              setItems(copy);
-            }}
-            placeholder="Supplement listesi"
-            className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
-          />
-          <button
-            onClick={() => setItems(items.filter((_, j) => j !== i))}
-            className="text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      ))}
+      {items.map((item, i) => {
+        const usedPeriods = items.map((it, idx) => idx !== i ? it.period : null).filter(Boolean);
+        return (
+          <div key={i} className="flex items-center gap-2">
+            <Select
+              value={SUPPLEMENT_PERIOD_OPTIONS.some((o) => o.value === item.period) ? item.period : ""}
+              onValueChange={(val) => {
+                const copy = [...items];
+                copy[i] = { ...copy[i], period: val };
+                setItems(copy);
+              }}
+            >
+              <SelectTrigger className="h-8 w-40 text-xs shrink-0">
+                <SelectValue placeholder="Zaman seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPLEMENT_PERIOD_OPTIONS.map((opt) => (
+                  <SelectItem
+                    key={opt.value}
+                    value={opt.value}
+                    disabled={usedPeriods.includes(opt.value)}
+                    className="text-xs"
+                  >
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <input
+              value={item.supplements}
+              onChange={(e) => {
+                const copy = [...items];
+                copy[i] = { ...copy[i], supplements: e.target.value };
+                setItems(copy);
+              }}
+              placeholder="ör. Omega-3, Kreatin"
+              className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
+            />
+            <button
+              onClick={() => setItems(items.filter((_, j) => j !== i))}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        );
+      })}
       <button
         onClick={() => setItems([...items, { period: "", supplements: "" }])}
         className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
@@ -591,23 +625,23 @@ function ProfileEditor({
               </span>
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Spor Geçmişi</span>
+          <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
+              <span className="text-sm text-muted-foreground">Spor Geçmişi</span>
               {!profile?.sportHistory && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
-              <span className="text-sm font-medium text-right max-w-[60%] truncate">
-                {profile?.sportHistory || "—"}
-              </span>
             </div>
+            <p className="text-sm font-medium line-clamp-3">
+              {profile?.sportHistory || "—"}
+            </p>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">İlaçlar</span>
+          <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
+              <span className="text-sm text-muted-foreground">İlaçlar</span>
               {!profile?.currentMedications && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
-              <span className="text-sm font-medium text-right max-w-[60%] truncate">
-                {profile?.currentMedications || "—"}
-              </span>
             </div>
+            <p className="text-sm font-medium line-clamp-3">
+              {profile?.currentMedications || "—"}
+            </p>
           </div>
           <>
             <div className="border-t border-border my-1" />
@@ -623,7 +657,7 @@ function ProfileEditor({
                     <Badge variant="secondary" className="shrink-0 gap-1">
                       <Info className="h-3 w-3" />
                     </Badge>
-                    <p className="text-sm">{note}</p>
+                    <p className="text-sm line-clamp-2">{note}</p>
                   </div>
                 ))
               ) : (
