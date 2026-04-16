@@ -222,6 +222,8 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
 - Dinlenme günlerinde sadece öğün planı oluştur, egzersiz ekleme
 - planType: "workout" (antrenman), "swimming" (yüzme), "rest" (dinlenme)
 - Section değerleri: "warmup", "main", "cooldown", "sauna", "swimming"
+- Hafta Pazartesi'den başlar. dayOfWeek: 0=Pazartesi, 1=Salı, 2=Çarşamba, 3=Perşembe, 4=Cuma, 5=Cumartesi, 6=Pazar (Türkiye standardı, JavaScript'teki gibi DEĞİL)
+- days dizisini Pazartesi'den (0) Pazar'a (6) sıralı ver
 - JSON formatı:
 {
   "weekTitle": "string",
@@ -229,7 +231,7 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
   "notes": "string (haftalık hedef ve progresyon notu)",
   "days": [
     {
-      "dayOfWeek": 0-6,
+      "dayOfWeek": 0,
       "dayName": "Pazartesi",
       "planType": "workout|swimming|rest",
       "workoutTitle": "string|null",
@@ -304,6 +306,8 @@ Bu kullanıcı sadece beslenme hizmeti alıyor — antrenman programı YAPMA. Am
 - 7 gün beslenme planı oluştur, exercises her zaman boş array olacak
 - planType her gün için "nutrition" olacak
 - workoutTitle her gün null olacak
+- Hafta Pazartesi'den başlar. dayOfWeek: 0=Pazartesi, 1=Salı, 2=Çarşamba, 3=Perşembe, 4=Cuma, 5=Cumartesi, 6=Pazar (Türkiye standardı)
+- days dizisini Pazartesi'den (0) Pazar'a (6) sıralı ver
 - JSON formatı:
 {
   "weekTitle": "string",
@@ -311,7 +315,7 @@ Bu kullanıcı sadece beslenme hizmeti alıyor — antrenman programı YAPMA. Am
   "notes": "string (haftalık beslenme hedefi ve notlar)",
   "days": [
     {
-      "dayOfWeek": 0-6,
+      "dayOfWeek": 0,
       "dayName": "Pazartesi",
       "planType": "nutrition",
       "workoutTitle": null,
