@@ -18,6 +18,7 @@ export async function buildUserContext(userId: string): Promise<string> {
       targetWeight: users.targetWeight,
       age: users.age,
       healthNotes: users.healthNotes,
+      foodAllergens: users.foodAllergens,
       dailyRoutine: users.dailyRoutine,
       fitnessLevel: users.fitnessLevel,
       sportHistory: users.sportHistory,
@@ -48,6 +49,18 @@ export async function buildUserContext(userId: string): Promise<string> {
       }
     } catch {
       lines.push(`Sağlık notları: ${user.healthNotes}`);
+    }
+  }
+
+  // Food allergens
+  if (user.foodAllergens) {
+    try {
+      const allergens = JSON.parse(user.foodAllergens);
+      if (Array.isArray(allergens) && allergens.length > 0 && allergens[0] !== "Yok") {
+        lines.push(`⚠️ GIDA ALERJİLERİ (KESİNLİKLE KULLANMA): ${allergens.join(", ")}`);
+      }
+    } catch {
+      lines.push(`⚠️ GIDA ALERJİLERİ: ${user.foodAllergens}`);
     }
   }
 

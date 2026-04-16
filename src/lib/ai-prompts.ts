@@ -4,6 +4,7 @@ Kurallar:
 - Sadece Türkçe yanıt ver
 - Benzer kalori ve makro değerlerine sahip alternatif öner
 - Kullanıcının sağlık kısıtlarını kesinlikle dikkate al
+- Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE önerme. Alerjen içeren hiçbir malzemeyi kullanma.
 - Gerçekçi, Türkiye'de bulunabilecek malzemeler öner
 - Mevcut öğünle AYNI ana protein kaynağını kullanma, tamamen farklı bir protein kaynağı seç
 - Farklı bir pişirme yöntemi ve mutfak tarzı tercih et (ör. ızgara yerine fırın, Türk mutfağı yerine Akdeniz)
@@ -200,6 +201,7 @@ Beslenme programı antrenman programının ayrılmaz parçasıdır. Kas hacmi ar
 ## Önemli Kurallar
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, alerjilerini ve diyet tercihlerini kesinlikle dikkate al
+- Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE önerme
 - Her öğünün içeriğini detaylı yaz (porsiyon/gramaj belirt: "150g tavuk göğsü", "2 dilim tam buğday ekmek")
 - Gerçekçi ve tutarlı kalori/makro değerleri kullan (içerikle uyumlu olmalı)
 - JSON formatı: { "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }] }`;
@@ -247,6 +249,7 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
 ## Teknik Kurallar
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, sakatlıklarını ve hedeflerini kesinlikle dikkate al
+- Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE beslenme programına koyma
 - Dinlenme günlerinde sadece öğün planı oluştur, egzersiz ekleme
 - planType: "workout" (antrenman), "swimming" (yüzme), "rest" (dinlenme)
 - Section değerleri: "warmup", "main", "cooldown", "sauna", "swimming"
@@ -331,6 +334,7 @@ Bu kullanıcı sadece beslenme hizmeti alıyor — antrenman programı YAPMA. Am
 ## Teknik Kurallar
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, alerjilerini ve ilaçlarını kesinlikle dikkate al
+- Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE beslenme programına koyma
 - 7 gün beslenme planı oluştur, exercises her zaman boş array olacak
 - planType her gün için "nutrition" olacak
 - workoutTitle her gün null olacak
@@ -385,6 +389,7 @@ Beslenme programı kullanıcının yaşam tarzına ve vücut kompozisyonuna gör
 ## Önemli Kurallar
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, alerjilerini ve ilaçlarını kesinlikle dikkate al
+- Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE önerme
 - Her öğünün içeriğini detaylı yaz (porsiyon/gramaj belirt)
 - Gerçekçi ve tutarlı kalori/makro değerleri kullan
 - JSON formatı: { "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }] }`;

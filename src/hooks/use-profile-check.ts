@@ -16,6 +16,7 @@ const REQUIRED_FIELDS: { key: string; label: string; check: (profile: Record<str
   { key: "sportHistory", label: "Spor Geçmişi", check: (p) => !p.sportHistory },
   { key: "currentMedications", label: "İlaçlar / Supplementler", check: (p) => !p.currentMedications },
   { key: "healthNotes", label: "Sağlık Notları", check: (p) => !p.healthNotes },
+  { key: "foodAllergens", label: "Gıda Alerjileri", check: (p) => !p.foodAllergens },
   {
     key: "dailyRoutine",
     label: "Günlük Akış",

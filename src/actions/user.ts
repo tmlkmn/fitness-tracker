@@ -15,6 +15,7 @@ export async function getUserProfile() {
       height: users.height,
       age: users.age,
       healthNotes: users.healthNotes,
+      foodAllergens: users.foodAllergens,
       dailyRoutine: users.dailyRoutine,
       supplementSchedule: users.supplementSchedule,
       fitnessLevel: users.fitnessLevel,
@@ -27,7 +28,7 @@ export async function getUserProfile() {
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, dailyRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null };
 }
 
 export async function updateUserWeightTargets(data: {
@@ -51,6 +52,7 @@ export async function updateUserOnboarding(data: {
   targetWeight: string;
   age?: number;
   healthNotes?: string;
+  foodAllergens?: string;
   dailyRoutine?: { time: string; event: string }[];
   fitnessLevel?: string;
   sportHistory?: string;
@@ -66,6 +68,7 @@ export async function updateUserOnboarding(data: {
       targetWeight: data.targetWeight,
       age: data.age ?? undefined,
       healthNotes: data.healthNotes ?? null,
+      foodAllergens: data.foodAllergens ?? null,
       dailyRoutine: data.dailyRoutine ?? undefined,
       fitnessLevel: data.fitnessLevel ?? undefined,
       sportHistory: data.sportHistory ?? undefined,
@@ -102,6 +105,7 @@ export async function updateUserProfile(data: {
   targetWeight?: string;
   age?: number | null;
   healthNotes?: string;
+  foodAllergens?: string;
   fitnessLevel?: string;
   sportHistory?: string;
   currentMedications?: string;
@@ -116,6 +120,7 @@ export async function updateUserProfile(data: {
       targetWeight: data.targetWeight ?? undefined,
       age: data.age !== undefined ? data.age : undefined,
       healthNotes: data.healthNotes !== undefined ? data.healthNotes : undefined,
+      foodAllergens: data.foodAllergens !== undefined ? data.foodAllergens : undefined,
       fitnessLevel: data.fitnessLevel !== undefined ? data.fitnessLevel : undefined,
       sportHistory: data.sportHistory !== undefined ? data.sportHistory : undefined,
       currentMedications: data.currentMedications !== undefined ? data.currentMedications : undefined,

@@ -17,6 +17,7 @@ import {
   Heart,
   Info,
   Settings,
+  ShieldAlert,
   LogOut,
   Loader2,
   Shield,
@@ -450,6 +451,12 @@ function SupplementScheduleEditor({ profile }: { profile: ReturnType<typeof useU
   );
 }
 
+const ALLERGEN_TAGS = [
+  "Süt ürünleri", "Yumurta", "Fıstık", "Yer fıstığı",
+  "Balık", "Kabuklu deniz ürünü", "Buğday (Gluten)",
+  "Soya", "Susam", "Kereviz", "Hardal", "Bal",
+];
+
 const FITNESS_LEVEL_OPTIONS = [
   { value: "beginner", label: "Yeni başlayan" },
   { value: "returning", label: "Ara vermiş, tekrar başlayan" },
@@ -477,6 +484,9 @@ function ProfileEditor({
   const [sportHistory, setSportHistory] = useState("");
   const [currentMedications, setCurrentMedications] = useState("");
   const [serviceType, setServiceType] = useState("full");
+  const [allergenMode, setAllergenMode] = useState<"none" | "has">("none");
+  const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+  const [otherAllergens, setOtherAllergens] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -489,11 +499,45 @@ function ProfileEditor({
       setSportHistory(profile.sportHistory ?? "");
       setCurrentMedications(profile.currentMedications ?? "");
       setServiceType(profile.serviceType ?? "full");
+      // Prefill allergens
+      if (profile.foodAllergens) {
+        try {
+          const parsed = JSON.parse(profile.foodAllergens);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (parsed.length === 1 && parsed[0] === "Yok") {
+              setAllergenMode("none");
+              setSelectedAllergens([]);
+              setOtherAllergens("");
+            } else {
+              setAllergenMode("has");
+              const known = parsed.filter((a: string) => ALLERGEN_TAGS.includes(a));
+              const other = parsed.filter((a: string) => !ALLERGEN_TAGS.includes(a));
+              setSelectedAllergens(known);
+              setOtherAllergens(other.join(", "));
+            }
+          }
+        } catch {
+          setAllergenMode("has");
+          setOtherAllergens(profile.foodAllergens);
+        }
+      }
     }
   }, [profile]);
 
   const handleSave = async () => {
     setSaving(true);
+    // Build foodAllergens JSON
+    let foodAllergens: string | undefined;
+    if (allergenMode === "none") {
+      foodAllergens = JSON.stringify(["Yok"]);
+    } else {
+      const all = [...selectedAllergens];
+      if (otherAllergens.trim()) {
+        const extras = otherAllergens.split(",").map((s) => s.trim()).filter(Boolean);
+        all.push(...extras);
+      }
+      foodAllergens = all.length > 0 ? JSON.stringify(all) : JSON.stringify(["Yok"]);
+    }
     try {
       await updateUserProfile({
         height: height ? parseInt(height, 10) : undefined,
@@ -505,6 +549,7 @@ function ProfileEditor({
         sportHistory: sportHistory.trim() || undefined,
         currentMedications: currentMedications.trim() || undefined,
         serviceType,
+        foodAllergens,
       });
       await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       setEditing(false);
@@ -524,6 +569,32 @@ function ProfileEditor({
       setSportHistory(profile.sportHistory ?? "");
       setCurrentMedications(profile.currentMedications ?? "");
       setServiceType(profile.serviceType ?? "full");
+      // Reset allergens
+      if (profile.foodAllergens) {
+        try {
+          const parsed = JSON.parse(profile.foodAllergens);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (parsed.length === 1 && parsed[0] === "Yok") {
+              setAllergenMode("none");
+              setSelectedAllergens([]);
+              setOtherAllergens("");
+            } else {
+              setAllergenMode("has");
+              const known = parsed.filter((a: string) => ALLERGEN_TAGS.includes(a));
+              const other = parsed.filter((a: string) => !ALLERGEN_TAGS.includes(a));
+              setSelectedAllergens(known);
+              setOtherAllergens(other.join(", "));
+            }
+          }
+        } catch {
+          setAllergenMode("has");
+          setOtherAllergens(profile.foodAllergens);
+        }
+      } else {
+        setAllergenMode("none");
+        setSelectedAllergens([]);
+        setOtherAllergens("");
+      }
     }
     setEditing(false);
   };
@@ -665,6 +736,40 @@ function ProfileEditor({
               )}
             </div>
           </>
+          <>
+            <div className="space-y-1.5">
+              <span className="text-sm text-muted-foreground flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4" />
+                Gıda Alerjileri
+                {!profile?.foodAllergens && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
+              </span>
+              {(() => {
+                if (!profile?.foodAllergens) {
+                  return <p className="text-xs text-muted-foreground pl-6">Henüz belirtilmemiş.</p>;
+                }
+                try {
+                  const parsed = JSON.parse(profile.foodAllergens);
+                  if (Array.isArray(parsed) && parsed.length === 1 && parsed[0] === "Yok") {
+                    return <p className="text-sm font-medium pl-6">Yok</p>;
+                  }
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    return (
+                      <div className="flex flex-wrap gap-1.5 pl-6">
+                        {parsed.map((a: string, i: number) => (
+                          <Badge key={i} variant="destructive" className="text-xs">
+                            {a}
+                          </Badge>
+                        ))}
+                      </div>
+                    );
+                  }
+                } catch {
+                  return <p className="text-sm font-medium pl-6">{profile.foodAllergens}</p>;
+                }
+                return null;
+              })()}
+            </div>
+          </>
           {profile?.membershipType && (
             <>
               <div className="border-t border-border my-2" />
@@ -766,6 +871,60 @@ function ProfileEditor({
         <div className="space-y-1.5">
           <label className="text-xs text-muted-foreground">Sağlık Notları</label>
           <textarea value={healthNotes} onChange={(e) => setHealthNotes(e.target.value)} rows={3} placeholder="Yaralanmalar, alerjiler, diyet kısıtlamaları..." className={`${inputClass} h-auto resize-none`} />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <ShieldAlert className="h-3.5 w-3.5" />
+            Gıda Alerjileri
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => { setAllergenMode("none"); setSelectedAllergens([]); setOtherAllergens(""); }}
+              className={`p-2 rounded-md border text-xs font-medium transition-colors ${allergenMode === "none" ? "border-primary bg-primary/10 text-primary" : "border-input hover:bg-accent"}`}
+            >
+              Alerjim yok
+            </button>
+            <button
+              type="button"
+              onClick={() => setAllergenMode("has")}
+              className={`p-2 rounded-md border text-xs font-medium transition-colors ${allergenMode === "has" ? "border-destructive bg-destructive/10 text-destructive" : "border-input hover:bg-accent"}`}
+            >
+              Var, belirtmek istiyorum
+            </button>
+          </div>
+          {allergenMode === "has" && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-1.5">
+                {ALLERGEN_TAGS.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() =>
+                      setSelectedAllergens((prev) =>
+                        prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+                      )
+                    }
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      selectedAllergens.includes(tag)
+                        ? "border-destructive bg-destructive/10 text-destructive"
+                        : "border-input hover:bg-accent"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={otherAllergens}
+                onChange={(e) => setOtherAllergens(e.target.value)}
+                rows={2}
+                placeholder="Diğer alerjiler (virgülle ayırın)..."
+                className={`${inputClass} h-auto resize-none`}
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 pt-1">

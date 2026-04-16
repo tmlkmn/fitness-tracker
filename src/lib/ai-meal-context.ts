@@ -43,6 +43,7 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
       weight: users.weight,
       targetWeight: users.targetWeight,
       healthNotes: users.healthNotes,
+      foodAllergens: users.foodAllergens,
       serviceType: users.serviceType,
     })
     .from(users)
@@ -64,6 +65,18 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
         }
       } catch {
         lines.push(`Sağlık notları: ${user.healthNotes}`);
+      }
+    }
+
+    // Food allergens
+    if (user.foodAllergens) {
+      try {
+        const allergens = JSON.parse(user.foodAllergens);
+        if (Array.isArray(allergens) && allergens.length > 0 && allergens[0] !== "Yok") {
+          lines.push(`⚠️ GIDA ALERJİLERİ (KESİNLİKLE KULLANMA): ${allergens.join(", ")}`);
+        }
+      } catch {
+        lines.push(`⚠️ GIDA ALERJİLERİ: ${user.foodAllergens}`);
       }
     }
 

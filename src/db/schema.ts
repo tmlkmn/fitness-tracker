@@ -23,6 +23,7 @@ export const users = pgTable("user", {
   weight: numeric("weight"),
   targetWeight: numeric("target_weight"),
   healthNotes: text("health_notes"),
+  foodAllergens: text("food_allergens"),
   dailyRoutine: jsonb("daily_routine"),
   supplementSchedule: jsonb("supplement_schedule"),
   fitnessLevel: text("fitness_level"),

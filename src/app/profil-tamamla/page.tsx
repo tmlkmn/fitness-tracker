@@ -9,7 +9,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dumbbell, Loader2, Ruler, Scale, Target, Heart, Sunrise, Briefcase, UtensilsCrossed, Home, Moon, Pill, User } from "lucide-react";
+import { Dumbbell, Loader2, Ruler, Scale, Target, Heart, Sunrise, Briefcase, UtensilsCrossed, Home, Moon, Pill, User, ShieldAlert } from "lucide-react";
+
+const ALLERGEN_TAGS = [
+  "Süt ürünleri", "Yumurta", "Fıstık", "Yer fıstığı",
+  "Balık", "Kabuklu deniz ürünü", "Buğday (Gluten)",
+  "Soya", "Susam", "Kereviz", "Hardal", "Bal",
+];
 
 export default function ProfilTamamlaPage() {
   const { data: session, isPending: sessionPending } = useSession();
@@ -43,6 +49,11 @@ export default function ProfilTamamlaPage() {
   // Service type
   const [serviceType, setServiceType] = useState("full");
 
+  // Food allergens
+  const [allergenMode, setAllergenMode] = useState<"none" | "has">("none");
+  const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+  const [otherAllergens, setOtherAllergens] = useState("");
+
   useEffect(() => {
     if (!sessionPending && !user) router.push("/giris");
   }, [sessionPending, user, router]);
@@ -59,6 +70,22 @@ export default function ProfilTamamlaPage() {
       if (profile.sportHistory) setSportHistory(profile.sportHistory);
       if (profile.currentMedications) setCurrentMedications(profile.currentMedications);
       if (profile.serviceType) setServiceType(profile.serviceType);
+      if (profile.foodAllergens) {
+        try {
+          const allergens = JSON.parse(profile.foodAllergens);
+          if (Array.isArray(allergens) && allergens.length > 0) {
+            if (allergens.length === 1 && allergens[0] === "Yok") {
+              setAllergenMode("none");
+            } else {
+              setAllergenMode("has");
+              const known = allergens.filter((a: string) => ALLERGEN_TAGS.includes(a));
+              const custom = allergens.filter((a: string) => !ALLERGEN_TAGS.includes(a));
+              setSelectedAllergens(known);
+              if (custom.length > 0) setOtherAllergens(custom.join(", "));
+            }
+          }
+        } catch { /* ignore */ }
+      }
       if (profile.dailyRoutine && Array.isArray(profile.dailyRoutine)) {
         const routine = profile.dailyRoutine as { time: string; event: string }[];
         const eventMap: Record<string, (v: string) => void> = {
@@ -110,12 +137,23 @@ export default function ProfilTamamlaPage() {
       if (workoutTime) routineEntries.push({ time: workoutTime, event: "Antrenman" });
       if (sleepTime) routineEntries.push({ time: sleepTime, event: "Uyku" });
 
+      // Build food allergens
+      let foodAllergens: string | undefined;
+      if (allergenMode === "none") {
+        foodAllergens = JSON.stringify(["Yok"]);
+      } else {
+        const extras = otherAllergens.split(",").map(s => s.trim()).filter(Boolean);
+        const all = [...selectedAllergens, ...extras];
+        foodAllergens = all.length > 0 ? JSON.stringify(all) : JSON.stringify(["Yok"]);
+      }
+
       await updateUserOnboarding({
         height: h,
         weight: weight,
         targetWeight: targetWeight,
         age: age ? parseInt(age, 10) : undefined,
         healthNotes: healthNotes.trim() || undefined,
+        foodAllergens,
         dailyRoutine: routineEntries.length > 0 ? routineEntries : undefined,
         fitnessLevel: fitnessLevel || undefined,
         sportHistory: sportHistory.trim() || undefined,
@@ -287,6 +325,72 @@ export default function ProfilTamamlaPage() {
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                 placeholder="Yaralanmalar, alerjiler, diyet kısıtlamaları..."
               />
+            </div>
+
+            {/* Food Allergens */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-muted-foreground" />
+                Gıda Alerjilerin
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAllergenMode("none")}
+                  className={`p-2.5 rounded-lg border text-xs font-medium text-center transition-all ${
+                    allergenMode === "none"
+                      ? "ring-2 ring-primary border-primary bg-primary/5"
+                      : "border-input hover:bg-accent"
+                  }`}
+                >
+                  Alerjim yok
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllergenMode("has")}
+                  className={`p-2.5 rounded-lg border text-xs font-medium text-center transition-all ${
+                    allergenMode === "has"
+                      ? "ring-2 ring-primary border-primary bg-primary/5"
+                      : "border-input hover:bg-accent"
+                  }`}
+                >
+                  Var, belirtmek istiyorum
+                </button>
+              </div>
+              {allergenMode === "has" && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {ALLERGEN_TAGS.map((tag) => {
+                      const isSelected = selectedAllergens.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() =>
+                            setSelectedAllergens((prev) =>
+                              isSelected ? prev.filter((t) => t !== tag) : [...prev, tag]
+                            )
+                          }
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                            isSelected
+                              ? "bg-destructive/15 border-destructive/40 text-destructive"
+                              : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <input
+                    type="text"
+                    value={otherAllergens}
+                    onChange={(e) => setOtherAllergens(e.target.value)}
+                    placeholder="Diğer alerjiler (virgülle ayır)..."
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                </div>
+              )}
             </div>
 
             <Separator />
