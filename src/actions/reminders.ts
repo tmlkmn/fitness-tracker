@@ -102,6 +102,9 @@ export async function updateReminder(
     time?: string;
     minutesBefore?: number;
     recurrence?: string;
+    intervalMinutes?: number;
+    intervalStart?: string;
+    intervalEnd?: string;
     daysOfWeek?: number[];
     onceDate?: string;
     skipEmail?: boolean;

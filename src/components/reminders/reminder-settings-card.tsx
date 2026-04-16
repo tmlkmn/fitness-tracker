@@ -293,12 +293,16 @@ export function ReminderSettingsCard() {
                 key={r.id}
                 id={r.id}
                 title={r.title}
+                body={r.body}
                 time={r.time}
                 minutesBefore={r.minutesBefore}
                 recurrence={r.recurrence}
                 intervalMinutes={r.intervalMinutes}
                 intervalStart={r.intervalStart}
                 intervalEnd={r.intervalEnd}
+                daysOfWeek={r.daysOfWeek as number[] | null}
+                onceDate={r.onceDate}
+                skipEmail={r.skipEmail}
                 isEnabled={r.isEnabled}
                 type={r.type}
               />

@@ -30,6 +30,8 @@ export async function sendNotification(params: {
   const emailEnabled = prefs?.emailEnabled ?? true;
   const pushEnabled = prefs?.pushEnabled ?? true;
 
+  console.log(`[notification] userId=${userId} type=${type} prefs: inApp=${inAppEnabled} email=${emailEnabled} push=${pushEnabled} skipEmail=${skipEmail}`);
+
   // 1. In-app notification
   if (inAppEnabled) {
     await db.insert(notifications).values({
@@ -64,6 +66,10 @@ export async function sendNotification(params: {
       .from(pushSubscriptions)
       .where(eq(pushSubscriptions.userId, userId));
 
+    if (subs.length === 0) {
+      console.warn(`[notification] No push subscriptions for user ${userId}`);
+    }
+
     for (const sub of subs) {
       const success = await sendPushNotification(
         { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
@@ -71,6 +77,7 @@ export async function sendNotification(params: {
       );
       // Remove expired subscriptions
       if (!success) {
+        console.warn(`[notification] Removing expired push subscription for user ${userId}`);
         await db
           .delete(pushSubscriptions)
           .where(eq(pushSubscriptions.id, sub.id));

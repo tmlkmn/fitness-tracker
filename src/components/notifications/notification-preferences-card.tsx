@@ -26,9 +26,9 @@ export function NotificationPreferencesCard() {
 
   const toggle = (key: string, value: boolean) => {
     updateMutation.mutate({
-      inAppEnabled: prefs?.inAppEnabled ?? false,
-      emailEnabled: prefs?.emailEnabled ?? false,
-      pushEnabled: prefs?.pushEnabled ?? false,
+      inAppEnabled: prefs?.inAppEnabled ?? true,
+      emailEnabled: prefs?.emailEnabled ?? true,
+      pushEnabled: prefs?.pushEnabled ?? true,
       [key]: value,
     });
   };
@@ -45,25 +45,25 @@ export function NotificationPreferencesCard() {
         <div className="flex items-center justify-between">
           <Label className="text-sm">Uygulama içi bildirimler</Label>
           <Switch
-            checked={prefs?.inAppEnabled ?? false}
+            checked={prefs?.inAppEnabled ?? true}
             onCheckedChange={(v) => toggle("inAppEnabled", v)}
           />
         </div>
         <div className="flex items-center justify-between">
           <Label className="text-sm">E-posta bildirimleri</Label>
           <Switch
-            checked={prefs?.emailEnabled ?? false}
+            checked={prefs?.emailEnabled ?? true}
             onCheckedChange={(v) => toggle("emailEnabled", v)}
           />
         </div>
         <div className="flex items-center justify-between">
           <Label className="text-sm">Push bildirimleri</Label>
           <Switch
-            checked={prefs?.pushEnabled ?? false}
+            checked={prefs?.pushEnabled ?? true}
             onCheckedChange={(v) => toggle("pushEnabled", v)}
           />
         </div>
-        {(prefs?.pushEnabled ?? false) && <PushPermissionButton />}
+        {(prefs?.pushEnabled ?? true) && <PushPermissionButton />}
       </CardContent>
     </Card>
   );

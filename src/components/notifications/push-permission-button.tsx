@@ -2,25 +2,52 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bell, BellOff, Loader2 } from "lucide-react";
+import { Bell, BellOff, CheckCircle2, Loader2 } from "lucide-react";
 import { subscribeToPush } from "@/lib/push-subscribe";
 
 export function PushPermissionButton() {
   const [permission, setPermission] = useState<NotificationPermission | "loading">("loading");
+  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (typeof Notification !== "undefined") {
-      setPermission(Notification.permission);
-    } else {
+    if (typeof Notification === "undefined") {
       setPermission("denied");
+      return;
+    }
+
+    setPermission(Notification.permission);
+
+    // Check if an actual push subscription exists in the service worker
+    if (Notification.permission === "granted") {
+      navigator.serviceWorker
+        .getRegistration()
+        .then(async (reg) => {
+          if (reg) {
+            const sub = await reg.pushManager.getSubscription();
+            setHasSubscription(!!sub);
+            // Auto re-subscribe if permission granted but no subscription
+            // (e.g., after PWA reinstall)
+            if (!sub) {
+              const success = await subscribeToPush();
+              setHasSubscription(success);
+            }
+          } else {
+            setHasSubscription(false);
+            // No service worker registered — register and subscribe
+            const success = await subscribeToPush();
+            setHasSubscription(success);
+          }
+        })
+        .catch(() => setHasSubscription(false));
     }
   }, []);
 
   const handleEnable = async () => {
     setLoading(true);
     try {
-      await subscribeToPush();
+      const success = await subscribeToPush();
+      setHasSubscription(success);
       if (typeof Notification !== "undefined") {
         setPermission(Notification.permission);
       }
@@ -40,8 +67,13 @@ export function PushPermissionButton() {
     );
   }
 
-  if (permission === "granted") {
-    return null;
+  if (permission === "granted" && hasSubscription) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+        Push bildirimleri aktif
+      </div>
+    );
   }
 
   if (permission === "denied") {
@@ -53,6 +85,7 @@ export function PushPermissionButton() {
     );
   }
 
+  // Permission not yet granted OR granted but subscription failed
   return (
     <Button
       variant="outline"
