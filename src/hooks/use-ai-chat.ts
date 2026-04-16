@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { getChatHistory, clearChatHistory } from "@/actions/chat";
 
 interface Message {
   id: string;
@@ -11,7 +12,30 @@ interface Message {
 export function useAIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Load chat history from DB on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const history = await getChatHistory();
+        if (history.length > 0) {
+          setMessages(
+            history.map((m) => ({
+              id: String(m.id),
+              role: m.role as "user" | "assistant",
+              content: m.content,
+            }))
+          );
+        }
+      } catch {
+        // silent — start with empty chat
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, []);
 
   const send = useCallback(
     async (content: string) => {
@@ -122,5 +146,14 @@ export function useAIChat() {
     abortRef.current?.abort();
   }, []);
 
-  return { messages, isStreaming, send, abort };
+  const clearHistory = useCallback(async () => {
+    try {
+      await clearChatHistory();
+      setMessages([]);
+    } catch {
+      // silent
+    }
+  }, []);
+
+  return { messages, isStreaming, isLoading, send, abort, clearHistory };
 }

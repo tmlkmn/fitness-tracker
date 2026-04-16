@@ -6,10 +6,10 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ChatMessage } from "@/components/ai/chat-message";
 import { ChatInput } from "@/components/ai/chat-input";
 import { useAIChat } from "@/hooks/use-ai-chat";
-import { Bot } from "lucide-react";
+import { Bot, Trash2, Loader2 } from "lucide-react";
 
 export default function AsistanPage() {
-  const { messages, isStreaming, send, abort } = useAIChat();
+  const { messages, isStreaming, isLoading, send, abort, clearHistory } = useAIChat();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new messages
@@ -26,11 +26,30 @@ export default function AsistanPage() {
         title="AI Asistan"
         subtitle="Kişisel fitness koçunuz"
         icon={Bot}
-        rightSlot={<NotificationBell />}
+        rightSlot={
+          <div className="flex items-center gap-1">
+            {messages.length > 0 && (
+              <button
+                onClick={clearHistory}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
+                title="Sohbeti Temizle"
+              >
+                <Trash2 className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
+            <NotificationBell />
+          </div>
+        }
       />
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
-        {messages.length === 0 && (
+        {isLoading && (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {!isLoading && messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-12">
             <div className="h-14 w-14 rounded-full bg-primary/20 flex items-center justify-center">
               <Bot className="h-7 w-7 text-primary" />

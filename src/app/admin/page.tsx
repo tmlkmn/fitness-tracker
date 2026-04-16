@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { listAllUsers, resendInvite, removeUserAction, extendMembership } from "@/actions/admin";
-import type { UserWithStatus, MembershipType } from "@/actions/admin";
+import { listAllUsers, resendInvite, removeUserAction, extendMembership, getAdminStats, getAiUsageByFeature, getAiUsageByUser } from "@/actions/admin";
+import type { UserWithStatus, MembershipType, AdminStats, FeatureUsage, UserAiUsage } from "@/actions/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Users,
@@ -17,6 +17,9 @@ import {
   AlertTriangle,
   CalendarClock,
   X,
+  Sparkles,
+  BarChart3,
+  Bot,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -54,6 +57,42 @@ const MEMBERSHIP_OPTIONS: { value: MembershipType; label: string }[] = [
   { value: "unlimited", label: "Sınırsız" },
   { value: "custom", label: "Özel Tarih" },
 ];
+
+const FEATURE_LABELS: Record<string, string> = {
+  meal: "Öğün Önerisi",
+  exercise: "Egzersiz İpucu",
+  analyze: "İlerleme Analizi",
+  chat: "AI Asistan",
+  workout: "Antrenman Önerisi",
+  "daily-meal": "Günlük Öğün",
+  weekly: "Haftalık Plan",
+  "exercise-demo": "Egzersiz Demo",
+};
+
+function formatTimeAgo(date: Date | null): string {
+  if (!date) return "-";
+  const now = new Date();
+  const diff = now.getTime() - new Date(date).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "Az önce";
+  if (minutes < 60) return `${minutes}dk önce`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}sa önce`;
+  const days = Math.floor(hours / 24);
+  return `${days}g önce`;
+}
+
+function StatCard({ label, value, sub }: { label: string; value: number; sub?: string }) {
+  return (
+    <Card>
+      <CardContent className="p-3">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-2xl font-bold">{value}</p>
+        {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
+      </CardContent>
+    </Card>
+  );
+}
 
 function MembershipBadge({ user }: { user: UserWithStatus }) {
   if (!user.membershipType || user.status === "Admin") return null;
@@ -176,6 +215,9 @@ export default function AdminPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [extendUser, setExtendUser] = useState<UserWithStatus | null>(null);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [featureUsage, setFeatureUsage] = useState<FeatureUsage[]>([]);
+  const [userAiUsage, setUserAiUsage] = useState<UserAiUsage[]>([]);
 
   const fetchUsers = async () => {
     try {
@@ -193,8 +235,24 @@ export default function AdminPage() {
     }
   };
 
+  const fetchReports = async () => {
+    try {
+      const [s, f, u] = await Promise.all([
+        getAdminStats(),
+        getAiUsageByFeature(),
+        getAiUsageByUser(),
+      ]);
+      setStats(s);
+      setFeatureUsage(f);
+      setUserAiUsage(u);
+    } catch {
+      // silent — report fetch failure doesn't block user list
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchReports();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -255,6 +313,96 @@ export default function AdminPage() {
         {error && (
           <p className="text-sm text-destructive text-center">{error}</p>
         )}
+
+        {/* ── Dashboard Stats ── */}
+        {stats && (
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              label="Toplam Kullanıcı"
+              value={stats.totalUsers}
+              sub={`${stats.activeUsers} aktif · ${stats.pendingUsers} bekleyen · ${stats.adminUsers} admin`}
+            />
+            <StatCard label="Bugün AI Kullanım" value={stats.aiUsageToday} />
+            <StatCard label="Bu Hafta AI" value={stats.aiUsageThisWeek} />
+            <StatCard label="Toplam AI" value={stats.aiUsageTotal} />
+          </div>
+        )}
+
+        {/* ── AI Feature Usage ── */}
+        {featureUsage.length > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold">AI Feature Kullanımı</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-1.5 text-muted-foreground font-medium">Feature</th>
+                      <th className="text-right py-1.5 text-muted-foreground font-medium">Bugün</th>
+                      <th className="text-right py-1.5 text-muted-foreground font-medium">Hafta</th>
+                      <th className="text-right py-1.5 text-muted-foreground font-medium">Toplam</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {featureUsage.map((f) => (
+                      <tr key={f.feature} className="border-b border-border/50">
+                        <td className="py-1.5">{FEATURE_LABELS[f.feature] ?? f.feature}</td>
+                        <td className="text-right py-1.5 tabular-nums">{f.today}</td>
+                        <td className="text-right py-1.5 tabular-nums">{f.thisWeek}</td>
+                        <td className="text-right py-1.5 tabular-nums font-medium">{f.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── User AI Usage ── */}
+        {userAiUsage.length > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold">Kullanıcı AI Kullanımı</h2>
+              </div>
+              <div className="space-y-2.5">
+                {userAiUsage.map((u) => (
+                  <div key={u.userId} className="border-b border-border/50 pb-2 last:border-0">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{u.userName}</p>
+                        <p className="text-[10px] text-muted-foreground">{formatTimeAgo(u.lastUsed)}</p>
+                      </div>
+                      <span className="text-sm font-bold tabular-nums">{u.total}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {Object.entries(u.features).map(([feature, count]) => (
+                        <span
+                          key={feature}
+                          className="inline-flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-[10px]"
+                        >
+                          {FEATURE_LABELS[feature] ?? feature}
+                          <span className="font-bold">{count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── User Management ── */}
+        <div className="flex items-center gap-2 pt-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold text-muted-foreground">Kullanıcılar</h2>
+        </div>
 
         <div className="space-y-3">
           {users.map((user) => {

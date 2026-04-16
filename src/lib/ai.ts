@@ -1,4 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { db } from "@/db";
+import { aiUsageLogs } from "@/db/schema";
 
 let client: Anthropic | null = null;
 
@@ -56,4 +58,12 @@ export function checkRateLimit(userId: string, feature: AIFeature): void {
 
   todayHits.push(now);
   userMap.set(feature, todayHits);
+}
+
+export async function logAiUsage(userId: string, feature: AIFeature): Promise<void> {
+  try {
+    await db.insert(aiUsageLogs).values({ userId, feature });
+  } catch {
+    // silent — logging should not break features
+  }
 }

@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { exerciseDemos } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
+import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { EXERCISE_MATCH_PROMPT } from "@/lib/ai-prompts";
 import {
   getExerciseDBList,
@@ -77,6 +77,7 @@ export async function getExerciseDemo(
 
   // 2. Rate limit before AI call
   checkRateLimit(user.id, "exercise-demo");
+  await logAiUsage(user.id, "exercise-demo");
 
   // 3. Fetch exercise database + AI matching
   const exerciseList = await getExerciseDBList();

@@ -1,8 +1,10 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
+import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { COACH_CHAT_PROMPT } from "@/lib/ai-prompts";
+import { db } from "@/db";
+import { chatMessages } from "@/db/schema";
 import type Anthropic from "@anthropic-ai/sdk";
 
 export const maxDuration = 60;
@@ -21,12 +23,26 @@ export async function POST(request: Request) {
     return new Response("Günlük sohbet limitine ulaştınız (max 20/gün).", { status: 429 });
   }
 
+  await logAiUsage(userId, "chat");
+
   const body = await request.json();
   const userMessages: Array<{ role: string; content: string }> =
     body.messages ?? [];
 
   if (userMessages.length === 0) {
     return new Response("Mesaj gerekli.", { status: 400 });
+  }
+
+  // Save user message to DB
+  const lastUserMsg = userMessages[userMessages.length - 1];
+  if (lastUserMsg?.role === "user") {
+    try {
+      await db.insert(chatMessages).values({
+        userId,
+        role: "user",
+        content: lastUserMsg.content,
+      });
+    } catch { /* silent */ }
   }
 
   // Build context for first message
@@ -67,6 +83,8 @@ export async function POST(request: Request) {
     messages,
   });
 
+  let fullResponse = "";
+
   const readableStream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
@@ -76,6 +94,7 @@ export async function POST(request: Request) {
             event.type === "content_block_delta" &&
             event.delta.type === "text_delta"
           ) {
+            fullResponse += event.delta.text;
             controller.enqueue(encoder.encode(event.delta.text));
           }
         }
@@ -83,6 +102,16 @@ export async function POST(request: Request) {
         console.error("AI chat stream error:", err);
       } finally {
         controller.close();
+        // Save assistant response to DB
+        if (fullResponse) {
+          try {
+            await db.insert(chatMessages).values({
+              userId,
+              role: "assistant",
+              content: fullResponse,
+            });
+          } catch { /* silent */ }
+        }
       }
     },
   });

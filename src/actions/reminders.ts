@@ -87,7 +87,7 @@ export async function createReminderFromTemplate(templateKey: string) {
       intervalMinutes: template.defaultIntervalMinutes ?? null,
       intervalStart: template.defaultIntervalStart ?? null,
       intervalEnd: template.defaultIntervalEnd ?? null,
-      skipEmail: true,
+      skipEmail: false,
     });
   }
 

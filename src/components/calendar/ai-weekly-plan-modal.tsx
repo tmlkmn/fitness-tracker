@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sparkles,
   RefreshCw,
@@ -20,6 +19,8 @@ import {
   Waves,
   UtensilsCrossed,
   MessageSquare,
+  Loader2,
+  Clock,
 } from "lucide-react";
 import {
   Collapsible,
@@ -28,7 +29,130 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import type { AIWeeklyPlan, AIWeeklyDay } from "@/actions/ai-weekly";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+
+// ─── Template tags for quick suggestions ────────────────────────────────────
+
+const SUGGESTION_TAGS = [
+  "Ağırlıkları artır",
+  "Yeni hareketler ekle",
+  "Kardiyo / kondisyon",
+  "Karın kası hareketleri",
+  "Esneklik / mobilite",
+  "Dinlenme sürelerini kısalt",
+  "Daha fazla set / tekrar",
+  "Drop set / süperset",
+  "Hafif hafta (deload)",
+  "Sadece 3 gün antrenman",
+];
+
+// ─── Stepped loading progress ───────────────────────────────────────────────
+
+const LOADING_STEPS = [
+  { label: "Profil ve geçmiş veriler analiz ediliyor", delay: 0 },
+  { label: "Antrenman programı oluşturuluyor", delay: 15000 },
+  { label: "Beslenme planı hazırlanıyor", delay: 45000 },
+  { label: "Program optimize ediliyor", delay: 90000 },
+];
+
+function SteppedProgress({ loading }: { loading: boolean }) {
+  const [activeStep, setActiveStep] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!loading) {
+      setActiveStep(0);
+      setElapsed(0);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      return;
+    }
+
+    const start = Date.now();
+    intervalRef.current = setInterval(() => {
+      const ms = Date.now() - start;
+      setElapsed(ms);
+      // Advance step based on elapsed time
+      for (let i = LOADING_STEPS.length - 1; i >= 0; i--) {
+        if (ms >= LOADING_STEPS[i].delay) {
+          setActiveStep(i);
+          break;
+        }
+      }
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [loading]);
+
+  const formatTime = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m > 0 ? `${m}dk ${sec}sn` : `${sec}sn`;
+  };
+
+  return (
+    <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+      <div className="space-y-2.5">
+        {LOADING_STEPS.map((step, i) => {
+          const isDone = i < activeStep;
+          const isActive = i === activeStep;
+          const isPending = i > activeStep;
+
+          return (
+            <div key={i} className="flex items-center gap-2.5">
+              {isDone ? (
+                <Check className="h-4 w-4 text-primary shrink-0" />
+              ) : isActive ? (
+                <Loader2 className="h-4 w-4 text-primary shrink-0 animate-spin" />
+              ) : (
+                <div className="h-4 w-4 rounded-full border-2 border-muted shrink-0" />
+              )}
+              <span
+                className={`text-xs ${
+                  isDone
+                    ? "text-primary"
+                    : isActive
+                      ? "text-foreground font-medium"
+                      : isPending
+                        ? "text-muted-foreground"
+                        : ""
+                }`}
+              >
+                {step.label}
+                {isActive && "..."}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-1000 ease-linear"
+          style={{
+            width: `${Math.min(95, (elapsed / 150000) * 100)}%`,
+          }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Bu işlem 1-3 dakika sürebilir
+        </p>
+        <p className="text-[10px] text-muted-foreground font-mono">
+          {formatTime(elapsed)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 interface AiWeeklyPlanModalProps {
   open: boolean;
@@ -53,6 +177,8 @@ const planTypeLabels: Record<string, string> = {
   swimming: "Yüzme",
   rest: "Dinlenme",
 };
+
+// ─── Day Summary (collapsible) ──────────────────────────────────────────────
 
 function DaySummary({ day }: { day: AIWeeklyDay }) {
   const Icon =
@@ -131,6 +257,8 @@ function DaySummary({ day }: { day: AIWeeklyDay }) {
   );
 }
 
+// ─── Main Modal ─────────────────────────────────────────────────────────────
+
 export function AiWeeklyPlanModal({
   open,
   onOpenChange,
@@ -143,13 +271,23 @@ export function AiWeeklyPlanModal({
   hasExistingPlan,
 }: AiWeeklyPlanModalProps) {
   const [userNote, setUserNote] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  };
 
   const handleGenerate = () => {
-    onGenerate(userNote.trim() || undefined);
+    const parts = [...selectedTags];
+    const note = userNote.trim();
+    if (note) parts.push(note);
+    onGenerate(parts.length > 0 ? parts.join(". ") : undefined);
   };
 
   const handleNewSuggestion = () => {
-    onGenerate(userNote.trim() || undefined);
+    handleGenerate();
   };
 
   return (
@@ -183,17 +321,43 @@ export function AiWeeklyPlanModal({
           {/* Phase 1: User input */}
           {!loading && !suggestedPlan && (
             <div className="space-y-3">
+              {/* Template tags */}
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Bu hafta için isteklerini seç:
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {SUGGESTION_TAGS.map((tag) => {
+                    const isSelected = selectedTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                          isSelected
+                            ? "bg-primary/15 border-primary/40 text-primary"
+                            : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Free text note */}
               <div className="flex items-start gap-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground">
-                  Bu hafta için özel bir durumun veya isteğin var mı?
+                <p className="text-xs text-muted-foreground">
+                  Ekstra bir isteğin varsa yaz:
                 </p>
               </div>
               <textarea
                 value={userNote}
                 onChange={(e) => setUserNote(e.target.value)}
-                rows={3}
-                placeholder="Örn: Bu hafta ağırlıkları artırmak istiyorum, sadece 3 gün antrenman yapabilirim, omzum ağrıyor..."
+                rows={2}
+                placeholder="Örn: Omzum ağrıyor, sadece alt vücut çalışayım..."
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               />
               <Button
@@ -207,17 +371,8 @@ export function AiWeeklyPlanModal({
             </div>
           )}
 
-          {/* Loading state */}
-          {loading && (
-            <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
-              <p className="text-xs text-primary mb-2 font-medium">
-                AI haftalık plan oluşturuyor...
-              </p>
-              {[...Array(7)].map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          )}
+          {/* Loading state — stepped progress */}
+          {loading && <SteppedProgress loading={loading} />}
 
           {/* Phase 2: Plan result */}
           {!loading && suggestedPlan && (

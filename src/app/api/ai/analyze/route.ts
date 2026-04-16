@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { progressLogs, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
+import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { PROGRESS_ANALYSIS_PROMPT } from "@/lib/ai-prompts";
 
@@ -22,6 +22,8 @@ export async function POST() {
   } catch {
     return new Response("Günlük analiz limitine ulaştınız (max 3/gün).", { status: 429 });
   }
+
+  await logAiUsage(userId, "analyze");
 
   // Fetch progress data — limited to 10 for token savings
   const logs = await db

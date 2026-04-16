@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { exerciseTips } from "@/db/schema";
 import { and, eq, gte } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
+import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import {
   MEAL_VARIATION_PROMPT,
@@ -43,6 +43,7 @@ export async function generateMealVariation(
 ): Promise<{ suggestion: MealVariationSuggestion }> {
   const user = await getAuthUser();
   checkRateLimit(user.id, "meal");
+  await logAiUsage(user.id, "meal");
 
   const userContext = await buildUserContext(user.id);
 
@@ -184,6 +185,7 @@ export async function getExerciseFormTips(
 
   // Rate limit before AI call
   checkRateLimit(user.id, "exercise");
+  await logAiUsage(user.id, "exercise");
 
   try {
     const userContext = await buildUserContext(user.id);
@@ -204,6 +206,7 @@ export async function regenerateExerciseFormTips(
 ) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "exercise");
+  await logAiUsage(user.id, "exercise");
 
   const nameNorm = exerciseName.toLowerCase().trim();
   const notesNorm = (exerciseNotes ?? "").trim();

@@ -23,9 +23,11 @@ export async function sendPushNotification(
   } catch (err: unknown) {
     const statusCode = (err as { statusCode?: number }).statusCode;
     if (statusCode === 410 || statusCode === 404) {
+      console.warn(`Push subscription expired (${statusCode}):`, subscription.endpoint.slice(0, 60));
       return false;
     }
-    console.error("Push send failed:", err);
-    return false;
+    console.error(`Push send failed (status=${statusCode}):`, subscription.endpoint.slice(0, 60), err);
+    // Don't remove subscription on transient errors — only on 410/404
+    return true;
   }
 }

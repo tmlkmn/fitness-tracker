@@ -123,7 +123,7 @@ export default function ProfilTamamlaPage() {
         serviceType,
       });
       await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      router.push("/");
+      router.push("/ayarlar?onboarding=true");
       router.refresh();
     } catch {
       setError("Bir hata oluştu. Tekrar deneyin.");

@@ -5,7 +5,7 @@ import { exercises } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
+import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { buildWeeklyWorkoutContext } from "@/lib/ai-workout-context";
 import {
@@ -108,6 +108,7 @@ async function callAI(
 export async function generateWorkoutReplacement(dailyPlanId: number, userNote?: string) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "workout");
+  await logAiUsage(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
   const [userContext, { context: workoutContext, currentDayExercises }] =
@@ -188,6 +189,7 @@ export async function generateSectionReplacement(
 ) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "workout");
+  await logAiUsage(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
   const [userContext, { context: workoutContext, currentDayExercises }] =
@@ -280,6 +282,7 @@ export async function generateExerciseVariation(
 ) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "workout");
+  await logAiUsage(user.id, "workout");
   await verifyExerciseOwnership(exerciseId, user.id);
 
   const [userContext, { context: workoutContext }] = await Promise.all([

@@ -5,7 +5,7 @@ import { meals, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
+import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { verifyDailyPlanOwnership } from "@/lib/ownership";
 import { DAILY_MEALS_PROMPT, NUTRITION_ONLY_MEALS_PROMPT } from "@/lib/ai-prompts";
 import { buildMealContext } from "@/lib/ai-meal-context";
@@ -49,6 +49,7 @@ function validateMealArray(data: unknown): AIMeal[] {
 export async function generateDailyMeals(dailyPlanId: number, userNote?: string) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "daily-meal");
+  await logAiUsage(user.id, "daily-meal");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
   // Get user's service type for prompt selection

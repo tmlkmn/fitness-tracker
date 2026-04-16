@@ -28,6 +28,8 @@ import {
   Pill,
   Pencil,
   Calendar,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
@@ -37,8 +39,8 @@ import { NotificationPreferencesCard } from "@/components/notifications/notifica
 import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
 import { PwaInstallCard } from "@/components/layout/pwa-install-card";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 
@@ -684,12 +686,22 @@ function ProfileEditor({
   );
 }
 
-export default function AyarlarPage() {
+function AyarlarContent() {
   const { data: session } = useSession();
   const { data: profile } = useUserProfile();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
   const user = session?.user;
+
+  useEffect(() => {
+    if (searchParams.get("onboarding") === "true") {
+      setShowOnboardingBanner(true);
+      // Clean URL without reload
+      window.history.replaceState(null, "", "/ayarlar");
+    }
+  }, [searchParams]);
 
   const handleSignOut = async () => {
     setLoggingOut(true);
@@ -712,6 +724,30 @@ export default function AyarlarPage() {
         }
       />
       <div className="p-4 space-y-4">
+        {showOnboardingBanner && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">Profilinizi Tamamlayın</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Günlük akış, sağlık notları, fitness seviyesi ve supplement bilgileriniz
+                    AI değerlendirmelerinde kullanılır. Ne kadar detaylı doldurursanız,
+                    size özel program o kadar isabetli olur.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowOnboardingBanner(false)}
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <ProfileEditor profile={profile} userEmail={user?.email} />
 
         <PwaInstallCard />
@@ -757,5 +793,13 @@ export default function AyarlarPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function AyarlarPage() {
+  return (
+    <Suspense>
+      <AyarlarContent />
+    </Suspense>
   );
 }

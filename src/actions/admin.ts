@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, aiUsageLogs } from "@/db/schema";
+import { eq, sql, gte } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { sendInviteEmail } from "@/lib/email";
 import { getAuthAdmin } from "@/lib/auth-utils";
@@ -236,4 +236,143 @@ export async function extendMembership(
 
   revalidatePath("/admin");
   return { success: true };
+}
+
+// ── Admin Report Actions ──
+
+export interface AdminStats {
+  totalUsers: number;
+  activeUsers: number;
+  pendingUsers: number;
+  adminUsers: number;
+  aiUsageToday: number;
+  aiUsageThisWeek: number;
+  aiUsageTotal: number;
+}
+
+export async function getAdminStats(): Promise<AdminStats> {
+  await getAuthAdmin();
+
+  const allUsers = await db.select().from(users);
+
+  let activeUsers = 0;
+  let pendingUsers = 0;
+  let adminUsers = 0;
+
+  for (const u of allUsers) {
+    const status = getUserStatus(u);
+    if (status === "Admin") adminUsers++;
+    else if (status === "Aktif") activeUsers++;
+    else pendingUsers++;
+  }
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayOfWeek = now.getDay();
+  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToMonday);
+
+  const [todayCount] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(aiUsageLogs)
+    .where(gte(aiUsageLogs.createdAt, startOfToday));
+
+  const [weekCount] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(aiUsageLogs)
+    .where(gte(aiUsageLogs.createdAt, startOfWeek));
+
+  const [totalCount] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(aiUsageLogs);
+
+  return {
+    totalUsers: allUsers.length,
+    activeUsers,
+    pendingUsers,
+    adminUsers,
+    aiUsageToday: todayCount?.count ?? 0,
+    aiUsageThisWeek: weekCount?.count ?? 0,
+    aiUsageTotal: totalCount?.count ?? 0,
+  };
+}
+
+export interface FeatureUsage {
+  feature: string;
+  today: number;
+  thisWeek: number;
+  total: number;
+}
+
+export async function getAiUsageByFeature(): Promise<FeatureUsage[]> {
+  await getAuthAdmin();
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayOfWeek = now.getDay();
+  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToMonday);
+
+  const rows = await db
+    .select({
+      feature: aiUsageLogs.feature,
+      total: sql<number>`count(*)::int`,
+      today: sql<number>`count(*) filter (where ${aiUsageLogs.createdAt} >= ${startOfToday})::int`,
+      thisWeek: sql<number>`count(*) filter (where ${aiUsageLogs.createdAt} >= ${startOfWeek})::int`,
+    })
+    .from(aiUsageLogs)
+    .groupBy(aiUsageLogs.feature)
+    .orderBy(sql`count(*) desc`);
+
+  return rows;
+}
+
+export interface UserAiUsage {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  total: number;
+  lastUsed: Date | null;
+  features: Record<string, number>;
+}
+
+export async function getAiUsageByUser(): Promise<UserAiUsage[]> {
+  await getAuthAdmin();
+
+  const rows = await db
+    .select({
+      userId: aiUsageLogs.userId,
+      userName: users.name,
+      userEmail: users.email,
+      feature: aiUsageLogs.feature,
+      count: sql<number>`count(*)::int`,
+      lastUsed: sql<Date>`max(${aiUsageLogs.createdAt})`,
+    })
+    .from(aiUsageLogs)
+    .innerJoin(users, eq(aiUsageLogs.userId, users.id))
+    .groupBy(aiUsageLogs.userId, users.name, users.email, aiUsageLogs.feature)
+    .orderBy(sql`max(${aiUsageLogs.createdAt}) desc`);
+
+  const userMap = new Map<string, UserAiUsage>();
+  for (const row of rows) {
+    let entry = userMap.get(row.userId);
+    if (!entry) {
+      entry = {
+        userId: row.userId,
+        userName: row.userName,
+        userEmail: row.userEmail,
+        total: 0,
+        lastUsed: row.lastUsed,
+        features: {},
+      };
+      userMap.set(row.userId, entry);
+    }
+    entry.total += row.count;
+    entry.features[row.feature] = row.count;
+    if (row.lastUsed && (!entry.lastUsed || row.lastUsed > entry.lastUsed)) {
+      entry.lastUsed = row.lastUsed;
+    }
+  }
+
+  return Array.from(userMap.values()).sort((a, b) => b.total - a.total);
 }

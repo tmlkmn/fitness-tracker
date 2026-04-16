@@ -5,7 +5,7 @@ import { weeklyPlans, dailyPlans, meals, exercises, progressLogs, users } from "
 import { eq, and, sql, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit } from "@/lib/ai";
+import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { WEEKLY_PLAN_PROMPT, NUTRITION_ONLY_WEEKLY_PROMPT } from "@/lib/ai-prompts";
 
 interface AIMealItem {
@@ -342,6 +342,7 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
 export async function generateWeeklyPlan(dateStr: string, userNote?: string) {
   const user = await getAuthUser();
   checkRateLimit(user.id, "weekly");
+  await logAiUsage(user.id, "weekly");
 
   // Get user's service type
   const [userRow] = await db
