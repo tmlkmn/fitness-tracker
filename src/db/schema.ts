@@ -29,6 +29,7 @@ export const users = pgTable("user", {
   sportHistory: text("sport_history"),
   currentMedications: text("current_medications"),
   serviceType: text("service_type").default("full"),
+  age: integer("age"),
   isApproved: boolean("is_approved").default(false).notNull(),
   role: text("role").default("user"),
   banned: boolean("banned").default(false),

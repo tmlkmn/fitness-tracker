@@ -13,6 +13,7 @@ export async function getUserProfile() {
       weight: users.weight,
       targetWeight: users.targetWeight,
       height: users.height,
+      age: users.age,
       healthNotes: users.healthNotes,
       dailyRoutine: users.dailyRoutine,
       supplementSchedule: users.supplementSchedule,
@@ -26,7 +27,7 @@ export async function getUserProfile() {
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, healthNotes: null, dailyRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, dailyRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null };
 }
 
 export async function updateUserWeightTargets(data: {
@@ -48,6 +49,7 @@ export async function updateUserOnboarding(data: {
   height: number;
   weight: string;
   targetWeight: string;
+  age?: number;
   healthNotes?: string;
   dailyRoutine?: { time: string; event: string }[];
   fitnessLevel?: string;
@@ -62,6 +64,7 @@ export async function updateUserOnboarding(data: {
       height: data.height,
       weight: data.weight,
       targetWeight: data.targetWeight,
+      age: data.age ?? undefined,
       healthNotes: data.healthNotes ?? null,
       dailyRoutine: data.dailyRoutine ?? undefined,
       fitnessLevel: data.fitnessLevel ?? undefined,
@@ -91,4 +94,35 @@ export async function updateSupplementSchedule(items: { period: string; suppleme
     .set({ supplementSchedule: items })
     .where(eq(users.id, user.id));
   revalidatePath("/ayarlar");
+}
+
+export async function updateUserProfile(data: {
+  height?: number;
+  weight?: string;
+  targetWeight?: string;
+  age?: number | null;
+  healthNotes?: string;
+  fitnessLevel?: string;
+  sportHistory?: string;
+  currentMedications?: string;
+  serviceType?: string;
+}) {
+  const user = await getAuthUser();
+  await db
+    .update(users)
+    .set({
+      height: data.height ?? undefined,
+      weight: data.weight ?? undefined,
+      targetWeight: data.targetWeight ?? undefined,
+      age: data.age !== undefined ? data.age : undefined,
+      healthNotes: data.healthNotes !== undefined ? data.healthNotes : undefined,
+      fitnessLevel: data.fitnessLevel !== undefined ? data.fitnessLevel : undefined,
+      sportHistory: data.sportHistory !== undefined ? data.sportHistory : undefined,
+      currentMedications: data.currentMedications !== undefined ? data.currentMedications : undefined,
+      serviceType: data.serviceType ?? undefined,
+    })
+    .where(eq(users.id, user.id));
+  revalidatePath("/");
+  revalidatePath("/ayarlar");
+  revalidatePath("/ilerleme");
 }

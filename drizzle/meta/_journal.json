@@ -71,6 +71,13 @@
       "when": 1776283513876,
       "tag": "0009_happy_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776331026285,
+      "tag": "0010_previous_iron_fist",
+      "breakpoints": true
     }
   ]
 }

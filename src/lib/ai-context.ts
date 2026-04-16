@@ -16,6 +16,7 @@ export async function buildUserContext(userId: string): Promise<string> {
       height: users.height,
       weight: users.weight,
       targetWeight: users.targetWeight,
+      age: users.age,
       healthNotes: users.healthNotes,
       dailyRoutine: users.dailyRoutine,
       fitnessLevel: users.fitnessLevel,
@@ -32,6 +33,7 @@ export async function buildUserContext(userId: string): Promise<string> {
 
   // User profile
   const parts: string[] = [];
+  if (user.age) parts.push(`Yaş: ${user.age}`);
   if (user.height) parts.push(`Boy: ${user.height}cm`);
   if (user.weight) parts.push(`Başlangıç kilo: ${user.weight}kg`);
   if (user.targetWeight) parts.push(`Hedef: ${user.targetWeight}kg`);

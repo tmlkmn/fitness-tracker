@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -25,10 +26,12 @@ import {
   Trash2,
   Clock,
   Pill,
+  Pencil,
+  Calendar,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
-import { updateDailyRoutine, updateSupplementSchedule } from "@/actions/user";
+import { updateDailyRoutine, updateSupplementSchedule, updateUserProfile } from "@/actions/user";
 import { ShareManager } from "@/components/sharing/share-manager";
 import { NotificationPreferencesCard } from "@/components/notifications/notification-preferences-card";
 import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
@@ -374,21 +377,319 @@ function SupplementScheduleEditor({ profile }: { profile: ReturnType<typeof useU
   );
 }
 
+const FITNESS_LEVEL_OPTIONS = [
+  { value: "beginner", label: "Yeni başlayan" },
+  { value: "returning", label: "Ara vermiş, tekrar başlayan" },
+  { value: "intermediate", label: "Orta düzey" },
+  { value: "advanced", label: "İleri düzey" },
+];
+
+function ProfileEditor({
+  profile,
+  userEmail,
+}: {
+  profile: ReturnType<typeof useUserProfile>["data"];
+  userEmail?: string;
+}) {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [targetWeight, setTargetWeight] = useState("");
+  const [age, setAge] = useState("");
+  const [healthNotes, setHealthNotes] = useState("");
+  const [fitnessLevel, setFitnessLevel] = useState("");
+  const [sportHistory, setSportHistory] = useState("");
+  const [currentMedications, setCurrentMedications] = useState("");
+  const [serviceType, setServiceType] = useState("full");
+
+  useEffect(() => {
+    if (profile) {
+      setHeight(profile.height ? String(profile.height) : "");
+      setWeight(profile.weight ?? "");
+      setTargetWeight(profile.targetWeight ?? "");
+      setAge(profile.age ? String(profile.age) : "");
+      setHealthNotes(profile.healthNotes ?? "");
+      setFitnessLevel(profile.fitnessLevel ?? "");
+      setSportHistory(profile.sportHistory ?? "");
+      setCurrentMedications(profile.currentMedications ?? "");
+      setServiceType(profile.serviceType ?? "full");
+    }
+  }, [profile]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateUserProfile({
+        height: height ? parseInt(height, 10) : undefined,
+        weight: weight || undefined,
+        targetWeight: targetWeight || undefined,
+        age: age ? parseInt(age, 10) : null,
+        healthNotes: healthNotes.trim(),
+        fitnessLevel: fitnessLevel || undefined,
+        sportHistory: sportHistory.trim() || undefined,
+        currentMedications: currentMedications.trim() || undefined,
+        serviceType,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (profile) {
+      setHeight(profile.height ? String(profile.height) : "");
+      setWeight(profile.weight ?? "");
+      setTargetWeight(profile.targetWeight ?? "");
+      setAge(profile.age ? String(profile.age) : "");
+      setHealthNotes(profile.healthNotes ?? "");
+      setFitnessLevel(profile.fitnessLevel ?? "");
+      setSportHistory(profile.sportHistory ?? "");
+      setCurrentMedications(profile.currentMedications ?? "");
+      setServiceType(profile.serviceType ?? "full");
+    }
+    setEditing(false);
+  };
+
+  let healthNotesArr: string[] = [];
+  if (profile?.healthNotes) {
+    try {
+      healthNotesArr = JSON.parse(profile.healthNotes);
+    } catch {
+      healthNotesArr = [profile.healthNotes];
+    }
+  }
+
+  if (!editing) {
+    return (
+      <Card>
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span className="flex-1">Profil</span>
+            <button
+              onClick={() => setEditing(true)}
+              className="text-xs text-primary hover:underline flex items-center gap-1"
+            >
+              <Pencil className="h-3 w-3" />
+              Düzenle
+            </button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-2 space-y-3">
+          {userEmail && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">E-posta</span>
+              <span className="text-sm font-medium">{userEmail}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Yaş</span>
+            </div>
+            <span className="text-sm font-medium">
+              {profile?.age ?? "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Ruler className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Boy</span>
+            </div>
+            <span className="text-sm font-medium">
+              {profile?.height ? `${profile.height} cm` : "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Scale className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Başlangıç kilosu</span>
+            </div>
+            <span className="text-sm font-medium">
+              {profile?.weight ? `${profile.weight} kg` : "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Scale className="h-4 w-4 text-primary" />
+              <span className="text-sm text-muted-foreground">Hedef kilo</span>
+            </div>
+            <span className="text-sm font-medium text-primary">
+              {profile?.targetWeight ? `${profile.targetWeight} kg` : "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Hizmet Tipi</span>
+            <span className="text-sm font-medium">
+              {profile?.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program"}
+            </span>
+          </div>
+          {profile?.fitnessLevel && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Fitness Seviyesi</span>
+              <span className="text-sm font-medium">
+                {FITNESS_LEVEL_OPTIONS.find((o) => o.value === profile.fitnessLevel)?.label ?? profile.fitnessLevel}
+              </span>
+            </div>
+          )}
+          {profile?.sportHistory && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Spor Geçmişi</span>
+              <span className="text-sm font-medium text-right max-w-[60%] truncate">{profile.sportHistory}</span>
+            </div>
+          )}
+          {profile?.currentMedications && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">İlaçlar</span>
+              <span className="text-sm font-medium text-right max-w-[60%] truncate">{profile.currentMedications}</span>
+            </div>
+          )}
+          {healthNotesArr.length > 0 && (
+            <>
+              <div className="border-t border-border my-1" />
+              <div className="space-y-1.5">
+                <span className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Heart className="h-4 w-4" />
+                  Sağlık Notları
+                </span>
+                {healthNotesArr.map((note, i) => (
+                  <div key={i} className="flex items-start gap-2 pl-6">
+                    <Badge variant="secondary" className="shrink-0 gap-1">
+                      <Info className="h-3 w-3" />
+                    </Badge>
+                    <p className="text-sm">{note}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {profile?.membershipType && (
+            <>
+              <div className="border-t border-border my-2" />
+              <MembershipInfo profile={profile} />
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Edit mode
+  const inputClass = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+
+  return (
+    <Card>
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <User className="h-4 w-4" />
+          Profil Düzenle
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-2 space-y-3">
+        {userEmail && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">E-posta</span>
+            <span className="text-sm font-medium">{userEmail}</span>
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <label className="text-xs text-muted-foreground">Yaş</label>
+          <input type="number" value={age} onChange={(e) => setAge(e.target.value)} min={10} max={100} placeholder="28" className={inputClass} />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs text-muted-foreground">Boy (cm)</label>
+          <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} min={100} max={250} placeholder="175" className={inputClass} />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs text-muted-foreground">Başlangıç kilosu (kg)</label>
+          <input type="number" step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)} min={30} max={300} placeholder="80" className={inputClass} />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs text-muted-foreground">Hedef kilo (kg)</label>
+          <input type="number" step="0.1" value={targetWeight} onChange={(e) => setTargetWeight(e.target.value)} min={30} max={300} placeholder="75" className={inputClass} />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs text-muted-foreground">Hizmet Tipi</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setServiceType("full")}
+              className={`p-2 rounded-md border text-xs font-medium transition-colors ${serviceType === "full" ? "border-primary bg-primary/10 text-primary" : "border-input hover:bg-accent"}`}
+            >
+              Tam Program
+            </button>
+            <button
+              type="button"
+              onClick={() => setServiceType("nutrition")}
+              className={`p-2 rounded-md border text-xs font-medium transition-colors ${serviceType === "nutrition" ? "border-primary bg-primary/10 text-primary" : "border-input hover:bg-accent"}`}
+            >
+              Sadece Beslenme
+            </button>
+          </div>
+        </div>
+
+        {serviceType === "full" && (
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Fitness Seviyesi</label>
+            <select
+              value={fitnessLevel}
+              onChange={(e) => setFitnessLevel(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Seçiniz</option>
+              {FITNESS_LEVEL_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {serviceType === "full" && (
+          <div className="space-y-1.5">
+            <label className="text-xs text-muted-foreground">Spor Geçmişi</label>
+            <textarea value={sportHistory} onChange={(e) => setSportHistory(e.target.value)} rows={2} placeholder="Daha önce yaptığınız sporlar..." className={`${inputClass} h-auto resize-none`} />
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <label className="text-xs text-muted-foreground">İlaçlar / Supplementler</label>
+          <textarea value={currentMedications} onChange={(e) => setCurrentMedications(e.target.value)} rows={2} placeholder="Kullandığınız ilaçlar veya takviyeler..." className={`${inputClass} h-auto resize-none`} />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs text-muted-foreground">Sağlık Notları</label>
+          <textarea value={healthNotes} onChange={(e) => setHealthNotes(e.target.value)} rows={3} placeholder="Yaralanmalar, alerjiler, diyet kısıtlamaları..." className={`${inputClass} h-auto resize-none`} />
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <Button size="sm" onClick={handleSave} disabled={saving} className="flex-1">
+            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Kaydet"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleCancel} className="flex-1">
+            İptal
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function AyarlarPage() {
   const { data: session } = useSession();
   const { data: profile } = useUserProfile();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const user = session?.user;
-
-  let healthNotes: string[] = [];
-  if (profile?.healthNotes) {
-    try {
-      healthNotes = JSON.parse(profile.healthNotes);
-    } catch {
-      healthNotes = [profile.healthNotes];
-    }
-  }
 
   const handleSignOut = async () => {
     setLoggingOut(true);
@@ -411,88 +712,9 @@ export default function AyarlarPage() {
         }
       />
       <div className="p-4 space-y-4">
-        {/* Profile — always open, not collapsible */}
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Profil
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 space-y-3">
-            {user && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">E-posta</span>
-                <span className="text-sm font-medium">{user.email}</span>
-              </div>
-            )}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Scale className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Başlangıç kilosu
-                </span>
-              </div>
-              <span className="text-sm font-medium">
-                {profile?.weight ? `${profile.weight} kg` : "—"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Scale className="h-4 w-4 text-primary" />
-                <span className="text-sm text-muted-foreground">
-                  Hedef kilo
-                </span>
-              </div>
-              <span className="text-sm font-medium text-primary">
-                {profile?.targetWeight ? `${profile.targetWeight} kg` : "—"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Ruler className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Boy</span>
-              </div>
-              <span className="text-sm font-medium">
-                {profile?.height ? `${profile.height} cm` : "—"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Hizmet Tipi</span>
-              <span className="text-sm font-medium">
-                {profile?.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program"}
-              </span>
-            </div>
-            {/* Membership info */}
-            {profile?.membershipType && (
-              <>
-                <div className="border-t border-border my-2" />
-                <MembershipInfo profile={profile} />
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <ProfileEditor profile={profile} userEmail={user?.email} />
 
         <PwaInstallCard />
-
-        <CollapsibleCard title="Sağlık Notları" icon={Heart}>
-          <div className="space-y-2">
-            {healthNotes.length > 0 ? (
-              healthNotes.map((note, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <Badge variant="secondary" className="shrink-0 gap-1">
-                    <Info className="h-3 w-3" />
-                  </Badge>
-                  <p className="text-sm">{note}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Sağlık notu bulunmuyor.
-              </p>
-            )}
-          </div>
-        </CollapsibleCard>
 
         <CollapsibleCard title="Günlük Akış" icon={Clock}>
           <DailyRoutineEditor profile={profile} />

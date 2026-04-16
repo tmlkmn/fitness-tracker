@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dumbbell, Loader2, Ruler, Scale, Target, Heart, Sunrise, Briefcase, UtensilsCrossed, Home, Moon, Pill } from "lucide-react";
+import { Dumbbell, Loader2, Ruler, Scale, Target, Heart, Sunrise, Briefcase, UtensilsCrossed, Home, Moon, Pill, User } from "lucide-react";
 
 export default function ProfilTamamlaPage() {
   const { data: session, isPending: sessionPending } = useSession();
@@ -22,6 +22,7 @@ export default function ProfilTamamlaPage() {
   const [weight, setWeight] = useState("");
   const [targetWeight, setTargetWeight] = useState("");
   const [healthNotes, setHealthNotes] = useState("");
+  const [age, setAge] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
@@ -53,6 +54,7 @@ export default function ProfilTamamlaPage() {
       if (profile.weight) setWeight(profile.weight);
       if (profile.targetWeight) setTargetWeight(profile.targetWeight);
       if (profile.healthNotes) setHealthNotes(profile.healthNotes);
+      if (profile.age) setAge(String(profile.age));
       if (profile.fitnessLevel) setFitnessLevel(profile.fitnessLevel);
       if (profile.sportHistory) setSportHistory(profile.sportHistory);
       if (profile.currentMedications) setCurrentMedications(profile.currentMedications);
@@ -112,6 +114,7 @@ export default function ProfilTamamlaPage() {
         height: h,
         weight: weight,
         targetWeight: targetWeight,
+        age: age ? parseInt(age, 10) : undefined,
         healthNotes: healthNotes.trim() || undefined,
         dailyRoutine: routineEntries.length > 0 ? routineEntries : undefined,
         fitnessLevel: fitnessLevel || undefined,
@@ -211,6 +214,24 @@ export default function ProfilTamamlaPage() {
                 max={250}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 placeholder="175"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="age" className="text-sm font-medium leading-none flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                Yaş
+                <span className="text-xs text-muted-foreground font-normal">(opsiyonel)</span>
+              </label>
+              <input
+                id="age"
+                type="number"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                min={10}
+                max={100}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="28"
               />
             </div>
 

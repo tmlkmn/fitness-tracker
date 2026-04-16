@@ -6,20 +6,23 @@ import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { subscribeToPush } from "@/lib/push-subscribe";
 
 export function PwaInstallButton() {
-  const { canInstall, isInstalled, install } = usePwaInstall();
+  const { canInstall, install } = usePwaInstall();
   const [installing, setInstalling] = useState(false);
 
-  if (isInstalled || !canInstall) return null;
-
   const handleInstall = async () => {
-    setInstalling(true);
-    try {
-      const accepted = await install();
-      if (accepted) {
-        await subscribeToPush();
+    if (canInstall) {
+      setInstalling(true);
+      try {
+        const accepted = await install();
+        if (accepted) {
+          await subscribeToPush();
+        }
+      } finally {
+        setInstalling(false);
       }
-    } finally {
-      setInstalling(false);
+    } else {
+      // Fallback: open share menu instructions or alert
+      alert("Tarayıcınızın menüsünden \"Ana Ekrana Ekle\" seçeneğini kullanın.");
     }
   };
 
