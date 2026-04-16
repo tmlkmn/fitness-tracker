@@ -23,9 +23,11 @@ export function useApplyWeeklyPlan() {
       plan: AIWeeklyPlan;
     }) => applyWeeklyPlan(dateStr, plan),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["plans"] });
-      qc.invalidateQueries({ queryKey: ["meals"] });
-      qc.invalidateQueries({ queryKey: ["exercises"] });
+      qc.refetchQueries({ queryKey: ["plans"] });
+      qc.refetchQueries({ queryKey: ["meals"] });
+      qc.refetchQueries({ queryKey: ["exercises"] });
+      qc.refetchQueries({ queryKey: ["today-dashboard"] });
+      qc.refetchQueries({ queryKey: ["week-plans-date"] });
     },
   });
 }

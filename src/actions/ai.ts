@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { exerciseTips } from "@/db/schema";
-import { and, eq, gte } from "drizzle-orm";
+import { exerciseTips, meals, dailyPlans } from "@/db/schema";
+import { and, eq, gte, asc, ne } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
@@ -39,7 +39,8 @@ export async function generateMealVariation(
   calories?: number | null,
   proteinG?: string | null,
   carbsG?: string | null,
-  fatG?: string | null
+  fatG?: string | null,
+  mealId?: number | null
 ): Promise<{ suggestion: MealVariationSuggestion }> {
   const user = await getAuthUser();
   checkRateLimit(user.id, "meal");
@@ -56,6 +57,51 @@ export async function generateMealVariation(
     .filter(Boolean)
     .join(", ");
 
+  // Build week context: what other meals of the same label exist this week
+  let weekContext = "";
+  if (mealId) {
+    try {
+      const [currentMeal] = await db
+        .select({ dailyPlanId: meals.dailyPlanId })
+        .from(meals)
+        .where(eq(meals.id, mealId));
+
+      if (currentMeal?.dailyPlanId) {
+        const [currentDay] = await db
+          .select({ weeklyPlanId: dailyPlans.weeklyPlanId })
+          .from(dailyPlans)
+          .where(eq(dailyPlans.id, currentMeal.dailyPlanId));
+
+        if (currentDay?.weeklyPlanId) {
+          const weekDays = await db
+            .select({ id: dailyPlans.id, dayName: dailyPlans.dayName })
+            .from(dailyPlans)
+            .where(eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId))
+            .orderBy(asc(dailyPlans.dayOfWeek));
+
+          const sameLabelMeals: string[] = [];
+          for (const day of weekDays) {
+            const dayMeals = await db
+              .select({ id: meals.id, mealLabel: meals.mealLabel, content: meals.content })
+              .from(meals)
+              .where(and(eq(meals.dailyPlanId, day.id), eq(meals.mealLabel, mealLabel), ne(meals.id, mealId)))
+              .orderBy(asc(meals.sortOrder));
+
+            for (const m of dayMeals) {
+              sameLabelMeals.push(`${day.dayName}: ${m.content}`);
+            }
+          }
+
+          if (sameLabelMeals.length > 0) {
+            weekContext = `\n\nBu hafta aynı öğün tipinde (${mealLabel}) zaten şunlar var, bunları TEKRARLAMA:\n${sameLabelMeals.join("\n")}`;
+          }
+        }
+      }
+    } catch {
+      // Best effort — proceed without week context
+    }
+  }
+
   try {
     const client = getAIClient();
     const message = await client.messages.create({
@@ -71,7 +117,7 @@ export async function generateMealVariation(
       messages: [
         {
           role: "user",
-          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}\n\nBu öğüne benzer makrolarla alternatif bir öğün öner. JSON formatında yanıt ver.`,
+          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${weekContext}\n\nBu öğüne benzer makrolarla tamamen farklı bir alternatif öğün öner. JSON formatında yanıt ver.`,
         },
       ],
     });

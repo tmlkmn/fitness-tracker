@@ -29,7 +29,8 @@ export function useApplyWorkoutReplacement() {
       exercises: AIExercise[];
     }) => applyWorkoutReplacement(dailyPlanId, exercises),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["exercises"] });
+      qc.refetchQueries({ queryKey: ["exercises"] });
+      qc.refetchQueries({ queryKey: ["today-dashboard"] });
     },
   });
 }
@@ -65,7 +66,8 @@ export function useApplySectionReplacement() {
       exercises: AIExercise[];
     }) => applySectionReplacement(dailyPlanId, section, exercises),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["exercises"] });
+      qc.refetchQueries({ queryKey: ["exercises"] });
+      qc.refetchQueries({ queryKey: ["today-dashboard"] });
     },
   });
 }
@@ -97,7 +99,8 @@ export function useApplyExerciseVariation() {
       exercise: { name: string; sets: number | null; reps: string | null; restSeconds: number | null; durationMinutes: number | null; notes: string | null };
     }) => applyExerciseVariation(exerciseId, exercise),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["exercises"] });
+      qc.refetchQueries({ queryKey: ["exercises"] });
+      qc.refetchQueries({ queryKey: ["today-dashboard"] });
     },
   });
 }

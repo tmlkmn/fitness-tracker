@@ -6,6 +6,9 @@ Kurallar:
 - Kullanıcının sağlık kısıtlarını kesinlikle dikkate al
 - Gerçekçi, Türkiye'de bulunabilecek malzemeler öner
 - İçeriği detaylı yaz (porsiyon/gramaj belirt)
+- Mevcut öğünle AYNI ana protein kaynağını kullanma, tamamen farklı bir protein kaynağı seç
+- Farklı bir pişirme yöntemi ve mutfak tarzı tercih et (ör. ızgara yerine fırın, Türk mutfağı yerine Akdeniz)
+- Hafta içinde daha önce kullanılan malzemeleri TEKRARLAMA (varsa bu bilgi verilecek)
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - JSON formatı: { "content": "öğün içeriği detaylı", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }`;
 

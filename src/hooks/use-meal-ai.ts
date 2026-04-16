@@ -23,7 +23,8 @@ export function useApplyDailyMeals() {
       meals: AIMeal[];
     }) => applyDailyMeals(dailyPlanId, meals),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["meals"] });
+      qc.refetchQueries({ queryKey: ["meals"] });
+      qc.refetchQueries({ queryKey: ["today-dashboard"] });
     },
   });
 }

@@ -54,7 +54,8 @@ export function AiSuggestionModal({
         calories,
         proteinG,
         carbsG,
-        fatG
+        fatG,
+        mealId
       );
       setSuggestion(result.suggestion);
     } catch (err) {
