@@ -82,8 +82,11 @@ export async function createReminderFromTemplate(templateKey: string) {
       title: template.title,
       body: template.body,
       templateKey: template.key,
-      time: template.defaultTime,
+      time: template.defaultTime ?? null,
       recurrence: template.defaultRecurrence,
+      intervalMinutes: template.defaultIntervalMinutes ?? null,
+      intervalStart: template.defaultIntervalStart ?? null,
+      intervalEnd: template.defaultIntervalEnd ?? null,
       skipEmail: true,
     });
   }

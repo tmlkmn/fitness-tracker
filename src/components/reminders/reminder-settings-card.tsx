@@ -249,15 +249,32 @@ export function ReminderSettingsCard() {
                 </div>
                 {isActive && existingReminder && (
                   <div className="flex items-center gap-1.5 pl-1 text-xs text-muted-foreground">
-                    <span className="font-mono">
-                      {existingReminder.time ?? t.defaultTime}
-                    </span>
-                    <span>·</span>
-                    <span>
-                      {existingReminder.recurrence === "daily"
-                        ? "Her gün tekrarlanır"
-                        : "Hafta içi tekrarlanır"}
-                    </span>
+                    {existingReminder.recurrence === "interval" ? (
+                      <>
+                        <span className="font-mono">
+                          {existingReminder.intervalStart ?? t.defaultIntervalStart ?? "08:00"}-{existingReminder.intervalEnd ?? t.defaultIntervalEnd ?? "22:00"}
+                        </span>
+                        <span>·</span>
+                        <span>
+                          {(() => {
+                            const min = existingReminder.intervalMinutes ?? t.defaultIntervalMinutes ?? 60;
+                            return min >= 60 ? `${min / 60} saatte bir` : `${min} dk.da bir`;
+                          })()}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-mono">
+                          {existingReminder.time ?? t.defaultTime}
+                        </span>
+                        <span>·</span>
+                        <span>
+                          {existingReminder.recurrence === "daily"
+                            ? "Her gün tekrarlanır"
+                            : "Hafta içi tekrarlanır"}
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

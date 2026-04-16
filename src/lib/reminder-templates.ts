@@ -3,8 +3,11 @@ export interface ReminderTemplate {
   title: string;
   body: string;
   icon: string;
-  defaultTime: string;
-  defaultRecurrence: "daily" | "weekdays";
+  defaultTime: string | null;
+  defaultRecurrence: "daily" | "weekdays" | "interval";
+  defaultIntervalMinutes?: number;
+  defaultIntervalStart?: string;
+  defaultIntervalEnd?: string;
 }
 
 export const REMINDER_TEMPLATES: ReminderTemplate[] = [
@@ -13,24 +16,33 @@ export const REMINDER_TEMPLATES: ReminderTemplate[] = [
     title: "Su İç",
     body: "Bir bardak su içmeyi unutma!",
     icon: "Droplets",
-    defaultTime: "10:00",
-    defaultRecurrence: "daily",
+    defaultTime: null,
+    defaultRecurrence: "interval",
+    defaultIntervalMinutes: 60,
+    defaultIntervalStart: "09:00",
+    defaultIntervalEnd: "23:00",
   },
   {
     key: "stretching",
     title: "Esneme Yap",
     body: "Kısa bir esneme molası ver, kaslarını gevşet.",
     icon: "StretchHorizontal",
-    defaultTime: "15:00",
-    defaultRecurrence: "weekdays",
+    defaultTime: null,
+    defaultRecurrence: "interval",
+    defaultIntervalMinutes: 60,
+    defaultIntervalStart: "09:00",
+    defaultIntervalEnd: "23:00",
   },
   {
     key: "posture",
     title: "Duruş Kontrolü",
     body: "Oturuşunu kontrol et, sırtını düzelt.",
     icon: "PersonStanding",
-    defaultTime: "12:00",
-    defaultRecurrence: "weekdays",
+    defaultTime: null,
+    defaultRecurrence: "interval",
+    defaultIntervalMinutes: 120,
+    defaultIntervalStart: "09:00",
+    defaultIntervalEnd: "23:00",
   },
   {
     key: "supplement",
@@ -53,7 +65,10 @@ export const REMINDER_TEMPLATES: ReminderTemplate[] = [
     title: "Yürüyüş Molası",
     body: "Kalk ve biraz yürü, 10 dk hareket et.",
     icon: "Footprints",
-    defaultTime: "14:00",
-    defaultRecurrence: "weekdays",
+    defaultTime: null,
+    defaultRecurrence: "interval",
+    defaultIntervalMinutes: 180,
+    defaultIntervalStart: "09:00",
+    defaultIntervalEnd: "23:00",
   },
 ];

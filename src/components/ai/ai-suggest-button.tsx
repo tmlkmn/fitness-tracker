@@ -6,6 +6,8 @@ import { Sparkles } from "lucide-react";
 import { AiSuggestionModal } from "./ai-suggestion-modal";
 
 interface AiSuggestButtonProps {
+  mealId: number;
+  mealTime: string;
   mealLabel: string;
   currentContent: string;
   calories?: number | null;
@@ -15,6 +17,8 @@ interface AiSuggestButtonProps {
 }
 
 export function AiSuggestButton({
+  mealId,
+  mealTime,
   mealLabel,
   currentContent,
   calories,
@@ -37,6 +41,8 @@ export function AiSuggestButton({
       <AiSuggestionModal
         open={open}
         onOpenChange={setOpen}
+        mealId={mealId}
+        mealTime={mealTime}
         mealLabel={mealLabel}
         currentContent={currentContent}
         calories={calories}

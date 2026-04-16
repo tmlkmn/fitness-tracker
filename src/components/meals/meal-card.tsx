@@ -115,6 +115,8 @@ export function MealCard({
               {!readOnly && !isCompleted && (
                 <div className="mt-2">
                   <AiSuggestButton
+                    mealId={id}
+                    mealTime={mealTime}
                     mealLabel={mealLabel}
                     currentContent={content}
                     calories={calories}

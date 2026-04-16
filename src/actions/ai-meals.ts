@@ -21,10 +21,12 @@ export interface AIMeal {
 }
 
 function parseJSON(text: string): unknown {
-  const cleaned = text
+  let cleaned = text
     .replace(/^```(?:json)?\s*\n?/i, "")
     .replace(/\n?```\s*$/i, "")
     .trim();
+  // Fix trailing commas before } or ]
+  cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
   return JSON.parse(cleaned);
 }
 

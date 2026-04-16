@@ -13,6 +13,26 @@ import {
 
 const TIPS_TTL_DAYS = 30;
 
+export interface MealVariationSuggestion {
+  content: string;
+  calories: number | null;
+  proteinG: string | null;
+  carbsG: string | null;
+  fatG: string | null;
+}
+
+function parseJSON(text: string): unknown {
+  let cleaned = text
+    .replace(/^```(?:json)?\s*\n?/i, "")
+    .replace(/\n?```\s*$/i, "")
+    .trim();
+
+  // Fix trailing commas before } or ]
+  cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
+
+  return JSON.parse(cleaned);
+}
+
 export async function generateMealVariation(
   mealLabel: string,
   currentContent: string,
@@ -20,7 +40,7 @@ export async function generateMealVariation(
   proteinG?: string | null,
   carbsG?: string | null,
   fatG?: string | null
-) {
+): Promise<{ suggestion: MealVariationSuggestion }> {
   const user = await getAuthUser();
   checkRateLimit(user.id, "meal");
 
@@ -39,7 +59,7 @@ export async function generateMealVariation(
     const client = getAIClient();
     const message = await client.messages.create({
       model: AI_MODELS.fast,
-      max_tokens: 300,
+      max_tokens: 400,
       system: [
         {
           type: "text",
@@ -50,14 +70,37 @@ export async function generateMealVariation(
       messages: [
         {
           role: "user",
-          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}\n\nBu öğüne benzer makrolarla alternatif bir öğün öner.`,
+          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}\n\nBu öğüne benzer makrolarla alternatif bir öğün öner. JSON formatında yanıt ver.`,
         },
       ],
     });
 
     const text =
       message.content[0].type === "text" ? message.content[0].text : "";
-    return { suggestion: text };
+
+    try {
+      const parsed = parseJSON(text) as Record<string, unknown>;
+      return {
+        suggestion: {
+          content: String(parsed.content ?? ""),
+          calories: parsed.calories != null ? Number(parsed.calories) : null,
+          proteinG: parsed.proteinG != null ? String(parsed.proteinG) : null,
+          carbsG: parsed.carbsG != null ? String(parsed.carbsG) : null,
+          fatG: parsed.fatG != null ? String(parsed.fatG) : null,
+        },
+      };
+    } catch {
+      // Fallback: treat entire response as content text
+      return {
+        suggestion: {
+          content: text,
+          calories: calories ?? null,
+          proteinG: proteinG ?? null,
+          carbsG: carbsG ?? null,
+          fatG: fatG ?? null,
+        },
+      };
+    }
   } catch (error) {
     console.error("[AI] Error generating meal variation:", error);
     throw new Error("AI_UNAVAILABLE");

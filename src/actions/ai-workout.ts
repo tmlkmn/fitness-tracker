@@ -41,7 +41,9 @@ interface AIExerciseVariation {
 
 function parseJSON(text: string): unknown {
   // Strip markdown code fences if present
-  const cleaned = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+  let cleaned = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+  // Fix trailing commas before } or ]
+  cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
   return JSON.parse(cleaned);
 }
 
