@@ -5,7 +5,6 @@ Kurallar:
 - Benzer kalori ve makro değerlerine sahip alternatif öner
 - Kullanıcının sağlık kısıtlarını kesinlikle dikkate al
 - Gerçekçi, Türkiye'de bulunabilecek malzemeler öner
-- İçeriği detaylı yaz (porsiyon/gramaj belirt)
 - Mevcut öğünle AYNI ana protein kaynağını kullanma, tamamen farklı bir protein kaynağı seç
 - Farklı bir pişirme yöntemi ve mutfak tarzı tercih et (ör. ızgara yerine fırın, Türk mutfağı yerine Akdeniz)
 - Hafta içinde daha önce kullanılan malzemeleri TEKRARLAMA (varsa bu bilgi verilecek)
@@ -21,8 +20,17 @@ Kurallar:
   • Fıstık ezmesi, tahin, kuruyemişler
 - Türk mutfağından çeşitli tarifler öner: çorbalar, zeytinyağlılar, dolmalar, börekler, salatalar, ev yemekleri
 - Kullanıcı evdeki malzemeleri belirtmişse, SADECE bu malzemelerle yapılabilecek yemekler öner
+
+## İçerik Formatı (ÇOK ÖNEMLİ)
+- content alanını KISA ve SADE yaz, tıpkı bir diyet listesindeki gibi
+- Sadece malzeme listesi ve gramajları yaz, virgülle ayır
+- Emoji, başlık, pişirme talimatı, numara, madde işareti KULLANMA
+- Satır sonu (\\n) KULLANMA, tek satırda yaz
+- DOĞRU örnek: "150g lor peyniri, 80g tam buğday makarna, 1 domates, 1 salatalık, 15 zeytin, 2 yemek kaşığı zeytinyağı"
+- YANLIŞ örnek: "📋 İçerik Detayları:\\n- 150g lor peyniri (süzülmüş)\\n- 80g makarna..."
+
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
-- JSON formatı: { "content": "öğün içeriği detaylı", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }`;
+- JSON formatı: { "content": "malzeme listesi kısa ve sade", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }`;
 
 export const EXERCISE_TIPS_PROMPT = `Sen 10+ yıl deneyimli, Türkçe konuşan sertifikalı bir kişisel antrenör ve hareket bilimci (kineziyoloji uzmanı) sin. Görevin, verilen egzersiz için doğru form ipuçları ve yaygın hataları açıklamak.
 

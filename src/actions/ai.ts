@@ -131,7 +131,7 @@ export async function generateMealVariation(
       messages: [
         {
           role: "user",
-          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${weekContext}${prevContext}${noteContext}\n\nBu öğüne benzer makrolarla tamamen farklı bir alternatif öğün öner. JSON formatında yanıt ver.`,
+          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${weekContext}${prevContext}${noteContext}\n\nBu öğüne benzer makrolarla tamamen farklı bir alternatif öğün öner. content alanını kısa ve sade tut — sadece malzeme ve gramaj listesi, emoji/başlık/pişirme talimatı/satır sonu yok. JSON formatında yanıt ver.`,
         },
       ],
     });
@@ -141,9 +141,14 @@ export async function generateMealVariation(
 
     try {
       const parsed = parseJSON(text) as Record<string, unknown>;
+      // Clean up content: remove newlines, emojis, and excessive formatting
+      let content = String(parsed.content ?? "");
+      content = content.replace(/\n/g, ", ").replace(/\s{2,}/g, " ").replace(/,\s*,/g, ",").trim();
+      // Remove leading/trailing commas
+      content = content.replace(/^,\s*/, "").replace(/,\s*$/, "");
       return {
         suggestion: {
-          content: String(parsed.content ?? ""),
+          content,
           calories: parsed.calories != null ? Number(parsed.calories) : null,
           proteinG: parsed.proteinG != null ? String(parsed.proteinG) : null,
           carbsG: parsed.carbsG != null ? String(parsed.carbsG) : null,
