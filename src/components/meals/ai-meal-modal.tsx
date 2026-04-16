@@ -112,7 +112,7 @@ export function AiMealModal({
               {/* Ingredient selection */}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Evdeki malzemeler:
+                  Beslenme Programı için Evdeki malzemeler:
                 </p>
                 <div className="flex gap-2 mb-2">
                   <button

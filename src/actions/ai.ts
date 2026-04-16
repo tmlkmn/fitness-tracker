@@ -40,7 +40,9 @@ export async function generateMealVariation(
   proteinG?: string | null,
   carbsG?: string | null,
   fatG?: string | null,
-  mealId?: number | null
+  mealId?: number | null,
+  previousSuggestions?: string[],
+  userNote?: string | null
 ): Promise<{ suggestion: MealVariationSuggestion }> {
   const user = await getAuthUser();
   checkRateLimit(user.id, "meal");
@@ -102,6 +104,18 @@ export async function generateMealVariation(
     }
   }
 
+  // Build previous suggestions context
+  let prevContext = "";
+  if (previousSuggestions && previousSuggestions.length > 0) {
+    prevContext = `\n\nDaha önce bu öğün için şu öneriler yapıldı, bunları TEKRARLAMA:\n${previousSuggestions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
+  }
+
+  // Build user note context
+  let noteContext = "";
+  if (userNote?.trim()) {
+    noteContext = `\n\nKULLANICI İSTEĞİ: ${userNote.trim()}`;
+  }
+
   try {
     const client = getAIClient();
     const message = await client.messages.create({
@@ -117,7 +131,7 @@ export async function generateMealVariation(
       messages: [
         {
           role: "user",
-          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${weekContext}\n\nBu öğüne benzer makrolarla tamamen farklı bir alternatif öğün öner. JSON formatında yanıt ver.`,
+          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${weekContext}${prevContext}${noteContext}\n\nBu öğüne benzer makrolarla tamamen farklı bir alternatif öğün öner. JSON formatında yanıt ver.`,
         },
       ],
     });
