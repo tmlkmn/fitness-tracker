@@ -8,11 +8,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { HelpCircle, Loader2, AlertCircle, RefreshCw } from "lucide-react";
-import {
-  useExerciseFormTips,
-  useRegenerateExerciseFormTips,
-} from "@/hooks/use-exercise-form-tips";
+import { HelpCircle, Loader2, AlertCircle } from "lucide-react";
+import { useExerciseFormTips } from "@/hooks/use-exercise-form-tips";
+import ReactMarkdown from "react-markdown";
 
 interface ExerciseFormTipsProps {
   name: string;
@@ -28,20 +26,13 @@ export function ExerciseFormTips({ name, notes }: ExerciseFormTipsProps) {
     error: queryError,
   } = useExerciseFormTips(name, notes ?? null, open);
 
-  const regenerate = useRegenerateExerciseFormTips();
-
   const errorMessage = queryError
     ? queryError.message === "RATE_LIMITED"
       ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
       : "AI özelliği şu anda kullanılamıyor."
-    : regenerate.error
-      ? regenerate.error.message === "RATE_LIMITED"
-        ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
-        : "Yeniden oluşturulamadı."
-      : null;
+    : null;
 
-  const tips = regenerate.data?.tips ?? data?.tips ?? "";
-  const loading = isLoading || regenerate.isPending;
+  const tips = data?.tips ?? "";
 
   return (
     <>
@@ -55,29 +46,17 @@ export function ExerciseFormTips({ name, notes }: ExerciseFormTipsProps) {
       </Button>
       {open && (
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-sm mx-4">
+          <DialogContent
+            className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
             <DialogHeader>
-              <DialogTitle className="text-sm flex items-center justify-between gap-2">
-                <span className="truncate">Form İpuçları: {name}</span>
-                {tips && !loading && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0"
-                    onClick={() =>
-                      regenerate.mutate({
-                        exerciseName: name,
-                        exerciseNotes: notes ?? null,
-                      })
-                    }
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  </Button>
-                )}
+              <DialogTitle className="text-sm">
+                Form İpuçları: {name}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              {loading && (
+              {isLoading && (
                 <div className="flex items-center justify-center py-6">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
@@ -88,11 +67,50 @@ export function ExerciseFormTips({ name, notes }: ExerciseFormTipsProps) {
                   <p className="text-sm text-destructive">{errorMessage}</p>
                 </div>
               )}
-              {tips && !loading && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm whitespace-pre-line leading-relaxed">
+              {tips && !isLoading && (
+                <div className="p-3 bg-muted rounded-lg text-sm leading-relaxed">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({ children }) => (
+                        <h3 className="text-sm font-bold text-primary mt-3 mb-1.5 first:mt-0">{children}</h3>
+                      ),
+                      h2: ({ children }) => (
+                        <h4 className="text-sm font-bold text-primary mt-3 mb-1.5 first:mt-0">{children}</h4>
+                      ),
+                      h3: ({ children }) => (
+                        <h4 className="text-sm font-semibold text-primary mt-2.5 mb-1 first:mt-0">{children}</h4>
+                      ),
+                      p: ({ children }) => (
+                        <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="mb-2 last:mb-0 space-y-1 ml-0.5">{children}</ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="mb-2 last:mb-0 space-y-1 ml-0.5 list-decimal list-inside">{children}</ol>
+                      ),
+                      li: ({ children }) => (
+                        <li className="flex gap-1.5 items-start">
+                          <span className="text-primary mt-1.5 shrink-0 h-1.5 w-1.5 rounded-full bg-primary/60 inline-block" />
+                          <span className="flex-1">{children}</span>
+                        </li>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-semibold text-foreground">{children}</strong>
+                      ),
+                      em: ({ children }) => (
+                        <em className="text-muted-foreground italic">{children}</em>
+                      ),
+                      code: ({ children }) => (
+                        <code className="bg-background/50 px-1 py-0.5 rounded text-xs font-mono">{children}</code>
+                      ),
+                      hr: () => (
+                        <hr className="border-border/50 my-2" />
+                      ),
+                    }}
+                  >
                     {tips}
-                  </p>
+                  </ReactMarkdown>
                 </div>
               )}
             </div>
