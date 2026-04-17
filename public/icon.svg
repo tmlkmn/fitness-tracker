@@ -25,5 +25,5 @@
     <rect x="-110" y="-12" width="220" height="24" rx="12" fill="#4ade80" opacity="0.15"/>
   </g>
   <!-- "FT" text beneath -->
-  <text x="256" y="355" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="72" fill="#4ade80" letter-spacing="8" opacity="0.9">FT</text>
+  <text x="256" y="355" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="72" fill="#4ade80" letter-spacing="8" opacity="0.9">FM</text>
 </svg>

@@ -2,7 +2,7 @@ import webPush from "web-push";
 
 webPush.setVapidDetails(
   "mailto:" +
-    (process.env.EMAIL_FROM?.match(/<(.+)>/)?.[1] ?? "noreply@fittrack.app"),
+    (process.env.EMAIL_FROM?.match(/<(.+)>/)?.[1] ?? "noreply@fitmusc.com"),
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );

@@ -1,4 +1,4 @@
-# Copilot Instructions — Fitness Tracker
+# Copilot Instructions — FitMusc
 
 Bu dosya GitHub Copilot ve diğer AI asistanlar için proje kurallarını tanımlar.
 
@@ -49,8 +49,8 @@ Bu dosya GitHub Copilot ve diğer AI asistanlar için proje kurallarını tanım
   export const metadata: Metadata = {
     metadataBase: new URL("https://domain.com"),
     title: {
-      default: "FitTrack — Kişisel Fitness Takip",
-      template: "%s | FitTrack",
+      default: "FitMusc — Kişisel Fitness Takip",
+      template: "%s | FitMusc",
     },
     robots: { index: false, follow: false },
     // ...

@@ -1002,7 +1002,7 @@ async function seed() {
     .values({
       id: userId,
       name: "Fitness User",
-      email: "user@fittrack.app",
+      email: "user@fitmusc.com",
       emailVerified: true,
       height: 178,
       weight: "96",
@@ -1015,7 +1015,7 @@ async function seed() {
     .returning();
 
   // Create credential account for login
-  const hashedPw = await hashPassword("fittrack123");
+  const hashedPw = await hashPassword("fitmusc123");
   await db.insert(schema.accounts).values({
     id: crypto.randomUUID(),
     userId: user.id,

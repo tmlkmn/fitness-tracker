@@ -84,7 +84,7 @@ export default function GirisPage() {
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
               <Dumbbell className="h-7 w-7 text-primary" />
             </div>
-            <h1 className="text-xl font-bold">FitTrack</h1>
+            <h1 className="text-xl font-bold">FitMusc</h1>
             <p className="text-sm text-muted-foreground">
               Hesabınıza giriş yapın
             </p>

@@ -1,6 +1,6 @@
 {
-  "name": "Fitness Tracker",
-  "short_name": "FitTrack",
+  "name": "FitMusc",
+  "short_name": "FitMusc",
   "description": "Kişisel fitness antrenman ve beslenme takip uygulaması",
   "id": "/",
   "scope": "/",

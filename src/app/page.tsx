@@ -113,7 +113,7 @@ export default function HomePage() {
   if (sessionPending) {
     return (
       <div className="animate-fade-in">
-        <Header title="FitTrack" rightSlot={
+        <Header title="FitMusc" rightSlot={
           <div className="flex items-center gap-1">
             <FeedbackButton />
             <NotificationBell />
@@ -133,7 +133,7 @@ export default function HomePage() {
   return (
     <div className="animate-fade-in">
       <Header
-        title="FitTrack"
+        title="FitMusc"
         subtitle={currentDay}
         rightSlot={
           <div className="flex items-center gap-1">

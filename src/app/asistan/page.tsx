@@ -60,7 +60,7 @@ export default function AsistanPage() {
               <Bot className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <p className="font-medium">FitTrack Asistan</p>
+              <p className="font-medium">FitMusc Asistan</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Beslenme, antrenman ve sağlık hakkında sorular sorabilirsiniz.
               </p>

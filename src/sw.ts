@@ -37,13 +37,13 @@ const serwist = new Serwist({
 // Push notification handler
 self.addEventListener("push", (event: PushEvent) => {
   const data = event.data?.json() ?? {};
-  const title = data.title ?? "FitTrack";
+  const title = data.title ?? "FitMusc";
   const options: NotificationOptions = {
     body: data.body ?? "",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     data: { url: data.url ?? "/" },
-    tag: data.tag ?? "fittrack-notification",
+    tag: data.tag ?? "fitmusc-notification",
     renotify: true,
     vibrate: [100, 50, 100],
     timestamp: Date.now(),

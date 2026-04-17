@@ -7,8 +7,8 @@ import { SwRegister } from "./sw-register";
 
 export const metadata: Metadata = {
   title: {
-    default: "FitTrack — Kişisel Fitness Takip",
-    template: "%s | FitTrack",
+    default: "FitMusc — Kişisel Fitness Takip",
+    template: "%s | FitMusc",
   },
   description: "Kişisel fitness antrenman ve beslenme takip uygulaması",
   manifest: "/manifest.json",
@@ -17,11 +17,11 @@ export const metadata: Metadata = {
     follow: false,
   },
   openGraph: {
-    title: "FitTrack — Kişisel Fitness Takip",
+    title: "FitMusc — Kişisel Fitness Takip",
     description: "Kişisel fitness antrenman ve beslenme takip uygulaması",
     type: "website",
     locale: "tr_TR",
-    siteName: "FitTrack",
+    siteName: "FitMusc",
   },
   icons: {
     icon: [
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "FitTrack",
+    title: "FitMusc",
   },
 };
 

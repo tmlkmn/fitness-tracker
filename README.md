@@ -1,4 +1,4 @@
-# 🏋️ Fitness Tracker
+# FitMusc
 
 Kişisel fitness antrenman ve beslenme takip uygulaması.
 

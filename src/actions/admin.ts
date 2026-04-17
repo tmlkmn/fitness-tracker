@@ -53,7 +53,7 @@ export async function inviteUser(email: string, name: string, membership: Member
     await sendNotification({
       userId: newUser.id,
       type: "user_invited",
-      title: "FitTrack'e Hoş Geldiniz!",
+      title: "FitMusc'a Hoş Geldiniz!",
       body: "Hesabınız oluşturuldu. Giriş yaparak başlayabilirsiniz.",
       link: "/",
       skipEmail: true,

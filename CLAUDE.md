@@ -59,7 +59,7 @@ No test framework is configured.
 - Ownership: `src/lib/ownership.ts` — entity ownership verification helpers + read-access checks for shared plans
 - Sharing actions: `src/actions/sharing.ts` — shareWeeklyPlan, revokeShare, getMySharesForPlan, getPlansSharedWithMe, getShareableUsers
 - Shared plan actions: `src/actions/shared-plans.ts` — read-only data access for shared weekly/daily plans, meals, exercises, supplements, shopping lists
-- Seeded credentials: `user@fittrack.app` / `fittrack123`, `temel.ekmen28@gmail.com` / `Admin123` (admin)
+- Seeded credentials: `user@fitmusc.app` / `fitmusc123`, `temel.ekmen28@gmail.com` / `Admin123` (admin)
 
 **Database**: 16 tables defined in `src/db/schema.ts` — `users` (text PK), `sessions`, `accounts`, `verifications` (auth), `weeklyPlans`, `dailyPlans`, `meals`, `exercises`, `supplements`, `progressLogs`, `shoppingLists`, `shares`, `notifications`, `pushSubscriptions`, `notificationPreferences`, `reminders`. Connection is a lazy singleton Proxy in `src/db/index.ts` requiring `DATABASE_URL` env var.
 
@@ -88,7 +88,7 @@ Required in `.env.local`:
 - `BETTER_AUTH_URL` — Base URL for better-auth (e.g. `http://localhost:3000`)
 - `NEXT_PUBLIC_APP_URL` — Public app URL for auth client
 - `RESEND_API_KEY` — Resend API key for sending invite and password reset emails
-- `EMAIL_FROM` — (optional) From address for emails (default: `FitTrack <onboarding@resend.dev>`)
+- `EMAIL_FROM` — (optional) From address for emails (default: `FitMusc <onboarding@resend.dev>`)
 - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` — VAPID public key for web push (generate with `npx tsx scripts/generate-vapid-keys.ts`)
 - `VAPID_PRIVATE_KEY` — VAPID private key for web push (server-only)
 - `CRON_SECRET` — Secret for Vercel Cron job authentication (used by `/api/cron/reminders`)

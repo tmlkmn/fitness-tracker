@@ -9,7 +9,7 @@ function getResend() {
   return resend;
 }
 
-const from = process.env.EMAIL_FROM ?? "FitTrack <onboarding@resend.dev>";
+const from = process.env.EMAIL_FROM ?? "FitMusc <onboarding@resend.dev>";
 const appUrl = process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 function emailLayout(content: string) {
@@ -18,7 +18,7 @@ function emailLayout(content: string) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FitTrack</title>
+  <title>FitMusc</title>
 </head>
 <body style="margin:0;padding:0;background-color:#0a0a0b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0b;padding:32px 16px;">
@@ -31,10 +31,10 @@ function emailLayout(content: string) {
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="width:32px;height:32px;vertical-align:middle;">
-                    <img src="${appUrl}/icon-192.png" alt="FitTrack" width="32" height="32" style="display:block;border-radius:8px;" />
+                    <img src="${appUrl}/icon-192.png" alt="FitMusc" width="32" height="32" style="display:block;border-radius:8px;" />
                   </td>
                   <td style="padding-left:10px;">
-                    <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.5px;">FitTrack</span>
+                    <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.5px;">FitMusc</span>
                   </td>
                 </tr>
               </table>
@@ -50,7 +50,7 @@ function emailLayout(content: string) {
           <tr>
             <td style="padding:24px 0 0 0;text-align:center;">
               <p style="color:#666;font-size:12px;line-height:18px;margin:0;">
-                Bu e-posta FitTrack tarafından gönderildi.<br>
+                Bu e-posta FitMusc tarafından gönderildi.<br>
                 Bildirim ayarlarınızı <a href="${appUrl}/ayarlar" style="color:#22c55e;text-decoration:none;">buradan</a> değiştirebilirsiniz.
               </p>
             </td>
@@ -77,7 +77,7 @@ export async function sendInviteEmail(to: string, tempPassword: string) {
   const html = emailLayout(`
     <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">Hoş Geldiniz!</h2>
     <p style="color:#a3a3a3;font-size:14px;line-height:22px;margin:0 0 20px 0;">
-      FitTrack hesabınız oluşturuldu. Aşağıdaki bilgilerle giriş yapabilirsiniz.
+      FitMusc hesabınız oluşturuldu. Aşağıdaki bilgilerle giriş yapabilirsiniz.
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0b;border-radius:8px;border:1px solid #262626;margin:0 0 20px 0;">
       <tr>
@@ -98,7 +98,7 @@ export async function sendInviteEmail(to: string, tempPassword: string) {
     ${emailButton(`${appUrl}/giris`, "Giriş Yap →")}
   `);
 
-  await getResend().emails.send({ from, to, subject: "FitTrack — Hesabınız Oluşturuldu", html });
+  await getResend().emails.send({ from, to, subject: "FitMusc — Hesabınız Oluşturuldu", html });
 }
 
 export async function sendResetEmail(to: string, resetUrl: string) {
@@ -113,7 +113,7 @@ export async function sendResetEmail(to: string, resetUrl: string) {
     </p>
   `);
 
-  await getResend().emails.send({ from, to, subject: "FitTrack — Şifre Sıfırlama", html });
+  await getResend().emails.send({ from, to, subject: "FitMusc — Şifre Sıfırlama", html });
 }
 
 export async function sendNotificationEmail(
@@ -131,7 +131,7 @@ export async function sendNotificationEmail(
     ${link ? emailButton(`${appUrl}${link}`, "Detayları Gör →") : ""}
   `);
 
-  await getResend().emails.send({ from, to, subject: `FitTrack — ${subject}`, html });
+  await getResend().emails.send({ from, to, subject: `FitMusc — ${subject}`, html });
 }
 
 export async function sendMembershipExpiryEmail(
@@ -179,5 +179,5 @@ export async function sendMembershipExpiryEmail(
     ${emailButton(`${appUrl}/ayarlar`, "Hesabıma Git →")}
   `);
 
-  await getResend().emails.send({ from, to, subject: `FitTrack — ${subject}`, html });
+  await getResend().emails.send({ from, to, subject: `FitMusc — ${subject}`, html });
 }

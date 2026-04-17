@@ -36,7 +36,7 @@ export function PwaInstallCard() {
             <div>
               <p className="text-sm font-medium">Uygulama Yüklü</p>
               <p className="text-xs text-muted-foreground">
-                FitTrack cihazınıza yüklenmiş durumda
+                FitMusc cihazınıza yüklenmiş durumda
               </p>
             </div>
           </div>
