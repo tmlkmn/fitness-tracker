@@ -27,6 +27,10 @@ export default async function GunPage({ params }: PageProps) {
 
   if (!dailyPlan) notFound();
 
+  // Past day detection — readOnly for past dates
+  const todayStr = new Date().toISOString().split("T")[0];
+  const isPast = dailyPlan.date ? dailyPlan.date < todayStr : false;
+
   const dateLabel = dailyPlan.date
     ? new Date(dailyPlan.date + "T00:00:00").toLocaleDateString("tr-TR", {
         day: "numeric",
@@ -69,10 +73,10 @@ export default async function GunPage({ params }: PageProps) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="meals">
-            <MealList dailyPlanId={id} />
+            <MealList dailyPlanId={id} readOnly={isPast} />
           </TabsContent>
           <TabsContent value="workout">
-            <WorkoutList dailyPlanId={id} />
+            <WorkoutList dailyPlanId={id} readOnly={isPast} />
           </TabsContent>
         </Tabs>
       </div>

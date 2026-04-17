@@ -11,3 +11,8 @@ export function formatDateStr(d: Date): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+export function isPastDate(dateStr: string): boolean {
+  const today = formatDateStr(new Date());
+  return dateStr < today;
+}

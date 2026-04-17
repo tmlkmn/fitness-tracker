@@ -9,6 +9,7 @@ import {
   getWeeklyPlanById,
   getDatesWithPlansForMonth,
   getTodayDashboardData,
+  getEmptyWeeksBetween,
 } from "@/actions/plans";
 
 export function useAllWeeks() {
@@ -78,5 +79,17 @@ export function useTodayDashboard() {
   return useQuery({
     queryKey: ["today-dashboard"],
     queryFn: getTodayDashboardData,
+  });
+}
+
+export function useEmptyWeeksBetween(
+  todayStr: string,
+  targetWeekStart: string,
+  enabled: boolean
+) {
+  return useQuery({
+    queryKey: ["emptyWeeks", todayStr, targetWeekStart],
+    queryFn: () => getEmptyWeeksBetween(todayStr, targetWeekStart),
+    enabled,
   });
 }

@@ -3,7 +3,6 @@
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
-import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -138,7 +137,6 @@ export default function HomePage() {
         rightSlot={
           <div className="flex items-center gap-1">
             <FeedbackButton />
-            <PwaInstallButton />
             <NotificationBell />
           </div>
         }

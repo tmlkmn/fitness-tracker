@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { weeklyPlans, dailyPlans, supplements, meals, exercises } from "@/db/schema";
-import { eq, asc, and, gte, lte, isNotNull } from "drizzle-orm";
+import { eq, asc, and, gte, lte, isNotNull, sql } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import { verifyWeeklyPlanOwnership } from "@/lib/ownership";
 
@@ -166,4 +166,94 @@ export async function getTodayDashboardData() {
   ]);
 
   return { dailyPlan, meals: mealRows, exercises: exerciseRows, weeklyPlan };
+}
+
+/**
+ * Returns an array of Monday date strings (YYYY-MM-DD) for weeks between
+ * todayStr and targetWeekStart that have no plan or only empty plans
+ * (all dailyPlans have 0 meals + 0 exercises).
+ */
+export async function getEmptyWeeksBetween(
+  todayStr: string,
+  targetWeekStart: string
+): Promise<string[]> {
+  const user = await getAuthUser();
+
+  // Calculate the Monday of today's week
+  const todayDate = new Date(todayStr + "T00:00:00");
+  const dow = todayDate.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  const currentMonday = new Date(todayDate);
+  currentMonday.setDate(currentMonday.getDate() + diff);
+
+  // Collect all Mondays between current week and target week (exclusive of target)
+  const mondays: string[] = [];
+  const d = new Date(currentMonday);
+  const target = new Date(targetWeekStart + "T00:00:00");
+
+  while (d < target) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    mondays.push(`${y}-${m}-${day}`);
+    d.setDate(d.getDate() + 7);
+  }
+
+  if (mondays.length === 0) return [];
+
+  // Get all weekly plans for this user in the date range
+  const userWeeklyPlans = await db
+    .select({
+      id: weeklyPlans.id,
+      startDate: weeklyPlans.startDate,
+    })
+    .from(weeklyPlans)
+    .where(
+      and(
+        eq(weeklyPlans.userId, user.id),
+        gte(weeklyPlans.startDate, mondays[0]),
+        lte(weeklyPlans.startDate, mondays[mondays.length - 1])
+      )
+    );
+
+  // For each weekly plan, count total meals + exercises
+  const planMap = new Map<string, number>(); // startDate -> weeklyPlanId
+
+  for (const wp of userWeeklyPlans) {
+    if (wp.startDate) planMap.set(wp.startDate, wp.id);
+  }
+
+  const emptyWeeks: string[] = [];
+
+  for (const monday of mondays) {
+    const wpId = planMap.get(monday);
+    if (!wpId) {
+      // No weekly plan at all — empty week
+      emptyWeeks.push(monday);
+      continue;
+    }
+
+    // Check if this weekly plan has any content
+    const [mealCount, exerciseCount] = await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(meals)
+        .innerJoin(dailyPlans, eq(meals.dailyPlanId, dailyPlans.id))
+        .where(eq(dailyPlans.weeklyPlanId, wpId)),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(exercises)
+        .innerJoin(dailyPlans, eq(exercises.dailyPlanId, dailyPlans.id))
+        .where(eq(dailyPlans.weeklyPlanId, wpId)),
+    ]);
+
+    const totalContent =
+      Number(mealCount[0]?.count ?? 0) + Number(exerciseCount[0]?.count ?? 0);
+
+    if (totalContent === 0) {
+      emptyWeeks.push(monday);
+    }
+  }
+
+  return emptyWeeks;
 }

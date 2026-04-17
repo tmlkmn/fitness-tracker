@@ -69,10 +69,16 @@ export function MealCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground font-mono">
+                  <span className={cn(
+                    "text-xs text-muted-foreground font-mono",
+                    readOnly && isCompleted && "line-through"
+                  )}>
                     {mealTime}
                   </span>
-                  <span className="text-sm font-semibold">
+                  <span className={cn(
+                    "text-sm font-semibold",
+                    readOnly && isCompleted && "line-through opacity-60"
+                  )}>
                     {stripEmoji(mealLabel)}
                   </span>
                 </div>

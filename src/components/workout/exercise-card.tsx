@@ -99,13 +99,13 @@ export function ExerciseCard({
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1">
-                <p className={cn("font-medium text-sm", isCompleted && "line-through")}>
+                <p className={cn("font-medium text-sm", isCompleted && "line-through", readOnly && isCompleted && "opacity-60")}>
                   {name}
                 </p>
                 <ExerciseDemoModal name={name} />
                 {!readOnly && <ExerciseFormTips name={name} notes={notes} />}
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-1">
+              <div className={cn("flex flex-wrap gap-1.5 mt-1", readOnly && isCompleted && "opacity-60")}>
                 {sets && reps ? (
                   <Badge variant="secondary" className="text-xs">
                     {sets}x{reps}
@@ -124,7 +124,7 @@ export function ExerciseCard({
                 ) : null}
               </div>
               {notes ? (
-                <p className="text-xs text-yellow-500 mt-1">{notes}</p>
+                <p className={cn("text-xs text-yellow-500 mt-1", readOnly && isCompleted && "line-through opacity-60")}>{notes}</p>
               ) : null}
             </div>
             {!readOnly && !isCompleted && (

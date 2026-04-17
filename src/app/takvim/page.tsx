@@ -10,7 +10,7 @@ import { DayDetailPanel } from "@/components/calendar/day-detail-panel";
 import { AiWeeklyPlanModal } from "@/components/calendar/ai-weekly-plan-modal";
 import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
 import { useProfileCheck } from "@/hooks/use-profile-check";
-import { useWeekPlansByDate, useDatesWithPlans } from "@/hooks/use-plans";
+import { useWeekPlansByDate, useDatesWithPlans, useEmptyWeeksBetween } from "@/hooks/use-plans";
 import { useGenerateWeeklyPlan, useApplyWeeklyPlan, useDeleteWeeklyPlan } from "@/hooks/use-weekly-ai";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import {
   Sparkles,
   Plus,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { formatDateStr } from "@/lib/utils";
 import { ensureDailyPlan } from "@/actions/ensure-plan";
@@ -126,6 +127,28 @@ export default function TakvimPage() {
 
   const todayStr = useMemo(() => formatDateStr(today), [today]);
   const isToday = selectedDate === todayStr;
+
+  // Past/future detection
+  const isPastDay = selectedDate < todayStr;
+
+  const weekStartStr = useMemo(() => formatDateStr(weekStart), [weekStart]);
+  const weekEndDate = useMemo(() => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + 6);
+    return d;
+  }, [weekStart]);
+  const weekEndStr = useMemo(() => formatDateStr(weekEndDate), [weekEndDate]);
+
+  const isCurrentWeek = todayStr >= weekStartStr && todayStr <= weekEndStr;
+  const isPastWeek = weekEndStr < todayStr;
+  const isFutureWeek = weekStartStr > todayStr;
+
+  const todayDow = today.getDay(); // 0=Sunday
+  const isMonday = todayDow === 1;
+
+  // Empty week gap detection for future weeks
+  const { data: emptyWeeks } = useEmptyWeeksBetween(todayStr, weekStartStr, isFutureWeek);
+  const hasEmptyWeekGap = isFutureWeek && (emptyWeeks?.length ?? 0) > 0;
 
   const handleGoToToday = useCallback(() => {
     const now = new Date();
@@ -289,27 +312,68 @@ export default function TakvimPage() {
         )}
 
         {/* AI Weekly Plan Button + Delete */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 gap-1.5"
-            onClick={() => handleWeeklyModalOpenChange(true)}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            AI ile Haftalık Plan {data?.weeklyPlan ? "Değiştir" : "Oluştur"}
-          </Button>
-          {data?.weeklyPlan && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-destructive hover:text-destructive"
-              onClick={() => setDeleteConfirmOpen(true)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          )}
-        </div>
+        {!isPastWeek && (
+          <div className="flex gap-2">
+            {/* AI button: hide for past week; current week: show only if no plan or Monday; future week: always show */}
+            {(isFutureWeek || !data?.weeklyPlan || isMonday) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-1.5"
+                onClick={() => handleWeeklyModalOpenChange(true)}
+                disabled={hasEmptyWeekGap}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                AI ile Haftalık Plan {data?.weeklyPlan ? "Değiştir" : "Oluştur"}
+              </Button>
+            )}
+            {/* Delete button: hide for past week; current week: only Monday */}
+            {data?.weeklyPlan && (isFutureWeek || (isCurrentWeek && isMonday)) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-destructive hover:text-destructive"
+                onClick={() => setDeleteConfirmOpen(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Empty week gap warning */}
+        {hasEmptyWeekGap && emptyWeeks && (
+          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
+              <p className="text-sm font-medium text-yellow-500">
+                Önceki haftalarda plansız hafta bulunmaktadır
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Önce aşağıdaki haftaların planlarını oluşturun:
+            </p>
+            <div className="space-y-1">
+              {emptyWeeks.map((monday) => {
+                const d = new Date(monday + "T00:00:00");
+                const label = d.toLocaleDateString("tr-TR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                });
+                return (
+                  <button
+                    key={monday}
+                    className="block w-full text-left text-sm text-primary hover:underline"
+                    onClick={() => handleSelectDate(monday)}
+                  >
+                    {label} haftası
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <p className="text-sm text-muted-foreground">
           {formatTurkishDate(selectedDate)}
@@ -330,6 +394,7 @@ export default function TakvimPage() {
                 planType: "workout",
               }
             }
+            readOnly={isPastDay}
           />
         ) : (
           <div className="text-center py-8 space-y-3">
@@ -337,27 +402,30 @@ export default function TakvimPage() {
             <p className="text-sm text-muted-foreground">
               Bu tarih için plan bulunamadı.
             </p>
-            <div className="flex gap-2 justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => handleWeeklyModalOpenChange(true)}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                AI ile Haftalık Plan
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={handleCreatePlanForDate}
-                disabled={creatingPlan}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {creatingPlan ? "Oluşturuluyor..." : "Manuel Ekle"}
-              </Button>
-            </div>
+            {!isPastDay && (
+              <div className="flex gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => handleWeeklyModalOpenChange(true)}
+                  disabled={hasEmptyWeekGap}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  AI ile Haftalık Plan
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={handleCreatePlanForDate}
+                  disabled={creatingPlan || hasEmptyWeekGap}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {creatingPlan ? "Oluşturuluyor..." : "Manuel Ekle"}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
