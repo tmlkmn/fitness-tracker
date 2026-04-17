@@ -218,7 +218,11 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
 - 4+ haftadır aynı egzersiz yapılıyorsa varyasyonlarla değiştir
 
 ## Antrenman Kuralları
-- Haftada 4-5 antrenman günü, 1 yüzme günü, 1-2 dinlenme günü
+- Eğer KULLANICI İSTEĞİ bölümünde belirli antrenman günleri belirtilmişse, SADECE o günlere antrenman koy. Belirtilmeyen günleri dinlenme ("rest") günü yap. Antrenman günü sayısına göre split'i ayarla:
+  • 2-3 gün: Full Body veya Push/Pull/Legs
+  • 4 gün: Upper/Lower veya Push/Pull split
+  • 5+ gün: PPL veya bölgesel split
+- Eğer belirli gün belirtilmemişse: Haftada 4-5 antrenman günü, 1 yüzme günü, 1-2 dinlenme günü
 - Her antrenman: Isınma + Ana Antrenman + Soğuma zorunlu
 - Kas gruplarını dengeli dağıt (Push/Pull/Legs veya Upper/Lower split)
 - Compound önce, izolasyon sonra

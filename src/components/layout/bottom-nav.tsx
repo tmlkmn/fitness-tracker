@@ -46,7 +46,7 @@ export function BottomNav() {
   if (hiddenPaths.some((p) => pathname.startsWith(p))) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t border-border pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="Ana navigasyon" className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t border-border pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {navItems.map(({ href, matchPaths, icon: Icon, label }) => {
           const isActive =
@@ -57,6 +57,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg transition-colors min-w-[3.5rem]",
                 isActive

@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -112,7 +113,12 @@ export default function HomePage() {
   if (sessionPending) {
     return (
       <div className="animate-fade-in">
-        <Header title="FitTrack" rightSlot={<NotificationBell />} />
+        <Header title="FitTrack" rightSlot={
+          <div className="flex items-center gap-1">
+            <FeedbackButton />
+            <NotificationBell />
+          </div>
+        } />
         <div className="p-4 space-y-4">
           <Skeleton className="h-32 rounded-xl" />
           <Skeleton className="h-40 rounded-xl" />
@@ -131,6 +137,7 @@ export default function HomePage() {
         subtitle={currentDay}
         rightSlot={
           <div className="flex items-center gap-1">
+            <FeedbackButton />
             <PwaInstallButton />
             <NotificationBell />
           </div>

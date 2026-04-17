@@ -18,6 +18,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
 
+  // Validate endpoint is a valid HTTPS URL
+  try {
+    const url = new URL(endpoint);
+    if (url.protocol !== "https:") {
+      return NextResponse.json({ error: "Invalid endpoint" }, { status: 400 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Invalid endpoint URL" }, { status: 400 });
+  }
+
   // Remove existing subscription with same endpoint (re-subscribe)
   await db
     .delete(pushSubscriptions)

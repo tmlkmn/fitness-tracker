@@ -45,7 +45,7 @@ export async function generateMealVariation(
   userNote?: string | null
 ): Promise<{ suggestion: MealVariationSuggestion }> {
   const user = await getAuthUser();
-  checkRateLimit(user.id, "meal");
+  await checkRateLimit(user.id, "meal");
   await logAiUsage(user.id, "meal");
 
   const userContext = await buildUserContext(user.id);
@@ -249,7 +249,7 @@ export async function getExerciseFormTips(
   }
 
   // Rate limit before AI call
-  checkRateLimit(user.id, "exercise");
+  await checkRateLimit(user.id, "exercise");
   await logAiUsage(user.id, "exercise");
 
   try {
@@ -270,7 +270,7 @@ export async function regenerateExerciseFormTips(
   exerciseNotes: string | null,
 ) {
   const user = await getAuthUser();
-  checkRateLimit(user.id, "exercise");
+  await checkRateLimit(user.id, "exercise");
   await logAiUsage(user.id, "exercise");
 
   const nameNorm = exerciseName.toLowerCase().trim();

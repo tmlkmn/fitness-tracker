@@ -334,6 +334,21 @@ export const aiUsageLogs = pgTable("ai_usage_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ── AI Plan Suggestions (saved for later reuse) ──
+
+export const aiPlanSuggestions = pgTable("ai_plan_suggestions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  phase: text("phase").notNull(),
+  userNote: text("user_note"),
+  plan: jsonb("plan").notNull(),
+  originalDate: date("original_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ── Chat Messages ──
 
 export const chatMessages = pgTable("chat_messages", {
@@ -343,5 +358,23 @@ export const chatMessages = pgTable("chat_messages", {
     .references(() => users.id, { onDelete: "cascade" }),
   role: text("role").notNull(),
   content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ── Feedbacks ──
+
+export const feedbacks = pgTable("feedbacks", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  category: text("category").notNull(),
+  rating: integer("rating"),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("open"),
+  adminResponse: text("admin_response"),
+  respondedByAdminId: text("responded_by_admin_id")
+    .references(() => users.id),
+  respondedAt: timestamp("responded_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

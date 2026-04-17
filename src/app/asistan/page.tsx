@@ -3,14 +3,18 @@
 import { useEffect, useRef } from "react";
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { ChatMessage } from "@/components/ai/chat-message";
 import { ChatInput } from "@/components/ai/chat-input";
 import { useAIChat } from "@/hooks/use-ai-chat";
 import { Bot, Trash2, Loader2 } from "lucide-react";
+import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 
 export default function AsistanPage() {
   const { messages, isStreaming, isLoading, send, abort, clearHistory } = useAIChat();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { data: quotaData } = useAiQuota();
+  const chatQuota = getQuota(quotaData, "chat");
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -24,7 +28,7 @@ export default function AsistanPage() {
     <div className="flex flex-col h-[100dvh] animate-fade-in">
       <Header
         title="AI Asistan"
-        subtitle="Kişisel fitness koçunuz"
+        subtitle={chatQuota ? `Kalan: ${chatQuota.remaining}/${chatQuota.limit}` : "Kişisel fitness koçunuz"}
         icon={Bot}
         rightSlot={
           <div className="flex items-center gap-1">
@@ -37,6 +41,7 @@ export default function AsistanPage() {
                 <Trash2 className="h-4 w-4 text-muted-foreground" />
               </button>
             )}
+            <FeedbackButton />
             <NotificationBell />
           </div>
         }
@@ -70,7 +75,8 @@ export default function AsistanPage() {
                 <button
                   key={q}
                   onClick={() => send(q)}
-                  className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-full transition-colors"
+                  disabled={chatQuota?.remaining === 0}
+                  className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
                 >
                   {q}
                 </button>
@@ -98,6 +104,7 @@ export default function AsistanPage() {
           onSend={send}
           onAbort={abort}
           isStreaming={isStreaming}
+          disabled={chatQuota?.remaining === 0}
         />
       </div>
     </div>

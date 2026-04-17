@@ -48,7 +48,7 @@ function validateMealArray(data: unknown): AIMeal[] {
 
 export async function generateDailyMeals(dailyPlanId: number, userNote?: string) {
   const user = await getAuthUser();
-  checkRateLimit(user.id, "daily-meal");
+  await checkRateLimit(user.id, "daily-meal");
   await logAiUsage(user.id, "daily-meal");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 

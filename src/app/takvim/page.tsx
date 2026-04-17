@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { WeekStrip } from "@/components/calendar/week-strip";
 import { MonthCalendar } from "@/components/calendar/month-calendar";
 import { DayDetailPanel } from "@/components/calendar/day-detail-panel";
@@ -11,34 +12,21 @@ import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
 import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans } from "@/hooks/use-plans";
 import { useGenerateWeeklyPlan, useApplyWeeklyPlan } from "@/hooks/use-weekly-ai";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dumbbell,
-  Waves,
-  Moon,
   Calendar,
   CalendarDays,
   ChevronUp,
   CircleDot,
-  ChevronDown,
-  Info,
   Sparkles,
   Plus,
-  UtensilsCrossed,
 } from "lucide-react";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { formatDateStr } from "@/lib/utils";
 import { ensureDailyPlan } from "@/actions/ensure-plan";
 import { useQueryClient } from "@tanstack/react-query";
-
-const planTypeConfig = {
-  workout: { icon: Dumbbell, label: "Antrenman", badge: "default" as const },
-  swimming: { icon: Waves, label: "Yüzme", badge: "secondary" as const },
-  rest: { icon: Moon, label: "Dinlenme", badge: "outline" as const },
-  nutrition: { icon: UtensilsCrossed, label: "Beslenme", badge: "default" as const },
-};
 
 function formatTurkishDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -156,6 +144,18 @@ export default function TakvimPage() {
     );
   };
 
+  const handleApplySaved = (plan: import("@/actions/ai-weekly").AIWeeklyPlan) => {
+    applyWeekly.mutate(
+      { dateStr: selectedDate, plan },
+      {
+        onSuccess: () => {
+          setWeeklyModalOpen(false);
+          generateWeekly.reset();
+        },
+      },
+    );
+  };
+
   const handleWeeklyModalOpenChange = (open: boolean) => {
     if (open && missingFields.length > 0) {
       setProfileWarningOpen(true);
@@ -196,7 +196,12 @@ export default function TakvimPage() {
         title="Takvim"
         subtitle="Antrenman & Beslenme Programı"
         icon={Calendar}
-        rightSlot={<NotificationBell />}
+        rightSlot={
+          <div className="flex items-center gap-1">
+            <FeedbackButton />
+            <NotificationBell />
+          </div>
+        }
       />
       <div className="p-4 space-y-4">
         {showFullCalendar ? (
@@ -273,34 +278,6 @@ export default function TakvimPage() {
           </>
         )}
 
-        {data?.weeklyPlan && (
-          <Collapsible>
-            <CollapsibleTrigger asChild>
-              <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/20 text-left transition-colors hover:bg-primary/10">
-                <Info className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-sm font-semibold flex-1 truncate">
-                  {data.weeklyPlan.title}
-                </span>
-                <Badge variant="outline" className="text-[10px] shrink-0">
-                  {data.weeklyPlan.phase === "adaptation"
-                    ? "Adaptasyon"
-                    : data.weeklyPlan.phase === "custom"
-                    ? "Özel"
-                    : "Split"}
-                </Badge>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              </button>
-            </CollapsibleTrigger>
-            {data.weeklyPlan.notes && (
-              <CollapsibleContent>
-                <p className="text-xs text-muted-foreground px-2.5 pt-2">
-                  {data.weeklyPlan.notes}
-                </p>
-              </CollapsibleContent>
-            )}
-          </Collapsible>
-        )}
-
         {/* AI Weekly Plan Button */}
         <Button
           variant="outline"
@@ -361,46 +338,6 @@ export default function TakvimPage() {
             </div>
           </div>
         )}
-
-        {data?.dailyPlans && data.dailyPlans.length > 0 && (
-          <div className="space-y-1.5">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Bu Haftanın Programı
-            </h3>
-            <div className="space-y-1.5">
-              {data.dailyPlans.map((day) => {
-                const config =
-                  planTypeConfig[
-                    day.planType as keyof typeof planTypeConfig
-                  ] ?? planTypeConfig.workout;
-                const Icon = config.icon;
-                const isSelected = day.date === selectedDate;
-                return (
-                  <button
-                    key={day.id}
-                    onClick={() => day.date && handleSelectDate(day.date)}
-                    className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-all text-left ${
-                      isSelected
-                        ? "bg-primary/10 border border-primary/20"
-                        : "hover:bg-accent"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-sm font-medium flex-1">
-                      {day.dayName}
-                    </span>
-                    <Badge
-                      variant={config.badge}
-                      className="text-[10px] px-1.5"
-                    >
-                      {config.label}
-                    </Badge>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       {weeklyModalOpen && (
@@ -413,6 +350,8 @@ export default function TakvimPage() {
           error={weeklyError}
           onGenerate={handleGenerateWeekly}
           onApply={handleApplyWeekly}
+          onApplySaved={handleApplySaved}
+          onReset={() => generateWeekly.reset()}
           hasExistingPlan={!!data?.weeklyPlan}
         />
       )}

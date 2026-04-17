@@ -7,43 +7,14 @@ import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { WEEKLY_PLAN_PROMPT, NUTRITION_ONLY_WEEKLY_PROMPT } from "@/lib/ai-prompts";
+import { saveAiSuggestion } from "@/actions/ai-suggestions";
+import {
+  validateWeeklyPlan,
+  type AIWeeklyPlan,
+  type AIWeeklyDay,
+} from "@/lib/ai-weekly-types";
 
-interface AIMealItem {
-  mealTime: string;
-  mealLabel: string;
-  content: string;
-  calories: number | null;
-  proteinG: string | null;
-  carbsG: string | null;
-  fatG: string | null;
-}
-
-interface AIExerciseItem {
-  section: string;
-  sectionLabel: string;
-  name: string;
-  sets: number | null;
-  reps: string | null;
-  restSeconds: number | null;
-  durationMinutes: number | null;
-  notes: string | null;
-}
-
-export interface AIWeeklyDay {
-  dayOfWeek: number;
-  dayName: string;
-  planType: string;
-  workoutTitle: string | null;
-  meals: AIMealItem[];
-  exercises: AIExerciseItem[];
-}
-
-export interface AIWeeklyPlan {
-  weekTitle: string;
-  phase: string;
-  notes: string | null;
-  days: AIWeeklyDay[];
-}
+export type { AIWeeklyPlan, AIWeeklyDay } from "@/lib/ai-weekly-types";
 
 function parseJSON(text: string): unknown {
   let cleaned = text
@@ -60,72 +31,6 @@ function parseJSON(text: string): unknown {
   cleaned = cleaned.replace(/'([^']*)'(?=\s*[:,\]}])/g, '"$1"');
 
   return JSON.parse(cleaned);
-}
-
-const TURKISH_DAY_NAMES_MAP: Record<string, number> = {
-  pazartesi: 0,
-  salı: 1,
-  "salÄ±": 1,
-  çarşamba: 2,
-  "Ã§arÅŸamba": 2,
-  perşembe: 3,
-  "perÅŸembe": 3,
-  cuma: 4,
-  cumartesi: 5,
-  pazar: 6,
-};
-
-function resolveDayOfWeek(dayName: string, aiDayOfWeek: number, index: number): number {
-  const normalized = dayName.toLowerCase().trim();
-  if (normalized in TURKISH_DAY_NAMES_MAP) {
-    return TURKISH_DAY_NAMES_MAP[normalized];
-  }
-  // Fallback: if AI sent 0-6 and it looks like Turkey format, use it; otherwise use index
-  if (aiDayOfWeek >= 0 && aiDayOfWeek <= 6) return aiDayOfWeek;
-  return index;
-}
-
-function validateWeeklyPlan(data: unknown): AIWeeklyPlan {
-  const obj = data as Record<string, unknown>;
-  if (!obj || typeof obj !== "object" || !Array.isArray(obj.days)) {
-    throw new Error("Invalid response format: expected { weekTitle, days: [...] }");
-  }
-
-  return {
-    weekTitle: String(obj.weekTitle ?? "Haftalık Plan"),
-    phase: String(obj.phase ?? "custom"),
-    notes: obj.notes != null ? String(obj.notes) : null,
-    days: (obj.days as Record<string, unknown>[]).map((day, index) => ({
-      dayOfWeek: resolveDayOfWeek(String(day.dayName ?? ""), Number(day.dayOfWeek ?? index), index),
-      dayName: String(day.dayName ?? ""),
-      planType: String(day.planType ?? "workout"),
-      workoutTitle: day.workoutTitle != null ? String(day.workoutTitle) : null,
-      meals: Array.isArray(day.meals)
-        ? (day.meals as Record<string, unknown>[]).map((m) => ({
-            mealTime: String(m.mealTime ?? "08:00"),
-            mealLabel: String(m.mealLabel ?? "Öğün"),
-            content: String(m.content ?? ""),
-            calories: m.calories != null ? Number(m.calories) : null,
-            proteinG: m.proteinG != null ? String(m.proteinG) : null,
-            carbsG: m.carbsG != null ? String(m.carbsG) : null,
-            fatG: m.fatG != null ? String(m.fatG) : null,
-          }))
-        : [],
-      exercises: Array.isArray(day.exercises)
-        ? (day.exercises as Record<string, unknown>[]).map((ex) => ({
-            section: String(ex.section ?? "main"),
-            sectionLabel: String(ex.sectionLabel ?? "Ana Antrenman"),
-            name: String(ex.name ?? ""),
-            sets: ex.sets != null ? Number(ex.sets) : null,
-            reps: ex.reps != null ? String(ex.reps) : null,
-            restSeconds: ex.restSeconds != null ? Number(ex.restSeconds) : null,
-            durationMinutes:
-              ex.durationMinutes != null ? Number(ex.durationMinutes) : null,
-            notes: ex.notes != null ? String(ex.notes) : null,
-          }))
-        : [],
-    })),
-  };
 }
 
 function getMondayStr(dateStr: string): string {
@@ -341,7 +246,7 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
 
 export async function generateWeeklyPlan(dateStr: string, userNote?: string) {
   const user = await getAuthUser();
-  checkRateLimit(user.id, "weekly");
+  await checkRateLimit(user.id, "weekly");
   await logAiUsage(user.id, "weekly");
 
   // Get user's service type
@@ -435,6 +340,13 @@ export async function generateWeeklyPlan(dateStr: string, userNote?: string) {
       text = retry.content[0].type === "text" ? retry.content[0].text : "";
       suggestedPlan = validateWeeklyPlan(parseJSON(text));
     }
+
+    // Auto-save suggestion to DB for later reuse (fire-and-forget)
+    saveAiSuggestion({
+      plan: suggestedPlan,
+      userNote: userNote ?? null,
+      originalDate: monday,
+    }).catch(() => {});
 
     return { suggestedPlan };
   } catch (error) {
@@ -565,6 +477,36 @@ export async function applyWeeklyPlan(
       );
     }
   }
+
+  revalidatePath("/");
+}
+
+export async function deleteWeeklyPlan(weeklyPlanId: number) {
+  const user = await getAuthUser();
+
+  const [week] = await db
+    .select({ id: weeklyPlans.id })
+    .from(weeklyPlans)
+    .where(
+      and(eq(weeklyPlans.id, weeklyPlanId), eq(weeklyPlans.userId, user.id)),
+    );
+
+  if (!week) throw new Error("Not found");
+
+  const days = await db
+    .select({ id: dailyPlans.id })
+    .from(dailyPlans)
+    .where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
+
+  for (const day of days) {
+    await db.delete(meals).where(eq(meals.dailyPlanId, day.id));
+    await db.delete(exercises).where(eq(exercises.dailyPlanId, day.id));
+  }
+
+  await db
+    .delete(dailyPlans)
+    .where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
+  await db.delete(weeklyPlans).where(eq(weeklyPlans.id, weeklyPlanId));
 
   revalidatePath("/");
 }

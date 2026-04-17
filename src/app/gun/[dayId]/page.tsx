@@ -1,5 +1,6 @@
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDailyPlan } from "@/actions/plans";
 import { MealList } from "@/components/meals/meal-list";
@@ -48,7 +49,12 @@ export default async function GunPage({ params }: PageProps) {
         subtitle={subtitle}
         showBack
         backHref="/takvim"
-        rightSlot={<NotificationBell />}
+        rightSlot={
+          <div className="flex items-center gap-1">
+            <FeedbackButton />
+            <NotificationBell />
+          </div>
+        }
       />
       <div className="p-4">
         <Tabs defaultValue="meals">

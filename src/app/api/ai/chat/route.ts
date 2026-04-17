@@ -18,16 +18,33 @@ export async function POST(request: Request) {
   const userId = session.user.id;
 
   try {
-    checkRateLimit(userId, "chat");
+    await checkRateLimit(userId, "chat");
   } catch {
-    return new Response("Günlük sohbet limitine ulaştınız (max 20/gün).", { status: 429 });
+    return new Response("Günlük sohbet limitine ulaştınız (max 15/gün).", { status: 429 });
   }
 
   await logAiUsage(userId, "chat");
 
   const body = await request.json();
-  const userMessages: Array<{ role: string; content: string }> =
-    body.messages ?? [];
+  const rawMessages = body.messages;
+
+  if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
+    return new Response("Mesaj gerekli.", { status: 400 });
+  }
+
+  // Validate & sanitize messages
+  const userMessages = rawMessages
+    .filter(
+      (m: unknown): m is { role: string; content: string } =>
+        typeof m === "object" &&
+        m !== null &&
+        typeof (m as Record<string, unknown>).role === "string" &&
+        typeof (m as Record<string, unknown>).content === "string",
+    )
+    .map((m) => ({
+      role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
+      content: m.content.slice(0, 5000),
+    }));
 
   if (userMessages.length === 0) {
     return new Response("Mesaj gerekli.", { status: 400 });

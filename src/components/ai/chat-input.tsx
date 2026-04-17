@@ -8,9 +8,10 @@ interface ChatInputProps {
   onSend: (content: string) => void;
   onAbort: () => void;
   isStreaming: boolean;
+  disabled?: boolean;
 }
 
-export function ChatInput({ onSend, onAbort, isStreaming }: ChatInputProps) {
+export function ChatInput({ onSend, onAbort, isStreaming, disabled }: ChatInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -24,7 +25,7 @@ export function ChatInput({ onSend, onAbort, isStreaming }: ChatInputProps) {
 
   const handleSubmit = () => {
     const trimmed = value.trim();
-    if (!trimmed || isStreaming) return;
+    if (!trimmed || isStreaming || disabled) return;
     onSend(trimmed);
     setValue("");
   };
@@ -43,10 +44,10 @@ export function ChatInput({ onSend, onAbort, isStreaming }: ChatInputProps) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Bir soru sorun..."
+        placeholder={disabled ? "Günlük mesaj limitine ulaştınız" : "Bir soru sorun..."}
         rows={1}
         className="flex-1 resize-none bg-muted rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[36px] max-h-[120px]"
-        disabled={isStreaming}
+        disabled={isStreaming || disabled}
       />
       {isStreaming ? (
         <Button

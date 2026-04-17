@@ -14,6 +14,7 @@ import {
   useGenerateWorkoutReplacement,
   useApplyWorkoutReplacement,
 } from "@/hooks/use-workout-ai";
+import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
 
 interface WorkoutListProps {
   dailyPlanId: number;
@@ -28,9 +29,13 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const generate = useGenerateWorkoutReplacement();
   const apply = useApplyWorkoutReplacement();
+  const { data: quotaData } = useAiQuota();
+  const invalidateQuota = useInvalidateAiQuota();
+  const workoutQuota = getQuota(quotaData, "workout");
 
   const handleGenerate = (userNote?: string) => {
     generate.mutate({ dailyPlanId, userNote });
+    invalidateQuota();
   };
 
   const handleApply = () => {
@@ -79,9 +84,9 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
           </p>
           {!readOnly && (
             <div className="flex gap-2 justify-center">
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleOpenChange(true)}>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleOpenChange(true)} disabled={workoutQuota?.remaining === 0}>
                 <Sparkles className="h-3.5 w-3.5" />
-                AI ile Oluştur
+                {workoutQuota?.remaining === 0 ? "Limit doldu" : `AI ile Oluştur${workoutQuota ? ` (${workoutQuota.remaining})` : ""}`}
               </Button>
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
                 <Plus className="h-3.5 w-3.5" />
@@ -158,9 +163,10 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
             size="sm"
             className="w-full gap-1.5"
             onClick={() => handleOpenChange(true)}
+            disabled={workoutQuota?.remaining === 0}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            AI ile Programı Değiştir
+            {workoutQuota?.remaining === 0 ? "Günlük limit doldu" : `AI ile Programı Değiştir${workoutQuota ? ` (${workoutQuota.remaining})` : ""}`}
           </Button>
         )}
         {sortedSections.map(([section, { label, exercises }]) => (

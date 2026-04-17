@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { useAllWeeks } from "@/hooks/use-plans";
 import { useShoppingList, useToggleShopping } from "@/hooks/use-shopping";
 import { ShoppingCategory } from "@/components/shopping/shopping-category";
@@ -80,7 +81,12 @@ export default function AlisverisPage() {
         title="Alışveriş Listesi"
         subtitle="Haftalık market listesi"
         icon={ShoppingCart}
-        rightSlot={<NotificationBell />}
+        rightSlot={
+          <div className="flex items-center gap-1">
+            <FeedbackButton />
+            <NotificationBell />
+          </div>
+        }
       />
       <div className="p-4 space-y-4">
         {weeks && weeks.length > 0 && (

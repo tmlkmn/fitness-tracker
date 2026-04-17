@@ -20,6 +20,7 @@ import {
   Sparkles,
   BarChart3,
   Bot,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -309,6 +310,14 @@ export default function AdminPage() {
             Davet Et
           </Link>
         </div>
+
+        <Link
+          href="/admin/geri-bildirim"
+          className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md border border-primary/50 text-primary text-sm font-medium hover:bg-primary/10 transition-colors"
+        >
+          <MessageSquare className="h-4 w-4" />
+          Geri Bildirimler
+        </Link>
 
         {error && (
           <p className="text-sm text-destructive text-center">{error}</p>

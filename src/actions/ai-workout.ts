@@ -107,7 +107,7 @@ async function callAI(
 
 export async function generateWorkoutReplacement(dailyPlanId: number, userNote?: string) {
   const user = await getAuthUser();
-  checkRateLimit(user.id, "workout");
+  await checkRateLimit(user.id, "workout");
   await logAiUsage(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
@@ -188,7 +188,7 @@ export async function generateSectionReplacement(
   userNote?: string,
 ) {
   const user = await getAuthUser();
-  checkRateLimit(user.id, "workout");
+  await checkRateLimit(user.id, "workout");
   await logAiUsage(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
@@ -281,7 +281,7 @@ export async function generateExerciseVariation(
   userNote?: string,
 ) {
   const user = await getAuthUser();
-  checkRateLimit(user.id, "workout");
+  await checkRateLimit(user.id, "workout");
   await logAiUsage(user.id, "workout");
   await verifyExerciseOwnership(exerciseId, user.id);
 

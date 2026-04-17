@@ -18,7 +18,7 @@ export async function POST() {
   const userId = session.user.id;
 
   try {
-    checkRateLimit(userId, "analyze");
+    await checkRateLimit(userId, "analyze");
   } catch {
     return new Response("Günlük analiz limitine ulaştınız (max 3/gün).", { status: 429 });
   }

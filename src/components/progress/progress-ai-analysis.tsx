@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, RefreshCw, AlertCircle } from "lucide-react";
+import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
 
 function timeAgo(date: Date): string {
   const s = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -21,6 +22,10 @@ export function ProgressAiAnalysis() {
   const [error, setError] = useState("");
   const lastFetchedAt = useRef<Date | null>(null);
   const [, forceUpdate] = useState(0);
+
+  const { data: quotaData } = useAiQuota();
+  const invalidateQuota = useInvalidateAiQuota();
+  const analyzeQuota = getQuota(quotaData, "analyze");
 
   const fetchAnalysis = async () => {
     setLoading(true);
@@ -58,6 +63,7 @@ export function ProgressAiAnalysis() {
 
       lastFetchedAt.current = new Date();
       forceUpdate((n) => n + 1);
+      invalidateQuota();
     } catch {
       setError("Bir hata oluştu. Daha sonra tekrar deneyin.");
     } finally {
@@ -83,7 +89,7 @@ export function ProgressAiAnalysis() {
               variant="outline"
               size="sm"
               onClick={fetchAnalysis}
-              disabled={loading}
+              disabled={loading || (analyzeQuota?.remaining === 0)}
               className="gap-1 text-xs"
             >
               {loading ? (
@@ -91,7 +97,11 @@ export function ProgressAiAnalysis() {
               ) : (
                 <Sparkles className="h-3 w-3" />
               )}
-              {loading ? "Analiz ediliyor..." : "Analiz Et"}
+              {loading
+                ? "Analiz ediliyor..."
+                : analyzeQuota?.remaining === 0
+                  ? "Limit doldu"
+                  : `Analiz Et${analyzeQuota ? ` (${analyzeQuota.remaining}/${analyzeQuota.limit})` : ""}`}
             </Button>
           ) : (
             <Button

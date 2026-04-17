@@ -23,6 +23,9 @@ import {
   Clock,
   Home,
   Building2,
+  History,
+  Trash2,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Collapsible,
@@ -32,6 +35,12 @@ import {
 import { ChevronDown } from "lucide-react";
 import type { AIWeeklyPlan, AIWeeklyDay } from "@/actions/ai-weekly";
 import { useState, useEffect, useRef } from "react";
+import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
+import {
+  useSavedSuggestions,
+  useSavedSuggestionDetail,
+  useDeleteSavedSuggestion,
+} from "@/hooks/use-weekly-ai";
 
 // ─── Template tags for quick suggestions ────────────────────────────────────
 
@@ -46,6 +55,16 @@ const SUGGESTION_TAGS = [
   "Drop set / süperset",
   "Hafif hafta (deload)",
   "Sadece 3 gün antrenman",
+];
+
+const WORKOUT_DAYS = [
+  { value: 0, label: "Pzt", full: "Pazartesi" },
+  { value: 1, label: "Sal", full: "Salı" },
+  { value: 2, label: "Çar", full: "Çarşamba" },
+  { value: 3, label: "Per", full: "Perşembe" },
+  { value: 4, label: "Cum", full: "Cuma" },
+  { value: 5, label: "Cmt", full: "Cumartesi" },
+  { value: 6, label: "Paz", full: "Pazar" },
 ];
 
 const EQUIPMENT_OPTIONS = [
@@ -185,6 +204,8 @@ interface AiWeeklyPlanModalProps {
   error: string | null;
   onGenerate: (userNote?: string) => void;
   onApply: () => void;
+  onApplySaved: (plan: AIWeeklyPlan) => void;
+  onReset: () => void;
   hasExistingPlan: boolean;
 }
 
@@ -210,17 +231,29 @@ function DaySummary({ day }: { day: AIWeeklyDay }) {
     0,
   );
 
+  // Group exercises by section
+  const exerciseSections = day.exercises.reduce<
+    Record<string, { label: string; items: typeof day.exercises }>
+  >((acc, ex) => {
+    const key = ex.section;
+    if (!acc[key]) acc[key] = { label: ex.sectionLabel, items: [] };
+    acc[key].items.push(ex);
+    return acc;
+  }, {});
+
   return (
     <Collapsible>
       <CollapsibleTrigger asChild>
         <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-muted/50 text-left hover:bg-muted transition-colors">
           <Icon className="h-4 w-4 text-primary shrink-0" />
-          <span className="text-sm font-medium flex-1 min-w-0 truncate">{day.dayName}</span>
-          <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
-            <Badge
-              variant="outline"
-              className="text-[10px]"
-            >
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-medium truncate block">{day.dayName}</span>
+            {day.workoutTitle && (
+              <span className="text-[10px] text-muted-foreground truncate block">{day.workoutTitle}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <Badge variant="outline" className="text-[10px]">
               {planTypeLabels[day.planType] ?? day.planType}
             </Badge>
             {day.meals.length > 0 && (
@@ -240,43 +273,97 @@ function DaySummary({ day }: { day: AIWeeklyDay }) {
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="px-2.5 pt-2 pb-1 space-y-2">
-          {day.workoutTitle && (
-            <p className="text-xs font-medium text-primary">
-              {day.workoutTitle}
-            </p>
-          )}
+        <div className="px-1 pt-2 pb-1 space-y-3">
+          {/* Meals */}
           {day.meals.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                Öğünler ({totalCalories} kcal)
-              </p>
-              {day.meals.map((m, i) => (
-                <p key={i} className="text-xs text-muted-foreground break-words">
-                  {m.mealTime} — {m.mealLabel}: {m.content}
-                  {m.calories ? ` (${m.calories} kcal)` : ""}
-                </p>
-              ))}
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <UtensilsCrossed className="h-3 w-3 text-primary" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Öğünler
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  ({totalCalories} kcal)
+                </span>
+              </div>
+              <div className="space-y-0.5">
+                {day.meals.map((m, i) => (
+                  <div key={i} className="flex gap-2 py-1 border-b border-border/30 last:border-0">
+                    <span className="text-[10px] text-muted-foreground font-mono w-10 shrink-0 pt-0.5">
+                      {m.mealTime}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium">{m.mealLabel}</span>
+                        {m.calories ? (
+                          <span className="text-[10px] text-muted-foreground">{m.calories} kcal</span>
+                        ) : null}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground break-words leading-relaxed">
+                        {m.content}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
+
+          {/* Exercises */}
           {day.exercises.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                Egzersizler
-              </p>
-              {day.exercises.map((ex, i) => (
-                <p key={i} className="text-xs text-muted-foreground break-words">
-                  {ex.name}
-                  {ex.sets && ex.reps ? ` ${ex.sets}x${ex.reps}` : ""}
-                  {ex.durationMinutes ? ` ${ex.durationMinutes}dk` : ""}
-                </p>
-              ))}
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Dumbbell className="h-3 w-3 text-primary" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Egzersizler
+                </span>
+              </div>
+              <div className="space-y-2">
+                {Object.entries(exerciseSections).map(([key, section]) => (
+                  <div key={key}>
+                    <p className="text-[10px] font-semibold text-primary/70 mb-0.5 pl-1 border-l-2 border-primary/30">
+                      {section.label}
+                    </p>
+                    <div className="space-y-0.5 pl-1">
+                      {section.items.map((ex, i) => (
+                        <div key={i} className="flex items-center gap-2 py-0.5">
+                          <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate">
+                            {ex.name}
+                          </span>
+                          {ex.sets && ex.reps ? (
+                            <Badge variant="secondary" className="text-[10px] shrink-0">
+                              {ex.sets}x{ex.reps}
+                            </Badge>
+                          ) : ex.durationMinutes ? (
+                            <Badge variant="secondary" className="text-[10px] shrink-0">
+                              {ex.durationMinutes}dk
+                            </Badge>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
       </CollapsibleContent>
     </Collapsible>
   );
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+function formatTimeAgo(date: Date): string {
+  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (s < 60) return "az önce";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} dk önce`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} saat önce`;
+  const d = Math.floor(h / 24);
+  return `${d} gün önce`;
 }
 
 // ─── Main Modal ─────────────────────────────────────────────────────────────
@@ -290,19 +377,73 @@ export function AiWeeklyPlanModal({
   error,
   onGenerate,
   onApply,
+  onApplySaved,
+  onReset,
   hasExistingPlan,
 }: AiWeeklyPlanModalProps) {
   const [userNote, setUserNote] = useState("");
+  const [selectedDays, setSelectedDays] = useState<number[]>([0, 1, 2, 3, 4]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [location, setLocation] = useState<"gym" | "home">("gym");
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [ingredientMode, setIngredientMode] = useState<"all" | "specific">("all");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
 
+  const { data: quotaData } = useAiQuota();
+  const invalidateQuota = useInvalidateAiQuota();
+  const weeklyQuota = getQuota(quotaData, "weekly");
+
+  // Saved suggestions state
+  const [showSaved, setShowSaved] = useState(false);
+  const [savedPlanToPreview, setSavedPlanToPreview] = useState<AIWeeklyPlan | null>(null);
+  const [selectedSavedId, setSelectedSavedId] = useState<number | null>(null);
+
+  const { data: savedList } = useSavedSuggestions(open);
+  const { data: savedDetail, isLoading: loadingSavedDetail } = useSavedSuggestionDetail(selectedSavedId);
+  const deleteSaved = useDeleteSavedSuggestion();
+
+  // When saved detail loads, show preview
+  useEffect(() => {
+    if (savedDetail?.plan) {
+      setSavedPlanToPreview(savedDetail.plan);
+    }
+  }, [savedDetail]);
+
+  const handleSelectSaved = (id: number) => {
+    setSelectedSavedId(id);
+  };
+
+  const handleDeleteSaved = (id: number) => {
+    deleteSaved.mutate(id, {
+      onSuccess: () => {
+        if (selectedSavedId === id) {
+          setSelectedSavedId(null);
+          setSavedPlanToPreview(null);
+        }
+      },
+    });
+  };
+
+  const handleBackFromSaved = () => {
+    setShowSaved(false);
+    setSelectedSavedId(null);
+    setSavedPlanToPreview(null);
+  };
+
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
+  };
+
+  const toggleDay = (day: number) => {
+    setSelectedDays((prev) => {
+      if (prev.includes(day)) {
+        if (prev.length <= 1) return prev; // En az 1 gün seçili olmalı
+        return prev.filter((d) => d !== day);
+      }
+      return [...prev, day].sort((a, b) => a - b);
+    });
   };
 
   const toggleEquipment = (eq: string) => {
@@ -319,6 +460,9 @@ export function AiWeeklyPlanModal({
 
   const handleGenerate = () => {
     const parts: string[] = [];
+    // Workout days
+    const dayNames = selectedDays.map(d => WORKOUT_DAYS.find(x => x.value === d)!.full);
+    parts.push(`Antrenman günleri: ${dayNames.join(", ")}. Sadece bu günlerde antrenman olsun, diğer günler dinlenme veya sadece beslenme günü olsun`);
     // Location + equipment
     if (location === "home") {
       parts.push(`Antrenman yeri: Ev. Mevcut ekipman: ${selectedEquipment.length > 0 ? selectedEquipment.join(", ") : "Vücut ağırlığı"}`);
@@ -335,15 +479,21 @@ export function AiWeeklyPlanModal({
     const note = userNote.trim();
     if (note) parts.push(note);
     onGenerate(parts.length > 0 ? parts.join(". ") : undefined);
+    invalidateQuota();
   };
 
-  const handleNewSuggestion = () => {
-    handleGenerate();
+  const handleOpenChange = (open: boolean) => {
+    if (!open && (loading || applying)) return;
+    onOpenChange(open);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto overflow-x-hidden">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto overflow-x-hidden"
+        onInteractOutside={(e) => { if (loading || applying) e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (loading || applying) e.preventDefault(); }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -370,8 +520,33 @@ export function AiWeeklyPlanModal({
           )}
 
           {/* Phase 1: User input */}
-          {!loading && !suggestedPlan && (
+          {!loading && !suggestedPlan && !showSaved && !savedPlanToPreview && (
             <div className="space-y-3">
+              {/* Day selection */}
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Antrenman günleri:
+                </p>
+                <div className="grid grid-cols-7 gap-1.5">
+                  {WORKOUT_DAYS.map(({ value, label }) => {
+                    const isSelected = selectedDays.includes(value);
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => toggleDay(value)}
+                        className={`flex items-center justify-center py-2 rounded-md text-xs font-medium border transition-colors ${
+                          isSelected
+                            ? "bg-primary/15 border-primary/40 text-primary"
+                            : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Location selection */}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
@@ -520,12 +695,134 @@ export function AiWeeklyPlanModal({
               />
               <Button
                 onClick={handleGenerate}
-                disabled={loading}
+                disabled={loading || (weeklyQuota?.remaining === 0)}
                 className="w-full"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Öneri Al
+                {weeklyQuota?.remaining === 0
+                  ? "Günlük limit doldu"
+                  : `Öneri Al${weeklyQuota ? ` (${weeklyQuota.remaining}/${weeklyQuota.limit})` : ""}`}
               </Button>
+              {savedList && savedList.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSaved(true)}
+                  className="w-full gap-2 text-muted-foreground"
+                >
+                  <History className="h-4 w-4" />
+                  Kayıtlı Öneriler ({savedList.length})
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Saved suggestions list */}
+          {!loading && !suggestedPlan && showSaved && !savedPlanToPreview && (
+            <div className="space-y-3">
+              <button
+                onClick={handleBackFromSaved}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Geri
+              </button>
+              {loadingSavedDetail && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              {savedList && savedList.length > 0 ? (
+                <div className="space-y-1.5">
+                  {savedList.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSelectSaved(item.id)}
+                      className="w-full flex items-start gap-2 p-2.5 rounded-lg bg-muted/50 text-left hover:bg-muted transition-colors"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium truncate">{item.title}</span>
+                          <Badge variant="outline" className="text-[10px] shrink-0">
+                            {item.phase}
+                          </Badge>
+                        </div>
+                        {item.userNote && (
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            {item.userNote.length > 60 ? item.userNote.slice(0, 60) + "..." : item.userNote}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {formatTimeAgo(item.createdAt)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSaved(item.id);
+                        }}
+                        className="p-1 rounded hover:bg-destructive/10 transition-colors shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  Henüz kayıtlı öneri yok.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Saved plan preview */}
+          {!loading && !suggestedPlan && savedPlanToPreview && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold flex-1">
+                  {savedPlanToPreview.weekTitle}
+                </p>
+                <Badge variant="outline" className="text-[10px]">
+                  {savedPlanToPreview.phase}
+                </Badge>
+              </div>
+              {savedPlanToPreview.notes && (
+                <p className="text-xs text-muted-foreground">
+                  {savedPlanToPreview.notes}
+                </p>
+              )}
+              <div className="space-y-1.5">
+                {savedPlanToPreview.days.map((day, i) => (
+                  <DaySummary key={i} day={day} />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleBackFromSaved}
+                  disabled={applying}
+                  className="flex-1"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Geri
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (savedPlanToPreview) onApplySaved(savedPlanToPreview);
+                  }}
+                  disabled={applying}
+                  className="flex-1"
+                >
+                  {applying ? (
+                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Check className="h-4 w-4 mr-2" />
+                  )}
+                  Onayla
+                </Button>
+              </div>
             </div>
           )}
 
@@ -561,11 +858,11 @@ export function AiWeeklyPlanModal({
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={handleNewSuggestion}
+                onClick={onReset}
                 disabled={loading || applying}
                 className="flex-1"
               >
-                <Sparkles className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4 mr-2" />
                 Yeni Öneri
               </Button>
               <Button

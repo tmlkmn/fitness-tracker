@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { ProgressForm } from "@/components/progress/progress-form";
 import { ProgressAiAnalysis } from "@/components/progress/progress-ai-analysis";
 import { ChartSelector } from "@/components/progress/chart-selector";
@@ -32,7 +33,12 @@ export default function IlerlemePage() {
         title="İlerleme"
         subtitle="Kilo ve ölçüm takibi"
         icon={TrendingUp}
-        rightSlot={<NotificationBell />}
+        rightSlot={
+          <div className="flex items-center gap-1">
+            <FeedbackButton />
+            <NotificationBell />
+          </div>
+        }
       />
       <div className="p-4 space-y-4">
         {/* Summary cards */}

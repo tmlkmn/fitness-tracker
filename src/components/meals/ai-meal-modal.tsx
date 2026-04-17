@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, Check, AlertCircle, MessageSquare } from "lucide-react";
 import type { AIMeal } from "@/actions/ai-meals";
 import { useState } from "react";
+import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
 
 const INGREDIENT_TAGS = [
   "Tavuk", "Kırmızı et", "Balık", "Yumurta", "Ton balığı",
@@ -67,6 +68,10 @@ export function AiMealModal({
   const [ingredientMode, setIngredientMode] = useState<"all" | "specific">("all");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
 
+  const { data: quotaData } = useAiQuota();
+  const invalidateQuota = useInvalidateAiQuota();
+  const mealQuota = getQuota(quotaData, "daily-meal");
+
   const toggleIngredient = (ing: string) => {
     setSelectedIngredients((prev) =>
       prev.includes(ing) ? prev.filter((i) => i !== ing) : [...prev, ing],
@@ -86,6 +91,7 @@ export function AiMealModal({
     const note = userNote.trim();
     if (note) parts.push(note);
     onGenerate(parts.length > 0 ? parts.join(". ") : undefined);
+    invalidateQuota();
   };
 
   return (
@@ -173,11 +179,13 @@ export function AiMealModal({
               />
               <Button
                 onClick={handleGenerate}
-                disabled={loading}
+                disabled={loading || (mealQuota?.remaining === 0)}
                 className="w-full"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Öneri Al
+                {mealQuota?.remaining === 0
+                  ? "Günlük limit doldu"
+                  : `Öneri Al${mealQuota ? ` (${mealQuota.remaining}/${mealQuota.limit})` : ""}`}
               </Button>
             </div>
           )}

@@ -12,35 +12,54 @@ Bu dosya GitHub Copilot ve diğer AI asistanlar için proje kurallarını tanım
 - `dangerouslySetInnerHTML` kullanımı yasak. Kullanıcı girdisi React JSX ile render edilmeli.
 - `next.config.ts`'de security headers tanımlanmalı:
   ```ts
-  // Eklenecek header'lar:
-  // Content-Security-Policy
+  // Mevcut header'lar (next.config.ts headers() içinde):
   // X-Frame-Options: DENY
   // X-Content-Type-Options: nosniff
   // Referrer-Policy: strict-origin-when-cross-origin
   // Permissions-Policy: camera=(), microphone=(), geolocation=()
-  // Strict-Transport-Security (production'da)
+  // X-DNS-Prefetch-Control: on
+  // Strict-Transport-Security: Vercel otomatik ekler
   ```
 - Hassas veriler (token, şifre, DB URL) için `console.log` kullanılmamalı.
 - Production'da server action'lara rate limiting uygulanmalı.
 - `.env.local` dosyası git'e eklenmemeli — `.gitignore`'da `.env*` pattern'i korunmalı.
+- **API route'larında input validation zorunlu** — `request.json()` ile alınan body mutlaka doğrulanmalı:
+  - String alanlar `typeof` ile kontrol edilmeli, max uzunluk sınırı konulmalı
+  - URL alanları `new URL()` ile parse edilip protocol kontrol edilmeli (HTTPS zorunlu)
+  - Array alanları `Array.isArray()` ile doğrulanmalı
+- **Cron endpoint'lerinde auth kontrolü strict olmalı** — secret yoksa deny:
+  ```ts
+  // DOĞRU: secret tanımlı değilse veya eşleşmiyorsa reddet
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) { return 401; }
+  // YANLIŞ: secret yoksa herkesi geçir
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) { return 401; }
+  ```
+- **Push subscription endpoint'lerinde** endpoint URL'si HTTPS olarak doğrulanmalı.
+- Yeni API route eklenirken `auth.api.getSession()` ile auth kontrolü zorunlu (cron hariç).
 
 ---
 
 ## SEO
 
+- Bu uygulama **invite-only özel uygulama** — `robots: { index: false, follow: false }` ile arama motorlarından gizlenmeli.
+- `public/robots.txt` dosyasında `Disallow: /` kuralı korunmalı.
 - Her sayfada benzersiz `title` ve `description` metadata tanımlanmalı (Next.js `Metadata` export ile).
 - Root layout'ta `metadataBase` tanımlanmalı — Open Graph ve canonical URL çözümlemesi için gerekli:
   ```ts
   export const metadata: Metadata = {
     metadataBase: new URL("https://domain.com"),
+    title: {
+      default: "FitTrack — Kişisel Fitness Takip",
+      template: "%s | FitTrack",
+    },
+    robots: { index: false, follow: false },
     // ...
   };
   ```
-- Open Graph meta tag'leri eklenmeli (`openGraph.title`, `openGraph.description`, `openGraph.images`).
-- Twitter Card meta tag'leri eklenmeli (`twitter.card`, `twitter.title`, `twitter.description`).
+- Open Graph meta tag'leri eklenmeli (`openGraph.title`, `openGraph.description`, `openGraph.locale`).
 - Semantic HTML kullanılmalı:
   - `<main>` — sayfa ana içeriği (layout'ta mevcut)
-  - `<nav>` — navigasyon (bottom-nav'da mevcut)
+  - `<nav>` — navigasyon (bottom-nav'da mevcut), `aria-label` zorunlu
   - `<section>` — tematik gruplamalar
   - `<article>` — bağımsız içerik blokları (meal card, exercise card)
   - `<header>` / `<footer>` — bölüm başlık/alt bilgileri
@@ -48,7 +67,6 @@ Bu dosya GitHub Copilot ve diğer AI asistanlar için proje kurallarını tanım
 - Görsel render ederken her zaman `next/image` komponenti kullanılmalı — otomatik lazy loading, responsive sizing, format optimizasyonu sağlar.
 - Sayfa başlıkları hiyerarşik olmalı: her sayfada tek bir `<h1>`, altında `<h2>`, `<h3>` sırasıyla.
 - `<html lang="tr">` korunmalı — arama motorları ve ekran okuyucular için dil bilgisi.
-- Gerektiğinde `robots.txt` ve `sitemap.xml` yapılandırılmalı (`next-sitemap` veya App Router `sitemap.ts`).
 
 ---
 
@@ -88,6 +106,8 @@ Bu dosya GitHub Copilot ve diğer AI asistanlar için proje kurallarını tanım
 ## Erişilebilirlik (a11y)
 
 - İnteraktif elementlerde (buton, link, input) `aria-label` veya görünür metin/label olmalı.
+- **`<nav>` elementlerinde `aria-label` zorunlu** — `<nav aria-label="Ana navigasyon">`.
+- **Aktif navigasyon linklerinde `aria-current="page"` kullanılmalı**.
 - Renk kontrastı **WCAG 2.1 AA** standardına uygun olmalı — minimum 4.5:1 normal metin, 3:1 büyük metin.
 - Tüm interaktif elementler klavye ile erişilebilir olmalı — `Tab` ile gezinme, `Enter`/`Space` ile aktivasyon.
 - Focus göstergesi (`outline`, `ring`) kaldırılmamalı — `focus-visible:ring-2` pattern'i tercih edilmeli.

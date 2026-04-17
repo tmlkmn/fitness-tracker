@@ -6,9 +6,23 @@ import { Toaster } from "@/components/ui/sonner";
 import { SwRegister } from "./sw-register";
 
 export const metadata: Metadata = {
-  title: "Fitness Tracker",
+  title: {
+    default: "FitTrack — Kişisel Fitness Takip",
+    template: "%s | FitTrack",
+  },
   description: "Kişisel fitness antrenman ve beslenme takip uygulaması",
   manifest: "/manifest.json",
+  robots: {
+    index: false,
+    follow: false,
+  },
+  openGraph: {
+    title: "FitTrack — Kişisel Fitness Takip",
+    description: "Kişisel fitness antrenman ve beslenme takip uygulaması",
+    type: "website",
+    locale: "tr_TR",
+    siteName: "FitTrack",
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "32x32" },

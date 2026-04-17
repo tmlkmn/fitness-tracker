@@ -76,7 +76,7 @@ export async function getExerciseDemo(
   if (existing) return toResult(existing);
 
   // 2. Rate limit before AI call
-  checkRateLimit(user.id, "exercise-demo");
+  await checkRateLimit(user.id, "exercise-demo");
   await logAiUsage(user.id, "exercise-demo");
 
   // 3. Fetch exercise database + AI matching

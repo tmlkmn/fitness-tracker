@@ -97,3 +97,17 @@ Required in `.env.local`:
 ## Development Guidelines
 
 Security, SEO, responsive, performance, accessibility, and code quality rules are defined in [`.github/copilot-instructions.md`](.github/copilot-instructions.md). All AI assistants and contributors must follow those rules.
+
+### Security Checklist (yeni kod yazarken)
+- **API route'lar**: `auth.api.getSession()` ile auth kontrolü zorunlu (cron endpoint'ler hariç)
+- **Cron endpoint'ler**: `if (!cronSecret || authHeader !== ...)` pattern'i — secret yoksa deny
+- **Input validation**: `request.json()` body'si mutlaka doğrulanmalı (type check + max length)
+- **Push subscriptions**: endpoint URL `https://` olarak validate edilmeli
+- **Security headers**: `next.config.ts` `headers()` fonksiyonunda tanımlı (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-DNS-Prefetch-Control)
+- **Env güvenliği**: `.env*` gitignore'da, `NEXT_PUBLIC_` prefix'i ile DB/API key paylaşılmamalı
+
+### SEO & Erişilebilirlik Kuralları
+- Uygulama **invite-only** — `robots: { index: false }` ve `public/robots.txt` → `Disallow: /`
+- Root layout'ta `title.template`, `openGraph`, `robots` metadata tanımlı
+- `<nav>` elementlerinde `aria-label` zorunlu, aktif link'te `aria-current="page"`
+- Heading hiyerarşisi: her sayfada tek `<h1>`, altında `<h2>`, `<h3>`
