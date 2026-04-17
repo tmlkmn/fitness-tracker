@@ -317,28 +317,45 @@ function DaySummary({ day }: { day: AIWeeklyDay }) {
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   Egzersizler
                 </span>
+                <span className="text-[10px] text-muted-foreground">
+                  ({day.exercises.length} hareket)
+                </span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {Object.entries(exerciseSections).map(([key, section]) => (
                   <div key={key}>
-                    <p className="text-[10px] font-semibold text-primary/70 mb-0.5 pl-1 border-l-2 border-primary/30">
+                    <p className="text-[10px] font-semibold text-primary/70 mb-1 pl-2 border-l-2 border-primary/30">
                       {section.label}
                     </p>
-                    <div className="space-y-0.5 pl-1">
+                    <div className="space-y-1 pl-2">
                       {section.items.map((ex, i) => (
-                        <div key={i} className="flex items-center gap-2 py-0.5">
-                          <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate">
-                            {ex.name}
-                          </span>
-                          {ex.sets && ex.reps ? (
-                            <Badge variant="secondary" className="text-[10px] shrink-0">
-                              {ex.sets}x{ex.reps}
-                            </Badge>
-                          ) : ex.durationMinutes ? (
-                            <Badge variant="secondary" className="text-[10px] shrink-0">
-                              {ex.durationMinutes}dk
-                            </Badge>
-                          ) : null}
+                        <div key={i} className="py-1 border-b border-border/20 last:border-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium flex-1 min-w-0 break-words">
+                              {ex.name}
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {ex.sets && ex.reps ? (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {ex.sets}x{ex.reps}
+                                </Badge>
+                              ) : ex.durationMinutes ? (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {ex.durationMinutes}dk
+                                </Badge>
+                              ) : null}
+                              {ex.restSeconds ? (
+                                <Badge variant="outline" className="text-[10px]">
+                                  {ex.restSeconds}sn
+                                </Badge>
+                              ) : null}
+                            </div>
+                          </div>
+                          {ex.notes && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5 break-words leading-relaxed">
+                              {ex.notes}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -490,7 +507,7 @@ export function AiWeeklyPlanModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto overflow-x-hidden"
+        className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto overflow-x-hidden"
         onInteractOutside={(e) => { if (loading || applying) e.preventDefault(); }}
         onEscapeKeyDown={(e) => { if (loading || applying) e.preventDefault(); }}
       >
@@ -705,13 +722,16 @@ export function AiWeeklyPlanModal({
               </Button>
               {savedList && savedList.length > 0 && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowSaved(true)}
-                  className="w-full gap-2 text-muted-foreground"
+                  className="w-full gap-2"
                 >
                   <History className="h-4 w-4" />
-                  Kayıtlı Öneriler ({savedList.length})
+                  Kayıtlı Öneriler
+                  <Badge variant="secondary" className="ml-auto text-[10px] px-1.5">
+                    {savedList.length}
+                  </Badge>
                 </Button>
               )}
             </div>

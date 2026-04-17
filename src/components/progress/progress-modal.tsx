@@ -124,7 +124,10 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-lg max-h-[85vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{isEdit ? "Ölçümü Düzenle" : "Yeni Ölçüm Ekle"}</DialogTitle>
         </DialogHeader>
