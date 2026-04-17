@@ -53,7 +53,7 @@ No test framework is configured.
 - API route: `src/app/api/auth/[...all]/route.ts` — toNextJsHandler
 - Proxy: `src/proxy.ts` — redirects unauthenticated users to `/giris`, public paths: `/giris`, `/bekliyor`, `/sifremi-unuttum`, `/sifre-sifirla`, `/api/auth`, `/api/cron`
 - Auth utility: `src/lib/auth-utils.ts` — `getAuthUser()` for regular actions, `getAuthAdmin()` for admin actions
-- Email service: `src/lib/email.ts` — Resend for invite and password reset emails
+- Email service: `src/lib/email.ts` — Mailjet for invite and password reset emails
 - Admin actions: `src/actions/admin.ts` — inviteUser, listAllUsers, resendInvite, removeUserAction
 - Password actions: `src/actions/password.ts` — forceChangePassword, requestPasswordReset
 - Ownership: `src/lib/ownership.ts` — entity ownership verification helpers + read-access checks for shared plans
@@ -87,8 +87,10 @@ Required in `.env.local`:
 - `BETTER_AUTH_SECRET` — Secret for better-auth session signing
 - `BETTER_AUTH_URL` — Base URL for better-auth (e.g. `http://localhost:3000`)
 - `NEXT_PUBLIC_APP_URL` — Public app URL for auth client
-- `RESEND_API_KEY` — Resend API key for sending invite and password reset emails
-- `EMAIL_FROM` — (optional) From address for emails (default: `FitMusc <onboarding@resend.dev>`)
+- `MJ_APIKEY_PUBLIC` — Mailjet API public key
+- `MJ_APIKEY_PRIVATE` — Mailjet API private key
+- `EMAIL_FROM_ADDRESS` — (optional) Sender email address (default: `noreply@fitmusc.com`)
+- `EMAIL_FROM_NAME` — (optional) Sender display name (default: `FitMusc`)
 - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` — VAPID public key for web push (generate with `npx tsx scripts/generate-vapid-keys.ts`)
 - `VAPID_PRIVATE_KEY` — VAPID private key for web push (server-only)
 - `CRON_SECRET` — Secret for Vercel Cron job authentication (used by `/api/cron/reminders`)

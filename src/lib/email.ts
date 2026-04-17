@@ -1,16 +1,33 @@
-import { Resend } from "resend";
+import Mailjet from "node-mailjet";
 
-let resend: Resend | null = null;
+let client: ReturnType<typeof Mailjet.apiConnect> | null = null;
 
-function getResend() {
-  if (!resend) {
-    resend = new Resend(process.env.RESEND_API_KEY);
+function getMailjet() {
+  if (!client) {
+    client = Mailjet.apiConnect(
+      process.env.MJ_APIKEY_PUBLIC!,
+      process.env.MJ_APIKEY_PRIVATE!,
+    );
   }
-  return resend;
+  return client;
 }
 
-const from = process.env.EMAIL_FROM ?? "FitMusc <onboarding@resend.dev>";
+const fromEmail = process.env.EMAIL_FROM_ADDRESS ?? "noreply@fitmusc.com";
+const fromName = process.env.EMAIL_FROM_NAME ?? "FitMusc";
 const appUrl = process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+async function sendEmail(to: string, subject: string, html: string) {
+  await getMailjet().post("send", { version: "v3.1" }).request({
+    Messages: [
+      {
+        From: { Email: fromEmail, Name: fromName },
+        To: [{ Email: to }],
+        Subject: subject,
+        HTMLPart: html,
+      },
+    ],
+  });
+}
 
 function emailLayout(content: string) {
   return `<!DOCTYPE html>
@@ -98,7 +115,7 @@ export async function sendInviteEmail(to: string, tempPassword: string) {
     ${emailButton(`${appUrl}/giris`, "Giriş Yap →")}
   `);
 
-  await getResend().emails.send({ from, to, subject: "FitMusc — Hesabınız Oluşturuldu", html });
+  await sendEmail(to, "FitMusc — Hesabınız Oluşturuldu", html);
 }
 
 export async function sendResetEmail(to: string, resetUrl: string) {
@@ -113,7 +130,7 @@ export async function sendResetEmail(to: string, resetUrl: string) {
     </p>
   `);
 
-  await getResend().emails.send({ from, to, subject: "FitMusc — Şifre Sıfırlama", html });
+  await sendEmail(to, "FitMusc — Şifre Sıfırlama", html);
 }
 
 export async function sendNotificationEmail(
@@ -131,7 +148,7 @@ export async function sendNotificationEmail(
     ${link ? emailButton(`${appUrl}${link}`, "Detayları Gör →") : ""}
   `);
 
-  await getResend().emails.send({ from, to, subject: `FitMusc — ${subject}`, html });
+  await sendEmail(to, `FitMusc — ${subject}`, html);
 }
 
 export async function sendMembershipExpiryEmail(
@@ -179,5 +196,5 @@ export async function sendMembershipExpiryEmail(
     ${emailButton(`${appUrl}/ayarlar`, "Hesabıma Git →")}
   `);
 
-  await getResend().emails.send({ from, to, subject: `FitMusc — ${subject}`, html });
+  await sendEmail(to, `FitMusc — ${subject}`, html);
 }
