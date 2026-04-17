@@ -36,6 +36,7 @@ export const auth = betterAuth({
       membershipStartDate: { type: "date", required: false },
       membershipEndDate: { type: "date", required: false },
       membershipNotifiedAt: { type: "date", required: false },
+      hasSeenOnboarding: { type: "boolean", required: false, defaultValue: false },
     },
   },
   session: {

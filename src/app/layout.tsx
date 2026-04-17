@@ -4,6 +4,7 @@ import { QueryProvider } from "@/lib/query-client";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Toaster } from "@/components/ui/sonner";
 import { SwRegister } from "./sw-register";
+import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 
 export const metadata: Metadata = {
   title: {
@@ -57,7 +58,9 @@ export default function RootLayout({
     <html lang="tr" className="dark">
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         <QueryProvider>
-          <main className="pb-24 max-w-lg mx-auto">{children}</main>
+          <PullToRefresh>
+            <main className="pb-24 max-w-lg mx-auto">{children}</main>
+          </PullToRefresh>
           <BottomNav />
           <Toaster />
           <SwRegister />

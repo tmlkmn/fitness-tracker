@@ -42,6 +42,7 @@ export const users = pgTable("user", {
   membershipStartDate: timestamp("membership_start_date"),
   membershipEndDate: timestamp("membership_end_date"),
   membershipNotifiedAt: timestamp("membership_notified_at"),
+  hasSeenOnboarding: boolean("has_seen_onboarding").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

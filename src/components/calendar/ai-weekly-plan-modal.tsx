@@ -762,15 +762,15 @@ export function AiWeeklyPlanModal({
                     >
                       <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-medium truncate">{item.title}</span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-xs font-medium line-clamp-2">{item.title}</span>
                           <Badge variant="outline" className="text-[10px] shrink-0">
                             {item.phase}
                           </Badge>
                         </div>
                         {item.userNote && (
-                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                            {item.userNote.length > 60 ? item.userNote.slice(0, 60) + "..." : item.userNote}
+                          <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">
+                            {item.userNote}
                           </p>
                         )}
                         <p className="text-[10px] text-muted-foreground mt-0.5">

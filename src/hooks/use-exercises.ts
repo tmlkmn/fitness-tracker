@@ -45,6 +45,7 @@ export function useToggleExercise() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["exercises"] });
+      qc.invalidateQueries({ queryKey: ["today-dashboard"] });
     },
   });
 }

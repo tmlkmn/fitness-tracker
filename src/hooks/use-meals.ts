@@ -44,6 +44,7 @@ export function useToggleMeal() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["meals"] });
+      qc.invalidateQueries({ queryKey: ["today-dashboard"] });
     },
   });
 }

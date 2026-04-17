@@ -3,6 +3,8 @@
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { OnboardingTrigger } from "@/components/onboarding/onboarding-trigger";
+import { OnboardingCarousel } from "@/components/onboarding/onboarding-carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -74,6 +76,17 @@ export default function HomePage() {
   const { data: weeks } = useAllWeeks();
   const { data: notifications } = useNotifications();
 
+  // Onboarding carousel — auto-open on first login
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [onboardingTriggered, setOnboardingTriggered] = useState(false);
+
+  useEffect(() => {
+    if (profile && profile.hasSeenOnboarding === false && !onboardingTriggered) {
+      setOnboardingOpen(true);
+      setOnboardingTriggered(true);
+    }
+  }, [profile, onboardingTriggered]);
+
   // Current day in Turkish
   const [currentDay] = useState(() =>
     new Date().toLocaleDateString("tr-TR", {
@@ -137,9 +150,17 @@ export default function HomePage() {
         rightSlot={
           <div className="flex items-center gap-1">
             <FeedbackButton />
+            <OnboardingTrigger />
             <NotificationBell />
           </div>
         }
+      />
+
+      {/* Onboarding carousel — auto on first login, re-openable via trigger */}
+      <OnboardingCarousel
+        open={onboardingOpen}
+        onOpenChange={setOnboardingOpen}
+        isFirstTime={profile?.hasSeenOnboarding === false}
       />
 
       <div className="p-4 space-y-4">

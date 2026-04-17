@@ -25,10 +25,11 @@ export async function getUserProfile() {
       membershipType: users.membershipType,
       membershipStartDate: users.membershipStartDate,
       membershipEndDate: users.membershipEndDate,
+      hasSeenOnboarding: users.hasSeenOnboarding,
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false };
 }
 
 export async function updateUserWeightTargets(data: {
@@ -130,4 +131,12 @@ export async function updateUserProfile(data: {
   revalidatePath("/");
   revalidatePath("/ayarlar");
   revalidatePath("/ilerleme");
+}
+
+export async function markOnboardingSeen() {
+  const user = await getAuthUser();
+  await db
+    .update(users)
+    .set({ hasSeenOnboarding: true })
+    .where(eq(users.id, user.id));
 }
