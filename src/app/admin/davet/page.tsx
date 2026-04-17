@@ -4,7 +4,7 @@ import { useState } from "react";
 import { inviteUser } from "@/actions/admin";
 import type { MembershipType } from "@/actions/admin";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Loader2, CheckCircle } from "lucide-react";
+import { UserPlus, Loader2, CheckCircle, Copy, Check } from "lucide-react";
 import Link from "next/link";
 
 const MEMBERSHIP_OPTIONS: { value: MembershipType; label: string }[] = [
@@ -16,6 +16,28 @@ const MEMBERSHIP_OPTIONS: { value: MembershipType; label: string }[] = [
   { value: "custom", label: "Özel Tarih" },
 ];
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors shrink-0"
+      aria-label="Kopyala"
+    >
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-green-500" />
+      ) : (
+        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+      )}
+    </button>
+  );
+}
+
 export default function DavetPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -24,6 +46,8 @@ export default function DavetPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [invitedEmail, setInvitedEmail] = useState("");
+  const [tempPassword, setTempPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,10 +65,12 @@ export default function DavetPage() {
     setLoading(true);
 
     try {
-      await inviteUser(email, name, {
+      const result = await inviteUser(email, name, {
         type: membershipType,
         ...(membershipType === "custom" ? { customEndDate } : {}),
       });
+      setInvitedEmail(email);
+      setTempPassword(result.tempPassword);
       setSuccess(true);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "";
@@ -68,9 +94,27 @@ export default function DavetPage() {
             </div>
             <h1 className="text-xl font-bold">Davet Gönderildi</h1>
             <p className="text-sm text-muted-foreground">
-              <strong>{email}</strong> adresine geçici şifre ile davet e-postası
-              gönderildi.
+              Geçici şifre ile davet e-postası gönderildi.
             </p>
+
+            {/* Credentials with copy buttons */}
+            <div className="rounded-lg border border-border bg-card p-3 space-y-3 text-left">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">E-posta</p>
+                  <p className="text-sm font-medium truncate">{invitedEmail}</p>
+                </div>
+                <CopyButton text={invitedEmail} />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Geçici Şifre</p>
+                  <p className="text-sm font-mono font-bold text-primary tracking-wider">{tempPassword}</p>
+                </div>
+                <CopyButton text={tempPassword} />
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -79,6 +123,8 @@ export default function DavetPage() {
                   setEmail("");
                   setMembershipType("1-month");
                   setCustomEndDate("");
+                  setInvitedEmail("");
+                  setTempPassword("");
                 }}
                 className="flex-1 h-10 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors"
               >

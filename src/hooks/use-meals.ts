@@ -22,6 +22,7 @@ export function useToggleMeal() {
       isCompleted: boolean;
     }) => toggleMealCompleted(id, isCompleted),
     onMutate: async ({ id, isCompleted }) => {
+      await qc.cancelQueries({ queryKey: ["meals"] });
       const queries = qc.getQueriesData<Meal[]>({ queryKey: ["meals"] });
       const snapshots: Array<[readonly unknown[], Meal[] | undefined]> = [];
       for (const [key, data] of queries) {

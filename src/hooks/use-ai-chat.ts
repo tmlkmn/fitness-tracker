@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { getChatHistory, clearChatHistory } from "@/actions/chat";
+import { getChatHistory, clearChatHistory, saveChatMessage } from "@/actions/chat";
 
 interface Message {
   id: string;
@@ -117,6 +117,11 @@ export function useAIChat() {
               m.id === assistantMsg.id ? { ...m, content: currentText } : m
             )
           );
+        }
+
+        // Stream tamamlandı, asistan mesajını DB'ye kaydet
+        if (text) {
+          saveChatMessage("assistant", text).catch(() => {});
         }
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") {

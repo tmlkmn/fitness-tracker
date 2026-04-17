@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { MessageSquarePlus } from "lucide-react";
 import { FeedbackModal } from "./feedback-modal";
+import { AdminLinkButton } from "@/components/layout/admin-link-button";
 
 export function FeedbackButton() {
   const [open, setOpen] = useState(false);
   return (
     <>
+      <AdminLinkButton />
       <button
         onClick={() => setOpen(true)}
         className="h-9 w-9 inline-flex items-center justify-center rounded-lg hover:bg-accent transition-colors"

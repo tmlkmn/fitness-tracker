@@ -61,7 +61,7 @@ export async function inviteUser(email: string, name: string, membership: Member
   }
 
   revalidatePath("/admin");
-  return { success: true };
+  return { success: true, tempPassword };
 }
 
 export type UserStatus = "Admin" | "Aktif" | "Bekliyor" | "Süresi Dolmuş" | "Üyelik Dolmuş";

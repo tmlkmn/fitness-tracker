@@ -22,6 +22,7 @@ export function useToggleExercise() {
       isCompleted: boolean;
     }) => toggleExerciseCompleted(id, isCompleted),
     onMutate: async ({ id, isCompleted }) => {
+      await qc.cancelQueries({ queryKey: ["exercises"] });
       // Optimistically update all exercise query caches
       const queries = qc.getQueriesData<Exercise[]>({ queryKey: ["exercises"] });
       const snapshots: Array<[readonly unknown[], Exercise[] | undefined]> = [];

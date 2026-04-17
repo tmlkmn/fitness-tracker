@@ -11,10 +11,17 @@ import { AiWeeklyPlanModal } from "@/components/calendar/ai-weekly-plan-modal";
 import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
 import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans } from "@/hooks/use-plans";
-import { useGenerateWeeklyPlan, useApplyWeeklyPlan } from "@/hooks/use-weekly-ai";
+import { useGenerateWeeklyPlan, useApplyWeeklyPlan, useDeleteWeeklyPlan } from "@/hooks/use-weekly-ai";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Dumbbell,
   Calendar,
@@ -23,6 +30,7 @@ import {
   CircleDot,
   Sparkles,
   Plus,
+  Trash2,
 } from "lucide-react";
 import { formatDateStr } from "@/lib/utils";
 import { ensureDailyPlan } from "@/actions/ensure-plan";
@@ -57,6 +65,7 @@ export default function TakvimPage() {
   const [profileWarningOpen, setProfileWarningOpen] = useState(false);
   const [creatingPlan, setCreatingPlan] = useState(false);
   const [createdDailyPlanId, setCreatedDailyPlanId] = useState<number | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const { data, isLoading } = useWeekPlansByDate(selectedDate);
   const { data: planDates } = useDatesWithPlans(viewYear, viewMonth);
@@ -64,6 +73,7 @@ export default function TakvimPage() {
 
   const generateWeekly = useGenerateWeeklyPlan();
   const applyWeekly = useApplyWeeklyPlan();
+  const deleteWeekly = useDeleteWeeklyPlan();
   const { missingFields } = useProfileCheck();
 
   // Also fetch plan dates for the week strip's month (may differ from viewMonth)
@@ -278,16 +288,28 @@ export default function TakvimPage() {
           </>
         )}
 
-        {/* AI Weekly Plan Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full gap-1.5"
-          onClick={() => handleWeeklyModalOpenChange(true)}
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          AI ile Haftalık Plan {data?.weeklyPlan ? "Değiştir" : "Oluştur"}
-        </Button>
+        {/* AI Weekly Plan Button + Delete */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-1.5"
+            onClick={() => handleWeeklyModalOpenChange(true)}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            AI ile Haftalık Plan {data?.weeklyPlan ? "Değiştir" : "Oluştur"}
+          </Button>
+          {data?.weeklyPlan && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-destructive hover:text-destructive"
+              onClick={() => setDeleteConfirmOpen(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
 
         <p className="text-sm text-muted-foreground">
           {formatTurkishDate(selectedDate)}
@@ -361,6 +383,38 @@ export default function TakvimPage() {
         onOpenChange={setProfileWarningOpen}
         missingFields={missingFields}
       />
+
+      {/* Delete Weekly Plan Confirmation */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Haftalık Planı Sil</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Bu haftanın planını silmek istediğinizden emin misiniz? Tüm günlük planlar, öğünler ve egzersizler silinecek. Bu işlem geri alınamaz.
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setDeleteConfirmOpen(false)}>
+              İptal
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteWeekly.isPending}
+              onClick={() => {
+                if (!data?.weeklyPlan?.id) return;
+                deleteWeekly.mutate(data.weeklyPlan.id, {
+                  onSuccess: () => {
+                    setDeleteConfirmOpen(false);
+                    setCreatedDailyPlanId(null);
+                  },
+                });
+              }}
+            >
+              {deleteWeekly.isPending ? "Siliniyor..." : "Sil"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

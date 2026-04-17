@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MealList } from "@/components/meals/meal-list";
-import { MealAgenda } from "@/components/meals/meal-agenda";
 import { WorkoutList } from "@/components/workout/workout-list";
 import { AiMealModal } from "@/components/meals/ai-meal-modal";
 import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
-import { UtensilsCrossed, Clock, Dumbbell } from "lucide-react";
+import { UtensilsCrossed, Dumbbell } from "lucide-react";
 import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
 import { useUserProfile } from "@/hooks/use-user";
 import { useProfileCheck } from "@/hooks/use-profile-check";
@@ -68,42 +67,39 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
 
   return (
     <>
-      <Tabs defaultValue="meals">
-        <TabsList className={`grid w-full ${isNutritionOnly ? "grid-cols-2" : "grid-cols-3"}`}>
-          <TabsTrigger value="meals" className="gap-1.5 text-xs">
-            <UtensilsCrossed className="h-3.5 w-3.5" />
-            Öğünler
-          </TabsTrigger>
-          <TabsTrigger value="agenda" className="gap-1.5 text-xs">
-            <Clock className="h-3.5 w-3.5" />
-            Ajanda
-          </TabsTrigger>
-          {!isNutritionOnly && (
+      {isNutritionOnly ? (
+        <MealList
+          dailyPlanId={dailyPlan.id}
+          readOnly={readOnly}
+          onAiGenerate={readOnly ? undefined : () => handleMealModalOpenChange(true)}
+        />
+      ) : (
+        <Tabs defaultValue="meals">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="meals" className="gap-1.5 text-xs">
+              <UtensilsCrossed className="h-3.5 w-3.5" />
+              Öğünler
+            </TabsTrigger>
             <TabsTrigger value="workout" className="gap-1.5 text-xs">
               <Dumbbell className="h-3.5 w-3.5" />
               Antrenman
             </TabsTrigger>
-          )}
-        </TabsList>
-        <TabsContent value="meals">
-          <MealList
-            dailyPlanId={dailyPlan.id}
-            readOnly={readOnly}
-            onAiGenerate={readOnly ? undefined : () => handleMealModalOpenChange(true)}
-          />
-        </TabsContent>
-        <TabsContent value="agenda">
-          <MealAgenda dailyPlanId={dailyPlan.id} />
-        </TabsContent>
-        {!isNutritionOnly && (
+          </TabsList>
+          <TabsContent value="meals">
+            <MealList
+              dailyPlanId={dailyPlan.id}
+              readOnly={readOnly}
+              onAiGenerate={readOnly ? undefined : () => handleMealModalOpenChange(true)}
+            />
+          </TabsContent>
           <TabsContent value="workout">
             <WorkoutList
               dailyPlanId={dailyPlan.id}
               readOnly={readOnly}
             />
           </TabsContent>
-        )}
-      </Tabs>
+        </Tabs>
+      )}
 
       {mealModalOpen && (
         <AiMealModal

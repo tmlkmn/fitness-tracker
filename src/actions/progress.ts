@@ -2,20 +2,18 @@
 
 import { db } from "@/db";
 import { progressLogs } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 
-export async function addProgressLog(data: {
+type ProgressData = {
   logDate: string;
-  // Ana Bilgiler
   weight?: string;
   fluidPercent?: string;
   fluidKg?: string;
   fatPercent?: string;
   fatKg?: string;
   bmi?: string;
-  // Vücut Bölgeleri
   leftArmFatPercent?: string;
   leftArmFatKg?: string;
   leftArmMusclePercent?: string;
@@ -36,17 +34,49 @@ export async function addProgressLog(data: {
   rightLegFatKg?: string;
   rightLegMusclePercent?: string;
   rightLegMuscleKg?: string;
-  // Ölçüler
   waistCm?: string;
   rightArmCm?: string;
   leftArmCm?: string;
   rightLegCm?: string;
   leftLegCm?: string;
-  // Meta
   notes?: string;
-}) {
+};
+
+export async function addProgressLog(data: ProgressData) {
   const user = await getAuthUser();
   await db.insert(progressLogs).values({ ...data, userId: user.id });
+  revalidatePath("/ilerleme");
+}
+
+export async function updateProgressLog(id: number, data: ProgressData) {
+  const user = await getAuthUser();
+
+  const [existing] = await db
+    .select({ id: progressLogs.id })
+    .from(progressLogs)
+    .where(and(eq(progressLogs.id, id), eq(progressLogs.userId, user.id)));
+
+  if (!existing) throw new Error("Not found");
+
+  await db
+    .update(progressLogs)
+    .set(data)
+    .where(eq(progressLogs.id, id));
+
+  revalidatePath("/ilerleme");
+}
+
+export async function deleteProgressLog(id: number) {
+  const user = await getAuthUser();
+
+  const [existing] = await db
+    .select({ id: progressLogs.id })
+    .from(progressLogs)
+    .where(and(eq(progressLogs.id, id), eq(progressLogs.userId, user.id)));
+
+  if (!existing) throw new Error("Not found");
+
+  await db.delete(progressLogs).where(eq(progressLogs.id, id));
   revalidatePath("/ilerleme");
 }
 

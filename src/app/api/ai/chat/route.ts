@@ -100,8 +100,6 @@ export async function POST(request: Request) {
     messages,
   });
 
-  let fullResponse = "";
-
   const readableStream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
@@ -111,7 +109,6 @@ export async function POST(request: Request) {
             event.type === "content_block_delta" &&
             event.delta.type === "text_delta"
           ) {
-            fullResponse += event.delta.text;
             controller.enqueue(encoder.encode(event.delta.text));
           }
         }
@@ -119,16 +116,6 @@ export async function POST(request: Request) {
         console.error("AI chat stream error:", err);
       } finally {
         controller.close();
-        // Save assistant response to DB
-        if (fullResponse) {
-          try {
-            await db.insert(chatMessages).values({
-              userId,
-              role: "assistant",
-              content: fullResponse,
-            });
-          } catch { /* silent */ }
-        }
       }
     },
   });
