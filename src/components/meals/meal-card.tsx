@@ -25,6 +25,7 @@ interface MealCardProps {
   isCompleted: boolean;
   onToggle?: (id: number, isCompleted: boolean) => void;
   readOnly?: boolean;
+  planDate?: string;
 }
 
 export function MealCard({
@@ -40,11 +41,22 @@ export function MealCard({
   isCompleted,
   onToggle,
   readOnly,
+  planDate,
 }: MealCardProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const mealIcon = getMealIcon(mealLabel);
+
+  // Check if meal time has passed (for today only)
+  const isMealTimePast = (() => {
+    if (!planDate) return false;
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (planDate !== todayStr) return false;
+    const now = new Date();
+    const [h, m] = mealTime.split(":").map(Number);
+    return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
+  })();
 
   return (
     <>
@@ -118,7 +130,7 @@ export function MealCard({
               >
                 {content}
               </p>
-              {!readOnly && !isCompleted && (
+              {!readOnly && !isCompleted && !isMealTimePast && (
                 <div className="mt-2">
                   <AiSuggestButton
                     mealId={id}

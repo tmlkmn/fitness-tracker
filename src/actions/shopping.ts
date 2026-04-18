@@ -63,7 +63,7 @@ export async function generateShoppingList(weeklyPlanId: number) {
     const client = getAIClient();
     const message = await client.messages.create({
       model: AI_MODELS.fast,
-      max_tokens: 1200,
+      max_tokens: 2500,
       system: [
         {
           type: "text",
@@ -81,6 +81,12 @@ export async function generateShoppingList(weeklyPlanId: number) {
 
     const text =
       message.content[0].type === "text" ? message.content[0].text : "";
+
+    // Check for truncated response
+    if (message.stop_reason === "max_tokens") {
+      console.error("[AI] Shopping list response was truncated (max_tokens)");
+      throw new Error("AI_UNAVAILABLE");
+    }
 
     // Parse JSON
     let cleaned = text

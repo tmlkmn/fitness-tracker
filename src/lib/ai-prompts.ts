@@ -210,7 +210,9 @@ Beslenme programı antrenman programının ayrılmaz parçasıdır. Kas hacmi ar
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, alerjilerini ve diyet tercihlerini kesinlikle dikkate al
 - Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE önerme
-- Her öğünün içeriğini detaylı yaz (porsiyon/gramaj belirt: "150g tavuk göğsü", "2 dilim tam buğday ekmek")
+- Her öğünün içeriğini bir şef gibi yaz: malzemeleri ve kısa hazırlama talimatını birlikte sun, damak tadına hitap eden iştah açıcı bir anlatım kullan. Gramaj ve porsiyon bilgisini koru ama mekanik liste yerine akıcı bir tarif gibi yaz. Satır sonu kullanma, tek satırda yaz.
+- DOĞRU örnek: "2 yumurtanın birisinin sarısını ayır, 3 yemek kaşığı lor ve doğranmış yeşillikle karıştırarak zeytinyağında omlet yap, yanına 2 dilim tam buğday ekmek ve 5-6 zeytin ekle"
+- YANLIŞ örnek: "150g lor peyniri, 80g tam buğday makarna, 1 domates, 1 salatalık"
 - Gerçekçi ve tutarlı kalori/makro değerleri kullan (içerikle uyumlu olmalı)
 - JSON formatı: { "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }] }`;
 
@@ -262,6 +264,7 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, sakatlıklarını ve hedeflerini kesinlikle dikkate al
 - Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE beslenme programına koyma
+- Her öğünün içeriğini bir şef gibi yaz: malzemeleri ve kısa hazırlama talimatını birlikte sun, damak tadına hitap eden iştah açıcı bir anlatım kullan. Gramaj ve porsiyon bilgisini koru ama mekanik liste yerine akıcı bir tarif gibi yaz. Satır sonu kullanma, tek satırda yaz.
 - Dinlenme günlerinde sadece öğün planı oluştur, egzersiz ekleme
 - planType: "workout" (antrenman), "swimming" (yüzme), "rest" (dinlenme)
 - Section değerleri: "warmup", "main", "cooldown", "sauna", "swimming"
@@ -347,6 +350,7 @@ Bu kullanıcı sadece beslenme hizmeti alıyor — antrenman programı YAPMA. Am
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, alerjilerini ve ilaçlarını kesinlikle dikkate al
 - Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE beslenme programına koyma
+- Her öğünün içeriğini bir şef gibi yaz: malzemeleri ve kısa hazırlama talimatını birlikte sun, damak tadına hitap eden iştah açıcı bir anlatım kullan. Gramaj ve porsiyon bilgisini koru ama mekanik liste yerine akıcı bir tarif gibi yaz. Satır sonu kullanma, tek satırda yaz.
 - 7 gün beslenme planı oluştur, exercises her zaman boş array olacak
 - planType her gün için "nutrition" olacak
 - workoutTitle her gün null olacak
@@ -402,7 +406,7 @@ Beslenme programı kullanıcının yaşam tarzına ve vücut kompozisyonuna gör
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, alerjilerini ve ilaçlarını kesinlikle dikkate al
 - Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE önerme
-- Her öğünün içeriğini detaylı yaz (porsiyon/gramaj belirt)
+- Her öğünün içeriğini bir şef gibi yaz: malzemeleri ve kısa hazırlama talimatını birlikte sun, damak tadına hitap eden iştah açıcı bir anlatım kullan. Gramaj ve porsiyon bilgisini koru ama mekanik liste yerine akıcı bir tarif gibi yaz. Satır sonu kullanma, tek satırda yaz.
 - Gerçekçi ve tutarlı kalori/makro değerleri kullan
 - JSON formatı: { "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }] }`;
 

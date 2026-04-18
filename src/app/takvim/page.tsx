@@ -314,7 +314,7 @@ export default function TakvimPage() {
         )}
 
         {/* AI Weekly Plan Button + Delete */}
-        {!isPastWeek && (
+        {!isPastWeek && !isLoading && (
           <div className="flex gap-2">
             {/* AI button: hide for past week; current week: show only if no plan or Monday; future week: always show */}
             {(isFutureWeek || !data?.weeklyPlan || isMonday) && (

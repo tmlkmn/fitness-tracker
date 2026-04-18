@@ -14,10 +14,11 @@ import { BulkDeleteMealsDialog } from "./bulk-delete-meals-dialog";
 interface MealListProps {
   dailyPlanId: number;
   readOnly?: boolean;
+  planDate?: string;
   onAiGenerate?: () => void;
 }
 
-export function MealList({ dailyPlanId, readOnly, onAiGenerate }: MealListProps) {
+export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: MealListProps) {
   const { data: mealList, isLoading } = useMeals(dailyPlanId);
   const toggleMeal = useToggleMeal();
   const [addOpen, setAddOpen] = useState(false);
@@ -105,6 +106,7 @@ export function MealList({ dailyPlanId, readOnly, onAiGenerate }: MealListProps)
           dailyPlanId={dailyPlanId}
           isCompleted={meal.isCompleted ?? false}
           readOnly={readOnly}
+          planDate={planDate}
           onToggle={readOnly ? undefined : (id, completed) =>
             toggleMeal.mutate({ id, isCompleted: completed })
           }

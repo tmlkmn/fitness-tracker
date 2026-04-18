@@ -71,6 +71,7 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
         <MealList
           dailyPlanId={dailyPlan.id}
           readOnly={readOnly}
+          planDate={dailyPlan.date ?? undefined}
           onAiGenerate={readOnly ? undefined : () => handleMealModalOpenChange(true)}
         />
       ) : (
@@ -89,6 +90,7 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
             <MealList
               dailyPlanId={dailyPlan.id}
               readOnly={readOnly}
+              planDate={dailyPlan.date ?? undefined}
               onAiGenerate={readOnly ? undefined : () => handleMealModalOpenChange(true)}
             />
           </TabsContent>
