@@ -350,6 +350,22 @@ export const aiPlanSuggestions = pgTable("ai_plan_suggestions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ── Saved Meal Suggestions ──
+
+export const savedMealSuggestions = pgTable("saved_meal_suggestions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  mealLabel: text("meal_label").notNull(),
+  content: text("content").notNull(),
+  calories: integer("calories"),
+  proteinG: numeric("protein_g"),
+  carbsG: numeric("carbs_g"),
+  fatG: numeric("fat_g"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ── Chat Messages ──
 
 export const chatMessages = pgTable("chat_messages", {

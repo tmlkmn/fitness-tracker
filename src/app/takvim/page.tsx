@@ -32,10 +32,12 @@ import {
   Plus,
   Trash2,
   AlertTriangle,
+  ShoppingCart,
 } from "lucide-react";
 import { formatDateStr } from "@/lib/utils";
 import { ensureDailyPlan } from "@/actions/ensure-plan";
 import { useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 
 function formatTurkishDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -338,6 +340,26 @@ export default function TakvimPage() {
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             )}
+            {/* Shopping cart: visible when a weekly plan exists */}
+            {data?.weeklyPlan && (
+              <Link href={`/alisveris?week=${data.weeklyPlan.id}`}>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* Shopping cart for past weeks (outside the !isPastWeek block) */}
+        {isPastWeek && data?.weeklyPlan && (
+          <div className="flex gap-2">
+            <Link href={`/alisveris?week=${data.weeklyPlan.id}`}>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <ShoppingCart className="h-3.5 w-3.5" />
+                Alışveriş Listesi
+              </Button>
+            </Link>
           </div>
         )}
 

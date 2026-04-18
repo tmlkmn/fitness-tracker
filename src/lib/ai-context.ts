@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { users, weeklyPlans, progressLogs } from "@/db/schema";
-import { eq, desc, and, gte } from "drizzle-orm";
+import { users, weeklyPlans, dailyPlans, meals, progressLogs } from "@/db/schema";
+import { eq, desc, and, gte, lte, asc } from "drizzle-orm";
 
 // 5-minute TTL memory cache for user context
 const contextCache = new Map<string, { text: string; timestamp: number }>();
@@ -118,6 +118,48 @@ export async function buildUserContext(userId: string): Promise<string> {
     lines.push(
       `Program: Hafta ${currentWeek.weekNumber}, ${currentWeek.phase} fazı (${currentWeek.title})`
     );
+  }
+
+  // Weekly meal plan for the current week (startDate <= today, most recent)
+  const [activeWeek] = await db
+    .select({ id: weeklyPlans.id })
+    .from(weeklyPlans)
+    .where(
+      and(
+        eq(weeklyPlans.userId, userId),
+        lte(weeklyPlans.startDate, today)
+      )
+    )
+    .orderBy(desc(weeklyPlans.startDate))
+    .limit(1);
+
+  if (activeWeek) {
+    const weekMeals = await db
+      .select({
+        dayName: dailyPlans.dayName,
+        planType: dailyPlans.planType,
+        mealLabel: meals.mealLabel,
+        content: meals.content,
+        calories: meals.calories,
+      })
+      .from(meals)
+      .innerJoin(dailyPlans, eq(meals.dailyPlanId, dailyPlans.id))
+      .where(eq(dailyPlans.weeklyPlanId, activeWeek.id))
+      .orderBy(asc(dailyPlans.dayOfWeek), asc(meals.sortOrder));
+
+    if (weekMeals.length > 0) {
+      const byDay = new Map<string, string[]>();
+      for (const m of weekMeals) {
+        const key = `${m.dayName} (${m.planType})`;
+        if (!byDay.has(key)) byDay.set(key, []);
+        byDay.get(key)!.push(`${m.mealLabel}: ${m.content} (${m.calories} kcal)`);
+      }
+      const mealLines: string[] = [];
+      for (const [day, dayMeals] of byDay) {
+        mealLines.push(`${day}: ${dayMeals.join(" | ")}`);
+      }
+      lines.push(`\nMevcut haftalık beslenme planı:\n${mealLines.join("\n")}`);
+    }
   }
 
   // Latest progress

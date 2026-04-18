@@ -23,15 +23,23 @@ Kurallar:
 - Kullanıcı evdeki malzemeleri belirtmişse, SADECE bu malzemelerle yapılabilecek yemekler öner
 
 ## İçerik Formatı (ÇOK ÖNEMLİ)
-- content alanını KISA ve SADE yaz, tıpkı bir diyet listesindeki gibi
-- Sadece malzeme listesi ve gramajları yaz, virgülle ayır
-- Emoji, başlık, pişirme talimatı, numara, madde işareti KULLANMA
+- Bir şef gibi yaz: malzemeleri ve kısa hazırlama talimatını birlikte sun
+- Damak tadına hitap eden, iştah açıcı bir anlatım kullan
+- Gramaj ve porsiyon bilgisini koru ama mekanik liste yerine akıcı bir tarif gibi yaz
+- Emoji, başlık, madde işareti, numara KULLANMA
 - Satır sonu (\\n) KULLANMA, tek satırda yaz
-- DOĞRU örnek: "150g lor peyniri, 80g tam buğday makarna, 1 domates, 1 salatalık, 15 zeytin, 2 yemek kaşığı zeytinyağı"
+- DOĞRU örnek: "2 yumurtanın birisinin sarısını ayır, 3 yemek kaşığı lor ve doğranmış yeşillikle karıştırarak zeytinyağında omlet yap, yanına 2 dilim tam buğday ekmek ve 5-6 zeytin ekle"
+- DOĞRU örnek: "150g tavuk göğsünü baharatla marine edip ızgarada pişir, yanına buharda 100g brokoli ve 80g bulgur pilavı eşlik etsin"
+- YANLIŞ örnek: "150g lor peyniri, 80g tam buğday makarna, 1 domates, 1 salatalık"
 - YANLIŞ örnek: "📋 İçerik Detayları:\\n- 150g lor peyniri (süzülmüş)\\n- 80g makarna..."
 
+## Gün Tipine Göre Makro Ayarı
+- Antrenman günü: Yüksek karbonhidrat + yüksek protein
+- Dinlenme günü: Düşük karbonhidrat + yüksek protein + sağlıklı yağ
+- Yüzme günü: Orta karbonhidrat + yüksek protein
+
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
-- JSON formatı: { "content": "malzeme listesi kısa ve sade", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }`;
+- JSON formatı: { "suggestions": [{ "content": "şef tarzı tarif açıklaması", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, { ... }, { ... }] }`;
 
 export const EXERCISE_TIPS_PROMPT = `Sen 10+ yıl deneyimli, Türkçe konuşan sertifikalı bir kişisel antrenör ve hareket bilimci (kineziyoloji uzmanı) sin. Görevin, verilen egzersiz için doğru form ipuçları ve yaygın hataları açıklamak.
 
@@ -397,3 +405,14 @@ Beslenme programı kullanıcının yaşam tarzına ve vücut kompozisyonuna gör
 - Her öğünün içeriğini detaylı yaz (porsiyon/gramaj belirt)
 - Gerçekçi ve tutarlı kalori/makro değerleri kullan
 - JSON formatı: { "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }] }`;
+
+export const SHOPPING_LIST_PROMPT = `Sen Türkçe konuşan deneyimli bir beslenme uzmanısın. Görevin, verilen haftalık beslenme programındaki tüm öğünleri analiz ederek kategorize edilmiş bir alışveriş listesi oluşturmak.
+
+Kurallar:
+- Tüm öğünlerdeki malzemeleri çıkar ve birleştir
+- Aynı malzemeyi tekrarlama, miktarları topla (haftalık toplam)
+- Kategorilere ayır: 🥩 Et & Balık, 🥚 Süt Ürünleri & Yumurta, 🥬 Sebze & Meyve, 🌾 Tahıllar & Baklagiller, 🫒 Yağ & Sos, 🥜 Kuruyemiş & Tohum, 🧂 Baharat & Çeşni, 📦 Diğer
+- Her ürün için gerçekçi haftalık miktar belirt (örn: "500g", "1 paket", "2 adet", "1 litre")
+- Tuz, su, temel baharat gibi her evde bulunan malzemeleri EKLEME
+- Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
+- JSON formatı: { "items": [{ "category": "🥩 Et & Balık", "itemName": "Tavuk göğsü", "quantity": "1kg", "notes": null }] }`;

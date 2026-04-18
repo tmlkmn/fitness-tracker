@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getShoppingList, toggleShoppingItem } from "@/actions/shopping";
+import { getShoppingList, toggleShoppingItem, generateShoppingList } from "@/actions/shopping";
 
 export function useShoppingList(weeklyPlanId: number) {
   return useQuery({
@@ -21,6 +21,16 @@ export function useToggleShopping() {
     }) => toggleShoppingItem(id, isPurchased),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shopping"] });
+    },
+  });
+}
+
+export function useGenerateShoppingList() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (weeklyPlanId: number) => generateShoppingList(weeklyPlanId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["shopping"] });
     },
   });
 }

@@ -43,7 +43,7 @@ export async function generateMealVariation(
   mealId?: number | null,
   previousSuggestions?: string[],
   userNote?: string | null
-): Promise<{ suggestion: MealVariationSuggestion }> {
+): Promise<{ suggestions: MealVariationSuggestion[] }> {
   const user = await getAuthUser();
   await checkRateLimit(user.id, "meal");
   await logAiUsage(user.id, "meal");
@@ -61,6 +61,7 @@ export async function generateMealVariation(
 
   // Build week context: what other meals of the same label exist this week
   let weekContext = "";
+  let planTypeContext = "";
   if (mealId) {
     try {
       const [currentMeal] = await db
@@ -70,9 +71,19 @@ export async function generateMealVariation(
 
       if (currentMeal?.dailyPlanId) {
         const [currentDay] = await db
-          .select({ weeklyPlanId: dailyPlans.weeklyPlanId })
+          .select({ weeklyPlanId: dailyPlans.weeklyPlanId, planType: dailyPlans.planType })
           .from(dailyPlans)
           .where(eq(dailyPlans.id, currentMeal.dailyPlanId));
+
+        if (currentDay?.planType) {
+          const planTypeLabels: Record<string, string> = {
+            workout: "Antrenman günü",
+            rest: "Dinlenme günü",
+            swimming: "Yüzme günü",
+            nutrition: "Beslenme günü",
+          };
+          planTypeContext = `\nGünün tipi: ${planTypeLabels[currentDay.planType] ?? currentDay.planType}`;
+        }
 
         if (currentDay?.weeklyPlanId) {
           const weekDays = await db
@@ -120,7 +131,7 @@ export async function generateMealVariation(
     const client = getAIClient();
     const message = await client.messages.create({
       model: AI_MODELS.fast,
-      max_tokens: 400,
+      max_tokens: 800,
       system: [
         {
           type: "text",
@@ -131,7 +142,7 @@ export async function generateMealVariation(
       messages: [
         {
           role: "user",
-          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${weekContext}${prevContext}${noteContext}\n\nBu öğüne benzer makrolarla tamamen farklı bir alternatif öğün öner. content alanını kısa ve sade tut — sadece malzeme ve gramaj listesi, emoji/başlık/pişirme talimatı/satır sonu yok. JSON formatında yanıt ver.`,
+          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${planTypeContext}${weekContext}${prevContext}${noteContext}\n\nBu öğüne benzer makrolarla birbirinden FARKLI 3 alternatif öğün öner. Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`,
         },
       ],
     });
@@ -141,30 +152,30 @@ export async function generateMealVariation(
 
     try {
       const parsed = parseJSON(text) as Record<string, unknown>;
-      // Clean up content: remove newlines, emojis, and excessive formatting
-      let content = String(parsed.content ?? "");
-      content = content.replace(/\n/g, ", ").replace(/\s{2,}/g, " ").replace(/,\s*,/g, ",").trim();
-      // Remove leading/trailing commas
-      content = content.replace(/^,\s*/, "").replace(/,\s*$/, "");
-      return {
-        suggestion: {
+      const suggestionsRaw = Array.isArray(parsed.suggestions) ? parsed.suggestions : [parsed];
+      const suggestions: MealVariationSuggestion[] = suggestionsRaw.map((s: Record<string, unknown>) => {
+        let content = String(s.content ?? "");
+        content = content.replace(/\n/g, ", ").replace(/\s{2,}/g, " ").replace(/,\s*,/g, ",").trim();
+        content = content.replace(/^,\s*/, "").replace(/,\s*$/, "");
+        return {
           content,
-          calories: parsed.calories != null ? Number(parsed.calories) : null,
-          proteinG: parsed.proteinG != null ? String(parsed.proteinG) : null,
-          carbsG: parsed.carbsG != null ? String(parsed.carbsG) : null,
-          fatG: parsed.fatG != null ? String(parsed.fatG) : null,
-        },
-      };
+          calories: s.calories != null ? Number(s.calories) : null,
+          proteinG: s.proteinG != null ? String(s.proteinG) : null,
+          carbsG: s.carbsG != null ? String(s.carbsG) : null,
+          fatG: s.fatG != null ? String(s.fatG) : null,
+        };
+      });
+      return { suggestions };
     } catch {
-      // Fallback: treat entire response as content text
+      // Fallback: treat entire response as single suggestion
       return {
-        suggestion: {
+        suggestions: [{
           content: text,
           calories: calories ?? null,
           proteinG: proteinG ?? null,
           carbsG: carbsG ?? null,
           fatG: fatG ?? null,
-        },
+        }],
       };
     }
   } catch (error) {
