@@ -25,6 +25,7 @@ export const users = pgTable("user", {
   healthNotes: text("health_notes"),
   foodAllergens: text("food_allergens"),
   dailyRoutine: jsonb("daily_routine"),
+  weekendRoutine: jsonb("weekend_routine"),
   supplementSchedule: jsonb("supplement_schedule"),
   fitnessLevel: text("fitness_level"),
   sportHistory: text("sport_history"),

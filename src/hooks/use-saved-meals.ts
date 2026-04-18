@@ -5,9 +5,9 @@ import {
   deleteSavedMealSuggestion,
 } from "@/actions/saved-meals";
 
-export function useSavedMealSuggestions(mealLabel: string) {
+export function useSavedMealSuggestions(mealLabel?: string) {
   return useQuery({
-    queryKey: ["saved-meal-suggestions", mealLabel],
+    queryKey: ["saved-meal-suggestions", mealLabel ?? "all"],
     queryFn: () => getSavedMealSuggestions(mealLabel),
     staleTime: 60_000,
   });

@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
-import { updateDailyRoutine, updateSupplementSchedule, updateUserProfile } from "@/actions/user";
+import { updateDailyRoutine, updateWeekendRoutine, updateSupplementSchedule, updateUserProfile } from "@/actions/user";
 import { ShareManager } from "@/components/sharing/share-manager";
 import { NotificationPreferencesCard } from "@/components/notifications/notification-preferences-card";
 import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
@@ -176,21 +176,28 @@ type RoutineItem = { time: string; event: string };
 
 function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserProfile>["data"] }) {
   const queryClient = useQueryClient();
-  const [items, setItems] = useState<RoutineItem[]>([]);
+  const [weekdayItems, setWeekdayItems] = useState<RoutineItem[]>([]);
+  const [weekendItems, setWeekendItems] = useState<RoutineItem[]>([]);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<"weekday" | "weekend">("weekday");
 
   useEffect(() => {
     if (profile?.dailyRoutine && Array.isArray(profile.dailyRoutine)) {
-      setItems(profile.dailyRoutine as RoutineItem[]);
+      setWeekdayItems(profile.dailyRoutine as RoutineItem[]);
     }
-  }, [profile?.dailyRoutine]);
+    if (profile?.weekendRoutine && Array.isArray(profile.weekendRoutine)) {
+      setWeekendItems(profile.weekendRoutine as RoutineItem[]);
+    }
+  }, [profile?.dailyRoutine, profile?.weekendRoutine]);
 
   const handleSave = async () => {
-    const filtered = items.filter((i) => i.time.trim() && i.event.trim());
+    const filteredWeekday = weekdayItems.filter((i) => i.time.trim() && i.event.trim());
+    const filteredWeekend = weekendItems.filter((i) => i.time.trim() && i.event.trim());
     setSaving(true);
     try {
-      await updateDailyRoutine(filtered);
+      await updateDailyRoutine(filteredWeekday);
+      await updateWeekendRoutine(filteredWeekend);
       await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       setEditing(false);
     } finally {
@@ -198,16 +205,38 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
     }
   };
 
+  const items = activeTab === "weekday" ? weekdayItems : weekendItems;
+  const setItems = activeTab === "weekday" ? setWeekdayItems : setWeekendItems;
+
+  const tabButton = (tab: "weekday" | "weekend", label: string) => (
+    <button
+      onClick={() => setActiveTab(tab)}
+      className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+        activeTab === tab
+          ? "bg-primary/15 border-primary/40 text-primary"
+          : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+      }`}
+    >
+      {label}
+    </button>
+  );
+
   if (!editing) {
+    const hasWeekend = weekendItems.length > 0;
     return (
       <div className="space-y-2">
-        {items.length > 0 ? (
-          items.map((item, i) => (
-            <div key={i} className="flex justify-between text-sm">
-              <span className="text-muted-foreground font-mono">{item.time}</span>
-              <span>{item.event}</span>
-            </div>
-          ))
+        {weekdayItems.length > 0 ? (
+          <>
+            {hasWeekend && (
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Hafta İçi</p>
+            )}
+            {weekdayItems.map((item, i) => (
+              <div key={i} className="flex justify-between text-sm">
+                <span className="text-muted-foreground font-mono">{item.time}</span>
+                <span>{item.event}</span>
+              </div>
+            ))}
+          </>
         ) : (
           <div className="space-y-1.5">
             <p className="text-sm text-muted-foreground">Henüz günlük akış eklenmemiş.</p>
@@ -228,11 +257,23 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
             </div>
           </div>
         )}
+        {hasWeekend && (
+          <>
+            <div className="border-t border-border/50 my-2" />
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Hafta Sonu</p>
+            {weekendItems.map((item, i) => (
+              <div key={i} className="flex justify-between text-sm">
+                <span className="text-muted-foreground font-mono">{item.time}</span>
+                <span>{item.event}</span>
+              </div>
+            ))}
+          </>
+        )}
         <button
           onClick={() => setEditing(true)}
           className="text-xs text-primary hover:underline mt-2"
         >
-          {items.length > 0 ? "Düzenle" : "Ekle"}
+          {weekdayItems.length > 0 ? "Düzenle" : "Ekle"}
         </button>
       </div>
     );
@@ -240,8 +281,13 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
 
   return (
     <div className="space-y-3">
+      <div className="flex gap-2">
+        {tabButton("weekday", "Hafta İçi")}
+        {tabButton("weekend", "Hafta Sonu")}
+      </div>
+
       {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-2">
+        <div key={`${activeTab}-${i}`} className="flex items-center gap-2">
           <input
             type="time"
             value={item.time}
@@ -287,7 +333,10 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
         <button
           onClick={() => {
             if (profile?.dailyRoutine && Array.isArray(profile.dailyRoutine)) {
-              setItems(profile.dailyRoutine as RoutineItem[]);
+              setWeekdayItems(profile.dailyRoutine as RoutineItem[]);
+            }
+            if (profile?.weekendRoutine && Array.isArray(profile.weekendRoutine)) {
+              setWeekendItems(profile.weekendRoutine as RoutineItem[]);
             }
             setEditing(false);
           }}

@@ -202,11 +202,12 @@ interface AiWeeklyPlanModalProps {
   loading: boolean;
   applying: boolean;
   error: string | null;
-  onGenerate: (userNote?: string) => void;
+  onGenerate: (userNote?: string, generateMode?: "both" | "nutrition" | "workout") => void;
   onApply: () => void;
   onApplySaved: (plan: AIWeeklyPlan) => void;
   onReset: () => void;
   hasExistingPlan: boolean;
+  serviceType?: string;
 }
 
 const planTypeIcons = {
@@ -397,6 +398,7 @@ export function AiWeeklyPlanModal({
   onApplySaved,
   onReset,
   hasExistingPlan,
+  serviceType,
 }: AiWeeklyPlanModalProps) {
   const [userNote, setUserNote] = useState("");
   const [selectedDays, setSelectedDays] = useState<number[]>([0, 1, 2, 3, 4]);
@@ -405,6 +407,7 @@ export function AiWeeklyPlanModal({
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [ingredientMode, setIngredientMode] = useState<"all" | "specific">("all");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  const [generateMode, setGenerateMode] = useState<"both" | "nutrition" | "workout">("both");
 
   const { data: quotaData } = useAiQuota();
   const invalidateQuota = useInvalidateAiQuota();
@@ -495,7 +498,7 @@ export function AiWeeklyPlanModal({
     // Free text
     const note = userNote.trim();
     if (note) parts.push(note);
-    onGenerate(parts.length > 0 ? parts.join(". ") : undefined);
+    onGenerate(parts.length > 0 ? parts.join(". ") : undefined, generateMode);
     invalidateQuota();
   };
 
@@ -539,7 +542,37 @@ export function AiWeeklyPlanModal({
           {/* Phase 1: User input */}
           {!loading && !suggestedPlan && !showSaved && !savedPlanToPreview && (
             <div className="space-y-3">
-              {/* Day selection */}
+              {/* Generate mode selection (full program only) */}
+              {serviceType === "full" && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Oluşturulacak plan:
+                  </p>
+                  <div className="flex gap-1.5">
+                    {([
+                      { value: "both" as const, label: "Beslenme + Antrenman" },
+                      { value: "nutrition" as const, label: "Sadece Beslenme" },
+                      { value: "workout" as const, label: "Sadece Antrenman" },
+                    ]).map(({ value, label }) => (
+                      <button
+                        key={value}
+                        onClick={() => setGenerateMode(value)}
+                        className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
+                          generateMode === value
+                            ? "bg-primary/15 border-primary/40 text-primary"
+                            : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Day selection — hide for nutrition-only */}
+              {generateMode !== "nutrition" && (
+              <>
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
                   Antrenman günleri:
@@ -621,8 +654,11 @@ export function AiWeeklyPlanModal({
                   </div>
                 </div>
               )}
+              </>
+              )}
 
-              {/* Ingredient selection */}
+              {/* Ingredient selection — hide for workout-only */}
+              {generateMode !== "workout" && (
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
                   Beslenme Programı için Evdeki malzemeler:
@@ -670,8 +706,10 @@ export function AiWeeklyPlanModal({
                   </div>
                 )}
               </div>
+              )}
 
-              {/* Template tags */}
+              {/* Template tags — hide for nutrition-only */}
+              {generateMode !== "nutrition" && (
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
                   Bu hafta için isteklerini seç:
@@ -695,6 +733,7 @@ export function AiWeeklyPlanModal({
                   })}
                 </div>
               </div>
+              )}
 
               {/* Free text note */}
               <div className="flex items-start gap-2">

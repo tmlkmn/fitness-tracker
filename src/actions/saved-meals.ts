@@ -25,19 +25,18 @@ export async function saveMealSuggestion(data: {
   });
 }
 
-export async function getSavedMealSuggestions(mealLabel: string) {
+export async function getSavedMealSuggestions(mealLabel?: string) {
   const user = await getAuthUser();
+  const conditions = [eq(savedMealSuggestions.userId, user.id)];
+  if (mealLabel) {
+    conditions.push(eq(savedMealSuggestions.mealLabel, mealLabel));
+  }
   return db
     .select()
     .from(savedMealSuggestions)
-    .where(
-      and(
-        eq(savedMealSuggestions.userId, user.id),
-        eq(savedMealSuggestions.mealLabel, mealLabel)
-      )
-    )
+    .where(and(...conditions))
     .orderBy(desc(savedMealSuggestions.createdAt))
-    .limit(20);
+    .limit(50);
 }
 
 export async function deleteSavedMealSuggestion(id: number) {

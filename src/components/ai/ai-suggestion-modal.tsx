@@ -75,8 +75,9 @@ export function AiSuggestionModal({
   const updateMeal = useUpdateMeal();
   const saveMeal = useSaveMealSuggestion();
   const deleteSaved = useDeleteSavedMealSuggestion();
-  const { data: savedMeals, isLoading: savedLoading } = useSavedMealSuggestions(mealLabel);
+  const { data: savedMeals, isLoading: savedLoading } = useSavedMealSuggestions();
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savedFilter, setSavedFilter] = useState<string | null>(null);
 
   const toggleIngredient = (ing: string) => {
     setSelectedIngredients((prev) =>
@@ -178,6 +179,7 @@ export function AiSuggestionModal({
       setView("input");
       setError("");
       setSavedIds(new Set());
+      setSavedFilter(null);
     }
     onOpenChange(open);
   };
@@ -403,52 +405,92 @@ export function AiSuggestionModal({
                   Henüz kayıtlı öğün yok
                 </p>
               )}
-              {savedMeals?.map((s) => (
-                <div
-                  key={s.id}
-                  className="p-3 bg-muted/50 border border-border rounded-lg space-y-2"
-                >
-                  <p className="text-sm leading-relaxed">{s.content}</p>
-                  {s.calories && (
-                    <div className="flex gap-1.5 flex-wrap">
-                      <Badge variant="secondary" className="text-[10px]">{s.calories} kcal</Badge>
-                      {s.proteinG && <Badge variant="outline" className="text-[10px]">P: {s.proteinG}g</Badge>}
-                      {s.carbsG && <Badge variant="outline" className="text-[10px]">K: {s.carbsG}g</Badge>}
-                      {s.fatG && <Badge variant="outline" className="text-[10px]">Y: {s.fatG}g</Badge>}
-                    </div>
-                  )}
-                  <div className="flex gap-2 pt-1">
-                    <Button
-                      size="sm"
-                      onClick={() => handleApply({
-                        content: s.content,
-                        calories: s.calories,
-                        proteinG: s.proteinG,
-                        carbsG: s.carbsG,
-                        fatG: s.fatG,
-                      })}
-                      disabled={updateMeal.isPending}
-                      className="flex-1 h-8"
-                    >
-                      {updateMeal.isPending ? (
-                        <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                      ) : (
-                        <Check className="h-3.5 w-3.5 mr-1.5" />
-                      )}
-                      Uygula
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteSaved(s.id)}
-                      disabled={deleteSaved.isPending}
-                      className="h-8 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+              {!savedLoading && savedMeals && savedMeals.length > 0 && (() => {
+                const labels = Array.from(new Set(savedMeals.map((s) => s.mealLabel)));
+                const filtered = savedFilter
+                  ? savedMeals.filter((s) => s.mealLabel === savedFilter)
+                  : savedMeals;
+                return (
+                  <>
+                    {labels.length > 1 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          onClick={() => setSavedFilter(null)}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                            savedFilter === null
+                              ? "bg-primary/15 border-primary/40 text-primary"
+                              : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          Tümü ({savedMeals.length})
+                        </button>
+                        {labels.map((label) => (
+                          <button
+                            key={label}
+                            onClick={() => setSavedFilter(savedFilter === label ? null : label)}
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                              savedFilter === label
+                                ? "bg-primary/15 border-primary/40 text-primary"
+                                : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {label} ({savedMeals.filter((s) => s.mealLabel === label).length})
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {filtered.map((s) => (
+                      <div
+                        key={s.id}
+                        className="p-3 bg-muted/50 border border-border rounded-lg space-y-2"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-[10px]">{s.mealLabel}</Badge>
+                        </div>
+                        <p className="text-sm leading-relaxed">{s.content}</p>
+                        {s.calories && (
+                          <div className="flex gap-1.5 flex-wrap">
+                            <Badge variant="secondary" className="text-[10px]">{s.calories} kcal</Badge>
+                            {s.proteinG && <Badge variant="outline" className="text-[10px]">P: {s.proteinG}g</Badge>}
+                            {s.carbsG && <Badge variant="outline" className="text-[10px]">K: {s.carbsG}g</Badge>}
+                            {s.fatG && <Badge variant="outline" className="text-[10px]">Y: {s.fatG}g</Badge>}
+                          </div>
+                        )}
+                        <div className="flex gap-2 pt-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApply({
+                              content: s.content,
+                              calories: s.calories,
+                              proteinG: s.proteinG,
+                              carbsG: s.carbsG,
+                              fatG: s.fatG,
+                            })}
+                            disabled={updateMeal.isPending}
+                            className="flex-1 h-8"
+                          >
+                            {updateMeal.isPending ? (
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                            ) : (
+                              <Check className="h-3.5 w-3.5 mr-1.5" />
+                            )}
+                            Uygula
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteSaved(s.id)}
+                            disabled={deleteSaved.isPending}
+                            className="h-8 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>

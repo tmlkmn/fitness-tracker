@@ -6,7 +6,7 @@ import { eq, and, sql, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
-import { WEEKLY_PLAN_PROMPT, NUTRITION_ONLY_WEEKLY_PROMPT } from "@/lib/ai-prompts";
+import { WEEKLY_PLAN_PROMPT, NUTRITION_ONLY_WEEKLY_PROMPT, WORKOUT_ONLY_WEEKLY_PROMPT } from "@/lib/ai-prompts";
 import { saveAiSuggestion } from "@/actions/ai-suggestions";
 import {
   validateWeeklyPlan,
@@ -64,6 +64,7 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
       targetWeight: users.targetWeight,
       healthNotes: users.healthNotes,
       dailyRoutine: users.dailyRoutine,
+      weekendRoutine: users.weekendRoutine,
       fitnessLevel: users.fitnessLevel,
       sportHistory: users.sportHistory,
       currentMedications: users.currentMedications,
@@ -93,7 +94,14 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
       const routineStr = (user.dailyRoutine as { time: string; event: string }[])
         .map((r) => `${r.time} ${r.event}`)
         .join(", ");
-      lines.push(`Günlük program: ${routineStr}`);
+      const hasWeekend = user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0;
+      lines.push(`${hasWeekend ? "Hafta içi programı" : "Günlük program"}: ${routineStr}`);
+    }
+    if (user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0) {
+      const routineStr = (user.weekendRoutine as { time: string; event: string }[])
+        .map((r) => `${r.time} ${r.event}`)
+        .join(", ");
+      lines.push(`Hafta sonu programı: ${routineStr}`);
     }
     const fitnessLabels: Record<string, string> = {
       beginner: "Yeni başlayan",
@@ -244,7 +252,7 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
   return lines.join("\n");
 }
 
-export async function generateWeeklyPlan(dateStr: string, userNote?: string) {
+export async function generateWeeklyPlan(dateStr: string, userNote?: string, generateMode?: "both" | "nutrition" | "workout") {
   const user = await getAuthUser();
   await checkRateLimit(user.id, "weekly");
   await logAiUsage(user.id, "weekly");
@@ -255,14 +263,30 @@ export async function generateWeeklyPlan(dateStr: string, userNote?: string) {
     .from(users)
     .where(eq(users.id, user.id));
   const isNutritionOnly = userRow?.serviceType === "nutrition";
-  const systemPrompt = isNutritionOnly ? NUTRITION_ONLY_WEEKLY_PROMPT : WEEKLY_PLAN_PROMPT;
+
+  // Select prompt based on generateMode (or serviceType fallback)
+  let systemPrompt: string;
+  if (generateMode === "nutrition") {
+    systemPrompt = NUTRITION_ONLY_WEEKLY_PROMPT;
+  } else if (generateMode === "workout") {
+    systemPrompt = WORKOUT_ONLY_WEEKLY_PROMPT;
+  } else if (isNutritionOnly) {
+    systemPrompt = NUTRITION_ONLY_WEEKLY_PROMPT;
+  } else {
+    systemPrompt = WEEKLY_PLAN_PROMPT;
+  }
 
   const monday = getMondayStr(dateStr);
   const weeklyContext = await buildWeeklyPlanContext(user.id);
 
-  let userMessage = isNutritionOnly
-    ? `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`
-    : `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
+  let userMessage: string;
+  if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
+    userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`;
+  } else if (generateMode === "workout") {
+    userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.`;
+  } else {
+    userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
+  }
 
   if (userNote?.trim()) {
     userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu hafta için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
@@ -358,9 +382,11 @@ export async function generateWeeklyPlan(dateStr: string, userNote?: string) {
 export async function applyWeeklyPlan(
   dateStr: string,
   plan: AIWeeklyPlan,
+  applyMode?: "both" | "nutrition" | "workout",
 ) {
   const user = await getAuthUser();
   const monday = getMondayStr(dateStr);
+  const mode = applyMode ?? "both";
 
   // Check if weeklyPlan exists for this week
   const existingWeek = await db
@@ -375,7 +401,7 @@ export async function applyWeeklyPlan(
   if (existingWeek.length > 0) {
     weeklyPlanId = existingWeek[0].id;
 
-    // Update weekly plan
+    // Update weekly plan metadata
     await db
       .update(weeklyPlans)
       .set({
@@ -385,19 +411,112 @@ export async function applyWeeklyPlan(
       })
       .where(eq(weeklyPlans.id, weeklyPlanId));
 
-    // Delete existing daily plans' meals and exercises
     const existingDays = await db
       .select({ id: dailyPlans.id })
       .from(dailyPlans)
       .where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
 
-    for (const day of existingDays) {
-      await db.delete(meals).where(eq(meals.dailyPlanId, day.id));
-      await db.delete(exercises).where(eq(exercises.dailyPlanId, day.id));
+    if (mode === "both") {
+      // Delete all existing data
+      for (const day of existingDays) {
+        await db.delete(meals).where(eq(meals.dailyPlanId, day.id));
+        await db.delete(exercises).where(eq(exercises.dailyPlanId, day.id));
+      }
+      await db.delete(dailyPlans).where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
+    } else if (mode === "nutrition") {
+      // Only delete meals, keep exercises
+      for (const day of existingDays) {
+        await db.delete(meals).where(eq(meals.dailyPlanId, day.id));
+      }
+    } else if (mode === "workout") {
+      // Only delete exercises, keep meals
+      for (const day of existingDays) {
+        await db.delete(exercises).where(eq(exercises.dailyPlanId, day.id));
+      }
     }
 
-    // Delete existing daily plans
-    await db.delete(dailyPlans).where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
+    // For selective modes, update existing daily plans or create missing ones
+    if (mode !== "both") {
+      for (const day of plan.days) {
+        const dayDate = addDays(monday, day.dayOfWeek);
+        // Find existing daily plan for this day
+        const [existingDay] = await db
+          .select({ id: dailyPlans.id })
+          .from(dailyPlans)
+          .where(
+            and(
+              eq(dailyPlans.weeklyPlanId, weeklyPlanId),
+              eq(dailyPlans.dayOfWeek, day.dayOfWeek),
+            ),
+          );
+
+        let dayId: number;
+        if (existingDay) {
+          dayId = existingDay.id;
+          // Update planType and workoutTitle if workout mode
+          if (mode === "workout") {
+            await db
+              .update(dailyPlans)
+              .set({
+                planType: day.planType,
+                workoutTitle: day.workoutTitle,
+              })
+              .where(eq(dailyPlans.id, dayId));
+          }
+        } else {
+          const [newDay] = await db
+            .insert(dailyPlans)
+            .values({
+              weeklyPlanId,
+              dayOfWeek: day.dayOfWeek,
+              dayName: day.dayName,
+              planType: day.planType,
+              workoutTitle: day.workoutTitle,
+              date: dayDate,
+            })
+            .returning({ id: dailyPlans.id });
+          dayId = newDay.id;
+        }
+
+        // Insert only the selected type
+        if (mode === "nutrition" && day.meals.length > 0) {
+          await db.insert(meals).values(
+            day.meals.map((m, i) => ({
+              dailyPlanId: dayId,
+              mealTime: m.mealTime,
+              mealLabel: m.mealLabel,
+              content: m.content,
+              calories: m.calories,
+              proteinG: m.proteinG,
+              carbsG: m.carbsG,
+              fatG: m.fatG,
+              isCompleted: false,
+              sortOrder: i,
+            })),
+          );
+        }
+        if (mode === "workout" && day.exercises.length > 0) {
+          await db.insert(exercises).values(
+            day.exercises.map((ex, i) => ({
+              dailyPlanId: dayId,
+              section: ex.section,
+              sectionLabel: ex.sectionLabel,
+              name: ex.name,
+              sets: ex.sets,
+              reps: ex.reps,
+              restSeconds: ex.restSeconds,
+              durationMinutes: ex.durationMinutes,
+              notes: ex.notes,
+              isCompleted: false,
+              sortOrder: i,
+            })),
+          );
+        }
+      }
+
+      revalidatePath("/");
+      return;
+    }
   } else {
     // Create new weekly plan
     const [maxRow] = await db
@@ -424,7 +543,7 @@ export async function applyWeeklyPlan(
     weeklyPlanId = newWeek.id;
   }
 
-  // Create daily plans with meals and exercises
+  // Create daily plans with meals and exercises (full mode or new week)
   for (const day of plan.days) {
     const dayDate = addDays(monday, day.dayOfWeek);
 
@@ -440,8 +559,8 @@ export async function applyWeeklyPlan(
       })
       .returning({ id: dailyPlans.id });
 
-    // Insert meals
-    if (day.meals.length > 0) {
+    // Insert meals (skip for workout-only mode on new week)
+    if (day.meals.length > 0 && mode !== "workout") {
       await db.insert(meals).values(
         day.meals.map((m, i) => ({
           dailyPlanId: newDay.id,
@@ -458,8 +577,8 @@ export async function applyWeeklyPlan(
       );
     }
 
-    // Insert exercises
-    if (day.exercises.length > 0) {
+    // Insert exercises (skip for nutrition-only mode on new week)
+    if (day.exercises.length > 0 && mode !== "nutrition") {
       await db.insert(exercises).values(
         day.exercises.map((ex, i) => ({
           dailyPlanId: newDay.id,

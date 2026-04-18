@@ -20,6 +20,7 @@ export async function buildUserContext(userId: string): Promise<string> {
       healthNotes: users.healthNotes,
       foodAllergens: users.foodAllergens,
       dailyRoutine: users.dailyRoutine,
+      weekendRoutine: users.weekendRoutine,
       fitnessLevel: users.fitnessLevel,
       sportHistory: users.sportHistory,
       currentMedications: users.currentMedications,
@@ -69,7 +70,16 @@ export async function buildUserContext(userId: string): Promise<string> {
     const routineStr = (user.dailyRoutine as { time: string; event: string }[])
       .map((r) => `${r.time} ${r.event}`)
       .join(", ");
-    lines.push(`Günlük program: ${routineStr}`);
+    const hasWeekend = user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0;
+    lines.push(`${hasWeekend ? "Hafta içi programı" : "Günlük program"}: ${routineStr}`);
+  }
+
+  // Weekend routine
+  if (user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0) {
+    const routineStr = (user.weekendRoutine as { time: string; event: string }[])
+      .map((r) => `${r.time} ${r.event}`)
+      .join(", ");
+    lines.push(`Hafta sonu programı: ${routineStr}`);
   }
 
   // Fitness level

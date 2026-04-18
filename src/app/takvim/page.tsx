@@ -12,6 +12,7 @@ import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
 import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans, useEmptyWeeksBetween } from "@/hooks/use-plans";
 import { useGenerateWeeklyPlan, useApplyWeeklyPlan, useDeleteWeeklyPlan } from "@/hooks/use-weekly-ai";
+import { useUserProfile } from "@/hooks/use-user";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,6 +70,7 @@ export default function TakvimPage() {
   const [creatingPlan, setCreatingPlan] = useState(false);
   const [createdDailyPlanId, setCreatedDailyPlanId] = useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [generateMode, setGenerateMode] = useState<"both" | "nutrition" | "workout">("both");
 
   const { data, isLoading } = useWeekPlansByDate(selectedDate);
   const { data: planDates } = useDatesWithPlans(viewYear, viewMonth);
@@ -78,6 +80,7 @@ export default function TakvimPage() {
   const applyWeekly = useApplyWeeklyPlan();
   const deleteWeekly = useDeleteWeeklyPlan();
   const { missingFields } = useProfileCheck();
+  const { data: userProfile } = useUserProfile();
 
   // Also fetch plan dates for the week strip's month (may differ from viewMonth)
   const weekMonth = weekStart.getMonth() + 1;
@@ -162,14 +165,16 @@ export default function TakvimPage() {
   }, []);
 
   // AI Weekly Plan handlers
-  const handleGenerateWeekly = (userNote?: string) => {
-    generateWeekly.mutate({ dateStr: selectedDate, userNote });
+  const handleGenerateWeekly = (userNote?: string, mode?: "both" | "nutrition" | "workout") => {
+    const m = mode ?? generateMode;
+    setGenerateMode(m);
+    generateWeekly.mutate({ dateStr: selectedDate, userNote, generateMode: m });
   };
 
   const handleApplyWeekly = () => {
     if (!generateWeekly.data?.suggestedPlan) return;
     applyWeekly.mutate(
-      { dateStr: selectedDate, plan: generateWeekly.data.suggestedPlan },
+      { dateStr: selectedDate, plan: generateWeekly.data.suggestedPlan, applyMode: generateMode },
       {
         onSuccess: () => {
           setWeeklyModalOpen(false);
@@ -181,7 +186,7 @@ export default function TakvimPage() {
 
   const handleApplySaved = (plan: import("@/actions/ai-weekly").AIWeeklyPlan) => {
     applyWeekly.mutate(
-      { dateStr: selectedDate, plan },
+      { dateStr: selectedDate, plan, applyMode: generateMode },
       {
         onSuccess: () => {
           setWeeklyModalOpen(false);
@@ -465,6 +470,7 @@ export default function TakvimPage() {
           onApplySaved={handleApplySaved}
           onReset={() => generateWeekly.reset()}
           hasExistingPlan={!!data?.weeklyPlan}
+          serviceType={userProfile?.serviceType ?? undefined}
         />
       )}
 

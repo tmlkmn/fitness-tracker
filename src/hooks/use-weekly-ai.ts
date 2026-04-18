@@ -13,8 +13,8 @@ import {
 
 export function useGenerateWeeklyPlan() {
   return useMutation({
-    mutationFn: ({ dateStr, userNote }: { dateStr: string; userNote?: string }) =>
-      generateWeeklyPlan(dateStr, userNote),
+    mutationFn: ({ dateStr, userNote, generateMode }: { dateStr: string; userNote?: string; generateMode?: "both" | "nutrition" | "workout" }) =>
+      generateWeeklyPlan(dateStr, userNote, generateMode),
   });
 }
 
@@ -24,10 +24,12 @@ export function useApplyWeeklyPlan() {
     mutationFn: ({
       dateStr,
       plan,
+      applyMode,
     }: {
       dateStr: string;
       plan: AIWeeklyPlan;
-    }) => applyWeeklyPlan(dateStr, plan),
+      applyMode?: "both" | "nutrition" | "workout";
+    }) => applyWeeklyPlan(dateStr, plan, applyMode),
     onSuccess: () => {
       qc.refetchQueries({ queryKey: ["plans"] });
       qc.refetchQueries({ queryKey: ["meals"] });

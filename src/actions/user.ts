@@ -17,6 +17,7 @@ export async function getUserProfile() {
       healthNotes: users.healthNotes,
       foodAllergens: users.foodAllergens,
       dailyRoutine: users.dailyRoutine,
+      weekendRoutine: users.weekendRoutine,
       supplementSchedule: users.supplementSchedule,
       fitnessLevel: users.fitnessLevel,
       sportHistory: users.sportHistory,
@@ -29,7 +30,7 @@ export async function getUserProfile() {
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false };
 }
 
 export async function updateUserWeightTargets(data: {
@@ -55,6 +56,7 @@ export async function updateUserOnboarding(data: {
   healthNotes?: string;
   foodAllergens?: string;
   dailyRoutine?: { time: string; event: string }[];
+  weekendRoutine?: { time: string; event: string }[];
   fitnessLevel?: string;
   sportHistory?: string;
   currentMedications?: string;
@@ -71,6 +73,7 @@ export async function updateUserOnboarding(data: {
       healthNotes: data.healthNotes ?? null,
       foodAllergens: data.foodAllergens ?? null,
       dailyRoutine: data.dailyRoutine ?? undefined,
+      weekendRoutine: data.weekendRoutine ?? undefined,
       fitnessLevel: data.fitnessLevel ?? undefined,
       sportHistory: data.sportHistory ?? undefined,
       currentMedications: data.currentMedications ?? undefined,
@@ -87,6 +90,15 @@ export async function updateDailyRoutine(items: { time: string; event: string }[
   await db
     .update(users)
     .set({ dailyRoutine: items })
+    .where(eq(users.id, user.id));
+  revalidatePath("/ayarlar");
+}
+
+export async function updateWeekendRoutine(items: { time: string; event: string }[]) {
+  const user = await getAuthUser();
+  await db
+    .update(users)
+    .set({ weekendRoutine: items })
     .where(eq(users.id, user.id));
   revalidatePath("/ayarlar");
 }

@@ -41,6 +41,13 @@ export default function ProfilTamamlaPage() {
   const [workoutTime, setWorkoutTime] = useState("");
   const [sleepTime, setSleepTime] = useState("");
 
+  // Weekend routine
+  const [hasWeekendRoutine, setHasWeekendRoutine] = useState(false);
+  const [weWakeTime, setWeWakeTime] = useState("");
+  const [weLunchTime, setWeLunchTime] = useState("");
+  const [weWorkoutTime, setWeWorkoutTime] = useState("");
+  const [weSleepTime, setWeSleepTime] = useState("");
+
   // Fitness background
   const [fitnessLevel, setFitnessLevel] = useState("");
   const [sportHistory, setSportHistory] = useState("");
@@ -100,6 +107,21 @@ export default function ProfilTamamlaPage() {
           eventMap[item.event]?.(item.time);
         }
       }
+      if (profile.weekendRoutine && Array.isArray(profile.weekendRoutine)) {
+        const routine = profile.weekendRoutine as { time: string; event: string }[];
+        if (routine.length > 0) {
+          setHasWeekendRoutine(true);
+          const eventMap: Record<string, (v: string) => void> = {
+            "Uyanış": setWeWakeTime,
+            "Öğle yemeği": setWeLunchTime,
+            "Antrenman": setWeWorkoutTime,
+            "Uyku": setWeSleepTime,
+          };
+          for (const item of routine) {
+            eventMap[item.event]?.(item.time);
+          }
+        }
+      }
       setPrefilled(true);
     }
   }, [profile, prefilled]);
@@ -137,6 +159,15 @@ export default function ProfilTamamlaPage() {
       if (workoutTime) routineEntries.push({ time: workoutTime, event: "Antrenman" });
       if (sleepTime) routineEntries.push({ time: sleepTime, event: "Uyku" });
 
+      // Build weekend routine
+      const weekendEntries: { time: string; event: string }[] = [];
+      if (hasWeekendRoutine) {
+        if (weWakeTime) weekendEntries.push({ time: weWakeTime, event: "Uyanış" });
+        if (weLunchTime) weekendEntries.push({ time: weLunchTime, event: "Öğle yemeği" });
+        if (weWorkoutTime) weekendEntries.push({ time: weWorkoutTime, event: "Antrenman" });
+        if (weSleepTime) weekendEntries.push({ time: weSleepTime, event: "Uyku" });
+      }
+
       // Build food allergens
       let foodAllergens: string | undefined;
       if (allergenMode === "none") {
@@ -155,6 +186,7 @@ export default function ProfilTamamlaPage() {
         healthNotes: healthNotes.trim() || undefined,
         foodAllergens,
         dailyRoutine: routineEntries.length > 0 ? routineEntries : undefined,
+        weekendRoutine: weekendEntries.length > 0 ? weekendEntries : undefined,
         fitnessLevel: fitnessLevel || undefined,
         sportHistory: sportHistory.trim() || undefined,
         currentMedications: currentMedications.trim() || undefined,
@@ -447,6 +479,59 @@ export default function ProfilTamamlaPage() {
                   <input id="sleepTime" type="time" value={sleepTime} onChange={(e) => setSleepTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
                 </div>
               </div>
+
+              {/* Weekend routine toggle */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setHasWeekendRoutine(!hasWeekendRoutine)}
+                  className={`w-full p-2.5 rounded-lg border text-xs font-medium text-center transition-all ${
+                    hasWeekendRoutine
+                      ? "ring-2 ring-primary border-primary bg-primary/5"
+                      : "border-input hover:bg-accent"
+                  }`}
+                >
+                  {hasWeekendRoutine ? "Hafta sonu programı eklendi" : "Hafta sonu farklı mı?"}
+                </button>
+              </div>
+
+              {hasWeekendRoutine && (
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="col-span-2">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Hafta Sonu</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="weWakeTime" className="text-xs font-medium flex items-center gap-1.5">
+                      <Sunrise className="h-3.5 w-3.5 text-muted-foreground" />
+                      Kaçta kalkıyorsun?
+                    </label>
+                    <input id="weWakeTime" type="time" value={weWakeTime} onChange={(e) => setWeWakeTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="weLunchTime" className="text-xs font-medium flex items-center gap-1.5">
+                      <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground" />
+                      Öğle yemeği saatin?
+                    </label>
+                    <input id="weLunchTime" type="time" value={weLunchTime} onChange={(e) => setWeLunchTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                  </div>
+                  {serviceType === "full" && (
+                    <div className="space-y-1.5">
+                      <label htmlFor="weWorkoutTime" className="text-xs font-medium flex items-center gap-1.5">
+                        <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
+                        Antrenman saatin?
+                      </label>
+                      <input id="weWorkoutTime" type="time" value={weWorkoutTime} onChange={(e) => setWeWorkoutTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <label htmlFor="weSleepTime" className="text-xs font-medium flex items-center gap-1.5">
+                      <Moon className="h-3.5 w-3.5 text-muted-foreground" />
+                      Kaçta yatıyorsun?
+                    </label>
+                    <input id="weSleepTime" type="time" value={weSleepTime} onChange={(e) => setWeSleepTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                  </div>
+                </div>
+              )}
             </div>
 
             <Separator />
