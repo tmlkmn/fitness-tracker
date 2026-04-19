@@ -155,7 +155,7 @@ export async function buildUserContext(userId: string): Promise<string> {
       .from(meals)
       .innerJoin(dailyPlans, eq(meals.dailyPlanId, dailyPlans.id))
       .where(eq(dailyPlans.weeklyPlanId, activeWeek.id))
-      .orderBy(asc(dailyPlans.dayOfWeek), asc(meals.sortOrder));
+      .orderBy(asc(dailyPlans.dayOfWeek), asc(meals.mealTime));
 
     if (weekMeals.length > 0) {
       const byDay = new Map<string, string[]>();

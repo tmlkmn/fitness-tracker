@@ -77,7 +77,7 @@ export async function getSharedMealsByDay(dailyPlanId: number) {
     .select()
     .from(meals)
     .where(eq(meals.dailyPlanId, dailyPlanId))
-    .orderBy(asc(meals.sortOrder));
+    .orderBy(asc(meals.mealTime));
 }
 
 export async function getSharedExercisesByDay(dailyPlanId: number) {

@@ -24,5 +24,5 @@ export async function getMealsByDay(dailyPlanId: number) {
     .select()
     .from(meals)
     .where(eq(meals.dailyPlanId, dailyPlanId))
-    .orderBy(meals.sortOrder);
+    .orderBy(meals.mealTime);
 }

@@ -11,19 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Sparkles, UtensilsCrossed, Trash2, CheckCheck } from "lucide-react";
 import { BulkDeleteMealsDialog } from "./bulk-delete-meals-dialog";
 import { useBulkCompleteMeals } from "@/hooks/use-bulk-completion";
-import { useReorderMeals } from "@/hooks/use-reorder";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 
 interface MealListProps {
   dailyPlanId: number;
@@ -38,23 +25,6 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
   const [addOpen, setAddOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const bulkComplete = useBulkCompleteMeals();
-  const reorder = useReorderMeals();
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id || !mealList) return;
-    const oldIndex = mealList.findIndex((m) => m.id === active.id);
-    const newIndex = mealList.findIndex((m) => m.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    const newOrder = [...mealList];
-    const [moved] = newOrder.splice(oldIndex, 1);
-    newOrder.splice(newIndex, 0, moved);
-    reorder.mutate({
-      dailyPlanId,
-      orderedIds: newOrder.map((m) => m.id),
-    });
-  };
 
   if (isLoading) {
     return (
@@ -146,23 +116,19 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
         <Progress value={percent} />
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={mealList.map((m) => m.id)} strategy={verticalListSortingStrategy}>
-          {mealList.map((meal) => (
-            <MealCard
-              key={meal.id}
-              {...meal}
-              dailyPlanId={dailyPlanId}
-              isCompleted={meal.isCompleted ?? false}
-              readOnly={readOnly}
-              planDate={planDate}
-              onToggle={readOnly ? undefined : (id, completed) =>
-                toggleMeal.mutate({ id, isCompleted: completed })
-              }
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
+      {mealList.map((meal) => (
+        <MealCard
+          key={meal.id}
+          {...meal}
+          dailyPlanId={dailyPlanId}
+          isCompleted={meal.isCompleted ?? false}
+          readOnly={readOnly}
+          planDate={planDate}
+          onToggle={readOnly ? undefined : (id, completed) =>
+            toggleMeal.mutate({ id, isCompleted: completed })
+          }
+        />
+      ))}
 
       {!readOnly && (
         <div className="flex gap-2">

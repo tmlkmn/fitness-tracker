@@ -48,7 +48,7 @@ export async function generateShoppingList(weeklyPlanId: number) {
     .from(meals)
     .innerJoin(dailyPlans, eq(meals.dailyPlanId, dailyPlans.id))
     .where(eq(dailyPlans.weeklyPlanId, weeklyPlanId))
-    .orderBy(asc(dailyPlans.dayOfWeek), asc(meals.sortOrder));
+    .orderBy(asc(dailyPlans.dayOfWeek), asc(meals.mealTime));
 
   if (weekMeals.length === 0) {
     throw new Error("NO_MEALS");

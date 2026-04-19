@@ -148,6 +148,31 @@ export default function ProfilTamamlaPage() {
       return;
     }
 
+    if (!age || !parseInt(age, 10)) {
+      setError("Yaş alanı zorunludur.");
+      return;
+    }
+
+    if (!healthNotes.trim()) {
+      setError("Sağlık notları alanı zorunludur.");
+      return;
+    }
+
+    if (serviceType === "full") {
+      if (!fitnessLevel) {
+        setError("Deneyim seviyesi seçimi zorunludur.");
+        return;
+      }
+      if (!sportHistory.trim()) {
+        setError("Spor geçmişi alanı zorunludur.");
+        return;
+      }
+      if (!currentMedications.trim()) {
+        setError("İlaçlar / Supplementler alanı zorunludur. Yoksa 'Yok' yazın.");
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       // Build daily routine array from filled time inputs
@@ -282,7 +307,7 @@ export default function ProfilTamamlaPage() {
                 required
                 min={100}
                 max={250}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 placeholder="175"
               />
             </div>
@@ -291,7 +316,7 @@ export default function ProfilTamamlaPage() {
               <label htmlFor="age" className="text-sm font-medium leading-none flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
                 Yaş
-                <span className="text-xs text-muted-foreground font-normal">(opsiyonel)</span>
+                <span className="text-xs text-red-400 font-normal">*</span>
               </label>
               <input
                 id="age"
@@ -300,7 +325,7 @@ export default function ProfilTamamlaPage() {
                 onChange={(e) => setAge(e.target.value)}
                 min={10}
                 max={100}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 placeholder="28"
               />
             </div>
@@ -319,7 +344,7 @@ export default function ProfilTamamlaPage() {
                 required
                 min={30}
                 max={300}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 placeholder="80"
               />
             </div>
@@ -338,7 +363,7 @@ export default function ProfilTamamlaPage() {
                 required
                 min={30}
                 max={300}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 placeholder="75"
               />
             </div>
@@ -347,14 +372,14 @@ export default function ProfilTamamlaPage() {
               <label htmlFor="healthNotes" className="text-sm font-medium leading-none flex items-center gap-2">
                 <Heart className="h-4 w-4 text-muted-foreground" />
                 Sağlık Notları
-                <span className="text-xs text-muted-foreground font-normal">(opsiyonel)</span>
+                <span className="text-xs text-red-400 font-normal">*</span>
               </label>
               <textarea
                 id="healthNotes"
                 value={healthNotes}
                 onChange={(e) => setHealthNotes(e.target.value)}
                 rows={3}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                 placeholder="Yaralanmalar, alerjiler, diyet kısıtlamaları..."
               />
             </div>
@@ -419,7 +444,7 @@ export default function ProfilTamamlaPage() {
                     value={otherAllergens}
                     onChange={(e) => setOtherAllergens(e.target.value)}
                     placeholder="Diğer alerjiler (virgülle ayır)..."
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
               )}
@@ -541,11 +566,11 @@ export default function ProfilTamamlaPage() {
             <div className="space-y-3">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 Fitness Geçmişin
-                <span className="text-xs text-muted-foreground font-normal">(opsiyonel)</span>
+                <span className="text-xs text-red-400 font-normal">*</span>
               </h2>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium">Deneyim Seviyesi</label>
+                <label className="text-xs font-medium">Deneyim Seviyesi <span className="text-red-400">*</span></label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { value: "beginner", label: "Yeni Başlayan" },
@@ -572,14 +597,14 @@ export default function ProfilTamamlaPage() {
               <div className="space-y-1.5">
                 <label htmlFor="sportHistory" className="text-xs font-medium flex items-center gap-1.5">
                   <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
-                  Spor Geçmişi
+                  Spor Geçmişi <span className="text-red-400">*</span>
                 </label>
                 <textarea
                   id="sportHistory"
                   value={sportHistory}
                   onChange={(e) => setSportHistory(e.target.value)}
                   rows={2}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                   placeholder="Daha önce hangi sporları yaptın, ne kadar süre?"
                 />
               </div>
@@ -587,14 +612,14 @@ export default function ProfilTamamlaPage() {
               <div className="space-y-1.5">
                 <label htmlFor="currentMedications" className="text-xs font-medium flex items-center gap-1.5">
                   <Pill className="h-3.5 w-3.5 text-muted-foreground" />
-                  İlaçlar / Supplementler
+                  İlaçlar / Supplementler <span className="text-red-400">*</span>
                 </label>
                 <textarea
                   id="currentMedications"
                   value={currentMedications}
                   onChange={(e) => setCurrentMedications(e.target.value)}
                   rows={2}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                   placeholder="Kullandığın ilaçlar veya supplementler"
                 />
               </div>

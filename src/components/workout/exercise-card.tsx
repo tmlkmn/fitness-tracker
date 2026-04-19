@@ -204,7 +204,7 @@ export function ExerciseCard({
     <>
       {!readOnly ? (
         <SwipeableCard
-          onSwipeLeft={() => deleteExercise.mutate(id)}
+          onSwipeLeft={() => setDeleteOpen(true)}
           onSwipeRight={() => onToggle?.(id, !isCompleted)}
         >
           {cardElement}

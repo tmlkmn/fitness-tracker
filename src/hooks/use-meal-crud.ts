@@ -53,7 +53,24 @@ export function useDeleteMeal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (mealId: number) => deleteMeal(mealId),
-    onSuccess: () => {
+    onMutate: async (mealId) => {
+      await qc.cancelQueries({ queryKey: ["meals"] });
+      const queries = qc.getQueriesData<{ id: number }[]>({ queryKey: ["meals"] });
+      for (const [key, data] of queries) {
+        if (Array.isArray(data)) {
+          qc.setQueryData(key, data.filter((m) => m.id !== mealId));
+        }
+      }
+      return { queries };
+    },
+    onError: (_err, _mealId, context) => {
+      if (context?.queries) {
+        for (const [key, data] of context.queries) {
+          qc.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["meals"] });
     },
   });

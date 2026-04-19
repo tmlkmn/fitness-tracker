@@ -60,7 +60,24 @@ export function useDeleteExercise() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (exerciseId: number) => deleteExercise(exerciseId),
-    onSuccess: () => {
+    onMutate: async (exerciseId) => {
+      await qc.cancelQueries({ queryKey: ["exercises"] });
+      const queries = qc.getQueriesData<{ id: number }[]>({ queryKey: ["exercises"] });
+      for (const [key, data] of queries) {
+        if (Array.isArray(data)) {
+          qc.setQueryData(key, data.filter((e) => e.id !== exerciseId));
+        }
+      }
+      return { queries };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.queries) {
+        for (const [key, data] of context.queries) {
+          qc.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["exercises"] });
     },
   });

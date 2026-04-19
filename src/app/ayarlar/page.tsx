@@ -269,6 +269,18 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
             ))}
           </>
         )}
+        {weekdayItems.length > 0 && !hasWeekend && (
+          <>
+            <div className="border-t border-border/50 my-2" />
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-2 text-xs text-yellow-500 hover:underline"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              Hafta sonu programı eklenmemiş
+            </button>
+          </>
+        )}
         <button
           onClick={() => setEditing(true)}
           className="text-xs text-primary hover:underline mt-2"
@@ -1059,11 +1071,11 @@ function AyarlarContent() {
 
         <PwaInstallCard />
 
-        <CollapsibleCard title="Günlük Akış" icon={Clock} defaultOpen warning={!profile?.dailyRoutine || !Array.isArray(profile.dailyRoutine) || (profile.dailyRoutine as unknown[]).length === 0}>
+        <CollapsibleCard title="Günlük Akış" icon={Clock} defaultOpen warning={!profile?.dailyRoutine || !Array.isArray(profile.dailyRoutine) || (profile.dailyRoutine as unknown[]).length === 0 || !profile?.weekendRoutine || !Array.isArray(profile.weekendRoutine) || (profile.weekendRoutine as unknown[]).length === 0}>
           <DailyRoutineEditor profile={profile} />
         </CollapsibleCard>
 
-        <CollapsibleCard title="Supplement Takvimi" icon={Pill} defaultOpen>
+        <CollapsibleCard title="Supplement / Takviye / İlaç Takvimi" icon={Pill} defaultOpen>
           <SupplementScheduleEditor profile={profile} />
         </CollapsibleCard>
 

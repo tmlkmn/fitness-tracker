@@ -157,7 +157,7 @@ export async function getTodayDashboardData() {
       .select()
       .from(meals)
       .where(eq(meals.dailyPlanId, dailyPlan.id))
-      .orderBy(meals.sortOrder),
+      .orderBy(meals.mealTime),
     db
       .select()
       .from(exercises)

@@ -21,6 +21,7 @@ import {
   Target,
   Scale,
   AlertCircle,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
@@ -416,6 +417,7 @@ export default function HomePage() {
             { href: "/ilerleme", icon: TrendingUp, label: "İlerleme", desc: "Kilo & ölçümler" },
             { href: "/asistan", icon: Bot, label: "AI Asistan", desc: "Fitness koçu" },
             { href: "/alisveris", icon: ShoppingCart, label: "Alışveriş", desc: "Haftalık liste" },
+            { href: "/paylasilan", icon: Users, label: "Paylaşılan", desc: "Benimle paylaşılan" },
           ].map(({ href, icon: Icon, label, desc }) => (
             <Link key={href} href={href}>
               <Card className="hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer h-full">

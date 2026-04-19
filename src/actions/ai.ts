@@ -98,7 +98,7 @@ export async function generateMealVariation(
               .select({ id: meals.id, mealLabel: meals.mealLabel, content: meals.content })
               .from(meals)
               .where(and(eq(meals.dailyPlanId, day.id), eq(meals.mealLabel, mealLabel), ne(meals.id, mealId)))
-              .orderBy(asc(meals.sortOrder));
+              .orderBy(asc(meals.mealTime));
 
             for (const m of dayMeals) {
               sameLabelMeals.push(`${day.dayName}: ${m.content}`);
