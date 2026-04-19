@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Sparkles, UtensilsCrossed, Trash2, CheckCheck } from "lucide-react";
 import { BulkDeleteMealsDialog } from "./bulk-delete-meals-dialog";
+import { BulkCompleteDialog } from "@/components/ui/bulk-complete-dialog";
 import { useBulkCompleteMeals } from "@/hooks/use-bulk-completion";
 
 interface MealListProps {
@@ -24,6 +25,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
   const toggleMeal = useToggleMeal();
   const [addOpen, setAddOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkCompleteOpen, setBulkCompleteOpen] = useState(false);
   const bulkComplete = useBulkCompleteMeals();
 
   if (isLoading) {
@@ -103,7 +105,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
                 variant="ghost"
                 size="sm"
                 className="h-6 px-2 text-xs gap-1"
-                onClick={() => bulkComplete.mutate(dailyPlanId)}
+                onClick={() => setBulkCompleteOpen(true)}
                 disabled={bulkComplete.isPending}
               >
                 <CheckCheck className="h-3 w-3" />
@@ -168,6 +170,16 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
           onOpenChange={setBulkDeleteOpen}
           dailyPlanId={dailyPlanId}
           mealCount={mealList.length}
+        />
+      )}
+      {bulkCompleteOpen && (
+        <BulkCompleteDialog
+          open={bulkCompleteOpen}
+          onOpenChange={setBulkCompleteOpen}
+          onConfirm={() => bulkComplete.mutate(dailyPlanId)}
+          isPending={bulkComplete.isPending}
+          itemCount={mealList.length - completedCount}
+          itemLabel="öğün"
         />
       )}
     </div>

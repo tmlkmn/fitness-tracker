@@ -11,6 +11,7 @@ import { Sparkles, Plus, Dumbbell, Trash2, Copy, CheckCheck } from "lucide-react
 import { AiWorkoutModal } from "./ai-workout-modal";
 import { BulkDeleteExercisesDialog } from "./bulk-delete-exercises-dialog";
 import { CopyWorkoutDialog } from "./copy-workout-dialog";
+import { BulkCompleteDialog } from "@/components/ui/bulk-complete-dialog";
 import { useBulkCompleteExercises } from "@/hooks/use-bulk-completion";
 import {
   useGenerateWorkoutReplacement,
@@ -30,6 +31,7 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
   const [addOpen, setAddOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [bulkCompleteOpen, setBulkCompleteOpen] = useState(false);
   const bulkComplete = useBulkCompleteExercises();
   const generate = useGenerateWorkoutReplacement();
   const apply = useApplyWorkoutReplacement();
@@ -174,7 +176,7 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
                   variant="ghost"
                   size="sm"
                   className="h-6 px-2 text-xs gap-1"
-                  onClick={() => bulkComplete.mutate(dailyPlanId)}
+                  onClick={() => setBulkCompleteOpen(true)}
                   disabled={bulkComplete.isPending}
                 >
                   <CheckCheck className="h-3 w-3" />
@@ -256,6 +258,17 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
           onOpenChange={setBulkDeleteOpen}
           dailyPlanId={dailyPlanId}
           exerciseCount={exerciseList.length}
+        />
+      )}
+
+      {bulkCompleteOpen && (
+        <BulkCompleteDialog
+          open={bulkCompleteOpen}
+          onOpenChange={setBulkCompleteOpen}
+          onConfirm={() => bulkComplete.mutate(dailyPlanId)}
+          isPending={bulkComplete.isPending}
+          itemCount={totalExercises - completedExercises}
+          itemLabel="egzersiz"
         />
       )}
 

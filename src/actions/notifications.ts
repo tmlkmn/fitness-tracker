@@ -5,11 +5,18 @@ import { notifications } from "@/db/schema";
 import { eq, and, desc, sql, gte } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 
+function getTurkeyStartOfDay(): Date {
+  const nowUtc = new Date();
+  const turkeyOffset = 3 * 60 * 60 * 1000;
+  const turkeyNow = new Date(nowUtc.getTime() + turkeyOffset);
+  return new Date(
+    Date.UTC(turkeyNow.getUTCFullYear(), turkeyNow.getUTCMonth(), turkeyNow.getUTCDate()) - turkeyOffset
+  );
+}
+
 export async function getNotifications() {
   const user = await getAuthUser();
-  // Only show today's notifications
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = getTurkeyStartOfDay();
   return db
     .select()
     .from(notifications)
@@ -25,8 +32,7 @@ export async function getNotifications() {
 
 export async function getUnreadCount() {
   const user = await getAuthUser();
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = getTurkeyStartOfDay();
   const [result] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(notifications)

@@ -844,7 +844,7 @@ function ProfileEditor({
   }
 
   // Edit mode
-  const inputClass = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  const inputClass = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   return (
     <Card>
@@ -863,7 +863,7 @@ function ProfileEditor({
         )}
 
         <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground">Yaş</label>
+          <label className="text-xs text-muted-foreground">Yaş <span className="text-red-400">*</span></label>
           <input type="number" value={age} onChange={(e) => setAge(e.target.value)} min={10} max={100} placeholder="28" className={inputClass} />
         </div>
 
@@ -904,7 +904,7 @@ function ProfileEditor({
 
         {serviceType === "full" && (
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Fitness Seviyesi</label>
+            <label className="text-xs text-muted-foreground">Fitness Seviyesi <span className="text-red-400">*</span></label>
             <select
               value={fitnessLevel}
               onChange={(e) => setFitnessLevel(e.target.value)}
@@ -920,18 +920,18 @@ function ProfileEditor({
 
         {serviceType === "full" && (
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Spor Geçmişi</label>
+            <label className="text-xs text-muted-foreground">Spor Geçmişi <span className="text-red-400">*</span></label>
             <textarea value={sportHistory} onChange={(e) => setSportHistory(e.target.value)} rows={2} placeholder="Daha önce yaptığınız sporlar..." className={`${inputClass} h-auto resize-none`} />
           </div>
         )}
 
         <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground">İlaçlar / Supplementler</label>
+          <label className="text-xs text-muted-foreground">İlaçlar / Supplementler <span className="text-red-400">*</span></label>
           <textarea value={currentMedications} onChange={(e) => setCurrentMedications(e.target.value)} rows={2} placeholder="Kullandığınız ilaçlar veya takviyeler..." className={`${inputClass} h-auto resize-none`} />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground">Sağlık Notları</label>
+          <label className="text-xs text-muted-foreground">Sağlık Notları <span className="text-red-400">*</span></label>
           <textarea value={healthNotes} onChange={(e) => setHealthNotes(e.target.value)} rows={3} placeholder="Yaralanmalar, alerjiler, diyet kısıtlamaları..." className={`${inputClass} h-auto resize-none`} />
         </div>
 

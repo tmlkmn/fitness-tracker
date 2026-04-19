@@ -43,8 +43,13 @@ const COOLDOWNS: Partial<Record<AIFeature, number>> = {
 };
 
 function getStartOfDay(): Date {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Use Turkey timezone (Europe/Istanbul, UTC+3) for daily reset
+  const nowUtc = new Date();
+  const turkeyOffset = 3 * 60 * 60 * 1000; // UTC+3
+  const turkeyNow = new Date(nowUtc.getTime() + turkeyOffset);
+  const start = new Date(
+    Date.UTC(turkeyNow.getUTCFullYear(), turkeyNow.getUTCMonth(), turkeyNow.getUTCDate()) - turkeyOffset
+  );
   return start;
 }
 
