@@ -172,9 +172,9 @@ export default function TakvimPage() {
   };
 
   const handleApplyWeekly = () => {
-    if (!generateWeekly.data?.suggestedPlan) return;
+    if (!generateWeekly.data) return;
     applyWeekly.mutate(
-      { dateStr: selectedDate, plan: generateWeekly.data.suggestedPlan, applyMode: generateMode },
+      { dateStr: selectedDate, plan: generateWeekly.data, applyMode: generateMode },
       {
         onSuccess: () => {
           setWeeklyModalOpen(false);
@@ -208,9 +208,7 @@ export default function TakvimPage() {
   };
 
   const weeklyError = generateWeekly.error
-    ? generateWeekly.error.message === "RATE_LIMITED"
-      ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
-      : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
+    ? generateWeekly.error.message || "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
     : null;
 
   // Create a plan on demand for empty days
@@ -461,7 +459,7 @@ export default function TakvimPage() {
         <AiWeeklyPlanModal
           open={weeklyModalOpen}
           onOpenChange={handleWeeklyModalOpenChange}
-          suggestedPlan={generateWeekly.data?.suggestedPlan ?? null}
+          suggestedPlan={generateWeekly.data ?? null}
           loading={generateWeekly.isPending}
           applying={applyWeekly.isPending}
           error={weeklyError}
@@ -498,12 +496,16 @@ export default function TakvimPage() {
               disabled={deleteWeekly.isPending}
               onClick={() => {
                 if (!data?.weeklyPlan?.id) return;
-                deleteWeekly.mutate(data.weeklyPlan.id, {
-                  onSuccess: () => {
-                    setDeleteConfirmOpen(false);
-                    setCreatedDailyPlanId(null);
-                  },
-                });
+                const wpId = data.weeklyPlan.id;
+                // Close modal immediately for snappy UX
+                setDeleteConfirmOpen(false);
+                setCreatedDailyPlanId(null);
+                // Optimistically clear the current week data
+                queryClient.setQueryData(
+                  ["week-plans-date", selectedDate],
+                  { weeklyPlan: null, dailyPlans: [] }
+                );
+                deleteWeekly.mutate(wpId);
               }}
             >
               {deleteWeekly.isPending ? "Siliniyor..." : "Sil"}

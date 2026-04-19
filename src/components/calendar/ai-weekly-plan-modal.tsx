@@ -91,15 +91,33 @@ const INGREDIENT_TAGS = [
 
 const LOADING_STEPS = [
   { label: "Profil ve geçmiş veriler analiz ediliyor", delay: 0 },
-  { label: "Antrenman programı oluşturuluyor", delay: 15000 },
-  { label: "Beslenme planı hazırlanıyor", delay: 45000 },
-  { label: "Program optimize ediliyor", delay: 90000 },
+  { label: "Program oluşturuluyor", delay: 8000 },
+  { label: "Program optimize ediliyor", delay: 40000 },
 ];
 
 function SteppedProgress({ loading }: { loading: boolean }) {
   const [activeStep, setActiveStep] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  // Keep screen awake during generation
+  useEffect(() => {
+    if (!loading) {
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+      return;
+    }
+    if ("wakeLock" in navigator) {
+      navigator.wakeLock.request("screen").then((lock) => {
+        wakeLockRef.current = lock;
+      }).catch(() => {});
+    }
+    return () => {
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+    };
+  }, [loading]);
 
   useEffect(() => {
     if (!loading) {
@@ -175,7 +193,7 @@ function SteppedProgress({ loading }: { loading: boolean }) {
         <div
           className="h-full bg-primary rounded-full transition-all duration-1000 ease-linear"
           style={{
-            width: `${Math.min(95, (elapsed / 150000) * 100)}%`,
+            width: `${Math.min(95, (elapsed / 90000) * 100)}%`,
           }}
         />
       </div>
@@ -183,7 +201,7 @@ function SteppedProgress({ loading }: { loading: boolean }) {
       <div className="flex items-center justify-between">
         <p className="text-[10px] text-muted-foreground flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          Bu işlem 1-3 dakika sürebilir
+          Bu işlem 1-2 dakika sürebilir
         </p>
         <p className="text-[10px] text-muted-foreground font-mono">
           {formatTime(elapsed)}

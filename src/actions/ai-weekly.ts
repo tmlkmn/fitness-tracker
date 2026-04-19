@@ -2,36 +2,15 @@
 
 import { db } from "@/db";
 import { weeklyPlans, dailyPlans, meals, exercises, progressLogs, users } from "@/db/schema";
-import { eq, and, sql, desc, asc } from "drizzle-orm";
+import { eq, and, sql, desc, asc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
-import { WEEKLY_PLAN_PROMPT, NUTRITION_ONLY_WEEKLY_PROMPT, WORKOUT_ONLY_WEEKLY_PROMPT } from "@/lib/ai-prompts";
-import { saveAiSuggestion } from "@/actions/ai-suggestions";
 import {
-  validateWeeklyPlan,
   type AIWeeklyPlan,
   type AIWeeklyDay,
 } from "@/lib/ai-weekly-types";
 
 export type { AIWeeklyPlan, AIWeeklyDay } from "@/lib/ai-weekly-types";
-
-function parseJSON(text: string): unknown {
-  let cleaned = text
-    .replace(/^```(?:json)?\s*\n?/i, "")
-    .replace(/\n?```\s*$/i, "")
-    .trim();
-
-  // Fix trailing commas before } or ]
-  cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
-
-  // Fix single-quoted strings → double-quoted
-  // Only when the value looks like a JSON string (not inside already-double-quoted text)
-  cleaned = cleaned.replace(/:\s*'([^']*)'/g, ': "$1"');
-  cleaned = cleaned.replace(/'([^']*)'(?=\s*[:,\]}])/g, '"$1"');
-
-  return JSON.parse(cleaned);
-}
 
 function getMondayStr(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -53,7 +32,7 @@ function addDays(dateStr: string, days: number): string {
   return `${y}-${m}-${dd}`;
 }
 
-async function buildWeeklyPlanContext(userId: string): Promise<string> {
+export async function buildWeeklyPlanContext(userId: string): Promise<string> {
   const lines: string[] = [];
 
   // ─── 1. User profile ──────────────────────────────────────────────────
@@ -182,36 +161,35 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
     .from(weeklyPlans)
     .where(eq(weeklyPlans.userId, userId))
     .orderBy(desc(weeklyPlans.weekNumber))
-    .limit(4);
+    .limit(2);
 
   if (prevWeeks.length > 0) {
     lines.push("");
     lines.push("═══ ANTRENMAN GEÇMİŞİ (Önceki Haftalar — progresif yüklenme için referans) ═══");
 
-    for (const week of prevWeeks.reverse()) {
-      lines.push("");
-      lines.push(`── Hafta ${week.weekNumber}: ${week.title} (${week.phase} fazı, ${week.startDate ?? ""}) ──`);
+    const weekIds = prevWeeks.map(w => w.id);
 
-      const days = await db
-        .select({
-          id: dailyPlans.id,
-          dayName: dailyPlans.dayName,
-          workoutTitle: dailyPlans.workoutTitle,
-          planType: dailyPlans.planType,
-          dayOfWeek: dailyPlans.dayOfWeek,
-        })
-        .from(dailyPlans)
-        .where(eq(dailyPlans.weeklyPlanId, week.id))
-        .orderBy(asc(dailyPlans.dayOfWeek));
+    // Fetch all days for these weeks in one query
+    const allDays = await db
+      .select({
+        id: dailyPlans.id,
+        weeklyPlanId: dailyPlans.weeklyPlanId,
+        dayName: dailyPlans.dayName,
+        workoutTitle: dailyPlans.workoutTitle,
+        planType: dailyPlans.planType,
+        dayOfWeek: dailyPlans.dayOfWeek,
+      })
+      .from(dailyPlans)
+      .where(inArray(dailyPlans.weeklyPlanId, weekIds))
+      .orderBy(asc(dailyPlans.dayOfWeek));
 
-      for (const day of days) {
-        if (day.planType === "rest") {
-          lines.push(`${day.dayName}: Dinlenme`);
-          continue;
-        }
+    const dayIds = allDays.filter(d => d.planType !== "rest").map(d => d.id);
 
-        const dayExs = await db
+    // Fetch all exercises for those days in one query
+    const allExercises = dayIds.length > 0
+      ? await db
           .select({
+            dailyPlanId: exercises.dailyPlanId,
             name: exercises.name,
             sectionLabel: exercises.sectionLabel,
             sets: exercises.sets,
@@ -220,8 +198,41 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
             durationMinutes: exercises.durationMinutes,
           })
           .from(exercises)
-          .where(eq(exercises.dailyPlanId, day.id))
-          .orderBy(asc(exercises.sortOrder));
+          .where(inArray(exercises.dailyPlanId, dayIds))
+          .orderBy(asc(exercises.sortOrder))
+      : [];
+
+    // Group exercises by dailyPlanId
+    const exercisesByDay = new Map<number, typeof allExercises>();
+    for (const ex of allExercises) {
+      if (ex.dailyPlanId == null) continue;
+      const arr = exercisesByDay.get(ex.dailyPlanId) ?? [];
+      arr.push(ex);
+      exercisesByDay.set(ex.dailyPlanId, arr);
+    }
+
+    // Group days by weeklyPlanId
+    const daysByWeek = new Map<number, typeof allDays>();
+    for (const day of allDays) {
+      if (day.weeklyPlanId == null) continue;
+      const arr = daysByWeek.get(day.weeklyPlanId) ?? [];
+      arr.push(day);
+      daysByWeek.set(day.weeklyPlanId, arr);
+    }
+
+    for (const week of prevWeeks.reverse()) {
+      lines.push("");
+      lines.push(`── Hafta ${week.weekNumber}: ${week.title} (${week.phase} fazı, ${week.startDate ?? ""}) ──`);
+
+      const days = daysByWeek.get(week.id) ?? [];
+
+      for (const day of days) {
+        if (day.planType === "rest") {
+          lines.push(`${day.dayName}: Dinlenme`);
+          continue;
+        }
+
+        const dayExs = exercisesByDay.get(day.id) ?? [];
 
         if (dayExs.length === 0) {
           lines.push(`${day.dayName} (${day.workoutTitle ?? ""}): Program yok`);
@@ -250,133 +261,6 @@ async function buildWeeklyPlanContext(userId: string): Promise<string> {
   }
 
   return lines.join("\n");
-}
-
-export async function generateWeeklyPlan(dateStr: string, userNote?: string, generateMode?: "both" | "nutrition" | "workout") {
-  const user = await getAuthUser();
-  await checkRateLimit(user.id, "weekly");
-  await logAiUsage(user.id, "weekly");
-
-  // Get user's service type
-  const [userRow] = await db
-    .select({ serviceType: users.serviceType })
-    .from(users)
-    .where(eq(users.id, user.id));
-  const isNutritionOnly = userRow?.serviceType === "nutrition";
-
-  // Select prompt based on generateMode (or serviceType fallback)
-  let systemPrompt: string;
-  if (generateMode === "nutrition") {
-    systemPrompt = NUTRITION_ONLY_WEEKLY_PROMPT;
-  } else if (generateMode === "workout") {
-    systemPrompt = WORKOUT_ONLY_WEEKLY_PROMPT;
-  } else if (isNutritionOnly) {
-    systemPrompt = NUTRITION_ONLY_WEEKLY_PROMPT;
-  } else {
-    systemPrompt = WEEKLY_PLAN_PROMPT;
-  }
-
-  const monday = getMondayStr(dateStr);
-  const weeklyContext = await buildWeeklyPlanContext(user.id);
-
-  let userMessage: string;
-  if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
-    userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`;
-  } else if (generateMode === "workout") {
-    userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.`;
-  } else {
-    userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
-  }
-
-  if (userNote?.trim()) {
-    userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu hafta için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
-  }
-
-  try {
-    const client = getAIClient();
-    const message = await client.messages.create({
-      model: AI_MODELS.smart,
-      max_tokens: 16000,
-      system: [
-        {
-          type: "text",
-          text: systemPrompt,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      messages: [
-        {
-          role: "user",
-          content: userMessage,
-        },
-      ],
-    });
-
-    let text = message.content[0].type === "text" ? message.content[0].text : "";
-
-    // If the response was truncated (stop_reason !== "end_turn"), retry with a nudge
-    let suggestedPlan: AIWeeklyPlan;
-    const wasTruncated = message.stop_reason !== "end_turn";
-    if (!wasTruncated) {
-      try {
-        suggestedPlan = validateWeeklyPlan(parseJSON(text));
-      } catch {
-        // JSON was complete but invalid — retry
-        const retry = await client.messages.create({
-          model: AI_MODELS.smart,
-          max_tokens: 16000,
-          system: [
-            {
-              type: "text",
-              text: systemPrompt,
-              cache_control: { type: "ephemeral" },
-            },
-          ],
-          messages: [
-            {
-              role: "user",
-              content: `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver.`,
-            },
-          ],
-        });
-        text = retry.content[0].type === "text" ? retry.content[0].text : "";
-        suggestedPlan = validateWeeklyPlan(parseJSON(text));
-      }
-    } else {
-      // Response was truncated — retry asking for completion
-      const retry = await client.messages.create({
-        model: AI_MODELS.smart,
-        max_tokens: 16000,
-        system: [
-          {
-            type: "text",
-            text: systemPrompt,
-            cache_control: { type: "ephemeral" },
-          },
-        ],
-        messages: [
-          {
-            role: "user",
-            content: `${userMessage}\n\nÖNCEKİ YANITINDA JSON KESILDI. Lütfen tüm 7 günü içeren eksiksiz JSON döndür. Daha kısa egzersiz notları ve öğün açıklamaları kullan.`,
-          },
-        ],
-      });
-      text = retry.content[0].type === "text" ? retry.content[0].text : "";
-      suggestedPlan = validateWeeklyPlan(parseJSON(text));
-    }
-
-    // Auto-save suggestion to DB for later reuse (fire-and-forget)
-    saveAiSuggestion({
-      plan: suggestedPlan,
-      userNote: userNote ?? null,
-      originalDate: monday,
-    }).catch(() => {});
-
-    return { suggestedPlan };
-  } catch (error) {
-    console.error("[AI Weekly] Error generating plan:", error);
-    throw new Error("AI_UNAVAILABLE");
-  }
 }
 
 export async function applyWeeklyPlan(

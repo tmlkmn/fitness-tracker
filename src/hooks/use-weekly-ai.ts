@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  generateWeeklyPlan,
   applyWeeklyPlan,
   deleteWeeklyPlan as deleteWeeklyPlanAction,
   type AIWeeklyPlan,
@@ -13,8 +12,29 @@ import {
 
 export function useGenerateWeeklyPlan() {
   return useMutation({
-    mutationFn: ({ dateStr, userNote, generateMode }: { dateStr: string; userNote?: string; generateMode?: "both" | "nutrition" | "workout" }) =>
-      generateWeeklyPlan(dateStr, userNote, generateMode),
+    mutationFn: async ({ dateStr, userNote, generateMode }: { dateStr: string; userNote?: string; generateMode?: "both" | "nutrition" | "workout" }) => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 180_000);
+
+      try {
+        const res = await fetch("/api/ai/weekly", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dateStr, userNote, generateMode }),
+          signal: controller.signal,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error ?? "Bir hata oluştu.");
+        }
+
+        return data.suggestedPlan as AIWeeklyPlan;
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
   });
 }
 
@@ -44,10 +64,16 @@ export function useDeleteWeeklyPlan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (weeklyPlanId: number) => deleteWeeklyPlanAction(weeklyPlanId),
+    onMutate: async () => {
+      // Cancel outgoing queries so they don't overwrite our optimistic update
+      await qc.cancelQueries({ queryKey: ["week-plans-date"] });
+      await qc.cancelQueries({ queryKey: ["today-dashboard"] });
+    },
     onSuccess: () => {
-      qc.refetchQueries({ queryKey: ["plans"] });
-      qc.refetchQueries({ queryKey: ["week-plans-date"] });
-      qc.refetchQueries({ queryKey: ["today-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["plans"] });
+      qc.invalidateQueries({ queryKey: ["week-plans-date"] });
+      qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["dates-with-plans"] });
     },
   });
 }

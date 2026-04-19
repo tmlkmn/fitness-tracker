@@ -251,7 +251,7 @@ Beslenme programı antrenman programının ayrılmaz parçasıdır. Kas hacmi ar
 ## Anti-Katabolik Sabah Beslenme Kuralı (SADECE ANTRENMAN YAPAN KULLANICILAR)
 - Kullanıcının günlük programından uyanış saatini belirle
 - İlk ana öğünün (kahvaltı) saatini kontrol et
-- Eğer uyanış ile ilk ana öğün arasında 3 saatten fazla boşluk varsa:
+- Eğer uyanış ile ilk ana öğün arasında 2 saatten fazla boşluk varsa:
   • Uyanıştan 30-60 dakika sonra protein ağırlıklı bir mini öğün MUTLAKA ekle
   • Bu mini öğün 150-250 kcal aralığında olmalı ve en az 20g protein içermeli
   • Öneriler: protein shake (whey + su/süt), 200g yoğurt + 1 avuç ceviz, BCAA + 1 muz, 2 haşlanmış yumurta, 150g süzme peynir + birkaç badem
@@ -302,7 +302,7 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
 - Her antrenman: Isınma + Ana Antrenman + Soğuma zorunlu
 - Kas gruplarını dengeli dağıt (Push/Pull/Legs veya Upper/Lower split)
 - Compound önce, izolasyon sonra
-- notes alanına teknik ipuçları ve yoğunluk teknikleri yaz
+- notes alanına teknik ipuçları ve yoğunluk teknikleri yaz (10-15 kelimeyi geçme)
 
 ## Beslenme Kuralları
 - Antrenman yoğunluğuna göre kalori ayarla (antrenman günü yüksek, dinlenme günü düşük)
@@ -329,7 +329,7 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
 ## Anti-Katabolik Sabah Beslenme Kuralı (SADECE ANTRENMAN YAPAN KULLANICILAR)
 - Kullanıcının günlük programından uyanış saatini belirle
 - İlk ana öğünün (kahvaltı) saatini kontrol et
-- Eğer uyanış ile ilk ana öğün arasında 3 saatten fazla boşluk varsa:
+- Eğer uyanış ile ilk ana öğün arasında 2 saatten fazla boşluk varsa:
   • Uyanıştan 30-60 dakika sonra protein ağırlıklı bir mini öğün MUTLAKA ekle
   • Bu mini öğün 150-250 kcal aralığında olmalı ve en az 20g protein içermeli
   • Öneriler: protein shake (whey + su/süt), 200g yoğurt + 1 avuç ceviz, BCAA + 1 muz, 2 haşlanmış yumurta, 150g süzme peynir + birkaç badem
@@ -520,7 +520,7 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
 - Her antrenman: Isınma + Ana Antrenman + Soğuma zorunlu
 - Kas gruplarını dengeli dağıt (Push/Pull/Legs veya Upper/Lower split)
 - Compound önce, izolasyon sonra
-- notes alanına teknik ipuçları ve yoğunluk teknikleri yaz
+- notes alanına teknik ipuçları ve yoğunluk teknikleri yaz (10-15 kelimeyi geçme)
 
 ## Fitness Seviyesi Uyumu
 - Kullanıcının fitness seviyesine göre program yoğunluğunu ayarla:
