@@ -4,6 +4,7 @@ import {
   addProgressLog,
   updateProgressLog,
   deleteProgressLog,
+  getLatestProgressLog,
 } from "@/actions/progress";
 
 export function useProgressLogs() {
@@ -41,5 +42,13 @@ export function useDeleteProgress() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["progress"] });
     },
+  });
+}
+
+export function useLatestProgress() {
+  return useQuery({
+    queryKey: ["progress-latest"],
+    queryFn: () => getLatestProgressLog(),
+    staleTime: 60_000,
   });
 }

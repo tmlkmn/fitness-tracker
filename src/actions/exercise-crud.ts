@@ -82,6 +82,33 @@ export async function deleteExercise(exerciseId: number) {
   revalidatePath("/");
 }
 
+export async function bulkCreateExercises(
+  dailyPlanId: number,
+  items: ExerciseInput[],
+) {
+  const user = await getAuthUser();
+  await verifyDailyPlanOwnership(dailyPlanId, user.id);
+
+  for (let i = 0; i < items.length; i++) {
+    const data = items[i];
+    await db.insert(exercises).values({
+      dailyPlanId,
+      section: data.section,
+      sectionLabel: data.sectionLabel,
+      name: data.name,
+      sets: data.sets ?? null,
+      reps: data.reps ?? null,
+      restSeconds: data.restSeconds ?? null,
+      durationMinutes: data.durationMinutes ?? null,
+      notes: data.notes ?? null,
+      isCompleted: false,
+      sortOrder: i,
+    });
+  }
+
+  revalidatePath("/");
+}
+
 export async function deleteAllExercises(dailyPlanId: number) {
   const user = await getAuthUser();
   await verifyDailyPlanOwnership(dailyPlanId, user.id);

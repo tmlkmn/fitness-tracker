@@ -31,6 +31,9 @@ import { useTodayDashboard, useWeekPlansByDate, useAllWeeks } from "@/hooks/use-
 import { useNotifications } from "@/hooks/use-notifications";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useActivityStats } from "@/hooks/use-activity-stats";
+import { StreakCard } from "@/components/gamification/streak-card";
+import { AchievementBadges } from "@/components/gamification/achievement-badges";
 
 const PLAN_TYPE_CONFIG: Record<string, { icon: typeof Dumbbell; label: string; color: string }> = {
   workout: { icon: Dumbbell, label: "Antrenman", color: "text-green-400 bg-green-400/10" },
@@ -75,6 +78,7 @@ export default function HomePage() {
   const { data: weekData } = useWeekPlansByDate(todayStr);
   const { data: weeks } = useAllWeeks();
   const { data: notifications } = useNotifications();
+  const { data: activityStats } = useActivityStats();
 
   // Onboarding carousel — auto-open on first login
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -219,6 +223,17 @@ export default function HomePage() {
               </CardContent>
             </Card>
           </Link>
+        )}
+
+        {/* Streak & Achievements */}
+        {activityStats && (
+          <>
+            <StreakCard
+              currentStreak={activityStats.currentStreak}
+              longestStreak={activityStats.longestStreak}
+            />
+            <AchievementBadges stats={activityStats} />
+          </>
         )}
 
         {/* Today's Summary */}

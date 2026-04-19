@@ -88,3 +88,14 @@ export async function getProgressLogs() {
     .where(eq(progressLogs.userId, user.id))
     .orderBy(desc(progressLogs.logDate));
 }
+
+export async function getLatestProgressLog() {
+  const user = await getAuthUser();
+  const [latest] = await db
+    .select()
+    .from(progressLogs)
+    .where(eq(progressLogs.userId, user.id))
+    .orderBy(desc(progressLogs.logDate))
+    .limit(1);
+  return latest ?? null;
+}

@@ -10,7 +10,11 @@ import { stripEmoji, getMealIcon, DynamicIcon } from "@/lib/icon-map";
 import { AiSuggestButton } from "@/components/ai/ai-suggest-button";
 import { MealFormDialog } from "./meal-form-dialog";
 import { MealDeleteDialog } from "./meal-delete-dialog";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, GripVertical } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { SwipeableCard } from "@/components/ui/swipeable-card";
+import { useDeleteMeal } from "@/hooks/use-meal-crud";
 
 interface MealCardProps {
   id: number;
@@ -45,6 +49,22 @@ export function MealCard({
 }: MealCardProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleteMeal = useDeleteMeal();
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
 
   const mealIcon = getMealIcon(mealLabel);
 
@@ -58,9 +78,10 @@ export function MealCard({
     return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
   })();
 
-  return (
-    <>
+  const cardElement = (
       <Card
+        ref={setNodeRef}
+        style={style}
         className={cn(
           "transition-all duration-200",
           isCompleted && "opacity-60"
@@ -68,6 +89,15 @@ export function MealCard({
       >
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
+            {!readOnly && (
+              <div
+                className="mt-1 cursor-grab active:cursor-grabbing touch-none"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+              </div>
+            )}
             {!readOnly && (
               <Checkbox
                 checked={isCompleted}
@@ -148,6 +178,20 @@ export function MealCard({
           </div>
         </CardContent>
       </Card>
+  );
+
+  return (
+    <>
+      {!readOnly ? (
+        <SwipeableCard
+          onSwipeLeft={() => deleteMeal.mutate(id)}
+          onSwipeRight={() => onToggle?.(id, !isCompleted)}
+        >
+          {cardElement}
+        </SwipeableCard>
+      ) : (
+        cardElement
+      )}
 
       {editOpen && dailyPlanId && (
         <MealFormDialog

@@ -6,16 +6,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Timer, Sparkles, Pencil, Trash2 } from "lucide-react";
+import { Timer, Sparkles, Pencil, Trash2, Plus } from "lucide-react";
 import { ExerciseFormTips } from "./exercise-form-tips";
 import { ExerciseDemoModal } from "./exercise-demo-modal";
 import { AiWorkoutModal } from "./ai-workout-modal";
 import { ExerciseFormDialog } from "./exercise-form-dialog";
 import { ExerciseDeleteDialog } from "./exercise-delete-dialog";
+import { InlineEditBadge } from "@/components/ui/inline-edit-badge";
+import { SwipeableCard } from "@/components/ui/swipeable-card";
+import { useDeleteExercise } from "@/hooks/use-exercise-crud";
 import {
   useGenerateExerciseVariation,
   useApplyExerciseVariation,
 } from "@/hooks/use-workout-ai";
+import { useUpdateExercise } from "@/hooks/use-exercise-crud";
 
 interface ExerciseCardProps {
   id: number;
@@ -53,6 +57,8 @@ export function ExerciseCard({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const generate = useGenerateExerciseVariation();
   const apply = useApplyExerciseVariation();
+  const updateExercise = useUpdateExercise();
+  const deleteExercise = useDeleteExercise();
 
   const handleGenerate = (userNote?: string) => {
     if (!dailyPlanId) return;
@@ -85,8 +91,7 @@ export function ExerciseCard({
       : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
     : null;
 
-  return (
-    <>
+  const cardElement = (
       <Card className={cn("transition-opacity", isCompleted && "opacity-60")}>
         <CardContent className="p-3">
           <div className="flex items-start gap-3">
@@ -107,9 +112,42 @@ export function ExerciseCard({
               </div>
               <div className={cn("flex flex-wrap gap-1.5 mt-1", readOnly && isCompleted && "opacity-60")}>
                 {sets && reps ? (
-                  <Badge variant="secondary" className="text-xs">
-                    {sets}x{reps}
-                  </Badge>
+                  <>
+                    {!readOnly && !isCompleted ? (
+                      <InlineEditBadge
+                        value={`${sets}x${reps}`}
+                        onSave={(v) => {
+                          const match = v.match(/^(\d+)x(.+)$/);
+                          if (match) {
+                            updateExercise.mutate({
+                              exerciseId: id,
+                              data: { section, sectionLabel, name, sets: parseInt(match[1]), reps: match[2], restSeconds, durationMinutes, notes },
+                            });
+                          }
+                        }}
+                      />
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">
+                        {sets}x{reps}
+                      </Badge>
+                    )}
+                    {!readOnly && !isCompleted && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() =>
+                          updateExercise.mutate({
+                            exerciseId: id,
+                            data: { section, sectionLabel, name, sets: (sets ?? 0) + 1, reps, restSeconds, durationMinutes, notes },
+                          })
+                        }
+                        title="+1 Set"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </>
                 ) : null}
                 {durationMinutes ? (
                   <Badge variant="secondary" className="text-xs">
@@ -160,6 +198,20 @@ export function ExerciseCard({
           </div>
         </CardContent>
       </Card>
+  );
+
+  return (
+    <>
+      {!readOnly ? (
+        <SwipeableCard
+          onSwipeLeft={() => deleteExercise.mutate(id)}
+          onSwipeRight={() => onToggle?.(id, !isCompleted)}
+        >
+          {cardElement}
+        </SwipeableCard>
+      ) : (
+        cardElement
+      )}
 
       {editOpen && dailyPlanId && (
         <ExerciseFormDialog

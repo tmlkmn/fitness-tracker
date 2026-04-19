@@ -73,6 +73,29 @@ export async function deleteMeal(mealId: number) {
   revalidatePath("/");
 }
 
+export async function bulkCreateMeals(dailyPlanId: number, items: MealInput[]) {
+  const user = await getAuthUser();
+  await verifyDailyPlanOwnership(dailyPlanId, user.id);
+
+  for (let i = 0; i < items.length; i++) {
+    const data = items[i];
+    await db.insert(meals).values({
+      dailyPlanId,
+      mealTime: data.mealTime,
+      mealLabel: data.mealLabel,
+      content: data.content,
+      calories: data.calories ?? null,
+      proteinG: data.proteinG ?? null,
+      carbsG: data.carbsG ?? null,
+      fatG: data.fatG ?? null,
+      isCompleted: false,
+      sortOrder: i,
+    });
+  }
+
+  revalidatePath("/");
+}
+
 export async function deleteAllMeals(dailyPlanId: number) {
   const user = await getAuthUser();
   await verifyDailyPlanOwnership(dailyPlanId, user.id);

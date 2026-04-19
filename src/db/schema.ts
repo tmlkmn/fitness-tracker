@@ -155,6 +155,28 @@ export const supplements = pgTable("supplements", {
   startWeek: integer("start_week").notNull(),
 });
 
+export const supplementCompletions = pgTable(
+  "supplement_completions",
+  {
+    id: serial("id").primaryKey(),
+    supplementId: integer("supplement_id")
+      .notNull()
+      .references(() => supplements.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    completionDate: date("completion_date").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("supplement_completion_unique").on(
+      table.supplementId,
+      table.userId,
+      table.completionDate,
+    ),
+  ],
+);
+
 export const progressLogs = pgTable("progress_logs", {
   id: serial("id").primaryKey(),
   userId: text("user_id")

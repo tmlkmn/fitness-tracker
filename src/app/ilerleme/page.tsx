@@ -38,6 +38,8 @@ import {
   Dumbbell,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useActivityStats } from "@/hooks/use-activity-stats";
+import { ActivityHeatmap } from "@/components/gamification/activity-heatmap";
 
 function formatTurkishDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -60,7 +62,7 @@ function LogDetailSection({ title, icon: Icon, items }: { title: string; icon: a
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1">
         {filled.map((item) => (
-          <div key={item.label} className="flex justify-between text-xs">
+          <div key={`${item.label}-${item.unit}`} className="flex justify-between text-xs">
             <span className="text-muted-foreground">{item.label}</span>
             <span className="font-medium">{item.value} {item.unit}</span>
           </div>
@@ -74,6 +76,7 @@ export default function IlerlemePage() {
   const { data: logs } = useProgressLogs();
   const { data: profile } = useUserProfile();
   const deleteProgress = useDeleteProgress();
+  const { data: activityStats } = useActivityStats();
 
   const [modalOpen, setModalOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -162,6 +165,11 @@ export default function IlerlemePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Activity Heatmap */}
+        {activityStats && (
+          <ActivityHeatmap completionMap={activityStats.completionMap} />
+        )}
 
         {/* Dynamic chart */}
         <ChartSelector data={logs ?? []} />

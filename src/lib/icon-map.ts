@@ -20,6 +20,20 @@ import {
   IceCreamCone,
   Flame,
   Waves,
+  Footprints,
+  Zap,
+  Shield,
+  Sword,
+  Crown,
+  Trophy,
+  Star,
+  Medal,
+  Gem,
+  Sparkles,
+  Dumbbell,
+  HeartPulse,
+  Utensils,
+  ChefHat,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
@@ -94,10 +108,29 @@ export function getSectionIcon(section: string): LucideIcon {
 
 // ── Dynamic icon renderer (avoids react-hooks/static-components lint) ─────
 
+const iconNameMap: Record<string, LucideIcon> = {
+  Footprints,
+  Zap,
+  Shield,
+  Sword,
+  Crown,
+  Trophy,
+  Star,
+  Medal,
+  Gem,
+  Sparkles,
+  Dumbbell,
+  Flame,
+  HeartPulse,
+  Utensils,
+  ChefHat,
+};
+
 interface DynamicIconProps extends LucideProps {
-  icon: LucideIcon;
+  icon: LucideIcon | string;
 }
 
 export function DynamicIcon({ icon, ...props }: DynamicIconProps) {
-  return React.createElement(icon, props);
+  const resolved = typeof icon === "string" ? iconNameMap[icon] ?? Star : icon;
+  return React.createElement(resolved, props);
 }

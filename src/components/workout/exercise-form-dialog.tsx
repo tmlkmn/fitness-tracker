@@ -18,6 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateExercise, useUpdateExercise } from "@/hooks/use-exercise-crud";
+import { ExerciseLibraryPicker } from "./exercise-library-picker";
+import { NumericStepper } from "@/components/ui/numeric-stepper";
+import { Search } from "lucide-react";
 
 const SECTIONS = [
   { value: "warmup", label: "Isınma" },
@@ -63,6 +66,7 @@ export function ExerciseFormDialog({
   const [restSeconds, setRestSeconds] = useState(exercise?.restSeconds?.toString() ?? "");
   const [durationMinutes, setDurationMinutes] = useState(exercise?.durationMinutes?.toString() ?? "");
   const [notes, setNotes] = useState(exercise?.notes ?? "");
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const isPending = createExercise.isPending || updateExercise.isPending;
 
@@ -123,9 +127,23 @@ export function ExerciseFormDialog({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-xs">
-              Egzersiz Adı *
-            </Label>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="name" className="text-xs">
+                Egzersiz Adı *
+              </Label>
+              {!isEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  type="button"
+                  onClick={() => setLibraryOpen(true)}
+                  title="Kütüphaneden seç"
+                >
+                  <Search className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
             <Input
               id="name"
               placeholder="Bench Press"
@@ -139,13 +157,14 @@ export function ExerciseFormDialog({
               <Label htmlFor="sets" className="text-xs">
                 Set
               </Label>
-              <Input
+              <NumericStepper
                 id="sets"
-                type="number"
-                min="0"
-                placeholder="4"
                 value={sets}
-                onChange={(e) => setSets(e.target.value)}
+                onChange={setSets}
+                min={1}
+                max={20}
+                step={1}
+                placeholder="4"
               />
             </div>
             <div className="space-y-1.5">
@@ -158,6 +177,20 @@ export function ExerciseFormDialog({
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
               />
+              <div className="flex gap-1 flex-wrap">
+                {["8-10", "10-12", "12-15", "15-20"].map((preset) => (
+                  <Button
+                    key={preset}
+                    type="button"
+                    variant={reps === preset ? "default" : "outline"}
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setReps(preset)}
+                  >
+                    {preset}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -165,14 +198,29 @@ export function ExerciseFormDialog({
               <Label htmlFor="restSeconds" className="text-xs">
                 Dinlenme (sn)
               </Label>
-              <Input
+              <NumericStepper
                 id="restSeconds"
-                type="number"
-                min="0"
-                placeholder="90"
                 value={restSeconds}
-                onChange={(e) => setRestSeconds(e.target.value)}
+                onChange={setRestSeconds}
+                min={0}
+                max={300}
+                step={15}
+                placeholder="90"
               />
+              <div className="flex gap-1">
+                {[30, 60, 90, 120].map((preset) => (
+                  <Button
+                    key={preset}
+                    type="button"
+                    variant={restSeconds === String(preset) ? "default" : "outline"}
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setRestSeconds(String(preset))}
+                  >
+                    {preset}
+                  </Button>
+                ))}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="durationMinutes" className="text-xs">
@@ -214,6 +262,20 @@ export function ExerciseFormDialog({
           </div>
         </form>
       </DialogContent>
+
+      {libraryOpen && (
+        <ExerciseLibraryPicker
+          open={libraryOpen}
+          onOpenChange={setLibraryOpen}
+          onSelect={(data) => {
+            setName(data.name);
+            setSets(data.sets);
+            setReps(data.reps);
+            setRestSeconds(data.restSeconds);
+            setDurationMinutes(data.durationMinutes);
+          }}
+        />
+      )}
     </Dialog>
   );
 }

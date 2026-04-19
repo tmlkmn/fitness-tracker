@@ -5,8 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDailyPlan } from "@/actions/plans";
 import { MealList } from "@/components/meals/meal-list";
 import { WorkoutList } from "@/components/workout/workout-list";
+import { SupplementTimeline } from "@/components/supplements/supplement-timeline";
 import { notFound } from "next/navigation";
-import { Utensils, Dumbbell } from "lucide-react";
+import { Utensils, Dumbbell, Pill } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,7 @@ export default async function GunPage({ params }: PageProps) {
       />
       <div className="p-4">
         <Tabs defaultValue="meals">
-          <TabsList className="grid grid-cols-2 w-full mb-4">
+          <TabsList className="grid grid-cols-3 w-full mb-4">
             <TabsTrigger value="meals" className="gap-1.5">
               <Utensils className="h-4 w-4" />
               Beslenme
@@ -71,12 +72,25 @@ export default async function GunPage({ params }: PageProps) {
               <Dumbbell className="h-4 w-4" />
               Antrenman
             </TabsTrigger>
+            <TabsTrigger value="supplements" className="gap-1.5">
+              <Pill className="h-4 w-4" />
+              Takviye
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="meals">
             <MealList dailyPlanId={id} readOnly={isPast} />
           </TabsContent>
           <TabsContent value="workout">
             <WorkoutList dailyPlanId={id} readOnly={isPast} />
+          </TabsContent>
+          <TabsContent value="supplements">
+            {dailyPlan.weeklyPlanId && (
+              <SupplementTimeline
+                weeklyPlanId={dailyPlan.weeklyPlanId}
+                date={dailyPlan.date ?? undefined}
+                readOnly={isPast}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </div>
