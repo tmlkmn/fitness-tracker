@@ -147,15 +147,14 @@ export function MealFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-sm w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto p-4 gap-3">
+        <DialogHeader className="space-y-0">
           <div className="flex items-center justify-between">
-            <DialogTitle>
+            <DialogTitle className="text-base">
               {isEdit ? "Öğünü Düzenle" : "Yeni Öğün Ekle"}
             </DialogTitle>
             {!isEdit && (
-              <div className="flex gap-1">
-                {/* (b) Template picker */}
+              <div className="flex gap-0.5 mr-6">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -166,7 +165,6 @@ export function MealFormDialog({
                 >
                   <Star className="h-3.5 w-3.5" />
                 </Button>
-                {/* (a) Copy from previous */}
                 {mealLabel && (
                   <Button
                     variant="ghost"
@@ -185,7 +183,7 @@ export function MealFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          {/* (e) Recent meals quick select — only in create mode */}
+          {/* Recent meals quick select — only in create mode */}
           {!isEdit && (
             <RecentMealChips
               onSelect={(m) => {
@@ -195,9 +193,9 @@ export function MealFormDialog({
             />
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="mealTime" className="text-xs">
+          <div className="grid grid-cols-[1fr_1.5fr] gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="mealTime" className="text-xs text-muted-foreground">
                 Saat
               </Label>
               <Input
@@ -205,10 +203,11 @@ export function MealFormDialog({
                 type="time"
                 value={mealTime}
                 onChange={(e) => setMealTime(e.target.value)}
+                className="h-9"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="mealLabel" className="text-xs">
+            <div className="space-y-1">
+              <Label htmlFor="mealLabel" className="text-xs text-muted-foreground">
                 Öğün Adı *
               </Label>
               <Input
@@ -217,85 +216,95 @@ export function MealFormDialog({
                 value={mealLabel}
                 onChange={(e) => setMealLabel(e.target.value)}
                 required
+                className="h-9"
               />
             </div>
           </div>
-          <div className="space-y-1.5">
+
+          <div className="space-y-1">
             <div className="flex items-center gap-1">
-              <Label htmlFor="content" className="text-xs">
+              <Label htmlFor="content" className="text-xs text-muted-foreground">
                 İçerik *
               </Label>
-              {/* (c) Food reference popover */}
               <FoodReferencePopover onAdd={handleAddFood} />
             </div>
             <textarea
               id="content"
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               placeholder="2 yumurta, 1 dilim tam buğday ekmeği..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="calories" className="text-xs">
-                Kalori (kcal)
-              </Label>
-              <Input
-                id="calories"
-                type="number"
-                min="0"
-                placeholder="350"
-                value={calories}
-                onChange={(e) => setCalories(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="protein" className="text-xs">
-                Protein (g)
-              </Label>
-              <Input
-                id="protein"
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="25"
-                value={protein}
-                onChange={(e) => setProtein(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="carbs" className="text-xs">
-                Karbonhidrat (g)
-              </Label>
-              <Input
-                id="carbs"
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="40"
-                value={carbs}
-                onChange={(e) => setCarbs(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="fat" className="text-xs">
-                Yağ (g)
-              </Label>
-              <Input
-                id="fat"
-                type="number"
-                min="0"
-                step="0.1"
-                placeholder="15"
-                value={fat}
-                onChange={(e) => setFat(e.target.value)}
-              />
+
+          {/* Macros */}
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">Besin Değerleri</p>
+            <div className="grid grid-cols-4 gap-1.5">
+              <div className="space-y-0.5">
+                <Label htmlFor="calories" className="text-[10px] text-muted-foreground/70">
+                  Kalori
+                </Label>
+                <Input
+                  id="calories"
+                  type="number"
+                  min="0"
+                  placeholder="350"
+                  value={calories}
+                  onChange={(e) => setCalories(e.target.value)}
+                  className="h-8 px-2 text-xs"
+                />
+              </div>
+              <div className="space-y-0.5">
+                <Label htmlFor="protein" className="text-[10px] text-muted-foreground/70">
+                  Protein
+                </Label>
+                <Input
+                  id="protein"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="25g"
+                  value={protein}
+                  onChange={(e) => setProtein(e.target.value)}
+                  className="h-8 px-2 text-xs"
+                />
+              </div>
+              <div className="space-y-0.5">
+                <Label htmlFor="carbs" className="text-[10px] text-muted-foreground/70">
+                  Karb
+                </Label>
+                <Input
+                  id="carbs"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="40g"
+                  value={carbs}
+                  onChange={(e) => setCarbs(e.target.value)}
+                  className="h-8 px-2 text-xs"
+                />
+              </div>
+              <div className="space-y-0.5">
+                <Label htmlFor="fat" className="text-[10px] text-muted-foreground/70">
+                  Yağ
+                </Label>
+                <Input
+                  id="fat"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="15g"
+                  value={fat}
+                  onChange={(e) => setFat(e.target.value)}
+                  className="h-8 px-2 text-xs"
+                />
+              </div>
             </div>
           </div>
 
-          {/* (b) Save as favorite checkbox */}
+          {/* Save as favorite checkbox */}
           {!isEdit && (
             <div className="flex items-center gap-2">
               <Checkbox
@@ -309,7 +318,7 @@ export function MealFormDialog({
             </div>
           )}
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 pt-1">
             <Button
               type="button"
               variant="outline"
