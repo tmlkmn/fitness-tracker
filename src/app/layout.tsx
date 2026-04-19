@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { SwRegister } from "./sw-register";
 import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 import { NetworkStatus } from "@/components/layout/network-status";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: {
@@ -56,16 +57,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className="dark">
+    <html lang="tr" className="dark" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="light")document.documentElement.classList.remove("dark");else document.documentElement.classList.add("dark")}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         <QueryProvider>
-          <NetworkStatus />
-          <PullToRefresh>
-            <main className="pb-24 max-w-lg mx-auto">{children}</main>
-          </PullToRefresh>
-          <BottomNav />
-          <Toaster />
-          <SwRegister />
+          <ThemeProvider>
+            <NetworkStatus />
+            <PullToRefresh>
+              <main className="pb-24 max-w-lg mx-auto">{children}</main>
+            </PullToRefresh>
+            <BottomNav />
+            <Toaster />
+            <SwRegister />
+          </ThemeProvider>
         </QueryProvider>
       </body>
     </html>

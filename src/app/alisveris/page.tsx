@@ -3,7 +3,7 @@
 import { useState, useMemo, Suspense } from "react";
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { HeaderMenu } from "@/components/layout/header-menu";
 import { useAllWeeks } from "@/hooks/use-plans";
 import { useShoppingList, useToggleShopping, useGenerateShoppingList } from "@/hooks/use-shopping";
 import { ShoppingCategory } from "@/components/shopping/shopping-category";
@@ -128,8 +128,8 @@ function AlisverisContent() {
         icon={ShoppingCart}
         rightSlot={
           <div className="flex items-center gap-1">
-            <FeedbackButton />
             <NotificationBell />
+            <HeaderMenu />
           </div>
         }
       />

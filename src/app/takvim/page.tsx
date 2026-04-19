@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { HeaderMenu } from "@/components/layout/header-menu";
 import { WeekStrip } from "@/components/calendar/week-strip";
 import { MonthCalendar } from "@/components/calendar/month-calendar";
 import { DayDetailPanel } from "@/components/calendar/day-detail-panel";
@@ -238,8 +238,8 @@ export default function TakvimPage() {
         icon={Calendar}
         rightSlot={
           <div className="flex items-center gap-1">
-            <FeedbackButton />
             <NotificationBell />
+            <HeaderMenu />
           </div>
         }
       />

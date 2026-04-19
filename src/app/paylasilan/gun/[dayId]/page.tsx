@@ -3,7 +3,7 @@
 import { use } from "react";
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { HeaderMenu } from "@/components/layout/header-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Utensils, Dumbbell, Eye } from "lucide-react";
 import { useSharedDailyPlan, useSharedMealsByDay, useSharedExercisesByDay } from "@/hooks/use-shared-plans";
@@ -72,8 +72,8 @@ export default function PaylasilanGunPage({ params }: PageProps) {
         backHref={dailyPlan ? `/paylasilan/hafta/${dailyPlan.weeklyPlanId}` : "/paylasilan"}
         rightSlot={
           <div className="flex items-center gap-1">
-            <FeedbackButton />
             <NotificationBell />
+            <HeaderMenu />
           </div>
         }
       />

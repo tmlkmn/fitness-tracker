@@ -2,7 +2,7 @@
 
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { HeaderMenu } from "@/components/layout/header-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Users } from "lucide-react";
@@ -22,8 +22,8 @@ export default function PaylasilanPage() {
         backHref="/"
         rightSlot={
           <div className="flex items-center gap-1">
-            <FeedbackButton />
             <NotificationBell />
+            <HeaderMenu />
           </div>
         }
       />

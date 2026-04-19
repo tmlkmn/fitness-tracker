@@ -39,7 +39,7 @@ export async function POST() {
 
   // Fetch user profile
   const [user] = await db
-    .select({ height: users.height, weight: users.weight, targetWeight: users.targetWeight })
+    .select({ height: users.height, weight: users.weight, targetWeight: users.targetWeight, serviceType: users.serviceType })
     .from(users)
     .where(eq(users.id, userId));
 
@@ -75,6 +75,7 @@ export async function POST() {
   const fullPrompt = `${userContext}
 
 Profil: Boy ${user?.height ?? "?"}cm, Başlangıç ${user?.weight ?? "?"}kg, Hedef ${user?.targetWeight ?? "?"}kg
+Hizmet Tipi: ${user?.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program (Antrenman + Beslenme)"}
 
 Vücut Kompozisyonu Verileri:
 ${dataTable}
@@ -86,7 +87,7 @@ Bu verileri analiz et ve kullanıcıya detaylı geri bildirim ver.`;
   const client = getAIClient();
   const stream = client.messages.stream({
     model: AI_MODELS.smart,
-    max_tokens: 1024,
+    max_tokens: 1500,
     system: [
       {
         type: "text",

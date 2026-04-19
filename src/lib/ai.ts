@@ -18,7 +18,7 @@ export const AI_MODELS = {
 } as const;
 
 // Feature-based daily rate limits
-export type AIFeature = "meal" | "exercise" | "analyze" | "chat" | "workout" | "daily-meal" | "weekly" | "exercise-demo" | "shopping";
+export type AIFeature = "meal" | "exercise" | "analyze" | "chat" | "workout" | "daily-meal" | "weekly" | "exercise-demo" | "shopping" | "target-weight";
 
 const DAILY_LIMITS: Record<AIFeature, number> = {
   meal: 10,
@@ -30,6 +30,7 @@ const DAILY_LIMITS: Record<AIFeature, number> = {
   weekly: 2,
   "exercise-demo": 30,
   shopping: 5,
+  "target-weight": 2,
 } as const;
 
 // Cooldown (seconds) — prevents rapid-fire expensive requests
@@ -38,6 +39,7 @@ const COOLDOWNS: Partial<Record<AIFeature, number>> = {
   "daily-meal": 30,
   workout: 30,
   shopping: 30,
+  "target-weight": 60,
 };
 
 function getStartOfDay(): Date {

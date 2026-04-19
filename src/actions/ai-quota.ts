@@ -8,6 +8,7 @@ export type AiQuotas = Record<AIFeature, { remaining: number; limit: number }>;
 const FEATURES: AIFeature[] = [
   "meal", "exercise", "analyze", "chat",
   "workout", "daily-meal", "weekly", "exercise-demo",
+  "target-weight",
 ];
 
 export async function getAiQuotas(): Promise<AiQuotas> {

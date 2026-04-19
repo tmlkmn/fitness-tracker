@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { HeaderMenu } from "@/components/layout/header-menu";
 import { ProgressAiAnalysis } from "@/components/progress/progress-ai-analysis";
 import { ChartSelector } from "@/components/progress/chart-selector";
 import { WeightTargetEditor } from "@/components/progress/weight-target-editor";
@@ -118,8 +118,8 @@ export default function IlerlemePage() {
         icon={TrendingUp}
         rightSlot={
           <div className="flex items-center gap-1">
-            <FeedbackButton />
             <NotificationBell />
+            <HeaderMenu />
           </div>
         }
       />

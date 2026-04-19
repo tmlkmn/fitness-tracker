@@ -2,8 +2,7 @@
 
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
-import { OnboardingTrigger } from "@/components/onboarding/onboarding-trigger";
+import { HeaderMenu } from "@/components/layout/header-menu";
 import { OnboardingCarousel } from "@/components/onboarding/onboarding-carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,14 +20,12 @@ import {
   ChevronRight,
   Target,
   Scale,
-  Bell,
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
 import { useTodayDashboard, useWeekPlansByDate, useAllWeeks } from "@/hooks/use-plans";
-import { useNotifications } from "@/hooks/use-notifications";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useActivityStats } from "@/hooks/use-activity-stats";
@@ -71,13 +68,15 @@ export default function HomePage() {
     if (!sessionPending && !user) router.push("/giris");
   }, [sessionPending, user, router]);
 
-  const [todayStr] = useState(() => new Date().toISOString().split("T")[0]);
+  const [todayStr] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
 
   const { data: profile } = useUserProfile();
   const { data: today, isLoading: todayLoading } = useTodayDashboard();
   const { data: weekData } = useWeekPlansByDate(todayStr);
   const { data: weeks } = useAllWeeks();
-  const { data: notifications } = useNotifications();
   const { data: activityStats } = useActivityStats();
 
   // Onboarding carousel — auto-open on first login
@@ -117,9 +116,6 @@ export default function HomePage() {
   const exercisesDone = today?.exercises?.filter((e) => e.isCompleted).length ?? 0;
   const exercisesTotal = today?.exercises?.length ?? 0;
 
-  // Unread notifications
-  const unreadNotifications = notifications?.filter((n) => !n.isRead).slice(0, 3) ?? [];
-
   // Today's day of week (0 = Mon in our schema)
   const todayDow = (() => {
     const d = new Date().getDay();
@@ -131,8 +127,8 @@ export default function HomePage() {
       <div className="animate-fade-in">
         <Header title="FitMusc" rightSlot={
           <div className="flex items-center gap-1">
-            <FeedbackButton />
             <NotificationBell />
+            <HeaderMenu />
           </div>
         } />
         <div className="p-4 space-y-4">
@@ -153,9 +149,8 @@ export default function HomePage() {
         subtitle={currentDay}
         rightSlot={
           <div className="flex items-center gap-1">
-            <FeedbackButton />
-            <OnboardingTrigger />
             <NotificationBell />
+            <HeaderMenu />
           </div>
         }
       />
@@ -223,17 +218,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
           </Link>
-        )}
-
-        {/* Streak & Achievements */}
-        {activityStats && (
-          <>
-            <StreakCard
-              currentStreak={activityStats.currentStreak}
-              longestStreak={activityStats.longestStreak}
-            />
-            <AchievementBadges stats={activityStats} />
-          </>
         )}
 
         {/* Today's Summary */}
@@ -439,29 +423,15 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Recent Notifications */}
-        {unreadNotifications.length > 0 && (
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Bell className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold">Bildirimler</h3>
-                </div>
-                <Badge variant="secondary" className="text-xs">{unreadNotifications.length}</Badge>
-              </div>
-              {unreadNotifications.map((n) => (
-                <Link
-                  key={n.id}
-                  href={n.link ?? "/ayarlar"}
-                  className="block rounded-lg p-2 -mx-1 hover:bg-accent transition-colors"
-                >
-                  <p className="text-sm font-medium">{n.title}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-1">{n.body}</p>
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
+        {/* Streak & Achievements */}
+        {activityStats && (
+          <>
+            <StreakCard
+              currentStreak={activityStats.currentStreak}
+              longestStreak={activityStats.longestStreak}
+            />
+            <AchievementBadges stats={activityStats} />
+          </>
         )}
       </div>
     </div>

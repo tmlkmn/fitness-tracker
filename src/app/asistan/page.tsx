@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { HeaderMenu } from "@/components/layout/header-menu";
 import { ChatMessage } from "@/components/ai/chat-message";
 import { ChatInput } from "@/components/ai/chat-input";
 import { useAIChat } from "@/hooks/use-ai-chat";
@@ -41,8 +41,8 @@ export default function AsistanPage() {
                 <Trash2 className="h-4 w-4 text-muted-foreground" />
               </button>
             )}
-            <FeedbackButton />
             <NotificationBell />
+            <HeaderMenu />
           </div>
         }
       />

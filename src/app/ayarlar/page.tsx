@@ -2,7 +2,7 @@
 
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { HeaderMenu } from "@/components/layout/header-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1022,9 +1022,9 @@ function AyarlarContent() {
         icon={Settings}
         rightSlot={
           <div className="flex items-center gap-1">
-            <FeedbackButton />
             <PwaInstallButton />
             <NotificationBell />
+            <HeaderMenu />
           </div>
         }
       />

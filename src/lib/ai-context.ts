@@ -172,26 +172,53 @@ export async function buildUserContext(userId: string): Promise<string> {
     }
   }
 
-  // Latest progress
-  const [latestLog] = await db
+  // Latest progress (last 2 for trend comparison)
+  const recentLogs = await db
     .select({
       weight: progressLogs.weight,
       fatPercent: progressLogs.fatPercent,
       bmi: progressLogs.bmi,
+      waistCm: progressLogs.waistCm,
+      fatKg: progressLogs.fatKg,
       logDate: progressLogs.logDate,
     })
     .from(progressLogs)
     .where(eq(progressLogs.userId, userId))
     .orderBy(desc(progressLogs.logDate))
-    .limit(1);
+    .limit(2);
 
-  if (latestLog) {
+  if (recentLogs.length > 0) {
+    const latest = recentLogs[0];
     const logParts: string[] = [];
-    if (latestLog.weight) logParts.push(`${latestLog.weight}kg`);
-    if (latestLog.fatPercent) logParts.push(`%${latestLog.fatPercent} yağ`);
-    if (latestLog.bmi) logParts.push(`BMI ${latestLog.bmi}`);
+    if (latest.weight) logParts.push(`${latest.weight}kg`);
+    if (latest.fatPercent) logParts.push(`%${latest.fatPercent} yağ`);
+    if (latest.bmi) logParts.push(`BMI ${latest.bmi}`);
+    if (latest.waistCm) logParts.push(`Bel ${latest.waistCm}cm`);
     if (logParts.length > 0) {
-      lines.push(`Son ölçüm (${latestLog.logDate}): ${logParts.join(", ")}`);
+      lines.push(`Son ölçüm (${latest.logDate}): ${logParts.join(", ")}`);
+    }
+
+    // Trend comparison between last 2 measurements
+    if (recentLogs.length === 2) {
+      const prev = recentLogs[1];
+      const trendParts: string[] = [];
+
+      if (latest.weight && prev.weight) {
+        const diff = parseFloat(String(latest.weight)) - parseFloat(String(prev.weight));
+        trendParts.push(`Kilo: ${diff > 0 ? "+" : ""}${diff.toFixed(1)}kg`);
+      }
+      if (latest.fatPercent && prev.fatPercent) {
+        const diff = parseFloat(String(latest.fatPercent)) - parseFloat(String(prev.fatPercent));
+        trendParts.push(`Yağ: ${diff > 0 ? "+" : ""}${diff.toFixed(1)}%`);
+      }
+      if (latest.waistCm && prev.waistCm) {
+        const diff = parseFloat(String(latest.waistCm)) - parseFloat(String(prev.waistCm));
+        trendParts.push(`Bel: ${diff > 0 ? "+" : ""}${diff.toFixed(1)}cm`);
+      }
+
+      if (trendParts.length > 0) {
+        lines.push(`Trend (${prev.logDate} → ${latest.logDate}): ${trendParts.join(", ")}`);
+      }
     }
   }
 
