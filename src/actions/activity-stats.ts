@@ -95,7 +95,8 @@ export async function getActivityStats(): Promise<ActivityStats> {
   }
 
   // Calculate streaks
-  const todayStr = new Date().toISOString().split("T")[0];
+  const { getTurkeyTodayStr, formatDateStr } = await import("@/lib/utils");
+  const todayStr = getTurkeyTodayStr();
   const fullDaysSet = new Set(fullDays);
 
   // Current streak: count backwards from today (or yesterday if today not yet complete)
@@ -109,7 +110,7 @@ export async function getActivityStats(): Promise<ActivityStats> {
 
   const cursor = new Date(startDate);
   while (true) {
-    const dateStr = cursor.toISOString().split("T")[0];
+    const dateStr = formatDateStr(cursor);
     if (fullDaysSet.has(dateStr)) {
       currentStreak++;
       cursor.setDate(cursor.getDate() - 1);

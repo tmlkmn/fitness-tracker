@@ -95,6 +95,35 @@ export function MealFormDialog({
     setFat(data.fat);
   };
 
+  // Directly create meal from template/saved selection
+  const handleTemplateSelect = (data: {
+    mealLabel?: string;
+    content: string;
+    calories: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+  }) => {
+    const label = data.mealLabel || mealLabel;
+    if (!label.trim() || !data.content.trim()) {
+      fillForm(data);
+      return;
+    }
+    const mealData = {
+      mealTime: mealTime || "08:00",
+      mealLabel: label.trim(),
+      content: data.content.trim(),
+      calories: data.calories ? parseInt(data.calories) : null,
+      proteinG: data.protein || null,
+      carbsG: data.carbs || null,
+      fatG: data.fat || null,
+    };
+    createMeal.mutate(
+      { dailyPlanId, data: mealData },
+      { onSuccess: () => onOpenChange(false) },
+    );
+  };
+
   // (c) Food reference: append to content and add macros
   const handleAddFood = (food: TurkishFood) => {
     const entry = `${food.name} (${food.portion})`;
@@ -339,7 +368,7 @@ export function MealFormDialog({
         <MealTemplatePicker
           open={templateOpen}
           onOpenChange={setTemplateOpen}
-          onSelect={fillForm}
+          onSelect={handleTemplateSelect}
         />
       )}
       {copyOpen && (
@@ -348,7 +377,7 @@ export function MealFormDialog({
           onOpenChange={setCopyOpen}
           mealLabel={mealLabel}
           dailyPlanId={dailyPlanId}
-          onSelect={fillForm}
+          onSelect={handleTemplateSelect}
         />
       )}
     </Dialog>

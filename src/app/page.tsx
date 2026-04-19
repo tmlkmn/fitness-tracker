@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
 import { OnboardingCarousel } from "@/components/onboarding/onboarding-carousel";
+import { getTurkeyTodayStr } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,10 +72,7 @@ export default function HomePage() {
     if (!sessionPending && !user) router.push("/giris");
   }, [sessionPending, user, router]);
 
-  const [todayStr] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  });
+  const [todayStr] = useState(() => getTurkeyTodayStr());
 
   const { data: profile } = useUserProfile();
   const { data: today, isLoading: todayLoading } = useTodayDashboard();

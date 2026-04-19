@@ -44,9 +44,11 @@ export async function getRecentMealsByLabel(
  */
 export async function getFrequentRecentMeals() {
   const user = await getAuthUser();
-  const fourteenDaysAgo = new Date();
+  const { getTurkeyTodayStr } = await import("@/lib/utils");
+  const today = getTurkeyTodayStr();
+  const fourteenDaysAgo = new Date(today + "T00:00:00");
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-  const dateStr = fourteenDaysAgo.toISOString().split("T")[0];
+  const dateStr = `${fourteenDaysAgo.getFullYear()}-${String(fourteenDaysAgo.getMonth() + 1).padStart(2, "0")}-${String(fourteenDaysAgo.getDate()).padStart(2, "0")}`;
 
   return db
     .select({

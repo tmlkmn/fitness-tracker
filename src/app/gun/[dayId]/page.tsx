@@ -31,7 +31,8 @@ export default async function GunPage({ params }: PageProps) {
   if (!dailyPlan) notFound();
 
   // Past day detection — readOnly for past dates
-  const todayStr = new Date().toISOString().split("T")[0];
+  const { getTurkeyTodayStr } = await import("@/lib/utils");
+  const todayStr = getTurkeyTodayStr();
   const isPast = dailyPlan.date ? dailyPlan.date < todayStr : false;
 
   const dateLabel = dailyPlan.date

@@ -107,7 +107,8 @@ export async function buildUserContext(userId: string): Promise<string> {
   lines.push(`Hizmet tipi: ${user.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program (Antrenman + Beslenme)"}`);
 
   // Current phase
-  const today = new Date().toISOString().split("T")[0];
+  const { getTurkeyTodayStr } = await import("@/lib/utils");
+  const today = getTurkeyTodayStr();
   const [currentWeek] = await db
     .select({
       weekNumber: weeklyPlans.weekNumber,

@@ -75,8 +75,8 @@ export async function getWaterLogs(limit = 30) {
 
 export async function getTodayWaterLog() {
   const user = await getAuthUser();
-  const d = new Date();
-  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const { getTurkeyTodayStr } = await import("@/lib/utils");
+  const today = getTurkeyTodayStr();
   const [log] = await db
     .select()
     .from(waterLogs)

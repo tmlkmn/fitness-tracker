@@ -4,15 +4,13 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Droplets, Plus, Minus } from "lucide-react";
 import { useTodayWater, useIncrementWater } from "@/hooks/use-water";
+import { getTurkeyTodayStr } from "@/lib/utils";
 
 export function WaterDashboardWidget() {
   const { data: log } = useTodayWater();
   const increment = useIncrementWater();
 
-  const [todayStr] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  });
+  const [todayStr] = useState(() => getTurkeyTodayStr());
 
   const glasses = log?.glasses ?? 0;
   const target = log?.targetGlasses ?? 8;
