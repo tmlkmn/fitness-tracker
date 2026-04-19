@@ -20,14 +20,14 @@ export function RecentMealChips({ onSelect }: RecentMealChipsProps) {
   if (!meals || meals.length === 0) return null;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 min-w-0 w-full">
       <p className="text-[10px] text-muted-foreground">Son kullanılanlar</p>
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex flex-wrap gap-1.5 max-h-[4.5rem] overflow-y-auto pb-1 scrollbar-hide">
         {meals.map((meal, i) => (
           <Badge
             key={i}
             variant="outline"
-            className="cursor-pointer hover:bg-muted shrink-0 text-xs max-w-[160px] truncate"
+            className="cursor-pointer hover:bg-muted text-xs max-w-[160px] truncate"
             onClick={() =>
               onSelect({
                 mealLabel: meal.mealLabel,
