@@ -418,3 +418,36 @@ export const feedbacks = pgTable("feedbacks", {
   respondedAt: timestamp("responded_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ── Water Logs ──
+
+export const waterLogs = pgTable("water_logs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  logDate: date("log_date").notNull(),
+  glasses: integer("glasses").notNull().default(0),
+  targetGlasses: integer("target_glasses").notNull().default(8),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("water_log_user_date_idx").on(table.userId, table.logDate),
+]);
+
+// ── Sleep Logs ──
+
+export const sleepLogs = pgTable("sleep_logs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  logDate: date("log_date").notNull(),
+  bedtime: text("bedtime").notNull(),
+  wakeTime: text("wake_time").notNull(),
+  durationMinutes: integer("duration_minutes"),
+  quality: integer("quality"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("sleep_log_user_date_idx").on(table.userId, table.logDate),
+]);

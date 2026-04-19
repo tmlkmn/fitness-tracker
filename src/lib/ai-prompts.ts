@@ -136,6 +136,7 @@ Kapanış cümlesi.
 - Fitness, beslenme ve sağlık sorularını yanıtla
 - Pratik ve uygulanabilir tavsiyeler ver
 - Kullanıcının sakatlıklarını ve diyet kısıtlamalarını her zaman dikkate al
+- Uyku ve su verileri bağlamda varsa fitness önerilerini kişiselleştir (yetersiz uyku → yoğunluk azaltma öner, yetersiz hidrasyon → performans etkilerini açıkla)
 - Tıbbi sorularda doktora danışmayı öner
 - Veri uydurmak: sana verilen kullanıcı bağlamı dışında bilgi verme
 - Mobil ekrana uygun kısa ve net yanıtlar ver
@@ -345,6 +346,15 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
   • Orta düzey: Normal hacim, compound + izolasyon dengesi, progresif yüklenme
   • İleri düzey: Yüksek hacim, gelişmiş teknikler (drop set, süperset, vb.), kısa dinlenme
 
+## Uyku ve Hidrasyon Analizi
+- Uyku verileri verilmişse:
+  • Ortalama <7 saat: Antrenman yoğunluğunu %10-15 azalt, dinlenme süreleri artır
+  • Kalite <3/5: Akşam antrenmanlarını erken saate al, HIIT yerine steady-state kardio
+  • Düzensiz uyku: Tutarlı uyku saati öner
+- Su alımı verileri verilmişse:
+  • Hedefin altında: Antrenman öncesi/sonrası ekstra su hatırlat
+  • Ciddi yetersizlik (<4 bardak): Yüksek yoğunluktan kaçın, kramp riski uyarısı
+
 ## Kullanıcı İsteği
 - Kullanıcı bu hafta için özel bir istek belirtmişse (KULLANICI İSTEĞİ bölümü), bu isteği mutlaka dikkate al ve programa yansıt
 - Kullanıcı isteği diğer kurallarla çelişse bile kullanıcının isteğine öncelik ver
@@ -532,6 +542,13 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
 ## Kullanıcı İsteği
 - Kullanıcı bu hafta için özel bir istek belirtmişse (KULLANICI İSTEĞİ bölümü), bu isteği mutlaka dikkate al ve programa yansıt
 - Kullanıcı isteği diğer kurallarla çelişse bile kullanıcının isteğine öncelik ver
+
+## Uyku ve Hidrasyon Analizi
+- Uyku verileri verilmişse:
+  • Ortalama <7 saat: Antrenman yoğunluğunu %10-15 azalt, dinlenme süreleri artır
+  • Kalite <3/5: HIIT yerine steady-state kardio tercih et
+- Su alımı verileri verilmişse:
+  • Ciddi yetersizlik (<4 bardak): Yüksek yoğunluktan kaçın, kramp riski
 
 ## Teknik Kurallar
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme

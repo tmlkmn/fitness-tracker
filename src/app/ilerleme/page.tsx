@@ -40,6 +40,8 @@ import {
 import { toast } from "sonner";
 import { useActivityStats } from "@/hooks/use-activity-stats";
 import { ActivityHeatmap } from "@/components/gamification/activity-heatmap";
+import { WaterChart } from "@/components/water/water-chart";
+import { SleepChart } from "@/components/sleep/sleep-chart";
 
 function formatTurkishDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -176,6 +178,10 @@ export default function IlerlemePage() {
 
         {/* AI Analysis — only show with 2+ measurements */}
         {logs && logs.length >= 2 && <ProgressAiAnalysis />}
+
+        {/* Su & Uyku Charts */}
+        <WaterChart />
+        <SleepChart />
 
         {/* Add measurement button */}
         <Button onClick={handleAdd} className="w-full gap-2">

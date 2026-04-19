@@ -8,6 +8,8 @@ import { WorkoutList } from "@/components/workout/workout-list";
 import { SupplementTimeline } from "@/components/supplements/supplement-timeline";
 import { notFound } from "next/navigation";
 import { Utensils, Dumbbell, Pill } from "lucide-react";
+import { WaterTracker } from "@/components/water/water-tracker";
+import { SleepEntry } from "@/components/sleep/sleep-entry";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +95,14 @@ export default async function GunPage({ params }: PageProps) {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Su & Uyku Takibi */}
+        {dailyPlan.date && (
+          <div className="space-y-3 mt-4">
+            <WaterTracker date={dailyPlan.date} readOnly={isPast} />
+            <SleepEntry date={dailyPlan.date} readOnly={isPast} />
+          </div>
+        )}
       </div>
     </div>
   );

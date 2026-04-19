@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { users, weeklyPlans, dailyPlans, meals, progressLogs } from "@/db/schema";
+import { users, weeklyPlans, dailyPlans, meals, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
 import { eq, desc, and, gte, lte, asc } from "drizzle-orm";
 
 // 5-minute TTL memory cache for user context
@@ -219,6 +219,54 @@ export async function buildUserContext(userId: string): Promise<string> {
       if (trendParts.length > 0) {
         lines.push(`Trend (${prev.logDate} → ${latest.logDate}): ${trendParts.join(", ")}`);
       }
+    }
+  }
+
+  // Water intake (last 7 days)
+  const recentWater = await db
+    .select({
+      glasses: waterLogs.glasses,
+      targetGlasses: waterLogs.targetGlasses,
+    })
+    .from(waterLogs)
+    .where(eq(waterLogs.userId, userId))
+    .orderBy(desc(waterLogs.logDate))
+    .limit(7);
+
+  if (recentWater.length > 0) {
+    const avgGlasses = (recentWater.reduce((s, w) => s + w.glasses, 0) / recentWater.length).toFixed(1);
+    const avgTarget = Math.round(recentWater.reduce((s, w) => s + w.targetGlasses, 0) / recentWater.length);
+    const avgLiters = (parseFloat(avgGlasses) * 0.25).toFixed(1);
+    lines.push(`Su alımı (son ${recentWater.length} gün): Ort. ${avgGlasses} bardak/gün (hedef: ${avgTarget}, ${avgLiters}L/gün)`);
+  }
+
+  // Sleep (last 7 days)
+  const recentSleep = await db
+    .select({
+      durationMinutes: sleepLogs.durationMinutes,
+      quality: sleepLogs.quality,
+    })
+    .from(sleepLogs)
+    .where(eq(sleepLogs.userId, userId))
+    .orderBy(desc(sleepLogs.logDate))
+    .limit(7);
+
+  if (recentSleep.length > 0) {
+    const validDurations = recentSleep.filter((s) => s.durationMinutes != null);
+    const validQualities = recentSleep.filter((s) => s.quality != null);
+    const parts: string[] = [];
+    if (validDurations.length > 0) {
+      const avgMin = Math.round(validDurations.reduce((s, sl) => s + sl.durationMinutes!, 0) / validDurations.length);
+      const h = Math.floor(avgMin / 60);
+      const m = avgMin % 60;
+      parts.push(`Ort. ${h}sa ${m}dk`);
+    }
+    if (validQualities.length > 0) {
+      const avgQ = (validQualities.reduce((s, sl) => s + sl.quality!, 0) / validQualities.length).toFixed(1);
+      parts.push(`kalite: ${avgQ}/5`);
+    }
+    if (parts.length > 0) {
+      lines.push(`Uyku (son ${recentSleep.length} gün): ${parts.join(", ")}`);
     }
   }
 

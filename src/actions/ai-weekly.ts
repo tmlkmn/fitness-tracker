@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { weeklyPlans, dailyPlans, meals, exercises, progressLogs, users } from "@/db/schema";
+import { weeklyPlans, dailyPlans, meals, exercises, progressLogs, users, waterLogs, sleepLogs } from "@/db/schema";
 import { eq, and, sql, desc, asc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
@@ -146,6 +146,41 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
         lines.push(`Kilo trendi: ${Math.abs(diff).toFixed(1)}kg ${diff > 0 ? "artış" : diff < 0 ? "düşüş" : "sabit"} (${oldest.logDate} → ${latest.logDate})`);
       }
     }
+  }
+
+  // ─── 2b. Water & Sleep (last 7 days) ─────────────────────────────────
+  const recentWater = await db
+    .select({ glasses: waterLogs.glasses, targetGlasses: waterLogs.targetGlasses })
+    .from(waterLogs)
+    .where(eq(waterLogs.userId, userId))
+    .orderBy(desc(waterLogs.logDate))
+    .limit(7);
+
+  if (recentWater.length > 0) {
+    const avgGlasses = (recentWater.reduce((s, w) => s + w.glasses, 0) / recentWater.length).toFixed(1);
+    const avgTarget = Math.round(recentWater.reduce((s, w) => s + w.targetGlasses, 0) / recentWater.length);
+    lines.push(`Su alımı (son ${recentWater.length} gün): Ort. ${avgGlasses}/${avgTarget} bardak/gün`);
+  }
+
+  const recentSleep = await db
+    .select({ durationMinutes: sleepLogs.durationMinutes, quality: sleepLogs.quality })
+    .from(sleepLogs)
+    .where(eq(sleepLogs.userId, userId))
+    .orderBy(desc(sleepLogs.logDate))
+    .limit(7);
+
+  if (recentSleep.length > 0) {
+    const validD = recentSleep.filter((s) => s.durationMinutes != null);
+    const validQ = recentSleep.filter((s) => s.quality != null);
+    const parts: string[] = [];
+    if (validD.length > 0) {
+      const avgMin = Math.round(validD.reduce((s, sl) => s + sl.durationMinutes!, 0) / validD.length);
+      parts.push(`Ort. ${Math.floor(avgMin / 60)}sa ${avgMin % 60}dk`);
+    }
+    if (validQ.length > 0) {
+      parts.push(`kalite: ${(validQ.reduce((s, sl) => s + sl.quality!, 0) / validQ.length).toFixed(1)}/5`);
+    }
+    if (parts.length > 0) lines.push(`Uyku (son ${recentSleep.length} gün): ${parts.join(", ")}`);
   }
 
   // ─── 3. Previous weeks' programs (skip workout details for nutrition-only) ──
