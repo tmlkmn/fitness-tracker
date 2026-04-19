@@ -103,17 +103,33 @@ export default function TakvimPage() {
     setWeekStart((prev) => {
       const d = new Date(prev);
       d.setDate(d.getDate() - 7);
+      const mondayOfTarget = getMonday(d);
+      const currentWeekMonday = getMonday(today);
+      if (mondayOfTarget.getTime() === currentWeekMonday.getTime()) {
+        setSelectedDate(formatDateStr(today));
+      } else {
+        setSelectedDate(formatDateStr(mondayOfTarget));
+      }
+      setCreatedDailyPlanId(null);
       return d;
     });
-  }, []);
+  }, [today]);
 
   const handleNextWeek = useCallback(() => {
     setWeekStart((prev) => {
       const d = new Date(prev);
       d.setDate(d.getDate() + 7);
+      const mondayOfTarget = getMonday(d);
+      const currentWeekMonday = getMonday(today);
+      if (mondayOfTarget.getTime() === currentWeekMonday.getTime()) {
+        setSelectedDate(formatDateStr(today));
+      } else {
+        setSelectedDate(formatDateStr(mondayOfTarget));
+      }
+      setCreatedDailyPlanId(null);
       return d;
     });
-  }, []);
+  }, [today]);
 
   const handleSelectDate = useCallback((dateStr: string) => {
     setSelectedDate(dateStr);
