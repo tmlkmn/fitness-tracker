@@ -390,6 +390,19 @@ export const aiPlanSuggestions = pgTable("ai_plan_suggestions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ── AI Daily Meal Suggestions (saved for later reuse) ──
+
+export const aiDailyMealSuggestions = pgTable("ai_daily_meal_suggestions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  planType: text("plan_type").notNull(),
+  userNote: text("user_note"),
+  meals: jsonb("meals").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ── Saved Meal Suggestions ──
 
 export const savedMealSuggestions = pgTable("saved_meal_suggestions", {

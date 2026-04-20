@@ -81,7 +81,7 @@ export default async function GunPage({ params }: PageProps) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="meals">
-            <MealList dailyPlanId={id} readOnly={isPast} />
+            <MealList dailyPlanId={id} readOnly={isPast} dailyPlanType={dailyPlan.planType} />
           </TabsContent>
           <TabsContent value="workout">
             <WorkoutList dailyPlanId={id} readOnly={isPast} />

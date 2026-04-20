@@ -9,22 +9,35 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, RefreshCw, Check, AlertCircle, MessageSquare } from "lucide-react";
-import type { AIMeal } from "@/actions/ai-meals";
+import {
+  Sparkles,
+  RefreshCw,
+  Check,
+  AlertCircle,
+  MessageSquare,
+  BookOpen,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+} from "lucide-react";
 import { useState } from "react";
-import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
+import type { AIMeal } from "@/actions/ai-meals";
+import {
+  useSavedDailyMealSuggestions,
+  useSaveDailyMealSuggestion,
+  useDeleteDailyMealSuggestion,
+  useApplyDailyMeals,
+} from "@/hooks/use-meal-ai";
 
-const INGREDIENT_TAGS = [
-  "Tavuk", "Kırmızı et", "Balık", "Yumurta", "Ton balığı",
-  "Pirinç", "Makarna", "Ekmek", "Yulaf", "Bulgur", "Kinoa",
-  "Brokoli", "Ispanak", "Domates", "Salatalık", "Biber",
-  "Süt", "Yoğurt", "Peynir", "Lor",
-  "Kuruyemiş", "Zeytin", "Zeytinyağı", "Bal", "Avokado",
-];
+type Tab = "suggest" | "saved";
 
 interface AiMealModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  dailyPlanId: number;
+  planType: string;
+  currentMeals: AIMeal[];
   suggestedMeals: AIMeal[] | null;
   loading: boolean;
   applying: boolean;
@@ -34,22 +47,163 @@ interface AiMealModalProps {
 }
 
 function MealRow({ meal }: { meal: AIMeal }) {
+  const cal = meal.calories ?? 0;
   return (
     <div className="flex items-start gap-2 py-1.5">
-      <span className="text-xs text-muted-foreground font-mono shrink-0 mt-0.5">
-        {meal.mealTime}
-      </span>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <p className="text-sm font-medium">{meal.mealLabel}</p>
-          {meal.calories && (
-            <Badge variant="secondary" className="text-[10px] shrink-0">
-              {meal.calories} kcal
+        <div className="flex items-center gap-1.5">
+          <Clock className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+          <span className="text-[10px] text-muted-foreground">{meal.mealTime}</span>
+          <span className="text-xs font-medium truncate">{meal.mealLabel}</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{meal.content}</p>
+      </div>
+      {cal > 0 && (
+        <Badge variant="secondary" className="text-[10px] shrink-0">{cal} kcal</Badge>
+      )}
+    </div>
+  );
+}
+
+function MealBlock({
+  meals,
+  label,
+  variant = "default",
+}: {
+  meals: AIMeal[];
+  label: string;
+  variant?: "default" | "suggested";
+}) {
+  const totalCal = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
+  return (
+    <div
+      className={`p-3 rounded-lg ${
+        variant === "suggested"
+          ? "bg-primary/10 border border-primary/20"
+          : "bg-muted"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <p
+          className={`text-xs font-medium ${
+            variant === "suggested" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          {label}
+        </p>
+        {totalCal > 0 && (
+          <span className="text-[10px] text-muted-foreground">{totalCal} kcal</span>
+        )}
+      </div>
+      {meals.length > 0 ? (
+        <div className="divide-y divide-border">
+          {meals.map((m, i) => (
+            <MealRow key={i} meal={m} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">Öğün yok</p>
+      )}
+    </div>
+  );
+}
+
+function SavedSuggestionRow({
+  id,
+  meals,
+  userNote,
+  createdAt,
+  dailyPlanId,
+  onApplied,
+}: {
+  id: number;
+  meals: AIMeal[];
+  userNote: string | null;
+  createdAt: Date | string | null;
+  dailyPlanId: number;
+  onApplied: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const deleteMutation = useDeleteDailyMealSuggestion();
+  const applyMutation = useApplyDailyMeals();
+
+  const totalCal = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
+  const dateStr = createdAt
+    ? new Date(createdAt).toLocaleDateString("tr-TR", {
+        day: "numeric",
+        month: "short",
+      })
+    : "";
+
+  const handleApply = async () => {
+    await applyMutation.mutateAsync({ dailyPlanId, newMeals: meals });
+    onApplied();
+  };
+
+  return (
+    <div className="border border-border rounded-lg overflow-hidden">
+      <button
+        className="w-full flex items-center gap-2 p-3 text-left hover:bg-muted/50 transition-colors"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium">{dateStr}</span>
+            <Badge variant="secondary" className="text-[10px]">
+              {meals.length} öğün
             </Badge>
+            {totalCal > 0 && (
+              <Badge variant="outline" className="text-[10px]">
+                {totalCal} kcal
+              </Badge>
+            )}
+          </div>
+          {userNote && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+              {userNote}
+            </p>
           )}
         </div>
-        <p className="text-xs text-muted-foreground break-words">{meal.content}</p>
-      </div>
+        {expanded ? (
+          <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        ) : (
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="px-3 pb-3 space-y-2 border-t border-border">
+          <div className="divide-y divide-border pt-1">
+            {meals.map((m, i) => (
+              <MealRow key={i} meal={m} />
+            ))}
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button
+              size="sm"
+              className="flex-1 h-7 text-xs"
+              onClick={handleApply}
+              disabled={applyMutation.isPending}
+            >
+              {applyMutation.isPending ? (
+                <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <Check className="h-3 w-3 mr-1" />
+              )}
+              Uygula
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+              onClick={() => deleteMutation.mutate(id)}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -57,6 +211,9 @@ function MealRow({ meal }: { meal: AIMeal }) {
 export function AiMealModal({
   open,
   onOpenChange,
+  dailyPlanId,
+  planType,
+  currentMeals,
   suggestedMeals,
   loading,
   applying,
@@ -64,34 +221,35 @@ export function AiMealModal({
   onGenerate,
   onApply,
 }: AiMealModalProps) {
+  const [tab, setTab] = useState<Tab>("suggest");
+  const [ingredients, setIngredients] = useState("");
   const [userNote, setUserNote] = useState("");
-  const [ingredientMode, setIngredientMode] = useState<"all" | "specific">("all");
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
 
-  const { data: quotaData } = useAiQuota();
-  const invalidateQuota = useInvalidateAiQuota();
-  const mealQuota = getQuota(quotaData, "daily-meal");
-
-  const toggleIngredient = (ing: string) => {
-    setSelectedIngredients((prev) =>
-      prev.includes(ing) ? prev.filter((i) => i !== ing) : [...prev, ing],
-    );
-  };
-
-  const totalCalories = suggestedMeals?.reduce(
-    (sum, m) => sum + (m.calories ?? 0),
-    0,
-  );
+  const saved = useSavedDailyMealSuggestions(planType);
+  const saveMutation = useSaveDailyMealSuggestion();
 
   const handleGenerate = () => {
     const parts: string[] = [];
-    if (ingredientMode === "specific" && selectedIngredients.length > 0) {
-      parts.push(`Evde mevcut malzemeler: ${selectedIngredients.join(", ")}. Sadece bu malzemelerle yapılabilecek yemekler öner`);
+    if (ingredients.trim()) {
+      parts.push(`Evde bulunan malzemeler: ${ingredients.trim()}`);
     }
-    const note = userNote.trim();
-    if (note) parts.push(note);
-    onGenerate(parts.length > 0 ? parts.join(". ") : undefined);
-    invalidateQuota();
+    if (userNote.trim()) {
+      parts.push(userNote.trim());
+    }
+    onGenerate(parts.join(". ") || undefined);
+  };
+
+  const handleSave = async () => {
+    if (!suggestedMeals) return;
+    const noteParts = [
+      ingredients.trim() ? `Malzemeler: ${ingredients.trim()}` : "",
+      userNote.trim(),
+    ].filter(Boolean);
+    await saveMutation.mutateAsync({
+      planType,
+      meals: suggestedMeals,
+      userNote: noteParts.join(". ") || undefined,
+    });
   };
 
   return (
@@ -100,156 +258,188 @@ export function AiMealModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            AI ile Öğün Oluştur
+            AI ile Beslenme Programı
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
+        {/* Tabs */}
+        <div className="flex gap-1 p-1 bg-muted rounded-lg">
+          <button
+            onClick={() => setTab("suggest")}
+            className={`flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-colors ${
+              tab === "suggest"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <Sparkles className="h-3 w-3" />
+              Öneri Al
+            </span>
+          </button>
+          <button
+            onClick={() => setTab("saved")}
+            className={`flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-colors ${
+              tab === "saved"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center justify-center gap-1.5">
+              <BookOpen className="h-3 w-3" />
+              Kayıtlı
+              {saved.data && saved.data.length > 0 && (
+                <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">
+                  {saved.data.length}
+                </Badge>
+              )}
+            </span>
+          </button>
+        </div>
 
-          {/* Phase 1: User input */}
-          {!loading && !suggestedMeals && (
-            <div className="space-y-3">
-              {/* Ingredient selection */}
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Beslenme Programı için Evdeki malzemeler:
-                </p>
-                <div className="flex gap-2 mb-2">
-                  <button
-                    onClick={() => setIngredientMode("all")}
-                    className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                      ingredientMode === "all"
-                        ? "bg-primary/15 border-primary/40 text-primary"
-                        : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    Her şey var
-                  </button>
-                  <button
-                    onClick={() => setIngredientMode("specific")}
-                    className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                      ingredientMode === "specific"
-                        ? "bg-primary/15 border-primary/40 text-primary"
-                        : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    Malzeme belirt
-                  </button>
+        {/* ── Tab: Öneri Al ── */}
+        {tab === "suggest" && (
+          <div className="space-y-4">
+            {/* Current meals */}
+            <MealBlock meals={currentMeals} label="Mevcut Öğünler" />
+
+            {/* Error */}
+            {error && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
+
+            {/* Input phase */}
+            {!loading && !suggestedMeals && (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5">
+                    Evdeki malzemeler (opsiyonel):
+                  </p>
+                  <textarea
+                    value={ingredients}
+                    onChange={(e) => setIngredients(e.target.value)}
+                    rows={2}
+                    placeholder="Örn: yumurta, yulaf, tavuk, brokoli, makarna..."
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                  />
                 </div>
-                {ingredientMode === "specific" && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {INGREDIENT_TAGS.map((ing) => {
-                      const isSelected = selectedIngredients.includes(ing);
-                      return (
-                        <button
-                          key={ing}
-                          onClick={() => toggleIngredient(ing)}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                            isSelected
-                              ? "bg-primary/15 border-primary/40 text-primary"
-                              : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
-                          }`}
-                        >
-                          {ing}
-                        </button>
-                      );
-                    })}
+                <div>
+                  <div className="flex items-start gap-2 mb-1.5">
+                    <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">Özel istek (opsiyonel):</p>
                   </div>
-                )}
+                  <textarea
+                    value={userNote}
+                    onChange={(e) => setUserNote(e.target.value)}
+                    rows={2}
+                    placeholder="Örn: Daha az karbonhidrat, öğle öğününü atla..."
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                  />
+                </div>
+                <Button onClick={handleGenerate} disabled={loading} className="w-full">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Öneri Al
+                </Button>
               </div>
+            )}
 
-              <div className="flex items-start gap-2">
-                <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground">
-                  Beslenme planı için özel bir isteğin var mı?
-                </p>
-              </div>
-              <textarea
-                value={userNote}
-                onChange={(e) => setUserNote(e.target.value)}
-                rows={2}
-                placeholder="Örn: Bugün düşük karbonhidrat istiyorum, süt ürünleri olmasın, daha fazla protein..."
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-              />
-              <Button
-                onClick={handleGenerate}
-                disabled={loading || (mealQuota?.remaining === 0)}
-                className="w-full"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                {mealQuota?.remaining === 0
-                  ? "Günlük limit doldu"
-                  : `Öneri Al${mealQuota ? ` (${mealQuota.remaining}/${mealQuota.limit})` : ""}`}
-              </Button>
-            </div>
-          )}
-
-          {/* Loading */}
-          {loading && (
-            <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
-              <p className="text-xs text-primary mb-2 font-medium">
-                AI öğün planı oluşturuyor...
-              </p>
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          )}
-
-          {/* Phase 2: Results */}
-          {!loading && suggestedMeals && (
-            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
+            {/* Loading */}
+            {loading && (
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
                 <p className="text-xs text-primary font-medium">
-                  Önerilen Öğün Planı
+                  AI öneri oluşturuyor...
                 </p>
-                {totalCalories ? (
-                  <Badge variant="secondary" className="text-[10px]">
-                    Toplam: {totalCalories} kcal
-                  </Badge>
-                ) : null}
-              </div>
-              <div className="divide-y divide-border">
-                {suggestedMeals.map((meal, i) => (
-                  <MealRow key={i} meal={meal} />
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Phase 2 buttons */}
-          {!loading && suggestedMeals && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleGenerate}
-                disabled={loading || applying}
-                className="flex-1"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Yeni Öneri
-              </Button>
-              <Button
-                onClick={onApply}
-                disabled={loading || applying}
-                className="flex-1"
-              >
-                {applying ? (
-                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Check className="h-4 w-4 mr-2" />
-                )}
-                Onayla
-              </Button>
-            </div>
-          )}
-        </div>
+            {/* Suggested meals */}
+            {!loading && suggestedMeals && (
+              <MealBlock
+                meals={suggestedMeals}
+                label="Önerilen Öğünler"
+                variant="suggested"
+              />
+            )}
+
+            {/* Action buttons */}
+            {!loading && suggestedMeals && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleGenerate}
+                    disabled={loading || applying || saveMutation.isPending}
+                    className="flex-1"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Yeni Öneri
+                  </Button>
+                  <Button
+                    onClick={onApply}
+                    disabled={loading || applying || saveMutation.isPending}
+                    className="flex-1"
+                  >
+                    {applying ? (
+                      <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Check className="h-4 w-4 mr-2" />
+                    )}
+                    Onayla
+                  </Button>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs text-muted-foreground"
+                  onClick={handleSave}
+                  disabled={saveMutation.isPending || applying}
+                >
+                  {saveMutation.isPending ? (
+                    <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <BookOpen className="h-3 w-3 mr-1" />
+                  )}
+                  Kayıtlara Ekle
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab: Kayıtlı Öneriler ── */}
+        {tab === "saved" && (
+          <div className="space-y-2">
+            {saved.isLoading && (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </div>
+            )}
+            {!saved.isLoading && (!saved.data || saved.data.length === 0) && (
+              <p className="text-center text-sm text-muted-foreground py-6">
+                Kayıtlı öneri bulunamadı
+              </p>
+            )}
+            {saved.data?.map((s) => (
+              <SavedSuggestionRow
+                key={s.id}
+                id={s.id}
+                meals={s.meals}
+                userNote={s.userNote}
+                createdAt={s.createdAt}
+                dailyPlanId={dailyPlanId}
+                onApplied={() => onOpenChange(false)}
+              />
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

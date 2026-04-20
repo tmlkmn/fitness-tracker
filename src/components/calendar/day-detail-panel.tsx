@@ -1,15 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MealList } from "@/components/meals/meal-list";
 import { WorkoutList } from "@/components/workout/workout-list";
-import { AiMealModal } from "@/components/meals/ai-meal-modal";
-import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
 import { UtensilsCrossed, Dumbbell } from "lucide-react";
-import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
 import { useUserProfile } from "@/hooks/use-user";
-import { useProfileCheck } from "@/hooks/use-profile-check";
 
 interface DayDetailPanelProps {
   dailyPlan: {
@@ -23,47 +18,8 @@ interface DayDetailPanelProps {
 }
 
 export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
-  const [mealModalOpen, setMealModalOpen] = useState(false);
-  const [profileWarningOpen, setProfileWarningOpen] = useState(false);
-  const generateMeals = useGenerateDailyMeals();
-  const applyMeals = useApplyDailyMeals();
   const { data: profile } = useUserProfile();
-  const { missingFields } = useProfileCheck();
   const isNutritionOnly = profile?.serviceType === "nutrition";
-
-  const handleGenerateMeals = (userNote?: string) => {
-    generateMeals.mutate({ dailyPlanId: dailyPlan.id, userNote });
-  };
-
-  const handleApplyMeals = () => {
-    if (!generateMeals.data?.suggestedMeals) return;
-    applyMeals.mutate(
-      { dailyPlanId: dailyPlan.id, meals: generateMeals.data.suggestedMeals },
-      {
-        onSuccess: () => {
-          setMealModalOpen(false);
-          generateMeals.reset();
-        },
-      },
-    );
-  };
-
-  const handleMealModalOpenChange = (open: boolean) => {
-    if (open && missingFields.length > 0) {
-      setProfileWarningOpen(true);
-      return;
-    }
-    setMealModalOpen(open);
-    if (!open) {
-      generateMeals.reset();
-    }
-  };
-
-  const mealError = generateMeals.error
-    ? generateMeals.error.message === "RATE_LIMITED"
-      ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
-      : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
-    : null;
 
   return (
     <>
@@ -72,7 +28,7 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
           dailyPlanId={dailyPlan.id}
           readOnly={readOnly}
           planDate={dailyPlan.date ?? undefined}
-          onAiGenerate={readOnly ? undefined : () => handleMealModalOpenChange(true)}
+          dailyPlanType={dailyPlan.planType}
         />
       ) : (
         <Tabs defaultValue="meals">
@@ -91,7 +47,7 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
               dailyPlanId={dailyPlan.id}
               readOnly={readOnly}
               planDate={dailyPlan.date ?? undefined}
-              onAiGenerate={readOnly ? undefined : () => handleMealModalOpenChange(true)}
+              dailyPlanType={dailyPlan.planType}
             />
           </TabsContent>
           <TabsContent value="workout">
@@ -102,25 +58,6 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
           </TabsContent>
         </Tabs>
       )}
-
-      {mealModalOpen && (
-        <AiMealModal
-          open={mealModalOpen}
-          onOpenChange={handleMealModalOpenChange}
-          suggestedMeals={generateMeals.data?.suggestedMeals ?? null}
-          loading={generateMeals.isPending}
-          applying={applyMeals.isPending}
-          error={mealError}
-          onGenerate={handleGenerateMeals}
-          onApply={handleApplyMeals}
-        />
-      )}
-
-      <ProfileMissingWarning
-        open={profileWarningOpen}
-        onOpenChange={setProfileWarningOpen}
-        missingFields={missingFields}
-      />
     </>
   );
 }

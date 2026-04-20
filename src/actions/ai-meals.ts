@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { meals, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { meals, users, aiDailyMealSuggestions } from "@/db/schema";
+import { eq, and, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
@@ -19,6 +19,8 @@ export interface AIMeal {
   carbsG: string | null;
   fatG: string | null;
 }
+
+const MAX_SAVED_DAILY_MEAL_SUGGESTIONS = 10;
 
 function parseJSON(text: string): unknown {
   let cleaned = text
@@ -51,6 +53,23 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
   await checkRateLimit(user.id, "daily-meal");
   await logAiUsage(user.id, "daily-meal");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
+
+  // Get current meals for comparison display
+  const currentMealRows = await db
+    .select()
+    .from(meals)
+    .where(eq(meals.dailyPlanId, dailyPlanId))
+    .orderBy(asc(meals.sortOrder));
+
+  const currentMeals: AIMeal[] = currentMealRows.map((m) => ({
+    mealTime: m.mealTime,
+    mealLabel: m.mealLabel,
+    content: m.content,
+    calories: m.calories ?? null,
+    proteinG: m.proteinG ?? null,
+    carbsG: m.carbsG ?? null,
+    fatG: m.fatG ?? null,
+  }));
 
   // Get user's service type for prompt selection
   const [userRow] = await db
@@ -117,7 +136,7 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
       suggestedMeals = validateMealArray(parseJSON(text));
     }
 
-    return { suggestedMeals };
+    return { suggestedMeals, currentMeals };
   } catch (error) {
     console.error("[AI Meals] Error generating daily meals:", error);
     throw new Error("AI_UNAVAILABLE");
@@ -153,4 +172,77 @@ export async function applyDailyMeals(
   }
 
   revalidatePath("/");
+}
+
+// ─── Saved Daily Meal Suggestions ────────────────────────────────────────────
+
+export async function saveDailyMealSuggestion(
+  planType: string,
+  mealList: AIMeal[],
+  userNote?: string,
+) {
+  const user = await getAuthUser();
+
+  // Enforce max limit — delete oldest if exceeded
+  const existing = await db
+    .select({ id: aiDailyMealSuggestions.id })
+    .from(aiDailyMealSuggestions)
+    .where(eq(aiDailyMealSuggestions.userId, user.id))
+    .orderBy(asc(aiDailyMealSuggestions.createdAt));
+
+  if (existing.length >= MAX_SAVED_DAILY_MEAL_SUGGESTIONS) {
+    await db
+      .delete(aiDailyMealSuggestions)
+      .where(eq(aiDailyMealSuggestions.id, existing[0].id));
+  }
+
+  const [inserted] = await db
+    .insert(aiDailyMealSuggestions)
+    .values({
+      userId: user.id,
+      planType,
+      userNote: userNote ?? null,
+      meals: mealList,
+    })
+    .returning({ id: aiDailyMealSuggestions.id });
+
+  return inserted;
+}
+
+export async function getSavedDailyMealSuggestions(planType?: string) {
+  const user = await getAuthUser();
+
+  const rows = await db
+    .select()
+    .from(aiDailyMealSuggestions)
+    .where(
+      planType
+        ? and(
+            eq(aiDailyMealSuggestions.userId, user.id),
+            eq(aiDailyMealSuggestions.planType, planType),
+          )
+        : eq(aiDailyMealSuggestions.userId, user.id),
+    )
+    .orderBy(asc(aiDailyMealSuggestions.createdAt));
+
+  return rows.map((r) => ({
+    id: r.id,
+    planType: r.planType,
+    userNote: r.userNote,
+    meals: r.meals as AIMeal[],
+    createdAt: r.createdAt,
+  }));
+}
+
+export async function deleteSavedDailyMealSuggestion(id: number) {
+  const user = await getAuthUser();
+
+  await db
+    .delete(aiDailyMealSuggestions)
+    .where(
+      and(
+        eq(aiDailyMealSuggestions.id, id),
+        eq(aiDailyMealSuggestions.userId, user.id),
+      ),
+    );
 }

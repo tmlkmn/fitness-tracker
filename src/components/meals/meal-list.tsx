@@ -5,6 +5,7 @@ import { useMeals, useToggleMeal } from "@/hooks/use-meals";
 import { MealCard } from "./meal-card";
 import { MealFormDialog } from "./meal-form-dialog";
 import { DailyMacroSummary } from "./daily-macro-summary";
+import { AiMealModal } from "./ai-meal-modal";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,21 +13,64 @@ import { Plus, Sparkles, UtensilsCrossed, Trash2, CheckCheck } from "lucide-reac
 import { BulkDeleteMealsDialog } from "./bulk-delete-meals-dialog";
 import { BulkCompleteDialog } from "@/components/ui/bulk-complete-dialog";
 import { useBulkCompleteMeals } from "@/hooks/use-bulk-completion";
+import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
+import type { AIMeal } from "@/actions/ai-meals";
 
 interface MealListProps {
   dailyPlanId: number;
   readOnly?: boolean;
   planDate?: string;
-  onAiGenerate?: () => void;
+  dailyPlanType?: string;
 }
 
-export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: MealListProps) {
+export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: MealListProps) {
   const { data: mealList, isLoading } = useMeals(dailyPlanId);
   const toggleMeal = useToggleMeal();
   const [addOpen, setAddOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkCompleteOpen, setBulkCompleteOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const bulkComplete = useBulkCompleteMeals();
+
+  const generateMeals = useGenerateDailyMeals();
+  const applyMeals = useApplyDailyMeals();
+
+  const suggestedMeals: AIMeal[] | null = generateMeals.data?.suggestedMeals ?? null;
+  const currentMealsFromAI: AIMeal[] = generateMeals.data?.currentMeals ?? [];
+
+  const currentMealsForModal: AIMeal[] =
+    currentMealsFromAI.length > 0
+      ? currentMealsFromAI
+      : (mealList ?? []).map((m) => ({
+          mealTime: m.mealTime,
+          mealLabel: m.mealLabel,
+          content: m.content,
+          calories: m.calories ?? null,
+          proteinG: m.proteinG ?? null,
+          carbsG: m.carbsG ?? null,
+          fatG: m.fatG ?? null,
+        }));
+
+  const aiError =
+    generateMeals.error instanceof Error
+      ? generateMeals.error.message === "AI_UNAVAILABLE"
+        ? "AI şu an kullanılamıyor. Lütfen tekrar deneyin."
+        : generateMeals.error.message === "RATE_LIMITED"
+          ? "Günlük AI kullanım limitine ulaştınız."
+          : "Bir hata oluştu. Lütfen tekrar deneyin."
+      : null;
+
+  const handleAiGenerate = (userNote?: string) => {
+    generateMeals.mutate({ dailyPlanId, userNote });
+  };
+
+  const handleAiApply = () => {
+    if (!suggestedMeals) return;
+    applyMeals.mutate(
+      { dailyPlanId, newMeals: suggestedMeals },
+      { onSuccess: () => setAiOpen(false) },
+    );
+  };
 
   if (isLoading) {
     return (
@@ -45,12 +89,15 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
         <p className="text-sm text-muted-foreground">Öğün bulunamadı</p>
         {!readOnly && (
           <div className="flex gap-2 justify-center">
-            {onAiGenerate && (
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={onAiGenerate}>
-                <Sparkles className="h-3.5 w-3.5" />
-                AI ile Oluştur
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setAiOpen(true)}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              AI ile Oluştur
+            </Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
               <Plus className="h-3.5 w-3.5" />
               Manuel Ekle
@@ -63,6 +110,24 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
             onOpenChange={setAddOpen}
             dailyPlanId={dailyPlanId}
             planDate={planDate}
+          />
+        )}
+        {aiOpen && (
+          <AiMealModal
+            open={aiOpen}
+            onOpenChange={(v) => {
+              setAiOpen(v);
+              if (!v) generateMeals.reset();
+            }}
+            dailyPlanId={dailyPlanId}
+            planType={dailyPlanType ?? "rest"}
+            currentMeals={currentMealsForModal}
+            suggestedMeals={suggestedMeals}
+            loading={generateMeals.isPending}
+            applying={applyMeals.isPending}
+            error={aiError}
+            onGenerate={handleAiGenerate}
+            onApply={handleAiApply}
           />
         )}
       </div>
@@ -118,6 +183,18 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
         <Progress value={percent} />
       </div>
 
+      {!readOnly && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-1.5"
+          onClick={() => setAiOpen(true)}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          AI ile Programı Değiştir
+        </Button>
+      )}
+
       {mealList.map((meal) => (
         <MealCard
           key={meal.id}
@@ -172,6 +249,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
           mealCount={mealList.length}
         />
       )}
+
       {bulkCompleteOpen && (
         <BulkCompleteDialog
           open={bulkCompleteOpen}
@@ -180,6 +258,25 @@ export function MealList({ dailyPlanId, readOnly, planDate, onAiGenerate }: Meal
           isPending={bulkComplete.isPending}
           itemCount={mealList.length - completedCount}
           itemLabel="öğün"
+        />
+      )}
+
+      {aiOpen && (
+        <AiMealModal
+          open={aiOpen}
+          onOpenChange={(v) => {
+            setAiOpen(v);
+            if (!v) generateMeals.reset();
+          }}
+          dailyPlanId={dailyPlanId}
+          planType={dailyPlanType ?? "rest"}
+          currentMeals={currentMealsForModal}
+          suggestedMeals={suggestedMeals}
+          loading={generateMeals.isPending}
+          applying={applyMeals.isPending}
+          error={aiError}
+          onGenerate={handleAiGenerate}
+          onApply={handleAiApply}
         />
       )}
     </div>
