@@ -36,10 +36,18 @@ const muscleLabels: Record<string, string> = {
   shoulders: "Omuz",
   traps: "Trapez",
   triceps: "Triceps",
+  pectorals: "Göğüs",
+  delts: "Omuz",
+  serratus_anterior: "Ön Dişli Kas",
+  abs: "Karın",
+  cardiovascular_system: "Kardiyovasküler",
+  levator_scapulae: "Kürek Kaldırıcı",
+  spine: "Omurga",
 };
 
 function getMuscleLabel(muscle: string): string {
-  return muscleLabels[muscle] ?? muscle;
+  const key = muscle.toLowerCase().replace(/\s+/g, "_");
+  return muscleLabels[key] ?? muscleLabels[muscle] ?? muscle;
 }
 
 export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
@@ -75,10 +83,7 @@ export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
 
             {isLoading && (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <Skeleton className="aspect-[3/4] rounded-lg" />
-                  <Skeleton className="aspect-[3/4] rounded-lg" />
-                </div>
+                <Skeleton className="aspect-square rounded-lg" />
                 <div className="flex gap-2">
                   <Skeleton className="h-5 w-16" />
                   <Skeleton className="h-5 w-16" />
@@ -101,8 +106,18 @@ export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
 
             {data?.found && (
               <div className="space-y-4">
-                {/* Images: start + end position */}
-                {data.images.length > 0 && (
+                {/* GIF (ExerciseDB) or static images (fallback) */}
+                {data.gifUrl ? (
+                  <div className="relative w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={data.gifUrl}
+                      alt={`${name} — egzersiz animasyonu`}
+                      className="w-full rounded-lg bg-muted"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : data.images.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
                     {data.images.slice(0, 2).map((url, i) => (
                       <div key={i} className="relative aspect-[3/4]">
@@ -119,7 +134,7 @@ export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
                       </div>
                     ))}
                   </div>
-                )}
+                ) : null}
 
                 {/* Muscle groups */}
                 {(data.primaryMuscles.length > 0 || data.secondaryMuscles.length > 0) && (

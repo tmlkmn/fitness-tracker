@@ -12,9 +12,11 @@ import {
   buildExerciseNameList,
   type ExerciseDBEntry,
 } from "@/lib/exercise-db";
+import { searchExerciseDB } from "@/lib/exercisedb-api";
 
 export interface ExerciseDemoResult {
   found: boolean;
+  gifUrl: string | null;
   images: string[];
   primaryMuscles: string[];
   secondaryMuscles: string[];
@@ -24,6 +26,7 @@ export interface ExerciseDemoResult {
 
 const NOT_FOUND_RESULT: ExerciseDemoResult = {
   found: false,
+  gifUrl: null,
   images: [],
   primaryMuscles: [],
   secondaryMuscles: [],
@@ -31,8 +34,23 @@ const NOT_FOUND_RESULT: ExerciseDemoResult = {
   instructions: [],
 };
 
+// Map ExerciseDB bodyPart/target to muscle group names used by free-exercise-db
+const bodyPartToMuscle: Record<string, string> = {
+  chest: "chest",
+  back: "lats",
+  "upper arms": "biceps",
+  "lower arms": "forearms",
+  "upper legs": "quadriceps",
+  "lower legs": "calves",
+  shoulders: "shoulders",
+  waist: "abdominals",
+  cardio: "abdominals",
+  neck: "neck",
+};
+
 function toResult(
   row: {
+    gifUrl: string | null;
     images: unknown;
     primaryMuscles: unknown;
     secondaryMuscles: unknown;
@@ -46,6 +64,7 @@ function toResult(
   const images = (row.images as string[] | null) ?? [];
   return {
     found: true,
+    gifUrl: row.gifUrl ?? null,
     images: images.map(getImageUrl),
     primaryMuscles: (row.primaryMuscles as string[] | null) ?? [],
     secondaryMuscles: (row.secondaryMuscles as string[] | null) ?? [],
@@ -63,6 +82,7 @@ export async function getExerciseDemo(
   // 1. Check DB cache
   const [existing] = await db
     .select({
+      gifUrl: exerciseDemos.gifUrl,
       images: exerciseDemos.images,
       primaryMuscles: exerciseDemos.primaryMuscles,
       secondaryMuscles: exerciseDemos.secondaryMuscles,
@@ -75,11 +95,42 @@ export async function getExerciseDemo(
 
   if (existing) return toResult(existing);
 
-  // 2. Rate limit before AI call
+  // 2. Try ExerciseDB API first (no AI tokens needed)
+  const exerciseDBResult = await searchExerciseDB(exerciseName);
+
+  if (exerciseDBResult) {
+    const primaryMuscle = bodyPartToMuscle[exerciseDBResult.bodyPart] ?? exerciseDBResult.target;
+    const primaryMuscles = [primaryMuscle];
+    const secondaryMuscles = exerciseDBResult.secondaryMuscles ?? [];
+
+    await db.insert(exerciseDemos).values({
+      exerciseNameNorm: nameNorm,
+      externalId: exerciseDBResult.id,
+      gifUrl: exerciseDBResult.gifUrl,
+      source: "exercisedb",
+      images: [],
+      primaryMuscles,
+      secondaryMuscles,
+      equipment: exerciseDBResult.equipment ?? null,
+      instructions: exerciseDBResult.instructions ?? [],
+      notFound: false,
+    });
+
+    return {
+      found: true,
+      gifUrl: exerciseDBResult.gifUrl,
+      images: [],
+      primaryMuscles,
+      secondaryMuscles,
+      equipment: exerciseDBResult.equipment ?? null,
+      instructions: exerciseDBResult.instructions ?? [],
+    };
+  }
+
+  // 3. Fallback: AI matching with free-exercise-db (static images)
   await checkRateLimit(user.id, "exercise-demo");
   await logAiUsage(user.id, "exercise-demo");
 
-  // 3. Fetch exercise database + AI matching
   const exerciseList = await getExerciseDBList();
   const nameList = buildExerciseNameList(exerciseList);
 
@@ -110,6 +161,7 @@ export async function getExerciseDemo(
   if (aiResponse === "NOT_FOUND" || !aiResponse) {
     await db.insert(exerciseDemos).values({
       exerciseNameNorm: nameNorm,
+      source: "free-exercise-db",
       notFound: true,
     });
     return NOT_FOUND_RESULT;
@@ -121,9 +173,9 @@ export async function getExerciseDemo(
   );
 
   if (!matched) {
-    // AI returned an ID that doesn't exist — mark as not found
     await db.insert(exerciseDemos).values({
       exerciseNameNorm: nameNorm,
+      source: "free-exercise-db",
       notFound: true,
     });
     return NOT_FOUND_RESULT;
@@ -133,6 +185,7 @@ export async function getExerciseDemo(
   await db.insert(exerciseDemos).values({
     exerciseNameNorm: nameNorm,
     externalId: matched.id,
+    source: "free-exercise-db",
     images: matched.images,
     primaryMuscles: matched.primaryMuscles,
     secondaryMuscles: matched.secondaryMuscles,
@@ -143,6 +196,7 @@ export async function getExerciseDemo(
 
   return {
     found: true,
+    gifUrl: null,
     images: matched.images.map(getImageUrl),
     primaryMuscles: matched.primaryMuscles,
     secondaryMuscles: matched.secondaryMuscles,

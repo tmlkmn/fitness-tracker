@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           {
             key: "Content-Security-Policy",
-            value: `default-src 'self'; ${cspScriptSrc} https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com data: blob:; font-src 'self'; connect-src 'self' https://vitals.vercel-insights.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io; media-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests`,
+            value: `default-src 'self'; ${cspScriptSrc} https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com https://v2.exercisedb.io https://*.cloudfront.net data: blob:; font-src 'self'; connect-src 'self' https://vitals.vercel-insights.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io; media-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests`,
           },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
           { key: "X-XSS-Protection", value: "0" },

@@ -339,6 +339,8 @@ export const exerciseDemos = pgTable("exercise_demos", {
   exerciseNameNorm: text("exercise_name_norm").notNull().unique(),
   externalId: text("external_id"),
   images: jsonb("images"),
+  gifUrl: text("gif_url"),
+  source: text("source"),
   primaryMuscles: jsonb("primary_muscles"),
   secondaryMuscles: jsonb("secondary_muscles"),
   equipment: text("equipment"),
