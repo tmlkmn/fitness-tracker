@@ -51,6 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ROUTINE_EVENTS, normalizeEvent } from "@/lib/routine-constants";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -184,10 +185,10 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
 
   useEffect(() => {
     if (profile?.dailyRoutine && Array.isArray(profile.dailyRoutine)) {
-      setWeekdayItems(profile.dailyRoutine as RoutineItem[]);
+      setWeekdayItems((profile.dailyRoutine as RoutineItem[]).map((r) => ({ ...r, event: normalizeEvent(r.event) })));
     }
     if (profile?.weekendRoutine && Array.isArray(profile.weekendRoutine)) {
-      setWeekendItems(profile.weekendRoutine as RoutineItem[]);
+      setWeekendItems((profile.weekendRoutine as RoutineItem[]).map((r) => ({ ...r, event: normalizeEvent(r.event) })));
     }
   }, [profile?.dailyRoutine, profile?.weekendRoutine]);
 
@@ -244,9 +245,9 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
               {[
                 { time: "07:00", event: "Uyanış" },
                 { time: "08:00", event: "Kahvaltı" },
-                { time: "12:30", event: "Öğle yemeği" },
+                { time: "12:30", event: "Öğle Yemeği" },
                 { time: "17:00", event: "Antrenman" },
-                { time: "19:00", event: "Akşam yemeği" },
+                { time: "19:00", event: "Akşam Yemeği" },
                 { time: "23:00", event: "Uyku" },
               ].map((item, i) => (
                 <div key={i} className="flex justify-between text-xs">
@@ -310,16 +311,34 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
             }}
             className="flex h-8 w-24 rounded-md border border-input bg-background px-2 text-xs font-mono"
           />
-          <input
+          <Select
             value={item.event}
-            onChange={(e) => {
+            onValueChange={(val) => {
               const copy = [...items];
-              copy[i] = { ...copy[i], event: e.target.value };
+              copy[i] = { ...copy[i], event: val };
               setItems(copy);
             }}
-            placeholder="Etkinlik"
-            className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
-          />
+          >
+            <SelectTrigger className="h-8 flex-1 text-xs">
+              <SelectValue placeholder="Etkinlik seç" />
+            </SelectTrigger>
+            <SelectContent>
+              {ROUTINE_EVENTS.map((ev) => {
+                const usedByOther = items.some(
+                  (it, j) => j !== i && it.event === ev.value,
+                );
+                return (
+                  <SelectItem
+                    key={ev.value}
+                    value={ev.value}
+                    disabled={usedByOther}
+                  >
+                    {ev.label}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
           <button
             onClick={() => setItems(items.filter((_, j) => j !== i))}
             className="text-muted-foreground hover:text-destructive"

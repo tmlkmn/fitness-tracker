@@ -35,16 +35,20 @@ export default function ProfilTamamlaPage() {
 
   // Daily routine
   const [wakeTime, setWakeTime] = useState("");
+  const [breakfastTime, setBreakfastTime] = useState("");
   const [workStartTime, setWorkStartTime] = useState("");
   const [lunchTime, setLunchTime] = useState("");
   const [workEndTime, setWorkEndTime] = useState("");
+  const [dinnerTime, setDinnerTime] = useState("");
   const [workoutTime, setWorkoutTime] = useState("");
   const [sleepTime, setSleepTime] = useState("");
 
   // Weekend routine
   const [hasWeekendRoutine, setHasWeekendRoutine] = useState(false);
   const [weWakeTime, setWeWakeTime] = useState("");
+  const [weBreakfastTime, setWeBreakfastTime] = useState("");
   const [weLunchTime, setWeLunchTime] = useState("");
+  const [weDinnerTime, setWeDinnerTime] = useState("");
   const [weWorkoutTime, setWeWorkoutTime] = useState("");
   const [weSleepTime, setWeSleepTime] = useState("");
 
@@ -97,9 +101,15 @@ export default function ProfilTamamlaPage() {
         const routine = profile.dailyRoutine as { time: string; event: string }[];
         const eventMap: Record<string, (v: string) => void> = {
           "Uyanış": setWakeTime,
+          "Kahvaltı": setBreakfastTime,
+          "İşe Gidiş": setWorkStartTime,
           "İşe gidiş": setWorkStartTime,
+          "Öğle Yemeği": setLunchTime,
           "Öğle yemeği": setLunchTime,
+          "İşten Çıkış": setWorkEndTime,
           "İşten çıkış": setWorkEndTime,
+          "Akşam Yemeği": setDinnerTime,
+          "Akşam yemeği": setDinnerTime,
           "Antrenman": setWorkoutTime,
           "Uyku": setSleepTime,
         };
@@ -113,7 +123,11 @@ export default function ProfilTamamlaPage() {
           setHasWeekendRoutine(true);
           const eventMap: Record<string, (v: string) => void> = {
             "Uyanış": setWeWakeTime,
+            "Kahvaltı": setWeBreakfastTime,
+            "Öğle Yemeği": setWeLunchTime,
             "Öğle yemeği": setWeLunchTime,
+            "Akşam Yemeği": setWeDinnerTime,
+            "Akşam yemeği": setWeDinnerTime,
             "Antrenman": setWeWorkoutTime,
             "Uyku": setWeSleepTime,
           };
@@ -178,9 +192,11 @@ export default function ProfilTamamlaPage() {
       // Build daily routine array from filled time inputs
       const routineEntries: { time: string; event: string }[] = [];
       if (wakeTime) routineEntries.push({ time: wakeTime, event: "Uyanış" });
-      if (workStartTime) routineEntries.push({ time: workStartTime, event: "İşe gidiş" });
-      if (lunchTime) routineEntries.push({ time: lunchTime, event: "Öğle yemeği" });
-      if (workEndTime) routineEntries.push({ time: workEndTime, event: "İşten çıkış" });
+      if (breakfastTime) routineEntries.push({ time: breakfastTime, event: "Kahvaltı" });
+      if (workStartTime) routineEntries.push({ time: workStartTime, event: "İşe Gidiş" });
+      if (lunchTime) routineEntries.push({ time: lunchTime, event: "Öğle Yemeği" });
+      if (workEndTime) routineEntries.push({ time: workEndTime, event: "İşten Çıkış" });
+      if (dinnerTime) routineEntries.push({ time: dinnerTime, event: "Akşam Yemeği" });
       if (workoutTime) routineEntries.push({ time: workoutTime, event: "Antrenman" });
       if (sleepTime) routineEntries.push({ time: sleepTime, event: "Uyku" });
 
@@ -188,7 +204,9 @@ export default function ProfilTamamlaPage() {
       const weekendEntries: { time: string; event: string }[] = [];
       if (hasWeekendRoutine) {
         if (weWakeTime) weekendEntries.push({ time: weWakeTime, event: "Uyanış" });
-        if (weLunchTime) weekendEntries.push({ time: weLunchTime, event: "Öğle yemeği" });
+        if (weBreakfastTime) weekendEntries.push({ time: weBreakfastTime, event: "Kahvaltı" });
+        if (weLunchTime) weekendEntries.push({ time: weLunchTime, event: "Öğle Yemeği" });
+        if (weDinnerTime) weekendEntries.push({ time: weDinnerTime, event: "Akşam Yemeği" });
         if (weWorkoutTime) weekendEntries.push({ time: weWorkoutTime, event: "Antrenman" });
         if (weSleepTime) weekendEntries.push({ time: weSleepTime, event: "Uyku" });
       }
@@ -467,6 +485,13 @@ export default function ProfilTamamlaPage() {
                   <input id="wakeTime" type="time" value={wakeTime} onChange={(e) => setWakeTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
                 </div>
                 <div className="space-y-1.5">
+                  <label htmlFor="breakfastTime" className="text-xs font-medium flex items-center gap-1.5">
+                    <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground" />
+                    Kahvaltı saatin?
+                  </label>
+                  <input id="breakfastTime" type="time" value={breakfastTime} onChange={(e) => setBreakfastTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                </div>
+                <div className="space-y-1.5">
                   <label htmlFor="workStartTime" className="text-xs font-medium flex items-center gap-1.5">
                     <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
                     Kaçta işe gidiyorsun?
@@ -486,6 +511,13 @@ export default function ProfilTamamlaPage() {
                     Kaçta işten çıkıyorsun?
                   </label>
                   <input id="workEndTime" type="time" value={workEndTime} onChange={(e) => setWorkEndTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="dinnerTime" className="text-xs font-medium flex items-center gap-1.5">
+                    <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground" />
+                    Akşam yemeği saatin?
+                  </label>
+                  <input id="dinnerTime" type="time" value={dinnerTime} onChange={(e) => setDinnerTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
                 </div>
                 {serviceType === "full" && (
                   <div className="space-y-1.5">
@@ -533,11 +565,25 @@ export default function ProfilTamamlaPage() {
                     <input id="weWakeTime" type="time" value={weWakeTime} onChange={(e) => setWeWakeTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
                   </div>
                   <div className="space-y-1.5">
+                    <label htmlFor="weBreakfastTime" className="text-xs font-medium flex items-center gap-1.5">
+                      <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground" />
+                      Kahvaltı saatin?
+                    </label>
+                    <input id="weBreakfastTime" type="time" value={weBreakfastTime} onChange={(e) => setWeBreakfastTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                  </div>
+                  <div className="space-y-1.5">
                     <label htmlFor="weLunchTime" className="text-xs font-medium flex items-center gap-1.5">
                       <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground" />
                       Öğle yemeği saatin?
                     </label>
                     <input id="weLunchTime" type="time" value={weLunchTime} onChange={(e) => setWeLunchTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="weDinnerTime" className="text-xs font-medium flex items-center gap-1.5">
+                      <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground" />
+                      Akşam yemeği saatin?
+                    </label>
+                    <input id="weDinnerTime" type="time" value={weDinnerTime} onChange={(e) => setWeDinnerTime(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
                   </div>
                   {serviceType === "full" && (
                     <div className="space-y-1.5">

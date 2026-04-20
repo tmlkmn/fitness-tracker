@@ -273,6 +273,19 @@ Beslenme programı antrenman programının ayrılmaz parçasıdır. Kas hacmi ar
 ## Kullanıcı İsteği
 - Kullanıcı özel bir istek belirtmişse (KULLANICI İSTEĞİ bölümü), bu isteği mutlaka dikkate al ve programa yansıt
 
+## Öğün Etiketleme Kuralı (KRİTİK)
+- Kullanıcının günlük programında tanımlı öğün etkinliklerini (Kahvaltı, Öğle Yemeği, Akşam Yemeği) mealLabel olarak AYNEN kullan
+- Tanımlanmamış saatlerdeki öğünleri "Ara Öğün" olarak etiketle
+- Örnek: Kullanıcı sadece "Kahvaltı" ve "Akşam Yemeği" tanımladıysa, öğlen saatindeki öğün "Öğle Yemeği" DEĞİL "Ara Öğün" olmalı
+- Pre-workout ve post-workout öğünlerini "Pre-Workout" ve "Post-Workout" olarak etiketle
+
+## Supplement Entegrasyonu
+- Supplement takvimi verilmişse öğün zamanlamasını buna göre uyumla
+- Protein tozu/whey ANTRENMAN SONRASI öner, öncesi DEĞİL
+- Kreatin ve BCAA antrenman öncesi olabilir
+- Pre-workout öğünü GERÇEK YİYECEK olmalı (kompleks karb + protein), supplement önerisi DEĞİL
+- Supplement'leri öğün içeriğine YAZMA, sadece zamanlamayı uyumla
+
 ## Önemli Kurallar
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, alerjilerini ve diyet tercihlerini kesinlikle dikkate al
@@ -326,6 +339,19 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
 - Hafta içi ve hafta sonu için farklı günlük program verilmişse:
   • Pazartesi-Cuma: Hafta içi programına göre öğün saatleri ayarla
   • Cumartesi-Pazar: Hafta sonu programına göre öğün saatleri ayarla
+
+## Öğün Etiketleme Kuralı (KRİTİK)
+- Kullanıcının günlük programında tanımlı öğün etkinliklerini (Kahvaltı, Öğle Yemeği, Akşam Yemeği) mealLabel olarak AYNEN kullan
+- Tanımlanmamış saatlerdeki öğünleri "Ara Öğün" olarak etiketle
+- Örnek: Kullanıcı sadece "Kahvaltı" ve "Akşam Yemeği" tanımladıysa, öğlen saatindeki öğün "Öğle Yemeği" DEĞİL "Ara Öğün" olmalı
+- Pre-workout ve post-workout öğünlerini "Pre-Workout" ve "Post-Workout" olarak etiketle
+
+## Supplement Entegrasyonu
+- Supplement takvimi verilmişse öğün zamanlamasını buna göre uyumla
+- Protein tozu/whey ANTRENMAN SONRASI öner, öncesi DEĞİL
+- Kreatin ve BCAA antrenman öncesi olabilir
+- Pre-workout öğünü GERÇEK YİYECEK olmalı (kompleks karb + protein), supplement önerisi DEĞİL
+- Supplement'leri öğün içeriğine YAZMA, sadece zamanlamayı uyumla
 
 ## Anti-Katabolik Sabah Beslenme Kuralı (SADECE ANTRENMAN YAPAN KULLANICILAR)
 - Kullanıcının günlük programından uyanış saatini belirle
@@ -444,6 +470,11 @@ Bu kullanıcı sadece beslenme hizmeti alıyor — antrenman programı YAPMA. Am
 - Hafta içinde çeşitlilik sağla, aynı öğünü tekrarlama
 - Mevsim sebze-meyvelerini tercih et
 
+## Öğün Etiketleme Kuralı (KRİTİK)
+- Kullanıcının günlük programında tanımlı öğün etkinliklerini (Kahvaltı, Öğle Yemeği, Akşam Yemeği) mealLabel olarak AYNEN kullan
+- Tanımlanmamış saatlerdeki öğünleri "Ara Öğün" olarak etiketle
+- Örnek: Kullanıcı sadece "Kahvaltı" ve "Akşam Yemeği" tanımladıysa, öğlen saatindeki öğün "Öğle Yemeği" DEĞİL "Ara Öğün" olmalı
+
 ## Kullanıcı İsteği
 - Kullanıcı bu hafta için özel bir istek belirtmişse (KULLANICI İSTEĞİ bölümü), bu isteği mutlaka dikkate al ve programa yansıt
 - Kullanıcı isteği diğer kurallarla çelişse bile kullanıcının isteğine öncelik ver
@@ -501,6 +532,11 @@ Beslenme programı kullanıcının yaşam tarzına ve vücut kompozisyonuna gör
 - Her öğünde bir protein kaynağı olmalı
 - Sebze/lif her ana öğünde bulunmalı
 - Aynı haftanın diğer günleriyle çeşitlilik sağla
+
+## Öğün Etiketleme Kuralı (KRİTİK)
+- Kullanıcının günlük programında tanımlı öğün etkinliklerini (Kahvaltı, Öğle Yemeği, Akşam Yemeği) mealLabel olarak AYNEN kullan
+- Tanımlanmamış saatlerdeki öğünleri "Ara Öğün" olarak etiketle
+- Örnek: Kullanıcı sadece "Kahvaltı" ve "Akşam Yemeği" tanımladıysa, öğlen saatindeki öğün "Öğle Yemeği" DEĞİL "Ara Öğün" olmalı
 
 ## Kullanıcı İsteği
 - Kullanıcı özel bir istek belirtmişse (KULLANICI İSTEĞİ bölümü), bu isteği mutlaka dikkate al ve programa yansıt

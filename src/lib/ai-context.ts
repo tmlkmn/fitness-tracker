@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { users, weeklyPlans, dailyPlans, meals, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
 import { eq, desc, and, gte, lte, asc } from "drizzle-orm";
+import { normalizeEvent } from "@/lib/routine-constants";
 
 // 5-minute TTL memory cache for user context
 const contextCache = new Map<string, { text: string; timestamp: number }>();
@@ -25,6 +26,7 @@ export async function buildUserContext(userId: string): Promise<string> {
       sportHistory: users.sportHistory,
       currentMedications: users.currentMedications,
       serviceType: users.serviceType,
+      supplementSchedule: users.supplementSchedule,
     })
     .from(users)
     .where(eq(users.id, userId));
@@ -68,7 +70,7 @@ export async function buildUserContext(userId: string): Promise<string> {
   // Daily routine
   if (user.dailyRoutine && Array.isArray(user.dailyRoutine) && user.dailyRoutine.length > 0) {
     const routineStr = (user.dailyRoutine as { time: string; event: string }[])
-      .map((r) => `${r.time} ${r.event}`)
+      .map((r) => `${r.time} ${normalizeEvent(r.event)}`)
       .join(", ");
     const hasWeekend = user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0;
     lines.push(`${hasWeekend ? "Hafta içi programı" : "Günlük program"}: ${routineStr}`);
@@ -77,9 +79,17 @@ export async function buildUserContext(userId: string): Promise<string> {
   // Weekend routine
   if (user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0) {
     const routineStr = (user.weekendRoutine as { time: string; event: string }[])
-      .map((r) => `${r.time} ${r.event}`)
+      .map((r) => `${r.time} ${normalizeEvent(r.event)}`)
       .join(", ");
     lines.push(`Hafta sonu programı: ${routineStr}`);
+  }
+
+  // Supplement schedule
+  if (user.supplementSchedule && Array.isArray(user.supplementSchedule) && user.supplementSchedule.length > 0) {
+    const suppStr = (user.supplementSchedule as { period: string; supplements: string }[])
+      .map((s) => `${s.period}: ${s.supplements}`)
+      .join("; ");
+    lines.push(`Supplement takvimi: ${suppStr}`);
   }
 
   // Fitness level

@@ -8,6 +8,7 @@ import {
   users,
 } from "@/db/schema";
 import { eq, asc, desc, and, ne, isNotNull } from "drizzle-orm";
+import { normalizeEvent, MEAL_EVENTS } from "@/lib/routine-constants";
 
 /**
  * Builds comprehensive AI context for daily meal generation.
@@ -45,6 +46,9 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
       healthNotes: users.healthNotes,
       foodAllergens: users.foodAllergens,
       serviceType: users.serviceType,
+      dailyRoutine: users.dailyRoutine,
+      weekendRoutine: users.weekendRoutine,
+      supplementSchedule: users.supplementSchedule,
     })
     .from(users)
     .where(eq(users.id, userId));
@@ -92,7 +96,52 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
     }
   }
 
-  // ─── 2. Progress / body composition trend (last 5 logs) ────────────
+  // ─── 1b. Daily routine & supplement schedule ──────────────────────
+  if (user) {
+    // Determine if weekend
+    const isWeekend = currentDay.dayOfWeek === 5 || currentDay.dayOfWeek === 6;
+    const routineRaw = isWeekend
+      ? (user.weekendRoutine as { time: string; event: string }[] | null) ?? (user.dailyRoutine as { time: string; event: string }[] | null)
+      : (user.dailyRoutine as { time: string; event: string }[] | null);
+
+    if (routineRaw && Array.isArray(routineRaw) && routineRaw.length > 0) {
+      const routine = routineRaw.map((r) => ({
+        time: r.time,
+        event: normalizeEvent(r.event),
+      }));
+      lines.push("");
+      lines.push("═══ GÜNLÜK PROGRAM ═══");
+      lines.push(
+        `Bugünün programı (${isWeekend ? "hafta sonu" : "hafta içi"}): ${routine.map((r) => `${r.time} ${r.event}`).join(", ")}`,
+      );
+      const definedMeals = routine
+        .filter((r) => MEAL_EVENTS.includes(r.event))
+        .map((r) => r.event);
+      if (definedMeals.length > 0) {
+        lines.push(`Tanımlı öğünler: ${definedMeals.join(", ")}`);
+        lines.push(
+          'NOT: Kullanıcı yukarıdaki öğünleri tanımlamış — bu saatlerdeki öğünleri bu etiketlerle oluştur. Tanımlanmamış saatlerde ek öğün gerekirse "Ara Öğün" olarak etiketle.',
+        );
+      } else {
+        lines.push(
+          'NOT: Kullanıcı standart öğün etiketi tanımlamamış — öğünleri "Ara Öğün" olarak etiketle.',
+        );
+      }
+    }
+
+    // Supplement schedule
+    const suppRaw = user.supplementSchedule as { period: string; supplements: string }[] | null;
+    if (suppRaw && Array.isArray(suppRaw) && suppRaw.length > 0) {
+      lines.push("");
+      lines.push("═══ SUPPLEMENT TAKVİMİ ═══");
+      for (const s of suppRaw) {
+        lines.push(`${s.period}: ${s.supplements}`);
+      }
+      lines.push(
+        "NOT: Protein tozu/whey ANTRENMAN SONRASI önerilmeli. Supplement'leri öğün içeriğine YAZMA, sadece zamanlamayı uyumla.",
+      );
+    }
+  }
 
   const recentLogs = await db
     .select({

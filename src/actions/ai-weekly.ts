@@ -5,6 +5,7 @@ import { weeklyPlans, dailyPlans, meals, exercises, progressLogs, users, waterLo
 import { eq, and, sql, desc, asc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
+import { normalizeEvent } from "@/lib/routine-constants";
 import {
   type AIWeeklyPlan,
   type AIWeeklyDay,
@@ -48,6 +49,7 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
       sportHistory: users.sportHistory,
       currentMedications: users.currentMedications,
       serviceType: users.serviceType,
+      supplementSchedule: users.supplementSchedule,
     })
     .from(users)
     .where(eq(users.id, userId));
@@ -71,16 +73,23 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
     }
     if (user.dailyRoutine && Array.isArray(user.dailyRoutine) && user.dailyRoutine.length > 0) {
       const routineStr = (user.dailyRoutine as { time: string; event: string }[])
-        .map((r) => `${r.time} ${r.event}`)
+        .map((r) => `${r.time} ${normalizeEvent(r.event)}`)
         .join(", ");
       const hasWeekend = user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0;
       lines.push(`${hasWeekend ? "Hafta içi programı" : "Günlük program"}: ${routineStr}`);
     }
     if (user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0) {
       const routineStr = (user.weekendRoutine as { time: string; event: string }[])
-        .map((r) => `${r.time} ${r.event}`)
+        .map((r) => `${r.time} ${normalizeEvent(r.event)}`)
         .join(", ");
       lines.push(`Hafta sonu programı: ${routineStr}`);
+    }
+    // Supplement schedule
+    if (user.supplementSchedule && Array.isArray(user.supplementSchedule) && user.supplementSchedule.length > 0) {
+      const suppStr = (user.supplementSchedule as { period: string; supplements: string }[])
+        .map((s) => `${s.period}: ${s.supplements}`)
+        .join("; ");
+      lines.push(`Supplement takvimi: ${suppStr}`);
     }
     const fitnessLabels: Record<string, string> = {
       beginner: "Yeni başlayan",
