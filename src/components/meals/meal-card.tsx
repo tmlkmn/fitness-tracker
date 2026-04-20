@@ -7,12 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { stripEmoji, getMealIcon, DynamicIcon } from "@/lib/icon-map";
-import { AiSuggestButton } from "@/components/ai/ai-suggest-button";
+import { AiSuggestionModal } from "@/components/ai/ai-suggestion-modal";
 import { MealFormDialog } from "./meal-form-dialog";
 import { MealDeleteDialog } from "./meal-delete-dialog";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Sparkles } from "lucide-react";
 import { SwipeableCard } from "@/components/ui/swipeable-card";
-import { useDeleteMeal } from "@/hooks/use-meal-crud";
 
 interface MealCardProps {
   id: number;
@@ -47,11 +46,10 @@ export function MealCard({
 }: MealCardProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const deleteMeal = useDeleteMeal();
+  const [aiOpen, setAiOpen] = useState(false);
 
   const mealIcon = getMealIcon(mealLabel);
 
-  // Check if meal time has passed (for today only)
   const isMealTimePast = (() => {
     if (!planDate) return false;
     const todayStr = new Date().toISOString().split("T")[0];
@@ -120,6 +118,16 @@ export function MealCard({
                       >
                         <Trash2 className="h-3 w-3 text-muted-foreground" />
                       </Button>
+                      {!isMealTimePast && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => setAiOpen(true)}
+                        >
+                          <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
@@ -132,20 +140,6 @@ export function MealCard({
               >
                 {content}
               </p>
-              {!readOnly && !isCompleted && !isMealTimePast && (
-                <div className="mt-2">
-                  <AiSuggestButton
-                    mealId={id}
-                    mealTime={mealTime}
-                    mealLabel={mealLabel}
-                    currentContent={content}
-                    calories={calories}
-                    proteinG={proteinG}
-                    carbsG={carbsG}
-                    fatG={fatG}
-                  />
-                </div>
-              )}
             </div>
           </div>
         </CardContent>
@@ -189,6 +183,21 @@ export function MealCard({
           onOpenChange={setDeleteOpen}
           mealId={id}
           mealLabel={mealLabel}
+        />
+      )}
+
+      {aiOpen && (
+        <AiSuggestionModal
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          mealId={id}
+          mealTime={mealTime}
+          mealLabel={mealLabel}
+          currentContent={content}
+          calories={calories}
+          proteinG={proteinG}
+          carbsG={carbsG}
+          fatG={fatG}
         />
       )}
     </>

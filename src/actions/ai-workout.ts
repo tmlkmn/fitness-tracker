@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { exercises } from "@/db/schema";
+import { exercises, exerciseAlternatives } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
@@ -30,7 +30,7 @@ export interface AIExercise {
   notes: string | null;
 }
 
-interface AIExerciseVariation {
+export interface AIExerciseVariation {
   name: string;
   sets: number | null;
   reps: string | null;
@@ -64,19 +64,19 @@ function validateExerciseArray(data: unknown): AIExercise[] {
   }));
 }
 
-function validateSingleExercise(data: unknown): AIExerciseVariation {
-  const ex = data as Record<string, unknown>;
-  if (!ex || typeof ex !== "object" || !ex.name) {
-    throw new Error("Invalid response format: expected exercise object with name");
+function validateAlternativesArray(data: unknown): AIExerciseVariation[] {
+  const obj = data as Record<string, unknown>;
+  if (!obj || typeof obj !== "object" || !Array.isArray(obj.alternatives)) {
+    throw new Error("Invalid response format: expected { alternatives: [...] }");
   }
-  return {
-    name: String(ex.name),
+  return (obj.alternatives as Record<string, unknown>[]).map((ex) => ({
+    name: String(ex.name ?? ""),
     sets: ex.sets != null ? Number(ex.sets) : null,
     reps: ex.reps != null ? String(ex.reps) : null,
     restSeconds: ex.restSeconds != null ? Number(ex.restSeconds) : null,
     durationMinutes: ex.durationMinutes != null ? Number(ex.durationMinutes) : null,
     notes: ex.notes != null ? String(ex.notes) : null,
-  };
+  }));
 }
 
 async function callAI(
@@ -273,22 +273,16 @@ export async function applySectionReplacement(
   revalidatePath("/");
 }
 
-// ─── Feature 3: Single Exercise Variation ───────────────────────────────────
+// ─── Feature 3: Single Exercise Variation (3 alternatives, cached) ───────────
 
 export async function generateExerciseVariation(
   exerciseId: number,
   dailyPlanId: number,
   userNote?: string,
+  forceRefresh?: boolean,
 ) {
   const user = await getAuthUser();
-  await checkRateLimit(user.id, "workout");
-  await logAiUsage(user.id, "workout");
   await verifyExerciseOwnership(exerciseId, user.id);
-
-  const [userContext, { context: workoutContext }] = await Promise.all([
-    buildUserContext(user.id),
-    buildWeeklyWorkoutContext(dailyPlanId),
-  ]);
 
   // Get the current exercise
   const [currentExercise] = await db
@@ -299,6 +293,38 @@ export async function generateExerciseVariation(
   if (!currentExercise) {
     throw new Error("Exercise not found");
   }
+
+  const nameNorm = currentExercise.name.toLowerCase().trim();
+
+  // Check DB cache (no TTL — alternatives for an exercise are stable)
+  if (!forceRefresh) {
+    const [cached] = await db
+      .select({ suggestions: exerciseAlternatives.suggestions })
+      .from(exerciseAlternatives)
+      .where(
+        and(
+          eq(exerciseAlternatives.userId, user.id),
+          eq(exerciseAlternatives.exerciseNameNorm, nameNorm),
+        ),
+      );
+
+    if (cached) {
+      return {
+        currentExercise,
+        alternatives: cached.suggestions as AIExerciseVariation[],
+        fromCache: true,
+      };
+    }
+  }
+
+  // No cache or force refresh — call AI
+  await checkRateLimit(user.id, "workout");
+  await logAiUsage(user.id, "workout");
+
+  const [userContext, { context: workoutContext }] = await Promise.all([
+    buildUserContext(user.id),
+    buildWeeklyWorkoutContext(dailyPlanId),
+  ]);
 
   const exerciseDetail = [
     currentExercise.name,
@@ -315,24 +341,37 @@ export async function generateExerciseVariation(
     .filter(Boolean)
     .join(", ");
 
-  const userMessage = `${userContext}\n\n${workoutContext}\n\n"${exerciseDetail}" egzersizi yerine alternatif bir egzersiz öner.${userNote?.trim() ? `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu egzersiz için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.` : ""}`;
+  const userMessage = `${userContext}\n\n${workoutContext}\n\n"${exerciseDetail}" egzersizi yerine 3 farklı alternatif egzersiz öner.${userNote?.trim() ? `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu egzersiz için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.` : ""}`;
 
   try {
-    let text = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 500);
+    let text = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 800);
 
-    let suggestedExercise: AIExerciseVariation;
+    let alternatives: AIExerciseVariation[];
     try {
-      suggestedExercise = validateSingleExercise(parseJSON(text));
+      alternatives = validateAlternativesArray(parseJSON(text));
     } catch {
       text = await callAI(
         EXERCISE_VARIATION_PROMPT,
-        `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "name": "...", ... }`,
-        500,
+        `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "alternatives": [...] }`,
+        800,
       );
-      suggestedExercise = validateSingleExercise(parseJSON(text));
+      alternatives = validateAlternativesArray(parseJSON(text));
     }
 
-    return { currentExercise, suggestedExercise };
+    // Upsert to DB cache
+    await db
+      .insert(exerciseAlternatives)
+      .values({
+        userId: user.id,
+        exerciseNameNorm: nameNorm,
+        suggestions: alternatives,
+      })
+      .onConflictDoUpdate({
+        target: [exerciseAlternatives.userId, exerciseAlternatives.exerciseNameNorm],
+        set: { suggestions: alternatives, createdAt: new Date() },
+      });
+
+    return { currentExercise, alternatives, fromCache: false };
   } catch (error) {
     console.error("[AI Workout] Error generating exercise variation:", error);
     throw new Error("AI_UNAVAILABLE");

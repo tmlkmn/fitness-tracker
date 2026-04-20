@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Timer, Sparkles, Pencil, Trash2, Plus } from "lucide-react";
 import { ExerciseFormTips } from "./exercise-form-tips";
 import { ExerciseDemoModal } from "./exercise-demo-modal";
-import { AiWorkoutModal } from "./ai-workout-modal";
+import { ExerciseAlternativeModal } from "./exercise-alternative-modal";
 import { ExerciseFormDialog } from "./exercise-form-dialog";
 import { ExerciseDeleteDialog } from "./exercise-delete-dialog";
 import { InlineEditBadge } from "@/components/ui/inline-edit-badge";
@@ -20,6 +20,7 @@ import {
   useApplyExerciseVariation,
 } from "@/hooks/use-workout-ai";
 import { useUpdateExercise } from "@/hooks/use-exercise-crud";
+import type { AIExerciseVariation } from "@/actions/ai-workout";
 
 interface ExerciseCardProps {
   id: number;
@@ -60,15 +61,14 @@ export function ExerciseCard({
   const updateExercise = useUpdateExercise();
   const deleteExercise = useDeleteExercise();
 
-  const handleGenerate = (userNote?: string) => {
+  const handleGenerate = (userNote?: string, forceRefresh?: boolean) => {
     if (!dailyPlanId) return;
-    generate.mutate({ exerciseId: id, dailyPlanId, userNote });
+    generate.mutate({ exerciseId: id, dailyPlanId, userNote, forceRefresh });
   };
 
-  const handleApply = () => {
-    if (!generate.data?.suggestedExercise) return;
+  const handleApply = (alternative: AIExerciseVariation) => {
     apply.mutate(
-      { exerciseId: id, exercise: generate.data.suggestedExercise },
+      { exerciseId: id, exercise: alternative },
       {
         onSuccess: () => {
           setModalOpen(false);
@@ -80,9 +80,7 @@ export function ExerciseCard({
 
   const handleOpenChange = (open: boolean) => {
     setModalOpen(open);
-    if (!open) {
-      generate.reset();
-    }
+    if (!open) generate.reset();
   };
 
   const error = generate.error
@@ -231,20 +229,16 @@ export function ExerciseCard({
         />
       )}
 
-      {modalOpen && (
-        <AiWorkoutModal
+      {modalOpen && dailyPlanId && (
+        <ExerciseAlternativeModal
           open={modalOpen}
           onOpenChange={handleOpenChange}
-          title="AI ile Hareketi Değiştir"
-          currentExercises={[{ name, sets, reps, restSeconds, durationMinutes, notes, section, sectionLabel }]}
-          suggestedExercises={
-            generate.data?.suggestedExercise
-              ? [{ ...generate.data.suggestedExercise, section, sectionLabel }]
-              : null
-          }
+          exerciseName={name}
+          alternatives={generate.data?.alternatives ?? null}
           loading={generate.isPending}
           applying={apply.isPending}
           error={error}
+          fromCache={generate.data?.fromCache ?? false}
           onGenerate={handleGenerate}
           onApply={handleApply}
         />

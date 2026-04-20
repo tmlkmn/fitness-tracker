@@ -7,6 +7,7 @@ import {
   generateExerciseVariation,
   applyExerciseVariation,
   type AIExercise,
+  type AIExerciseVariation,
 } from "@/actions/ai-workout";
 
 // ─── Feature 1: Full Workout ────────────────────────────────────────────────
@@ -80,11 +81,13 @@ export function useGenerateExerciseVariation() {
       exerciseId,
       dailyPlanId,
       userNote,
+      forceRefresh,
     }: {
       exerciseId: number;
       dailyPlanId: number;
       userNote?: string;
-    }) => generateExerciseVariation(exerciseId, dailyPlanId, userNote),
+      forceRefresh?: boolean;
+    }) => generateExerciseVariation(exerciseId, dailyPlanId, userNote, forceRefresh),
   });
 }
 
@@ -96,7 +99,7 @@ export function useApplyExerciseVariation() {
       exercise,
     }: {
       exerciseId: number;
-      exercise: { name: string; sets: number | null; reps: string | null; restSeconds: number | null; durationMinutes: number | null; notes: string | null };
+      exercise: AIExerciseVariation;
     }) => applyExerciseVariation(exerciseId, exercise),
     onSuccess: () => {
       qc.refetchQueries({ queryKey: ["exercises"] });

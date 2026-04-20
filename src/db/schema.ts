@@ -334,6 +334,21 @@ export const exerciseTips = pgTable("exercise_tips", {
   ),
 ]);
 
+export const exerciseAlternatives = pgTable("exercise_alternatives", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  exerciseNameNorm: text("exercise_name_norm").notNull(),
+  suggestions: jsonb("suggestions").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("exercise_alternatives_user_exercise_idx").on(
+    table.userId,
+    table.exerciseNameNorm,
+  ),
+]);
+
 export const exerciseDemos = pgTable("exercise_demos", {
   id: serial("id").primaryKey(),
   exerciseNameNorm: text("exercise_name_norm").notNull().unique(),

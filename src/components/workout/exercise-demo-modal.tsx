@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Eye, AlertCircle, ChevronDown, ChevronUp, X } from "lucide-react";
 import Image from "next/image";
 import { useExerciseDemo } from "@/hooks/use-exercise-demo";
 
@@ -53,6 +53,7 @@ function getMuscleLabel(muscle: string): string {
 export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
   const [open, setOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [fullscreenSrc, setFullscreenSrc] = useState<string | null>(null);
 
   const { data, isLoading, error } = useExerciseDemo(name, open);
 
@@ -72,6 +73,25 @@ export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
       >
         <Eye className="h-3.5 w-3.5" />
       </Button>
+
+      {/* Fullscreen overlay */}
+      {fullscreenSrc && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center"
+          onClick={() => setFullscreenSrc(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={fullscreenSrc}
+            alt="Tam ekran görsel"
+            className="max-w-full max-h-full object-contain"
+          />
+          <div className="absolute top-4 right-4 p-1 rounded-full bg-white/10">
+            <X className="h-6 w-6 text-white" />
+          </div>
+        </div>
+      )}
+
       {open && (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto overflow-x-hidden">
@@ -108,7 +128,11 @@ export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
               <div className="space-y-4">
                 {/* GIF (ExerciseDB) or static images (fallback) */}
                 {data.gifUrl ? (
-                  <div className="relative w-full">
+                  <div
+                    className="relative w-full cursor-pointer"
+                    onClick={() => setFullscreenSrc(data.gifUrl!)}
+                    title="Tam ekran için tıkla"
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={data.gifUrl}
@@ -120,7 +144,12 @@ export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
                 ) : data.images.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
                     {data.images.slice(0, 2).map((url, i) => (
-                      <div key={i} className="relative aspect-[3/4]">
+                      <div
+                        key={i}
+                        className="relative aspect-[3/4] cursor-pointer"
+                        onClick={() => setFullscreenSrc(url)}
+                        title="Tam ekran için tıkla"
+                      >
                         <Image
                           src={url}
                           alt={`${name} - ${i === 0 ? "başlangıç" : "bitiş"} pozisyonu`}
