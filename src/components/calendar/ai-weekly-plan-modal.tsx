@@ -102,19 +102,33 @@ function SteppedProgress({ loading }: { loading: boolean }) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
-  // Keep screen awake during generation
+  // Keep screen awake during generation (re-acquire on iOS visibility change)
   useEffect(() => {
     if (!loading) {
       wakeLockRef.current?.release().catch(() => {});
       wakeLockRef.current = null;
       return;
     }
-    if ("wakeLock" in navigator) {
-      navigator.wakeLock.request("screen").then((lock) => {
-        wakeLockRef.current = lock;
-      }).catch(() => {});
-    }
+
+    const acquireLock = () => {
+      if ("wakeLock" in navigator && document.visibilityState === "visible") {
+        navigator.wakeLock.request("screen").then((lock) => {
+          wakeLockRef.current = lock;
+        }).catch(() => {});
+      }
+    };
+
+    acquireLock();
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible" && loading) {
+        acquireLock();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       wakeLockRef.current?.release().catch(() => {});
       wakeLockRef.current = null;
     };

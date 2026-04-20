@@ -144,8 +144,6 @@ export async function POST(request: Request) {
     return Response.json({ error: msg }, { status: 429 });
   }
 
-  await logAiUsage(userId, "weekly");
-
   // Get user's service type
   const [userRow] = await db
     .select({ serviceType: users.serviceType })
@@ -275,6 +273,9 @@ export async function POST(request: Request) {
       userNote: userNote ?? null,
       originalDate: monday,
     }).catch(() => {});
+
+    // Log usage only after successful generation — failed requests don't consume quota
+    await logAiUsage(userId, "weekly");
 
     return Response.json({ suggestedPlan });
   } catch (error) {
