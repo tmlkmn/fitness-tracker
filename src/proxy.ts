@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const publicPaths = ["/giris", "/bekliyor", "/uyelik-doldu", "/sifremi-unuttum", "/sifre-sifirla", "/api/auth", "/api/cron"];
+const publicPaths = ["/giris", "/bekliyor", "/uyelik-doldu", "/sifremi-unuttum", "/sifre-sifirla", "/api/auth", "/api/cron", "/gizlilik", "/kvkk", "/kullanim-sartlari"];
 
 function isPublic(pathname: string) {
   return publicPaths.some((p) => pathname.startsWith(p));

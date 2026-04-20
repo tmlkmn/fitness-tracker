@@ -40,7 +40,7 @@ export const auth = betterAuth({
     },
   },
   session: {
-    expiresIn: 60 * 60 * 24 * 30, // 30 days
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
   },
   plugins: [
     admin({

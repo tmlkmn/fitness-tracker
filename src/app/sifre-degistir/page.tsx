@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { forceChangePassword } from "@/actions/password";
 import { Card, CardContent } from "@/components/ui/card";
-import { KeyRound, Loader2, Eye, EyeOff } from "lucide-react";
+import { KeyRound, Loader2, Eye, EyeOff, Check, X } from "lucide-react";
+import { validatePasswordStrength, PASSWORD_REQUIREMENTS } from "@/lib/password-validation";
 
 export default function SifreDegistirPage() {
   const router = useRouter();
@@ -30,6 +31,12 @@ export default function SifreDegistirPage() {
 
     if (newPassword.length < 8) {
       setError("Şifre en az 8 karakter olmalıdır.");
+      return;
+    }
+
+    const strength = validatePasswordStrength(newPassword);
+    if (!strength.valid) {
+      setError(strength.error!);
       return;
     }
 
@@ -79,10 +86,10 @@ export default function SifreDegistirPage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  minLength={8}
+                  minLength={10}
                   autoComplete="new-password"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  placeholder="En az 8 karakter"
+                  placeholder="En az 10 karakter"
                 />
                 <button
                   type="button"
@@ -93,6 +100,21 @@ export default function SifreDegistirPage() {
                   {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {newPassword && (
+                <ul className="space-y-0.5 mt-1.5">
+                  {[
+                    { label: "En az 10 karakter", ok: newPassword.length >= 10 },
+                    { label: "Büyük harf (A-Z)", ok: /[A-Z]/.test(newPassword) },
+                    { label: "Rakam (0-9)", ok: /[0-9]/.test(newPassword) },
+                    { label: "Özel karakter", ok: /[^a-zA-Z0-9]/.test(newPassword) },
+                  ].map((r) => (
+                    <li key={r.label} className="flex items-center gap-1.5 text-xs">
+                      {r.ok ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-muted-foreground" />}
+                      <span className={r.ok ? "text-green-500" : "text-muted-foreground"}>{r.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -109,7 +131,7 @@ export default function SifreDegistirPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  minLength={8}
+                  minLength={10}
                   autoComplete="new-password"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   placeholder="••••••••"

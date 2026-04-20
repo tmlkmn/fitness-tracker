@@ -9,6 +9,7 @@ import { getAuthAdmin } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { sendNotification } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
 
 export type MembershipType = "unlimited" | "1-month" | "3-month" | "6-month" | "1-year" | "custom";
 
@@ -18,7 +19,7 @@ export interface MembershipInput {
 }
 
 export async function inviteUser(email: string, name: string, membership: MembershipInput) {
-  await getAuthAdmin();
+  const admin = await getAuthAdmin();
 
   const tempPassword = crypto.randomUUID().slice(0, 12);
   const inviteExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -61,6 +62,9 @@ export async function inviteUser(email: string, name: string, membership: Member
   }
 
   revalidatePath("/admin");
+
+  logAudit({ adminId: admin.id, action: "user.invite", entityType: "user", entityId: newUser?.id, details: { email, name, membershipType: membership.type } }).catch(() => {});
+
   return { success: true, tempPassword };
 }
 
@@ -113,7 +117,7 @@ export async function listAllUsers(): Promise<UserWithStatus[]> {
 }
 
 export async function resendInvite(userId: string) {
-  await getAuthAdmin();
+  const admin = await getAuthAdmin();
 
   const [user] = await db
     .select()
@@ -137,12 +141,13 @@ export async function resendInvite(userId: string) {
     .where(eq(users.id, userId));
 
   await sendInviteEmail(user.email, tempPassword);
+  logAudit({ adminId: admin.id, action: "user.resend_invite", entityType: "user", entityId: userId, details: { email: user.email } }).catch(() => {});
   revalidatePath("/admin");
   return { success: true };
 }
 
 export async function removeUserAction(userId: string) {
-  await getAuthAdmin();
+  const admin = await getAuthAdmin();
 
   const [user] = await db
     .select({ role: users.role })
@@ -156,6 +161,8 @@ export async function removeUserAction(userId: string) {
     headers: await headers(),
     body: { userId },
   });
+
+  logAudit({ adminId: admin.id, action: "user.remove", entityType: "user", entityId: userId }).catch(() => {});
 
   revalidatePath("/admin");
   return { success: true };
@@ -187,7 +194,7 @@ export async function extendMembership(
   newType: MembershipType,
   customEndDate?: string
 ) {
-  await getAuthAdmin();
+  const admin = await getAuthAdmin();
 
   const [user] = await db.select().from(users).where(eq(users.id, userId));
   if (!user) throw new Error("User not found");
@@ -219,6 +226,8 @@ export async function extendMembership(
   }
 
   await db.update(users).set(updateData).where(eq(users.id, userId));
+
+  logAudit({ adminId: admin.id, action: "membership.extend", entityType: "user", entityId: userId, details: { newType, customEndDate, endDate: updateData.membershipEndDate } }).catch(() => {});
 
   const endDateFormatted = updateData.membershipEndDate
     ? (updateData.membershipEndDate as Date).toLocaleDateString("tr-TR")

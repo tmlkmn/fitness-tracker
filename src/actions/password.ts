@@ -8,6 +8,8 @@ import { getAuthSession } from "@/lib/auth-utils";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { computeMembershipEndDate } from "@/actions/admin";
+import { validatePasswordStrength } from "@/lib/password-validation";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function forceChangePassword(newPassword: string) {
   const user = await getAuthSession();
@@ -17,8 +19,9 @@ export async function forceChangePassword(newPassword: string) {
     throw new Error("Password change not required");
   }
 
-  if (newPassword.length < 8) {
-    throw new Error("Şifre en az 8 karakter olmalıdır");
+  const strength = validatePasswordStrength(newPassword);
+  if (!strength.valid) {
+    throw new Error(strength.error!);
   }
 
   const hashed = await hashPassword(newPassword);
@@ -66,19 +69,28 @@ export async function forceChangePassword(newPassword: string) {
 }
 
 export async function requestPasswordReset(email: string) {
-  // Check if user exists before attempting reset
-  const [existingUser] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.email, email));
-
-  if (!existingUser) {
-    return { success: false, error: "UserNotFound" };
+  // Rate limit: 3 requests per hour per email
+  try {
+    checkRateLimit(`reset:${email.toLowerCase()}`, RATE_LIMITS.passwordReset.maxAttempts, RATE_LIMITS.passwordReset.windowMs);
+  } catch {
+    return { success: false, error: "TooManyRequests" };
   }
 
-  await auth.api.requestPasswordReset({
-    body: { email, redirectTo: "/sifre-sifirla" },
-  });
+  // Always return success to prevent user enumeration
+  try {
+    const [existingUser] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email));
+
+    if (existingUser) {
+      await auth.api.requestPasswordReset({
+        body: { email, redirectTo: "/sifre-sifirla" },
+      });
+    }
+  } catch {
+    // Swallow errors — don't reveal whether email exists
+  }
 
   return { success: true, error: null };
 }

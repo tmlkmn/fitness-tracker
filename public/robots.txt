@@ -1,2 +1,8 @@
 User-agent: *
+Allow: /tanitim
+Allow: /gizlilik
+Allow: /kvkk
+Allow: /kullanim-sartlari
 Disallow: /
+
+Sitemap: https://fitmusc.com/sitemap.xml

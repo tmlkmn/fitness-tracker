@@ -4,8 +4,9 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Card, CardContent } from "@/components/ui/card";
-import { KeyRound, Loader2, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { KeyRound, Loader2, CheckCircle, Eye, EyeOff, Check, X } from "lucide-react";
 import Link from "next/link";
+import { validatePasswordStrength } from "@/lib/password-validation";
 
 export default function SifreSifirlaPage() {
   return (
@@ -58,8 +59,14 @@ function SifreSifirlaContent() {
     e.preventDefault();
     setError("");
 
-    if (newPassword.length < 8) {
-      setError("Şifre en az 8 karakter olmalıdır.");
+    if (newPassword.length < 10) {
+      setError("Şifre en az 10 karakter olmalıdır.");
+      return;
+    }
+
+    const strength = validatePasswordStrength(newPassword);
+    if (!strength.valid) {
+      setError(strength.error!);
       return;
     }
 
@@ -139,10 +146,10 @@ function SifreSifirlaContent() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  minLength={8}
+                  minLength={10}
                   autoComplete="new-password"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  placeholder="En az 8 karakter"
+                  placeholder="En az 10 karakter"
                 />
                 <button
                   type="button"
@@ -153,6 +160,21 @@ function SifreSifirlaContent() {
                   {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {newPassword && (
+                <ul className="space-y-0.5 mt-1.5">
+                  {[
+                    { label: "En az 10 karakter", ok: newPassword.length >= 10 },
+                    { label: "Büyük harf (A-Z)", ok: /[A-Z]/.test(newPassword) },
+                    { label: "Rakam (0-9)", ok: /[0-9]/.test(newPassword) },
+                    { label: "Özel karakter", ok: /[^a-zA-Z0-9]/.test(newPassword) },
+                  ].map((r) => (
+                    <li key={r.label} className="flex items-center gap-1.5 text-xs">
+                      {r.ok ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-muted-foreground" />}
+                      <span className={r.ok ? "text-green-500" : "text-muted-foreground"}>{r.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -169,7 +191,7 @@ function SifreSifirlaContent() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  minLength={8}
+                  minLength={10}
                   autoComplete="new-password"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   placeholder="••••••••"

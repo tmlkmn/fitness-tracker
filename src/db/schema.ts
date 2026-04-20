@@ -451,3 +451,29 @@ export const sleepLogs = pgTable("sleep_logs", {
 }, (table) => [
   uniqueIndex("sleep_log_user_date_idx").on(table.userId, table.logDate),
 ]);
+
+// ── Audit Logs ──
+
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").references(() => users.id),
+  adminId: text("admin_id"),
+  action: text("action").notNull(),
+  entityType: text("entity_type"),
+  entityId: text("entity_id"),
+  details: jsonb("details"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ── Cookie Consents ──
+
+export const cookieConsents = pgTable("cookie_consents", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").references(() => users.id),
+  sessionId: text("session_id"),
+  necessary: boolean("necessary").default(true).notNull(),
+  analytics: boolean("analytics").default(false).notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  consentedAt: timestamp("consented_at").defaultNow().notNull(),
+});
