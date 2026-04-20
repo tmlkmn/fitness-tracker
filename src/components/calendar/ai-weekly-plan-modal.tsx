@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +35,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import type { AIWeeklyPlan, AIWeeklyDay } from "@/actions/ai-weekly";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import {
   useSavedSuggestions,
@@ -402,6 +403,11 @@ function formatTimeAgo(date: Date): string {
   return `${d} gün önce`;
 }
 
+function formatWeekLabel(mondayStr: string): string {
+  const d = new Date(mondayStr + "T00:00:00");
+  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long" });
+}
+
 // ─── Main Modal ─────────────────────────────────────────────────────────────
 
 export function AiWeeklyPlanModal({
@@ -435,10 +441,25 @@ export function AiWeeklyPlanModal({
   const [showSaved, setShowSaved] = useState(false);
   const [savedPlanToPreview, setSavedPlanToPreview] = useState<AIWeeklyPlan | null>(null);
   const [selectedSavedId, setSelectedSavedId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   const { data: savedList } = useSavedSuggestions(open);
   const { data: savedDetail, isLoading: loadingSavedDetail } = useSavedSuggestionDetail(selectedSavedId);
   const deleteSaved = useDeleteSavedSuggestion();
+
+  // Group suggestions by week for display
+  const groupedSuggestions = useMemo(() => {
+    if (!savedList) return [];
+    const byWeek = new Map<string, typeof savedList>();
+    for (const item of savedList) {
+      const key = item.originalDate ?? "unknown";
+      if (!byWeek.has(key)) byWeek.set(key, []);
+      byWeek.get(key)!.push(item);
+    }
+    return Array.from(byWeek.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([weekDate, items]) => ({ weekDate, items }));
+  }, [savedList]);
 
   // When saved detail loads, show preview
   useEffect(() => {
@@ -452,12 +473,18 @@ export function AiWeeklyPlanModal({
   };
 
   const handleDeleteSaved = (id: number) => {
-    deleteSaved.mutate(id, {
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDeleteSaved = () => {
+    if (deleteConfirmId === null) return;
+    deleteSaved.mutate(deleteConfirmId, {
       onSuccess: () => {
-        if (selectedSavedId === id) {
+        if (selectedSavedId === deleteConfirmId) {
           setSelectedSavedId(null);
           setSavedPlanToPreview(null);
         }
+        setDeleteConfirmId(null);
       },
     });
   };
@@ -810,40 +837,53 @@ export function AiWeeklyPlanModal({
                 </div>
               )}
               {savedList && savedList.length > 0 ? (
-                <div className="space-y-1.5">
-                  {savedList.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSelectSaved(item.id)}
-                      className="w-full flex items-start gap-2 p-2.5 rounded-lg bg-muted/50 text-left hover:bg-muted transition-colors"
-                    >
-                      <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-xs font-medium line-clamp-2">{item.title}</span>
-                          <Badge variant="outline" className="text-[10px] shrink-0">
-                            {item.phase}
-                          </Badge>
-                        </div>
-                        {item.userNote && (
-                          <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">
-                            {item.userNote}
-                          </p>
-                        )}
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          {formatTimeAgo(item.createdAt)}
-                        </p>
+                <div className="space-y-3">
+                  {groupedSuggestions.map(({ weekDate, items }) => (
+                    <div key={weekDate}>
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
+                        {weekDate !== "unknown"
+                          ? `${formatWeekLabel(weekDate)} haftası`
+                          : "Tarihsiz"}
+                      </p>
+                      <div className="space-y-1.5">
+                        {items.map((item, idx) => (
+                          <button
+                            key={item.id}
+                            onClick={() => handleSelectSaved(item.id)}
+                            className="w-full flex items-start gap-2 p-2.5 rounded-lg bg-muted/50 text-left hover:bg-muted transition-colors"
+                          >
+                            <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-xs font-medium line-clamp-2">
+                                  Öneri {idx + 1} — {item.title}
+                                </span>
+                                <Badge variant="outline" className="text-[10px] shrink-0">
+                                  {item.phase}
+                                </Badge>
+                              </div>
+                              {item.userNote && (
+                                <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">
+                                  {item.userNote}
+                                </p>
+                              )}
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {formatTimeAgo(item.createdAt)}
+                              </p>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSaved(item.id);
+                              }}
+                              className="p-1 rounded hover:bg-destructive/10 transition-colors shrink-0"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                            </button>
+                          </button>
+                        ))}
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSaved(item.id);
-                        }}
-                        className="p-1 rounded hover:bg-destructive/10 transition-colors shrink-0"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                      </button>
-                    </button>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -958,6 +998,26 @@ export function AiWeeklyPlanModal({
           )}
         </div>
       </DialogContent>
+
+      {/* Delete saved suggestion confirmation */}
+      <Dialog open={deleteConfirmId !== null} onOpenChange={(o) => { if (!o) setDeleteConfirmId(null); }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Öneriyi Sil</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Bu kayıtlı öneriyi silmek istediğinizden emin misiniz?
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
+              İptal
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteSaved} disabled={deleteSaved.isPending}>
+              {deleteSaved.isPending ? "Siliniyor..." : "Sil"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

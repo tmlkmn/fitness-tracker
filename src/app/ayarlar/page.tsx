@@ -193,12 +193,18 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
   }, [profile?.dailyRoutine, profile?.weekendRoutine]);
 
   const handleSave = async () => {
-    const filteredWeekday = weekdayItems.filter((i) => i.time.trim() && i.event.trim());
-    const filteredWeekend = weekendItems.filter((i) => i.time.trim() && i.event.trim());
+    const filteredWeekday = weekdayItems
+      .filter((i) => i.time.trim() && i.event.trim())
+      .sort((a, b) => a.time.localeCompare(b.time));
+    const filteredWeekend = weekendItems
+      .filter((i) => i.time.trim() && i.event.trim())
+      .sort((a, b) => a.time.localeCompare(b.time));
     setSaving(true);
     try {
       await updateDailyRoutine(filteredWeekday);
       await updateWeekendRoutine(filteredWeekend);
+      setWeekdayItems(filteredWeekday);
+      setWeekendItems(filteredWeekend);
       await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       setEditing(false);
     } finally {
@@ -208,6 +214,12 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
 
   const items = activeTab === "weekday" ? weekdayItems : weekendItems;
   const setItems = activeTab === "weekday" ? setWeekdayItems : setWeekendItems;
+
+  const startEditing = () => {
+    setWeekdayItems((prev) => [...prev].sort((a, b) => a.time.localeCompare(b.time)));
+    setWeekendItems((prev) => [...prev].sort((a, b) => a.time.localeCompare(b.time)));
+    setEditing(true);
+  };
 
   const tabButton = (tab: "weekday" | "weekend", label: string) => (
     <button
@@ -274,7 +286,7 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
           <>
             <div className="border-t border-border/50 my-2" />
             <button
-              onClick={() => setEditing(true)}
+              onClick={startEditing}
               className="flex items-center gap-2 text-xs text-yellow-500 hover:underline"
             >
               <AlertTriangle className="h-3 w-3" />
@@ -283,7 +295,7 @@ function DailyRoutineEditor({ profile }: { profile: ReturnType<typeof useUserPro
           </>
         )}
         <button
-          onClick={() => setEditing(true)}
+          onClick={startEditing}
           className="text-xs text-primary hover:underline mt-2"
         >
           {weekdayItems.length > 0 ? "Düzenle" : "Ekle"}

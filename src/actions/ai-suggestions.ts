@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { aiPlanSuggestions } from "@/db/schema";
-import { eq, and, asc, sql } from "drizzle-orm";
+import { eq, and, asc, sql, gte, or } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import { validateWeeklyPlan, type AIWeeklyPlan } from "@/lib/ai-weekly-types";
 
@@ -69,6 +69,15 @@ export interface SavedSuggestionMeta {
 export async function getSavedSuggestions(): Promise<SavedSuggestionMeta[]> {
   const user = await getAuthUser();
 
+  // Calculate current week's Monday (Turkey timezone)
+  const { getTurkeyTodayStr } = await import("@/lib/utils");
+  const today = getTurkeyTodayStr();
+  const todayDate = new Date(today + "T00:00:00");
+  const dayOfWeek = todayDate.getDay();
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  todayDate.setDate(todayDate.getDate() + diff);
+  const currentMonday = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, "0")}-${String(todayDate.getDate()).padStart(2, "0")}`;
+
   const rows = await db
     .select({
       id: aiPlanSuggestions.id,
@@ -79,7 +88,15 @@ export async function getSavedSuggestions(): Promise<SavedSuggestionMeta[]> {
       createdAt: aiPlanSuggestions.createdAt,
     })
     .from(aiPlanSuggestions)
-    .where(eq(aiPlanSuggestions.userId, user.id))
+    .where(
+      and(
+        eq(aiPlanSuggestions.userId, user.id),
+        or(
+          gte(aiPlanSuggestions.originalDate, currentMonday),
+          sql`${aiPlanSuggestions.originalDate} IS NULL`,
+        ),
+      ),
+    )
     .orderBy(asc(aiPlanSuggestions.createdAt));
 
   return rows.map((r) => ({
