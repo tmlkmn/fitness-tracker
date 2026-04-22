@@ -10,6 +10,7 @@ interface Item {
   quantity: string;
   notes?: string | null;
   isPurchased: boolean | null;
+  mealIds?: number[] | null;
 }
 
 interface ShoppingCategoryProps {

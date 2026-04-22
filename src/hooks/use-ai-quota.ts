@@ -4,7 +4,7 @@ import type { AIFeature } from "@/lib/ai";
 
 export function useAiQuota() {
   return useQuery({
-    queryKey: ["ai-quota"],
+    queryKey: ["ai.quota"],
     queryFn: () => getAiQuotas(),
     staleTime: 30_000,
   });
@@ -12,7 +12,7 @@ export function useAiQuota() {
 
 export function useInvalidateAiQuota() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: ["ai-quota"] });
+  return () => qc.invalidateQueries({ queryKey: ["ai.quota"] });
 }
 
 export function getQuota(

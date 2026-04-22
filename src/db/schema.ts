@@ -44,8 +44,27 @@ export const users = pgTable("user", {
   membershipEndDate: timestamp("membership_end_date"),
   membershipNotifiedAt: timestamp("membership_notified_at"),
   hasSeenOnboarding: boolean("has_seen_onboarding").default(false),
+  targetCalories: integer("target_calories"),
+  targetProteinG: numeric("target_protein_g"),
+  targetCarbsG: numeric("target_carbs_g"),
+  targetFatG: numeric("target_fat_g"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const userFoods = pgTable("user_foods", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  portion: text("portion").notNull(),
+  calories: integer("calories").notNull(),
+  proteinG: numeric("protein_g"),
+  carbsG: numeric("carbs_g"),
+  fatG: numeric("fat_g"),
+  category: text("category"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const sessions = pgTable("session", {
@@ -126,6 +145,7 @@ export const meals = pgTable("meals", {
   proteinG: numeric("protein_g"),
   carbsG: numeric("carbs_g"),
   fatG: numeric("fat_g"),
+  icon: text("icon"),
   isCompleted: boolean("is_completed").default(false),
   sortOrder: integer("sort_order").notNull().default(0),
 });
@@ -235,6 +255,7 @@ export const shoppingLists = pgTable("shopping_lists", {
   notes: text("notes"),
   isPurchased: boolean("is_purchased").default(false),
   sortOrder: integer("sort_order").notNull().default(0),
+  mealIds: jsonb("meal_ids").$type<number[]>(),
 });
 
 export const shares = pgTable("shares", {

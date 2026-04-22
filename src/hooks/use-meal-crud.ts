@@ -20,7 +20,7 @@ export function useCreateMeal() {
       };
     }) => createMeal(dailyPlanId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["meals"] });
+      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
     },
   });
 }
@@ -44,7 +44,7 @@ export function useUpdateMeal() {
       };
     }) => updateMeal(mealId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["meals"] });
+      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
     },
   });
 }
@@ -54,8 +54,8 @@ export function useDeleteMeal() {
   return useMutation({
     mutationFn: (mealId: number) => deleteMeal(mealId),
     onMutate: async (mealId) => {
-      await qc.cancelQueries({ queryKey: ["meals"] });
-      const queries = qc.getQueriesData<{ id: number }[]>({ queryKey: ["meals"] });
+      await qc.cancelQueries({ queryKey: ["meals.byDay"] });
+      const queries = qc.getQueriesData<{ id: number }[]>({ queryKey: ["meals.byDay"] });
       for (const [key, data] of queries) {
         if (Array.isArray(data)) {
           qc.setQueryData(key, data.filter((m) => m.id !== mealId));
@@ -71,7 +71,7 @@ export function useDeleteMeal() {
       }
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["meals"] });
+      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
     },
   });
 }
@@ -81,7 +81,7 @@ export function useDeleteAllMeals() {
   return useMutation({
     mutationFn: (dailyPlanId: number) => deleteAllMeals(dailyPlanId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["meals"] });
+      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
     },
   });
 }

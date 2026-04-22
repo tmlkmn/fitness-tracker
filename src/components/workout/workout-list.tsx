@@ -18,6 +18,7 @@ import {
   useApplyWorkoutReplacement,
 } from "@/hooks/use-workout-ai";
 import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
+import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 
 interface WorkoutListProps {
   dailyPlanId: number;
@@ -92,7 +93,8 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
             <div className="flex gap-2 justify-center flex-wrap">
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleOpenChange(true)} disabled={workoutQuota?.remaining === 0}>
                 <Sparkles className="h-3.5 w-3.5" />
-                {workoutQuota?.remaining === 0 ? "Limit doldu" : `AI ile Oluştur${workoutQuota ? ` (${workoutQuota.remaining})` : ""}`}
+                AI ile Oluştur
+                <AiQuotaBadge feature="workout" />
               </Button>
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setCopyOpen(true)}>
                 <Copy className="h-3.5 w-3.5" />
@@ -197,7 +199,8 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
             disabled={workoutQuota?.remaining === 0}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            {workoutQuota?.remaining === 0 ? "Günlük limit doldu" : `AI ile Programı Değiştir${workoutQuota ? ` (${workoutQuota.remaining})` : ""}`}
+            AI ile Programı Değiştir
+            <AiQuotaBadge feature="workout" />
           </Button>
         )}
         {sortedSections.map(([section, { label, exercises }]) => (

@@ -18,8 +18,8 @@ export function useBulkCompleteMeals() {
   return useMutation({
     mutationFn: (dailyPlanId: number) => completeAllMeals(dailyPlanId),
     onMutate: async () => {
-      await qc.cancelQueries({ queryKey: ["meals"] });
-      const queries = qc.getQueriesData<MealItem[]>({ queryKey: ["meals"] });
+      await qc.cancelQueries({ queryKey: ["meals.byDay"] });
+      const queries = qc.getQueriesData<MealItem[]>({ queryKey: ["meals.byDay"] });
       for (const [key, data] of queries) {
         if (Array.isArray(data)) {
           qc.setQueryData(key, data.map((m) => ({ ...m, isCompleted: true })));
@@ -35,7 +35,7 @@ export function useBulkCompleteMeals() {
       }
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["meals"] });
+      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
       qc.invalidateQueries({ queryKey: ["today-dashboard"] });
     },
   });

@@ -27,10 +27,35 @@ export async function getUserProfile() {
       membershipStartDate: users.membershipStartDate,
       membershipEndDate: users.membershipEndDate,
       hasSeenOnboarding: users.hasSeenOnboarding,
+      targetCalories: users.targetCalories,
+      targetProteinG: users.targetProteinG,
+      targetCarbsG: users.targetCarbsG,
+      targetFatG: users.targetFatG,
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false, targetCalories: null, targetProteinG: null, targetCarbsG: null, targetFatG: null };
+}
+
+export async function updateMacroTargets(data: {
+  targetCalories: number | null;
+  targetProteinG: string | null;
+  targetCarbsG: string | null;
+  targetFatG: string | null;
+}) {
+  const user = await getAuthUser();
+  await db
+    .update(users)
+    .set({
+      targetCalories: data.targetCalories,
+      targetProteinG: data.targetProteinG,
+      targetCarbsG: data.targetCarbsG,
+      targetFatG: data.targetFatG,
+    })
+    .where(eq(users.id, user.id));
+  revalidatePath("/");
+  revalidatePath("/ayarlar");
+  revalidatePath("/gun", "layout");
 }
 
 export async function updateUserWeightTargets(data: {

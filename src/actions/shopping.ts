@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { shoppingLists, dailyPlans, meals } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { shoppingLists, dailyPlans, meals, weeklyPlans } from "@/db/schema";
+import { eq, asc, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
@@ -41,6 +41,7 @@ export async function generateShoppingList(weeklyPlanId: number) {
   // Fetch all meals for this week
   const weekMeals = await db
     .select({
+      id: meals.id,
       dayName: dailyPlans.dayName,
       mealLabel: meals.mealLabel,
       content: meals.content,
@@ -54,9 +55,11 @@ export async function generateShoppingList(weeklyPlanId: number) {
     throw new Error("NO_MEALS");
   }
 
-  // Build meal summary for AI
+  const validMealIds = new Set(weekMeals.map((m) => m.id));
+
+  // Build meal summary for AI — include id so AI can return mealIds per item
   const mealSummary = weekMeals
-    .map((m) => `${m.dayName} - ${m.mealLabel}: ${m.content}`)
+    .map((m) => `[id:${m.id}] ${m.dayName} - ${m.mealLabel}: ${m.content}`)
     .join("\n");
 
   try {
@@ -96,7 +99,7 @@ export async function generateShoppingList(weeklyPlanId: number) {
     cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
 
     const parsed = JSON.parse(cleaned) as {
-      items: { category: string; itemName: string; quantity: string; notes: string | null }[];
+      items: { category: string; itemName: string; quantity: string; notes: string | null; mealIds?: number[] }[];
     };
 
     if (!Array.isArray(parsed.items) || parsed.items.length === 0) {
@@ -108,15 +111,21 @@ export async function generateShoppingList(weeklyPlanId: number) {
       .delete(shoppingLists)
       .where(eq(shoppingLists.weeklyPlanId, weeklyPlanId));
 
-    // Insert new items
-    const values = parsed.items.map((item, idx) => ({
-      weeklyPlanId,
-      category: item.category,
-      itemName: item.itemName,
-      quantity: item.quantity,
-      notes: item.notes,
-      sortOrder: idx,
-    }));
+    // Insert new items — filter mealIds to only valid ones from this week
+    const values = parsed.items.map((item, idx) => {
+      const cleanIds = Array.isArray(item.mealIds)
+        ? item.mealIds.filter((id) => typeof id === "number" && validMealIds.has(id))
+        : null;
+      return {
+        weeklyPlanId,
+        category: item.category,
+        itemName: item.itemName,
+        quantity: item.quantity,
+        notes: item.notes,
+        sortOrder: idx,
+        mealIds: cleanIds && cleanIds.length > 0 ? cleanIds : null,
+      };
+    });
 
     await db.insert(shoppingLists).values(values);
     revalidatePath("/alisveris");
@@ -127,6 +136,23 @@ export async function generateShoppingList(weeklyPlanId: number) {
     console.error("[AI] Error generating shopping list:", error);
     throw new Error("AI_UNAVAILABLE");
   }
+}
+
+export async function getMealsByIds(mealIds: number[]) {
+  const user = await getAuthUser();
+  if (mealIds.length === 0) return [];
+  const rows = await db
+    .select({
+      id: meals.id,
+      mealLabel: meals.mealLabel,
+      content: meals.content,
+      dayName: dailyPlans.dayName,
+    })
+    .from(meals)
+    .innerJoin(dailyPlans, eq(meals.dailyPlanId, dailyPlans.id))
+    .innerJoin(weeklyPlans, eq(dailyPlans.weeklyPlanId, weeklyPlans.id))
+    .where(and(inArray(meals.id, mealIds), eq(weeklyPlans.userId, user.id)));
+  return rows;
 }
 
 export async function deleteShoppingList(weeklyPlanId: number) {

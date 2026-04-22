@@ -258,3 +258,29 @@ export async function getEmptyWeeksBetween(
 
   return emptyWeeks;
 }
+
+export async function getUpcomingDailyPlans() {
+  const user = await getAuthUser();
+  const { getTurkeyTodayStr } = await import("@/lib/utils");
+  const today = getTurkeyTodayStr();
+  return db
+    .select({
+      id: dailyPlans.id,
+      weeklyPlanId: dailyPlans.weeklyPlanId,
+      dayOfWeek: dailyPlans.dayOfWeek,
+      dayName: dailyPlans.dayName,
+      planType: dailyPlans.planType,
+      workoutTitle: dailyPlans.workoutTitle,
+      date: dailyPlans.date,
+    })
+    .from(dailyPlans)
+    .innerJoin(weeklyPlans, eq(dailyPlans.weeklyPlanId, weeklyPlans.id))
+    .where(
+      and(
+        eq(weeklyPlans.userId, user.id),
+        gte(dailyPlans.date, today),
+      ),
+    )
+    .orderBy(asc(dailyPlans.date))
+    .limit(40);
+}

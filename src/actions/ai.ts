@@ -5,7 +5,7 @@ import { exerciseTips, meals, dailyPlans } from "@/db/schema";
 import { and, eq, gte, asc, ne } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
-import { buildUserContext } from "@/lib/ai-context";
+import { buildUserContext, getMealMacroBudget } from "@/lib/ai-context";
 import {
   MEAL_VARIATION_PROMPT,
   EXERCISE_TIPS_PROMPT,
@@ -62,6 +62,7 @@ export async function generateMealVariation(
   // Build week context: what other meals of the same label exist this week
   let weekContext = "";
   let planTypeContext = "";
+  let budgetContext = "";
   if (mealId) {
     try {
       const [currentMeal] = await db
@@ -70,6 +71,15 @@ export async function generateMealVariation(
         .where(eq(meals.id, mealId));
 
       if (currentMeal?.dailyPlanId) {
+        try {
+          const budget = await getMealMacroBudget(user.id, currentMeal.dailyPlanId, mealId);
+          if (budget.text) {
+            budgetContext = `\n\n${budget.text}`;
+          }
+        } catch {
+          // Best effort — proceed without budget
+        }
+
         const [currentDay] = await db
           .select({ weeklyPlanId: dailyPlans.weeklyPlanId, planType: dailyPlans.planType })
           .from(dailyPlans)
@@ -86,26 +96,28 @@ export async function generateMealVariation(
         }
 
         if (currentDay?.weeklyPlanId) {
-          const weekDays = await db
-            .select({ id: dailyPlans.id, dayName: dailyPlans.dayName })
-            .from(dailyPlans)
-            .where(eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId))
-            .orderBy(asc(dailyPlans.dayOfWeek));
+          const sameLabelRows = await db
+            .select({
+              dayName: dailyPlans.dayName,
+              dayOfWeek: dailyPlans.dayOfWeek,
+              mealTime: meals.mealTime,
+              content: meals.content,
+            })
+            .from(meals)
+            .innerJoin(dailyPlans, eq(meals.dailyPlanId, dailyPlans.id))
+            .where(
+              and(
+                eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId),
+                eq(meals.mealLabel, mealLabel),
+                ne(meals.id, mealId),
+              ),
+            )
+            .orderBy(asc(dailyPlans.dayOfWeek), asc(meals.mealTime));
 
-          const sameLabelMeals: string[] = [];
-          for (const day of weekDays) {
-            const dayMeals = await db
-              .select({ id: meals.id, mealLabel: meals.mealLabel, content: meals.content })
-              .from(meals)
-              .where(and(eq(meals.dailyPlanId, day.id), eq(meals.mealLabel, mealLabel), ne(meals.id, mealId)))
-              .orderBy(asc(meals.mealTime));
-
-            for (const m of dayMeals) {
-              sameLabelMeals.push(`${day.dayName}: ${m.content}`);
-            }
-          }
-
-          if (sameLabelMeals.length > 0) {
+          if (sameLabelRows.length > 0) {
+            const sameLabelMeals = sameLabelRows.map(
+              (r) => `${r.dayName}: ${r.content}`,
+            );
             weekContext = `\n\nBu hafta aynı öğün tipinde (${mealLabel}) zaten şunlar var, bunları TEKRARLAMA:\n${sameLabelMeals.join("\n")}`;
           }
         }
@@ -142,7 +154,7 @@ export async function generateMealVariation(
       messages: [
         {
           role: "user",
-          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${planTypeContext}${weekContext}${prevContext}${noteContext}\n\nBu öğüne benzer makrolarla birbirinden FARKLI 3 alternatif öğün öner. Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`,
+          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${planTypeContext}${budgetContext}${weekContext}${prevContext}${noteContext}\n\nBu öğüne benzer makrolarla birbirinden FARKLI 3 alternatif öğün öner. Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı. Eğer kalan makro bütçesi verilmişse, önerilerini bu bütçeye uyumlu yap. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`,
         },
       ],
     });

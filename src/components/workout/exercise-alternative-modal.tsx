@@ -22,6 +22,7 @@ import {
 import { useState } from "react";
 import type { AIExerciseVariation } from "@/actions/ai-workout";
 import { ExerciseDemoModal } from "./exercise-demo-modal";
+import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -211,10 +212,11 @@ export function ExerciseAlternativeModal({
               <Button
                 onClick={() => handleGenerate(false)}
                 disabled={loading}
-                className="w-full"
+                className="w-full gap-1.5"
               >
-                <Sparkles className="h-4 w-4 mr-2" />
+                <Sparkles className="h-4 w-4" />
                 Öneri Al
+                <AiQuotaBadge feature="exercise" />
               </Button>
             </div>
           )}

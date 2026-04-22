@@ -35,6 +35,8 @@ import {
   AlertTriangle,
   Share2,
   Bell,
+  BookOpen,
+  ChevronRight,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
@@ -42,6 +44,7 @@ import { updateDailyRoutine, updateWeekendRoutine, updateSupplementSchedule, upd
 import { ShareManager } from "@/components/sharing/share-manager";
 import { NotificationPreferencesCard } from "@/components/notifications/notification-preferences-card";
 import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
+import { MacroTargetsCard } from "@/components/meals/macro-targets-card";
 import { PwaInstallCard } from "@/components/layout/pwa-install-card";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 import {
@@ -1097,6 +1100,23 @@ function AyarlarContent() {
         )}
 
         <ProfileEditor profile={profile} userEmail={user?.email} />
+
+        <MacroTargetsCard />
+
+        <Link href="/ogunlerim" className="block">
+          <Card className="hover:bg-accent transition-colors cursor-pointer">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <BookOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">Öğün Kütüphanem</p>
+                <p className="text-xs text-muted-foreground">Kayıtlı öğünler ve günlük planlar</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </CardContent>
+          </Card>
+        </Link>
 
         <NotificationPreferencesCard />
 

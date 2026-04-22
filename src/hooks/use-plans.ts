@@ -10,6 +10,7 @@ import {
   getDatesWithPlansForMonth,
   getTodayDashboardData,
   getEmptyWeeksBetween,
+  getUpcomingDailyPlans,
 } from "@/actions/plans";
 
 export function useAllWeeks() {
@@ -79,6 +80,13 @@ export function useTodayDashboard() {
   return useQuery({
     queryKey: ["today-dashboard"],
     queryFn: getTodayDashboardData,
+  });
+}
+
+export function useUpcomingDailyPlans() {
+  return useQuery({
+    queryKey: ["upcoming-daily-plans"],
+    queryFn: getUpcomingDailyPlans,
   });
 }
 

@@ -28,6 +28,8 @@ import {
   useSaveMealSuggestion,
   useDeleteSavedMealSuggestion,
 } from "@/hooks/use-saved-meals";
+import { useInvalidateAiQuota } from "@/hooks/use-ai-quota";
+import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 
 const INGREDIENT_TAGS = [
   "Tavuk", "Kırmızı et", "Balık", "Yumurta", "Ton balığı",
@@ -76,6 +78,7 @@ export function AiSuggestionModal({
   const saveMeal = useSaveMealSuggestion();
   const deleteSaved = useDeleteSavedMealSuggestion();
   const { data: savedMeals, isLoading: savedLoading } = useSavedMealSuggestions();
+  const invalidateQuota = useInvalidateAiQuota();
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savedFilter, setSavedFilter] = useState<string | null>(null);
 
@@ -126,6 +129,7 @@ export function AiSuggestionModal({
       setError(message);
     } finally {
       setLoading(false);
+      invalidateQuota();
     }
   };
 
@@ -293,10 +297,11 @@ export function AiSuggestionModal({
                 <Button
                   onClick={generateSuggestion}
                   disabled={loading}
-                  className="flex-1"
+                  className="flex-1 gap-1.5"
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
+                  <Sparkles className="h-4 w-4" />
                   Öneri Al
+                  <AiQuotaBadge feature="meal" />
                 </Button>
                 {savedMeals && savedMeals.length > 0 && (
                   <Button

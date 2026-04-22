@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { getMealsByDay, toggleMealCompleted } from "@/actions/meals";
 
 type Meal = Awaited<ReturnType<typeof getMealsByDay>>[number];
 
 export function useMeals(dailyPlanId: number) {
   return useQuery({
-    queryKey: ["meals", dailyPlanId],
+    queryKey: ["meals.byDay", dailyPlanId],
     queryFn: () => getMealsByDay(dailyPlanId),
     enabled: !!dailyPlanId,
   });
@@ -22,8 +23,8 @@ export function useToggleMeal() {
       isCompleted: boolean;
     }) => toggleMealCompleted(id, isCompleted),
     onMutate: async ({ id, isCompleted }) => {
-      await qc.cancelQueries({ queryKey: ["meals"] });
-      const queries = qc.getQueriesData<Meal[]>({ queryKey: ["meals"] });
+      await qc.cancelQueries({ queryKey: ["meals.byDay"] });
+      const queries = qc.getQueriesData<Meal[]>({ queryKey: ["meals.byDay"] });
       const snapshots: Array<[readonly unknown[], Meal[] | undefined]> = [];
       for (const [key, data] of queries) {
         snapshots.push([key, data]);
@@ -41,9 +42,36 @@ export function useToggleMeal() {
           qc.setQueryData(key, data);
         }
       }
+      toast.error("Öğün durumu güncellenemedi");
+    },
+    onSuccess: (_data, variables, context) => {
+      const { id, isCompleted } = variables;
+      const previouslyCompleted = context?.snapshots
+        ?.flatMap(([, data]) => data ?? [])
+        .find((m) => m.id === id)?.isCompleted;
+      const didToggle = previouslyCompleted !== isCompleted;
+      if (!didToggle && !isCompleted) return;
+
+      const message = isCompleted ? "Öğün tamamlandı" : "Tamamlanma geri alındı";
+      toast.success(message, {
+        duration: 5000,
+        action: {
+          label: "Geri Al",
+          onClick: () => {
+            toggleMealCompleted(id, !isCompleted)
+              .then(() => {
+                qc.invalidateQueries({ queryKey: ["meals.byDay"] });
+                qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+              })
+              .catch(() => {
+                toast.error("Geri alma başarısız");
+              });
+          },
+        },
+      });
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["meals"] });
+      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
       qc.invalidateQueries({ queryKey: ["today-dashboard"] });
     },
   });

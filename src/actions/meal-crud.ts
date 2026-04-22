@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { meals } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { meals, shoppingLists } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
@@ -18,6 +18,7 @@ interface MealInput {
   proteinG?: string | null;
   carbsG?: string | null;
   fatG?: string | null;
+  icon?: string | null;
 }
 
 export async function createMeal(dailyPlanId: number, data: MealInput) {
@@ -35,6 +36,7 @@ export async function createMeal(dailyPlanId: number, data: MealInput) {
       proteinG: data.proteinG ?? null,
       carbsG: data.carbsG ?? null,
       fatG: data.fatG ?? null,
+      icon: data.icon ?? null,
       isCompleted: false,
       sortOrder: 0,
     })
@@ -58,6 +60,7 @@ export async function updateMeal(mealId: number, data: MealInput) {
       proteinG: data.proteinG ?? null,
       carbsG: data.carbsG ?? null,
       fatG: data.fatG ?? null,
+      icon: data.icon ?? null,
     })
     .where(eq(meals.id, mealId));
 
@@ -70,7 +73,22 @@ export async function deleteMeal(mealId: number) {
 
   await db.delete(meals).where(eq(meals.id, mealId));
 
+  // Remove this mealId from any shopping list references; null out empty arrays
+  await db.execute(sql`
+    UPDATE shopping_lists
+    SET meal_ids = (
+      SELECT CASE
+        WHEN COUNT(*) = 0 THEN NULL
+        ELSE jsonb_agg(elem)
+      END
+      FROM jsonb_array_elements(meal_ids) AS elem
+      WHERE (elem)::text::int <> ${mealId}
+    )
+    WHERE meal_ids @> ${JSON.stringify([mealId])}::jsonb
+  `);
+
   revalidatePath("/");
+  revalidatePath("/alisveris");
 }
 
 export async function bulkCreateMeals(dailyPlanId: number, items: MealInput[]) {

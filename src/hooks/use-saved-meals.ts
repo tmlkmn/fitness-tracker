@@ -7,7 +7,7 @@ import {
 
 export function useSavedMealSuggestions(mealLabel?: string) {
   return useQuery({
-    queryKey: ["saved-meal-suggestions", mealLabel ?? "all"],
+    queryKey: ["meals.saved", mealLabel ?? "all"],
     queryFn: () => getSavedMealSuggestions(mealLabel),
     staleTime: 60_000,
   });
@@ -18,7 +18,7 @@ export function useSaveMealSuggestion() {
   return useMutation({
     mutationFn: saveMealSuggestion,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["saved-meal-suggestions"] });
+      qc.invalidateQueries({ queryKey: ["meals.saved"] });
     },
   });
 }
@@ -28,7 +28,7 @@ export function useDeleteSavedMealSuggestion() {
   return useMutation({
     mutationFn: deleteSavedMealSuggestion,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["saved-meal-suggestions"] });
+      qc.invalidateQueries({ queryKey: ["meals.saved"] });
     },
   });
 }

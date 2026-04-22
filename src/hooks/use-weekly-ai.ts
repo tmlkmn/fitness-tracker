@@ -52,7 +52,7 @@ export function useApplyWeeklyPlan() {
     }) => applyWeeklyPlan(dateStr, plan, applyMode),
     onSuccess: () => {
       qc.refetchQueries({ queryKey: ["plans"] });
-      qc.refetchQueries({ queryKey: ["meals"] });
+      qc.refetchQueries({ queryKey: ["meals.byDay"] });
       qc.refetchQueries({ queryKey: ["exercises"] });
       qc.refetchQueries({ queryKey: ["today-dashboard"] });
       qc.refetchQueries({ queryKey: ["week-plans-date"] });

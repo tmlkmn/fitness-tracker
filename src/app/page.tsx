@@ -35,6 +35,7 @@ import { StreakCard } from "@/components/gamification/streak-card";
 import { AchievementBadges } from "@/components/gamification/achievement-badges";
 import { WaterDashboardWidget } from "@/components/water/water-dashboard-widget";
 import { SleepDashboardWidget } from "@/components/sleep/sleep-dashboard-widget";
+import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
 
 const PLAN_TYPE_CONFIG: Record<string, { icon: typeof Dumbbell; label: string; color: string }> = {
   workout: { icon: Dumbbell, label: "Antrenman", color: "text-green-400 bg-green-400/10" },
@@ -407,6 +408,9 @@ export default function HomePage() {
           <WaterDashboardWidget />
           <SleepDashboardWidget />
         </div>
+
+        {/* 7 Günlük Kalori Trendi */}
+        <MacroTrendSparkline endDate={todayStr} metric="calories" />
 
         {/* Quick Access */}
         <div className="grid grid-cols-2 gap-3">

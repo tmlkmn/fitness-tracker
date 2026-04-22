@@ -13,9 +13,13 @@ import {
 // ─── Feature 1: Full Workout ────────────────────────────────────────────────
 
 export function useGenerateWorkoutReplacement() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ dailyPlanId, userNote }: { dailyPlanId: number; userNote?: string }) =>
       generateWorkoutReplacement(dailyPlanId, userNote),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["ai.quota"] });
+    },
   });
 }
 
@@ -39,6 +43,7 @@ export function useApplyWorkoutReplacement() {
 // ─── Feature 2: Section ─────────────────────────────────────────────────────
 
 export function useGenerateSectionReplacement() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       dailyPlanId,
@@ -51,6 +56,9 @@ export function useGenerateSectionReplacement() {
       sectionLabel: string;
       userNote?: string;
     }) => generateSectionReplacement(dailyPlanId, section, sectionLabel, userNote),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["ai.quota"] });
+    },
   });
 }
 
@@ -76,6 +84,7 @@ export function useApplySectionReplacement() {
 // ─── Feature 3: Single Exercise ─────────────────────────────────────────────
 
 export function useGenerateExerciseVariation() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       exerciseId,
@@ -88,6 +97,9 @@ export function useGenerateExerciseVariation() {
       userNote?: string;
       forceRefresh?: boolean;
     }) => generateExerciseVariation(exerciseId, dailyPlanId, userNote, forceRefresh),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["ai.quota"] });
+    },
   });
 }
 

@@ -7,7 +7,7 @@ export function useRecentMealsByLabel(
   enabled: boolean,
 ) {
   return useQuery({
-    queryKey: ["meal-history", mealLabel, excludeDailyPlanId],
+    queryKey: ["meals.history", mealLabel, excludeDailyPlanId],
     queryFn: () => getRecentMealsByLabel(mealLabel, excludeDailyPlanId),
     enabled: enabled && !!mealLabel,
     staleTime: 60_000,
@@ -16,7 +16,7 @@ export function useRecentMealsByLabel(
 
 export function useFrequentMeals() {
   return useQuery({
-    queryKey: ["frequent-meals"],
+    queryKey: ["meals.frequent"],
     queryFn: () => getFrequentRecentMeals(),
     staleTime: 60_000,
   });

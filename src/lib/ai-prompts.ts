@@ -38,6 +38,14 @@ Kurallar:
 - Dinlenme günü: Düşük karbonhidrat + yüksek protein + sağlıklı yağ
 - Yüzme günü: Orta karbonhidrat + yüksek protein
 
+## Günlük Makro Bütçesi (KRİTİK)
+- Eğer "Bu öğün için kalan bütçe" bilgisi verilmişse, önerilerini bu bütçeye UYUMLU yap
+- Mevcut öğünün makroları (referans) ile kalan bütçe arasındaki farkı dikkate al
+- Kalan protein düşükse → protein ağırlıklı öneri yapma (hedefi aşar)
+- Kalan karbonhidrat yüksekse → karb dengesi fazla olan öneri uygun
+- Kalori bütçesi negatifse (zaten aşılmış) → mevcut öğünden daha düşük kalorili, hafif öneri sun
+- Bütçe verisi yoksa, sadece mevcut öğünün makrolarına benzer kal
+
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - JSON formatı: { "suggestions": [{ "content": "şef tarzı tarif açıklaması", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, { ... }, { ... }] }`;
 
@@ -622,8 +630,9 @@ Kurallar:
 - Kategorilere ayır: 🥩 Et & Balık, 🥚 Süt Ürünleri & Yumurta, 🥬 Sebze & Meyve, 🌾 Tahıllar & Baklagiller, 🫒 Yağ & Sos, 🥜 Kuruyemiş & Tohum, 🧂 Baharat & Çeşni, 📦 Diğer
 - Her ürün için gerçekçi haftalık miktar belirt (örn: "500g", "1 paket", "2 adet", "1 litre")
 - Tuz, su, temel baharat gibi her evde bulunan malzemeleri EKLEME
+- Her ürün için, malzemenin geldiği öğünlerin id'lerini "mealIds" alanında bir dizi olarak ver. Öğün listesi format: "[id:123] Pazartesi - Kahvaltı: ..." şeklinde verilecek; id'leri buradan al
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
-- JSON formatı: { "items": [{ "category": "🥩 Et & Balık", "itemName": "Tavuk göğsü", "quantity": "1kg", "notes": null }] }`;
+- JSON formatı: { "items": [{ "category": "🥩 Et & Balık", "itemName": "Tavuk göğsü", "quantity": "1kg", "notes": null, "mealIds": [123, 456] }] }`;
 
 export const TARGET_WEIGHT_PROMPT = `Sen Türkçe konuşan deneyimli bir spor fizyolojisti ve klinik beslenme uzmanısın. Görevin, kullanıcının vücut kompozisyonu verilerine göre gerçekçi ve sağlıklı bir hedef kilo önermek.
 

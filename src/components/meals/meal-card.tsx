@@ -23,6 +23,7 @@ interface MealCardProps {
   proteinG?: string | null;
   carbsG?: string | null;
   fatG?: string | null;
+  icon?: string | null;
   isCompleted: boolean;
   onToggle?: (id: number, isCompleted: boolean) => void;
   readOnly?: boolean;
@@ -39,6 +40,7 @@ export function MealCard({
   proteinG,
   carbsG,
   fatG,
+  icon,
   isCompleted,
   onToggle,
   readOnly,
@@ -76,7 +78,11 @@ export function MealCard({
               />
             )}
             <div className="mt-0.5 shrink-0">
-              <DynamicIcon icon={mealIcon} className="h-4 w-4 text-primary" />
+              {icon ? (
+                <span className="text-base leading-none">{icon}</span>
+              ) : (
+                <DynamicIcon icon={mealIcon} className="h-4 w-4 text-primary" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
@@ -173,6 +179,7 @@ export function MealCard({
             proteinG,
             carbsG,
             fatG,
+            icon,
           }}
         />
       )}

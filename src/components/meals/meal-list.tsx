@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMeals, useToggleMeal } from "@/hooks/use-meals";
 import { MealCard } from "./meal-card";
 import { MealFormDialog } from "./meal-form-dialog";
@@ -14,6 +14,11 @@ import { BulkDeleteMealsDialog } from "./bulk-delete-meals-dialog";
 import { BulkCompleteDialog } from "@/components/ui/bulk-complete-dialog";
 import { useBulkCompleteMeals } from "@/hooks/use-bulk-completion";
 import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
+import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
+import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
+import { useUserProfile } from "@/hooks/use-user";
+import { computeMealMacros } from "@/lib/meal-macros";
+import { resolveTargets } from "@/lib/macro-targets";
 import type { AIMeal } from "@/actions/ai-meals";
 
 interface MealListProps {
@@ -34,6 +39,11 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
 
   const generateMeals = useGenerateDailyMeals();
   const applyMeals = useApplyDailyMeals();
+  const { data: quotaData } = useAiQuota();
+  const dailyMealQuota = getQuota(quotaData, "daily-meal");
+  const isDailyMealExhausted = dailyMealQuota !== null && dailyMealQuota.remaining <= 0;
+  const { data: profile } = useUserProfile();
+  const targets = useMemo(() => (profile ? resolveTargets(profile) : null), [profile]);
 
   const suggestedMeals: AIMeal[] | null = generateMeals.data?.suggestedMeals ?? null;
   const currentMealsFromAI: AIMeal[] = generateMeals.data?.currentMeals ?? [];
@@ -72,6 +82,8 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
     );
   };
 
+  const macros = useMemo(() => computeMealMacros(mealList ?? []), [mealList]);
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -94,9 +106,11 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
               size="sm"
               className="gap-1.5"
               onClick={() => setAiOpen(true)}
+              disabled={isDailyMealExhausted}
             >
               <Sparkles className="h-3.5 w-3.5" />
               AI ile Oluştur
+              <AiQuotaBadge feature="daily-meal" />
             </Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
               <Plus className="h-3.5 w-3.5" />
@@ -134,25 +148,19 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
     );
   }
 
-  const totalCalories = mealList.reduce((sum, m) => sum + (m.calories || 0), 0);
-  const totalProtein = mealList.reduce(
-    (sum, m) => sum + parseFloat(m.proteinG ?? "0"),
-    0
-  );
-  const totalCarbs = mealList.reduce(
-    (sum, m) => sum + parseFloat(m.carbsG ?? "0"),
-    0
-  );
-  const totalFat = mealList.reduce(
-    (sum, m) => sum + parseFloat(m.fatG ?? "0"),
-    0
-  );
-  const completedCount = mealList.filter((m) => m.isCompleted).length;
-  const percent = Math.round((completedCount / mealList.length) * 100);
+  const {
+    calories: totalCalories,
+    protein: totalProtein,
+    carbs: totalCarbs,
+    fat: totalFat,
+    completedCount,
+    percent,
+  } = macros;
 
   return (
     <div className="space-y-3">
       <DailyMacroSummary
+        targets={targets}
         calories={totalCalories}
         protein={Math.round(totalProtein)}
         carbs={Math.round(totalCarbs)}
@@ -189,9 +197,11 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
           size="sm"
           className="w-full gap-1.5"
           onClick={() => setAiOpen(true)}
+          disabled={isDailyMealExhausted}
         >
           <Sparkles className="h-3.5 w-3.5" />
           AI ile Programı Değiştir
+          <AiQuotaBadge feature="daily-meal" />
         </Button>
       )}
 

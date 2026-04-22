@@ -1,7 +1,9 @@
 import { db } from "@/db";
 import { users, weeklyPlans, dailyPlans, meals, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
-import { eq, desc, and, gte, lte, asc } from "drizzle-orm";
+import { eq, desc, and, gte, lte, asc, ne } from "drizzle-orm";
 import { normalizeEvent } from "@/lib/routine-constants";
+import { resolveTargets, type MacroTargets } from "@/lib/macro-targets";
+import { computeMealMacros } from "@/lib/meal-macros";
 
 // 5-minute TTL memory cache for user context
 const contextCache = new Map<string, { text: string; timestamp: number }>();
@@ -284,4 +286,91 @@ export async function buildUserContext(userId: string): Promise<string> {
   const result = lines.join("\n");
   contextCache.set(userId, { text: result, timestamp: Date.now() });
   return result;
+}
+
+export interface MacroBudgetContext {
+  targets: MacroTargets | null;
+  consumed: { calories: number; protein: number; carbs: number; fat: number };
+  remaining: { calories: number; protein: number; carbs: number; fat: number } | null;
+  text: string;
+}
+
+/**
+ * Builds macro budget context for a specific day — targets from user profile,
+ * consumed from existing meals on that day (optionally excluding a specific meal).
+ * Returns a human-readable summary suitable for AI prompts.
+ */
+export async function getMealMacroBudget(
+  userId: string,
+  dailyPlanId: number,
+  excludeMealId?: number | null,
+): Promise<MacroBudgetContext> {
+  const [userRow] = await db
+    .select({
+      weight: users.weight,
+      height: users.height,
+      age: users.age,
+      fitnessLevel: users.fitnessLevel,
+      targetCalories: users.targetCalories,
+      targetProteinG: users.targetProteinG,
+      targetCarbsG: users.targetCarbsG,
+      targetFatG: users.targetFatG,
+    })
+    .from(users)
+    .where(eq(users.id, userId));
+
+  const targets = userRow ? resolveTargets(userRow) : null;
+
+  const whereClause = excludeMealId
+    ? and(eq(meals.dailyPlanId, dailyPlanId), ne(meals.id, excludeMealId))
+    : eq(meals.dailyPlanId, dailyPlanId);
+
+  const dayMeals = await db
+    .select({
+      calories: meals.calories,
+      proteinG: meals.proteinG,
+      carbsG: meals.carbsG,
+      fatG: meals.fatG,
+    })
+    .from(meals)
+    .where(whereClause);
+
+  const totals = computeMealMacros(dayMeals);
+  const consumed = {
+    calories: totals.calories,
+    protein: totals.protein,
+    carbs: totals.carbs,
+    fat: totals.fat,
+  };
+
+  const remaining = targets
+    ? {
+        calories: targets.calories - consumed.calories,
+        protein: targets.protein - consumed.protein,
+        carbs: targets.carbs - consumed.carbs,
+        fat: targets.fat - consumed.fat,
+      }
+    : null;
+
+  const parts: string[] = [];
+  if (targets) {
+    parts.push(
+      `Günlük hedef: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}g karb, ${targets.fat}g yağ`,
+    );
+  }
+  parts.push(
+    `Bugün tüketilen (diğer öğünler): ${consumed.calories} kcal, ${consumed.protein}g P, ${consumed.carbs}g K, ${consumed.fat}g Y`,
+  );
+  if (remaining) {
+    parts.push(
+      `Bu öğün için kalan bütçe: ${remaining.calories} kcal, ${remaining.protein}g P, ${remaining.carbs}g K, ${remaining.fat}g Y`,
+    );
+  }
+
+  return {
+    targets,
+    consumed,
+    remaining,
+    text: parts.join("\n"),
+  };
 }

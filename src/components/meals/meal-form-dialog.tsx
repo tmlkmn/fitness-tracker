@@ -15,12 +15,11 @@ import { useCreateMeal, useUpdateMeal } from "@/hooks/use-meal-crud";
 import { useUserProfile } from "@/hooks/use-user";
 import { getDefaultMealTime, isWeekendDate } from "@/lib/meal-time-defaults";
 import { saveMealSuggestion } from "@/actions/saved-meals";
-import { MealTemplatePicker } from "./meal-template-picker";
-import { MealCopyPicker } from "./meal-copy-picker";
-import { RecentMealChips } from "./recent-meal-chips";
+import { UnifiedMealPicker } from "./unified-meal-picker";
 import { FoodReferencePopover } from "./food-reference-popover";
-import { Star, Copy } from "lucide-react";
-import type { TurkishFood } from "@/data/turkish-foods";
+import { IconPicker } from "@/components/ui/icon-picker";
+import { BookOpen, X } from "lucide-react";
+import { multiplyFood, formatScaledEntry, type FoodLike } from "@/lib/food-math";
 
 interface MealData {
   id?: number;
@@ -31,6 +30,7 @@ interface MealData {
   proteinG?: string | null;
   carbsG?: string | null;
   fatG?: string | null;
+  icon?: string | null;
 }
 
 interface MealFormDialogProps {
@@ -71,23 +71,31 @@ export function MealFormDialog({
   const [protein, setProtein] = useState(meal?.proteinG ?? "");
   const [carbs, setCarbs] = useState(meal?.carbsG ?? "");
   const [fat, setFat] = useState(meal?.fatG ?? "");
+  const [icon, setIcon] = useState<string | null>(meal?.icon ?? null);
   const [saveAsFavorite, setSaveAsFavorite] = useState(false);
 
-  // Picker states
-  const [templateOpen, setTemplateOpen] = useState(false);
-  const [copyOpen, setCopyOpen] = useState(false);
+  // Picker state
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  type AddedFood = {
+    key: string;
+    food: FoodLike;
+    multiplier: number;
+    scaled: ReturnType<typeof multiplyFood>;
+  };
+  const [addedFoods, setAddedFoods] = useState<AddedFood[]>([]);
 
   const isPending = createMeal.isPending || updateMeal.isPending;
 
-  const fillForm = (data: {
-    mealLabel?: string;
+  const handlePickerSelect = (data: {
+    mealLabel: string;
     content: string;
     calories: string;
     protein: string;
     carbs: string;
     fat: string;
   }) => {
-    if (data.mealLabel) setMealLabel(data.mealLabel);
+    setMealLabel(data.mealLabel);
     setContent(data.content);
     setCalories(data.calories);
     setProtein(data.protein);
@@ -95,43 +103,42 @@ export function MealFormDialog({
     setFat(data.fat);
   };
 
-  // Directly create meal from template/saved selection
-  const handleTemplateSelect = (data: {
-    mealLabel?: string;
-    content: string;
-    calories: string;
-    protein: string;
-    carbs: string;
-    fat: string;
-  }) => {
-    const label = data.mealLabel || mealLabel;
-    if (!label.trim() || !data.content.trim()) {
-      fillForm(data);
-      return;
-    }
-    const mealData = {
-      mealTime: mealTime || "08:00",
-      mealLabel: label.trim(),
-      content: data.content.trim(),
-      calories: data.calories ? parseInt(data.calories) : null,
-      proteinG: data.protein || null,
-      carbsG: data.carbs || null,
-      fatG: data.fat || null,
-    };
-    createMeal.mutate(
-      { dailyPlanId, data: mealData },
-      { onSuccess: () => onOpenChange(false) },
-    );
+  // (c) Food reference: append to content and add scaled macros
+  const handleAddFood = (food: FoodLike, multiplier: number) => {
+    const scaled = multiplyFood(food, multiplier);
+    const entry = formatScaledEntry(food, multiplier);
+    setContent((prev) => (prev ? `${prev}, ${entry}` : entry));
+    setCalories((prev) => String((parseInt(prev) || 0) + scaled.calories));
+    setProtein((prev) => String(Math.round(((parseFloat(prev) || 0) + scaled.protein) * 10) / 10));
+    setCarbs((prev) => String(Math.round(((parseFloat(prev) || 0) + scaled.carbs) * 10) / 10));
+    setFat((prev) => String(Math.round(((parseFloat(prev) || 0) + scaled.fat) * 10) / 10));
+    setAddedFoods((prev) => [
+      ...prev,
+      { key: `${food.name}-${Date.now()}`, food, multiplier, scaled },
+    ]);
   };
 
-  // (c) Food reference: append to content and add macros
-  const handleAddFood = (food: TurkishFood) => {
-    const entry = `${food.name} (${food.portion})`;
-    setContent((prev) => (prev ? `${prev}, ${entry}` : entry));
-    setCalories((prev) => String((parseInt(prev) || 0) + food.calories));
-    setProtein((prev) => String(Math.round(((parseFloat(prev) || 0) + food.protein) * 10) / 10));
-    setCarbs((prev) => String(Math.round(((parseFloat(prev) || 0) + food.carbs) * 10) / 10));
-    setFat((prev) => String(Math.round(((parseFloat(prev) || 0) + food.fat) * 10) / 10));
+  const handleRemoveAddedFood = (key: string) => {
+    const item = addedFoods.find((f) => f.key === key);
+    if (!item) return;
+    const entry = formatScaledEntry(item.food, item.multiplier);
+    setAddedFoods((prev) => prev.filter((f) => f.key !== key));
+    setContent((prev) => {
+      const parts = prev.split(",").map((s) => s.trim());
+      const idx = parts.findIndex((p) => p === entry);
+      if (idx >= 0) parts.splice(idx, 1);
+      return parts.join(", ");
+    });
+    setCalories((prev) => String(Math.max(0, (parseInt(prev) || 0) - item.scaled.calories)));
+    setProtein((prev) =>
+      String(Math.max(0, Math.round(((parseFloat(prev) || 0) - item.scaled.protein) * 10) / 10)),
+    );
+    setCarbs((prev) =>
+      String(Math.max(0, Math.round(((parseFloat(prev) || 0) - item.scaled.carbs) * 10) / 10)),
+    );
+    setFat((prev) =>
+      String(Math.max(0, Math.round(((parseFloat(prev) || 0) - item.scaled.fat) * 10) / 10)),
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -146,6 +153,7 @@ export function MealFormDialog({
       proteinG: protein || null,
       carbsG: carbs || null,
       fatG: fat || null,
+      icon: icon || null,
     };
 
     const onSuccess = async () => {
@@ -183,45 +191,22 @@ export function MealFormDialog({
               {isEdit ? "Öğünü Düzenle" : "Yeni Öğün Ekle"}
             </DialogTitle>
             {!isEdit && (
-              <div className="flex gap-0.5 mr-6">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  type="button"
-                  onClick={() => setTemplateOpen(true)}
-                  title="Kayıtlı öğünler"
-                >
-                  <Star className="h-3.5 w-3.5" />
-                </Button>
-                {mealLabel && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    type="button"
-                    onClick={() => setCopyOpen(true)}
-                    title="Önceki günden kopyala"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 mr-6 gap-1 text-xs"
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                title="Öğün seç"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                Seç
+              </Button>
             )}
           </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Recent meals quick select — only in create mode */}
-          {!isEdit && (
-            <RecentMealChips
-              onSelect={(m) => {
-                fillForm(m);
-                if (m.mealLabel) setMealLabel(m.mealLabel);
-              }}
-            />
-          )}
-
           <div className="grid grid-cols-[1fr_1.5fr] gap-2">
             <div className="space-y-1">
               <Label htmlFor="mealTime" className="text-xs text-muted-foreground">
@@ -239,14 +224,17 @@ export function MealFormDialog({
               <Label htmlFor="mealLabel" className="text-xs text-muted-foreground">
                 Öğün Adı *
               </Label>
-              <Input
-                id="mealLabel"
-                placeholder="Kahvaltı"
-                value={mealLabel}
-                onChange={(e) => setMealLabel(e.target.value)}
-                required
-                className="h-9"
-              />
+              <div className="flex gap-1.5">
+                <IconPicker value={icon} onChange={setIcon} className="h-9 w-9" />
+                <Input
+                  id="mealLabel"
+                  placeholder="Kahvaltı"
+                  value={mealLabel}
+                  onChange={(e) => setMealLabel(e.target.value)}
+                  required
+                  className="h-9 flex-1"
+                />
+              </div>
             </div>
           </div>
 
@@ -265,6 +253,22 @@ export function MealFormDialog({
               onChange={(e) => setContent(e.target.value)}
               required
             />
+            {addedFoods.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {addedFoods.map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => handleRemoveAddedFood(f.key)}
+                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20"
+                    title="Kaldır"
+                  >
+                    {formatScaledEntry(f.food, f.multiplier)} · {f.scaled.calories}kcal
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Macros */}
@@ -363,21 +367,12 @@ export function MealFormDialog({
         </form>
       </DialogContent>
 
-      {/* Pickers */}
-      {templateOpen && (
-        <MealTemplatePicker
-          open={templateOpen}
-          onOpenChange={setTemplateOpen}
-          onSelect={handleTemplateSelect}
-        />
-      )}
-      {copyOpen && (
-        <MealCopyPicker
-          open={copyOpen}
-          onOpenChange={setCopyOpen}
-          mealLabel={mealLabel}
-          dailyPlanId={dailyPlanId}
-          onSelect={handleTemplateSelect}
+      {pickerOpen && (
+        <UnifiedMealPicker
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          excludeDailyPlanId={dailyPlanId}
+          onSelect={handlePickerSelect}
         />
       )}
     </Dialog>

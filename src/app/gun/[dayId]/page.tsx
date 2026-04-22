@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { Utensils, Dumbbell, Pill } from "lucide-react";
 import { WaterTracker } from "@/components/water/water-tracker";
 import { SleepEntry } from "@/components/sleep/sleep-entry";
+import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
 
 export const dynamic = "force-dynamic";
 
@@ -80,7 +81,10 @@ export default async function GunPage({ params }: PageProps) {
               Takviye
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="meals">
+          <TabsContent value="meals" className="space-y-3">
+            {dailyPlan.date && (
+              <MacroTrendSparkline endDate={dailyPlan.date} metric="calories" />
+            )}
             <MealList dailyPlanId={id} readOnly={isPast} dailyPlanType={dailyPlan.planType} />
           </TabsContent>
           <TabsContent value="workout">
