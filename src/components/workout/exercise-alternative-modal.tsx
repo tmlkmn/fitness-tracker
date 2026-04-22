@@ -23,6 +23,7 @@ import { useState } from "react";
 import type { AIExerciseVariation } from "@/actions/ai-workout";
 import { ExerciseDemoModal } from "./exercise-demo-modal";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
+import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -84,8 +85,8 @@ export function ExerciseAlternativeModal({
   onApply,
 }: ExerciseAlternativeModalProps) {
   const [userNote, setUserNote] = useState("");
-  const [location, setLocation] = useState<"gym" | "home">("gym");
-  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
+  const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>(() => loadWorkoutPrefs().equipment);
   const [selected, setSelected] = useState<number | null>(null);
 
   const toggleEquipment = (eq: string) => {
@@ -109,6 +110,7 @@ export function ExerciseAlternativeModal({
   };
 
   const handleGenerate = (forceRefresh = false) => {
+    saveWorkoutPrefs({ location, equipment: selectedEquipment });
     setSelected(null);
     onGenerate(buildNote(), forceRefresh);
   };

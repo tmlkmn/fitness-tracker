@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, Check, AlertCircle, Timer, MessageSquare, Home, Building2 } from "lucide-react";
 import type { AIExercise } from "@/actions/ai-workout";
 import { useState } from "react";
+import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -131,8 +132,8 @@ export function AiWorkoutModal({
   onApply,
 }: AiWorkoutModalProps) {
   const [userNote, setUserNote] = useState("");
-  const [location, setLocation] = useState<"gym" | "home">("gym");
-  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
+  const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>(() => loadWorkoutPrefs().equipment);
 
   const toggleEquipment = (eq: string) => {
     setSelectedEquipment((prev) =>
@@ -145,6 +146,7 @@ export function AiWorkoutModal({
     new Set(suggestedExercises.map((e) => e.sectionLabel)).size > 1;
 
   const handleGenerate = () => {
+    saveWorkoutPrefs({ location, equipment: selectedEquipment });
     const parts: string[] = [];
     if (location === "home") {
       parts.push(`Antrenman yeri: Ev. Mevcut ekipman: ${selectedEquipment.length > 0 ? selectedEquipment.join(", ") : "Vücut ağırlığı"}`);

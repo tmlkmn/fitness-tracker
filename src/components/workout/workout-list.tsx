@@ -7,10 +7,11 @@ import { ExerciseFormDialog } from "./exercise-form-dialog";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Plus, Dumbbell, Trash2, Copy, CheckCheck } from "lucide-react";
+import { Sparkles, Plus, Dumbbell, Trash2, Copy, CheckCheck, ArrowRightLeft } from "lucide-react";
 import { AiWorkoutModal } from "./ai-workout-modal";
 import { BulkDeleteExercisesDialog } from "./bulk-delete-exercises-dialog";
 import { CopyWorkoutDialog } from "./copy-workout-dialog";
+import { MoveDayContentsDialog } from "./move-day-contents-dialog";
 import { BulkCompleteDialog } from "@/components/ui/bulk-complete-dialog";
 import { useBulkCompleteExercises } from "@/hooks/use-bulk-completion";
 import {
@@ -32,6 +33,7 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
   const [addOpen, setAddOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
   const [bulkCompleteOpen, setBulkCompleteOpen] = useState(false);
   const bulkComplete = useBulkCompleteExercises();
   const generate = useGenerateWorkoutReplacement();
@@ -232,14 +234,25 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
               size="sm"
               className="gap-1.5"
               onClick={() => setCopyOpen(true)}
+              title="Geçen haftadan kopyala"
             >
               <Copy className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="outline"
               size="sm"
+              className="gap-1.5"
+              onClick={() => setMoveOpen(true)}
+              title="Başka güne taşı"
+            >
+              <ArrowRightLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               className="gap-1.5 text-destructive hover:text-destructive"
               onClick={() => setBulkDeleteOpen(true)}
+              title="Tümünü sil"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -295,6 +308,16 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
           open={copyOpen}
           onOpenChange={setCopyOpen}
           dailyPlanId={dailyPlanId}
+        />
+      )}
+
+      {moveOpen && (
+        <MoveDayContentsDialog
+          open={moveOpen}
+          onOpenChange={setMoveOpen}
+          sourceDailyPlanId={dailyPlanId}
+          defaultIncludeWorkout={true}
+          defaultIncludeMeals={false}
         />
       )}
     </>

@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { weeklyPlans, dailyPlans, supplements, meals, exercises } from "@/db/schema";
-import { eq, asc, and, gte, lte, isNotNull, sql } from "drizzle-orm";
+import { eq, asc, and, gte, lte, isNotNull, sql, inArray } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import { verifyWeeklyPlanOwnership } from "@/lib/ownership";
 
@@ -257,6 +257,53 @@ export async function getEmptyWeeksBetween(
   }
 
   return emptyWeeks;
+}
+
+export async function getDailyPlansWithContentCounts(weeklyPlanId: number) {
+  const user = await getAuthUser();
+  await verifyWeeklyPlanOwnership(weeklyPlanId, user.id);
+
+  const days = await db
+    .select()
+    .from(dailyPlans)
+    .where(eq(dailyPlans.weeklyPlanId, weeklyPlanId))
+    .orderBy(asc(dailyPlans.dayOfWeek));
+
+  if (days.length === 0) return [];
+
+  const dayIds = days.map((d) => d.id);
+
+  const [exerciseCounts, mealCounts] = await Promise.all([
+    db
+      .select({
+        dailyPlanId: exercises.dailyPlanId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(exercises)
+      .where(inArray(exercises.dailyPlanId, dayIds))
+      .groupBy(exercises.dailyPlanId),
+    db
+      .select({
+        dailyPlanId: meals.dailyPlanId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(meals)
+      .where(inArray(meals.dailyPlanId, dayIds))
+      .groupBy(meals.dailyPlanId),
+  ]);
+
+  const exMap = new Map(
+    exerciseCounts.map((e) => [e.dailyPlanId, Number(e.count)]),
+  );
+  const mealMap = new Map(
+    mealCounts.map((m) => [m.dailyPlanId, Number(m.count)]),
+  );
+
+  return days.map((d) => ({
+    ...d,
+    exerciseCount: exMap.get(d.id) ?? 0,
+    mealCount: mealMap.get(d.id) ?? 0,
+  }));
 }
 
 export async function getUpcomingDailyPlans() {

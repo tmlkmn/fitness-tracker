@@ -42,6 +42,7 @@ import {
   useSavedSuggestionDetail,
   useDeleteSavedSuggestion,
 } from "@/hooks/use-weekly-ai";
+import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 
 // ─── Template tags for quick suggestions ────────────────────────────────────
 
@@ -441,8 +442,8 @@ export function AiWeeklyPlanModal({
   const [userNote, setUserNote] = useState("");
   const [selectedDays, setSelectedDays] = useState<number[]>([0, 1, 2, 3, 4]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [location, setLocation] = useState<"gym" | "home">("gym");
-  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
+  const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>(() => loadWorkoutPrefs().equipment);
   const [ingredientMode, setIngredientMode] = useState<"all" | "specific">("all");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [generateMode, setGenerateMode] = useState<"both" | "nutrition" | "workout">("both");
@@ -538,6 +539,7 @@ export function AiWeeklyPlanModal({
   };
 
   const handleGenerate = () => {
+    saveWorkoutPrefs({ location, equipment: selectedEquipment });
     const parts: string[] = [];
     // Workout days
     const dayNames = selectedDays.map(d => WORKOUT_DAYS.find(x => x.value === d)!.full);
@@ -911,16 +913,16 @@ export function AiWeeklyPlanModal({
           {/* Saved plan preview */}
           {!loading && !suggestedPlan && savedPlanToPreview && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold flex-1">
+              <div className="flex items-start gap-2">
+                <p className="text-sm font-semibold flex-1 min-w-0 wrap-break-word">
                   {savedPlanToPreview.weekTitle}
                 </p>
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="text-[10px] shrink-0">
                   {savedPlanToPreview.phase}
                 </Badge>
               </div>
               {savedPlanToPreview.notes && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground wrap-break-word whitespace-pre-wrap leading-relaxed">
                   {savedPlanToPreview.notes}
                 </p>
               )}
@@ -963,16 +965,16 @@ export function AiWeeklyPlanModal({
           {/* Phase 2: Plan result */}
           {!loading && suggestedPlan && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold flex-1">
+              <div className="flex items-start gap-2">
+                <p className="text-sm font-semibold flex-1 min-w-0 wrap-break-word">
                   {suggestedPlan.weekTitle}
                 </p>
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="text-[10px] shrink-0">
                   {suggestedPlan.phase}
                 </Badge>
               </div>
               {suggestedPlan.notes && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground wrap-break-word whitespace-pre-wrap leading-relaxed">
                   {suggestedPlan.notes}
                 </p>
               )}

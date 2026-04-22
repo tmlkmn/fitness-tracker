@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getAllWeeks,
   getWeeklyPlan,
+  getDailyPlan,
   getDailyPlansByWeek,
+  getDailyPlansWithContentCounts,
   getSupplementsByWeek,
   getDailyPlanByDate,
   getDailyPlansForWeekByDate,
@@ -41,6 +43,25 @@ export function useDailyPlansByWeek(weeklyPlanId: number) {
     queryKey: ["daily-plans", weeklyPlanId],
     queryFn: () => getDailyPlansByWeek(weeklyPlanId),
     enabled: !!weeklyPlanId,
+  });
+}
+
+export function useDailyPlan(dailyPlanId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["daily-plan", dailyPlanId],
+    queryFn: () => getDailyPlan(dailyPlanId),
+    enabled: !!dailyPlanId && enabled,
+  });
+}
+
+export function useDailyPlansWithContentCounts(
+  weeklyPlanId: number,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["daily-plans-content", weeklyPlanId],
+    queryFn: () => getDailyPlansWithContentCounts(weeklyPlanId),
+    enabled: !!weeklyPlanId && enabled,
   });
 }
 
