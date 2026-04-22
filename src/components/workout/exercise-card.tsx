@@ -25,6 +25,7 @@ import type { AIExerciseVariation } from "@/actions/ai-workout";
 interface ExerciseCardProps {
   id: number;
   name: string;
+  englishName?: string | null;
   sets?: number | null;
   reps?: string | null;
   restSeconds?: number | null;
@@ -41,6 +42,7 @@ interface ExerciseCardProps {
 export function ExerciseCard({
   id,
   name,
+  englishName,
   sets,
   reps,
   restSeconds,
@@ -105,7 +107,7 @@ export function ExerciseCard({
                 <p className={cn("font-medium text-sm", isCompleted && "line-through", readOnly && isCompleted && "opacity-60")}>
                   {name}
                 </p>
-                <ExerciseDemoModal name={name} />
+                <ExerciseDemoModal name={name} englishName={englishName} />
                 {!readOnly && <ExerciseFormTips name={name} notes={notes} />}
               </div>
               <div className={cn("flex flex-wrap gap-1.5 mt-1", readOnly && isCompleted && "opacity-60")}>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Search, Trash2, UtensilsCrossed, ClipboardList, Plus, Star } from "lucide-react";
+import { Search, Trash2, UtensilsCrossed, ClipboardList, Plus, Star, Flame } from "lucide-react";
 import { toast } from "sonner";
 import {
   useSavedMealSuggestions,
@@ -26,6 +27,25 @@ import {
 } from "@/hooks/use-meal-ai";
 import { useUpcomingDailyPlans } from "@/hooks/use-plans";
 import type { AIMeal } from "@/actions/ai-meals";
+import { computeMealMacros } from "@/lib/meal-macros";
+
+function formatRelativeDate(input: Date | string | null | undefined): string {
+  if (!input) return "";
+  const date = typeof input === "string" ? new Date(input) : input;
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return date.toLocaleDateString("tr-TR", { day: "numeric", month: "long" });
+  if (diffDays === 0) return "Bugün";
+  if (diffDays === 1) return "Dün";
+  if (diffDays < 7) return `${diffDays} gün önce`;
+  return date.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: now.getFullYear() === date.getFullYear() ? undefined : "numeric",
+  });
+}
 
 const PLAN_TYPE_LABELS: Record<string, string> = {
   workout: "Antrenman",
@@ -290,9 +310,27 @@ function DailyPlansTab() {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-8">
-        Yükleniyor…
-      </p>
+      <div className="space-y-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-16" />
+              </div>
+              <Skeleton className="h-5 w-3/4" />
+              <div className="flex gap-1.5">
+                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-5 w-12" />
+                <Skeleton className="h-5 w-12" />
+                <Skeleton className="h-5 w-12" />
+              </div>
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-7 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     );
   }
 
@@ -329,73 +367,86 @@ function DailyPlansTab() {
       ) : (
         <div className="space-y-2">
           {filtered.map((p) => {
-            const totalCals = p.meals.reduce(
-              (s, m) => s + (m.calories ?? 0),
-              0,
-            );
-            const dateLabel = p.createdAt
-              ? new Date(p.createdAt).toLocaleDateString("tr-TR", {
-                  day: "numeric",
-                  month: "short",
-                })
-              : "";
-            const planLabel =
-              p.userNote ??
-              `${PLAN_TYPE_LABELS[p.planType] ?? p.planType} — ${dateLabel}`;
+            const macros = computeMealMacros(p.meals);
+            const dateLabel = formatRelativeDate(p.createdAt);
+            const planTypeLabel = PLAN_TYPE_LABELS[p.planType] ?? p.planType;
+            const planTitle = p.userNote ?? `${planTypeLabel} planı`;
+            const dialogLabel = p.userNote ?? `${planTypeLabel} — ${dateLabel}`;
             return (
-              <Card key={p.id}>
-                <CardContent className="p-3 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {PLAN_TYPE_LABELS[p.planType] ?? p.planType}
-                    </Badge>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">
-                        {p.meals.length} öğün · {totalCals} kcal · {dateLabel}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-destructive"
-                        onClick={() => {
-                          deletePlan.mutate(p.id);
-                          toast.success("Plan silindi");
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+              <Card
+                key={p.id}
+                className="hover:bg-accent/30 transition-colors"
+              >
+                <CardContent className="p-3 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <h4 className="text-sm font-semibold leading-tight line-clamp-2">
+                        {planTitle}
+                      </h4>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge variant="outline" className="text-[10px] h-5">
+                          {planTypeLabel}
+                        </Badge>
+                        <Badge variant="secondary" className="text-[10px] h-5">
+                          {p.meals.length} öğün
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          {dateLabel}
+                        </span>
+                      </div>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive shrink-0"
+                      onClick={() => {
+                        deletePlan.mutate(p.id);
+                        toast.success("Plan silindi");
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  {p.userNote && (
-                    <p className="text-xs text-muted-foreground italic line-clamp-1">
-                      &ldquo;{p.userNote}&rdquo;
-                    </p>
-                  )}
-                  <ul className="text-xs space-y-0.5">
+
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge className="text-[10px] h-5 gap-1 bg-orange-500/15 text-orange-400 border-orange-500/30 hover:bg-orange-500/20">
+                      <Flame className="h-3 w-3" />
+                      {macros.calories} kcal
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] h-5 border-red-500/40 text-red-400">
+                      P {macros.protein}g
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] h-5 border-amber-500/40 text-amber-400">
+                      K {macros.carbs}g
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] h-5 border-yellow-500/40 text-yellow-400">
+                      Y {macros.fat}g
+                    </Badge>
+                  </div>
+
+                  <ul className="text-xs space-y-0.5 border-l-2 border-muted pl-2.5">
                     {p.meals.slice(0, 4).map((m, i) => (
                       <li key={i} className="line-clamp-1">
-                        <span className="text-muted-foreground">{m.mealTime}</span>{" "}
-                        <span className="font-medium">{m.mealLabel}</span> —{" "}
-                        <span className="text-muted-foreground">
-                          {m.content}
-                        </span>
+                        <span className="text-muted-foreground tabular-nums">{m.mealTime}</span>{" "}
+                        <span className="font-medium">{m.mealLabel}</span>
+                        <span className="text-muted-foreground"> — {m.content}</span>
                       </li>
                     ))}
                     {p.meals.length > 4 && (
                       <li className="text-[10px] text-muted-foreground">
-                        +{p.meals.length - 4} daha…
+                        +{p.meals.length - 4} öğün daha…
                       </li>
                     )}
                   </ul>
+
                   <Button
-                    variant="outline"
                     size="sm"
-                    className="w-full h-7 text-xs gap-1"
+                    className="w-full h-8 text-xs gap-1.5"
                     onClick={() =>
-                      setApplyTarget({ meals: p.meals, label: planLabel })
+                      setApplyTarget({ meals: p.meals, label: dialogLabel })
                     }
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="h-3.5 w-3.5" />
                     Günün planına ekle
                   </Button>
                 </CardContent>

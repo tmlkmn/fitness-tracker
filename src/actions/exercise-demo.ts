@@ -75,11 +75,14 @@ function toResult(
 
 export async function getExerciseDemo(
   exerciseName: string,
+  englishName?: string,
 ): Promise<ExerciseDemoResult> {
   const user = await getAuthUser();
   const nameNorm = exerciseName.toLowerCase().trim();
+  // ExerciseDB araması için: önce İngilizce ad, yoksa Türkçe ad fallback
+  const searchName = (englishName?.trim() || exerciseName).trim();
 
-  // 1. Check DB cache
+  // 1. Check DB cache — notFound + englishName mevcutsa cache'i bypass et (yeni İngilizce ad ile yeniden dene)
   const [existing] = await db
     .select({
       gifUrl: exerciseDemos.gifUrl,
@@ -93,16 +96,21 @@ export async function getExerciseDemo(
     .from(exerciseDemos)
     .where(eq(exerciseDemos.exerciseNameNorm, nameNorm));
 
-  if (existing) return toResult(existing);
+  const shouldBypassCache = existing?.notFound && !!englishName?.trim();
+  if (existing && !shouldBypassCache) return toResult(existing);
 
   // 2. Try ExerciseDB API first (no AI tokens needed)
-  const exerciseDBResult = await searchExerciseDB(exerciseName);
+  const exerciseDBResult = await searchExerciseDB(searchName);
 
   if (exerciseDBResult) {
     const primaryMuscle = bodyPartToMuscle[exerciseDBResult.bodyPart] ?? exerciseDBResult.target;
     const primaryMuscles = [primaryMuscle];
     const secondaryMuscles = exerciseDBResult.secondaryMuscles ?? [];
 
+    if (shouldBypassCache) {
+      // notFound kaydını sil, taze veriyi insert et
+      await db.delete(exerciseDemos).where(eq(exerciseDemos.exerciseNameNorm, nameNorm));
+    }
     await db.insert(exerciseDemos).values({
       exerciseNameNorm: nameNorm,
       externalId: exerciseDBResult.id,
@@ -126,6 +134,9 @@ export async function getExerciseDemo(
       instructions: exerciseDBResult.instructions ?? [],
     };
   }
+
+  // ExerciseDB de İngilizce ad ile bulamadıysa — cache'lenmiş notFound varsa onu döndür (AI fallback'i tekrar harcama)
+  if (existing) return toResult(existing);
 
   // 3. Fallback: AI matching with free-exercise-db (static images)
   await checkRateLimit(user.id, "exercise-demo");

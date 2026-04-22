@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { getExercisesByDay, toggleExerciseCompleted } from "@/actions/exercises";
 
 type Exercise = Awaited<ReturnType<typeof getExercisesByDay>>[number];
@@ -42,6 +43,33 @@ export function useToggleExercise() {
           qc.setQueryData(key, data);
         }
       }
+      toast.error("Egzersiz durumu güncellenemedi");
+    },
+    onSuccess: (_data, variables, context) => {
+      const { id, isCompleted } = variables;
+      const previouslyCompleted = context?.snapshots
+        ?.flatMap(([, data]) => data ?? [])
+        .find((e) => e.id === id)?.isCompleted;
+      const didToggle = previouslyCompleted !== isCompleted;
+      if (!didToggle && !isCompleted) return;
+
+      const message = isCompleted ? "Egzersiz tamamlandı" : "Tamamlanma geri alındı";
+      toast.success(message, {
+        duration: 5000,
+        action: {
+          label: "Geri Al",
+          onClick: () => {
+            toggleExerciseCompleted(id, !isCompleted)
+              .then(() => {
+                qc.invalidateQueries({ queryKey: ["exercises"] });
+                qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+              })
+              .catch(() => {
+                toast.error("Geri alma başarısız");
+              });
+          },
+        },
+      });
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["exercises"] });

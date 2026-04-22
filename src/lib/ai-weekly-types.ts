@@ -12,6 +12,7 @@ export interface AIExerciseItem {
   section: string;
   sectionLabel: string;
   name: string;
+  englishName: string | null;
   sets: number | null;
   reps: string | null;
   restSeconds: number | null;
@@ -88,6 +89,7 @@ export function validateWeeklyPlan(data: unknown): AIWeeklyPlan {
             section: String(ex.section ?? "main"),
             sectionLabel: String(ex.sectionLabel ?? "Ana Antrenman"),
             name: String(ex.name ?? ""),
+            englishName: ex.englishName != null && String(ex.englishName).trim() !== "" ? String(ex.englishName) : null,
             sets: ex.sets != null ? Number(ex.sets) : null,
             reps: ex.reps != null ? String(ex.reps) : null,
             restSeconds: ex.restSeconds != null ? Number(ex.restSeconds) : null,

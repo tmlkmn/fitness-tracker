@@ -21,6 +21,7 @@ import {
 // Types for AI-generated exercise data
 export interface AIExercise {
   name: string;
+  englishName: string | null;
   section: string;
   sectionLabel: string;
   sets: number | null;
@@ -32,6 +33,7 @@ export interface AIExercise {
 
 export interface AIExerciseVariation {
   name: string;
+  englishName: string | null;
   sets: number | null;
   reps: string | null;
   restSeconds: number | null;
@@ -54,6 +56,7 @@ function validateExerciseArray(data: unknown): AIExercise[] {
   }
   return (obj.exercises as Record<string, unknown>[]).map((ex) => ({
     name: String(ex.name ?? ""),
+    englishName: ex.englishName != null && String(ex.englishName).trim() !== "" ? String(ex.englishName) : null,
     section: String(ex.section ?? "main"),
     sectionLabel: String(ex.sectionLabel ?? "Ana Antrenman"),
     sets: ex.sets != null ? Number(ex.sets) : null,
@@ -71,6 +74,7 @@ function validateAlternativesArray(data: unknown): AIExerciseVariation[] {
   }
   return (obj.alternatives as Record<string, unknown>[]).map((ex) => ({
     name: String(ex.name ?? ""),
+    englishName: ex.englishName != null && String(ex.englishName).trim() !== "" ? String(ex.englishName) : null,
     sets: ex.sets != null ? Number(ex.sets) : null,
     reps: ex.reps != null ? String(ex.reps) : null,
     restSeconds: ex.restSeconds != null ? Number(ex.restSeconds) : null,
@@ -165,6 +169,7 @@ export async function applyWorkoutReplacement(
         section: ex.section,
         sectionLabel: ex.sectionLabel,
         name: ex.name,
+        englishName: ex.englishName,
         sets: ex.sets,
         reps: ex.reps,
         restSeconds: ex.restSeconds,
@@ -259,6 +264,7 @@ export async function applySectionReplacement(
         section: ex.section,
         sectionLabel: ex.sectionLabel,
         name: ex.name,
+        englishName: ex.englishName,
         sets: ex.sets,
         reps: ex.reps,
         restSeconds: ex.restSeconds,
@@ -389,6 +395,7 @@ export async function applyExerciseVariation(
     .update(exercises)
     .set({
       name: newExercise.name,
+      englishName: newExercise.englishName,
       sets: newExercise.sets,
       reps: newExercise.reps,
       restSeconds: newExercise.restSeconds,

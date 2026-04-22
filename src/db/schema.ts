@@ -156,6 +156,7 @@ export const exercises = pgTable("exercises", {
   section: text("section").notNull(),
   sectionLabel: text("section_label").notNull(),
   name: text("name").notNull(),
+  englishName: text("english_name"),
   sets: integer("sets"),
   reps: text("reps"),
   restSeconds: integer("rest_seconds"),

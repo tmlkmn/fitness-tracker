@@ -199,11 +199,13 @@ Amacın kas hacmi artışı (hipertrofi) ve kuvvet gelişimi sağlamak. Her yeni
 ## Önemli Kurallar
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını ve sakatlıklarını kesinlikle dikkate al
-- Her egzersiz için: section, sectionLabel, name, sets, reps, restSeconds, durationMinutes, notes
+- Her egzersiz için: section, sectionLabel, name, englishName, sets, reps, restSeconds, durationMinutes, notes
+- name: Türkçe egzersiz adı (kullanıcıya gösterilir)
+- englishName: ExerciseDB'de aramak için İngilizce karşılık (örn: name "Barfiks" → englishName "pull up", name "Çekiç Curl" → englishName "hammer curl"). Standart İngilizce isim kullan; bilmiyorsan null bırak
 - Section değerleri: "warmup", "main", "cooldown", "sauna", "swimming"
 - notes alanını AKTIF kullan: teknik ipucu, tempo, yoğunluk tekniği, ağırlık tavsiyesi
 - sets ve reps null olabilir (süre bazlı egzersizlerde), durationMinutes null olabilir (set bazlı egzersizlerde)
-- JSON formatı: { "exercises": [{ "section": "...", "sectionLabel": "...", "name": "...", "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }] }`;
+- JSON formatı: { "exercises": [{ "section": "...", "sectionLabel": "...", "name": "...", "englishName": "string"|null, "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }] }`;
 
 export const SECTION_REPLACE_PROMPT = `Sen 10+ yıl deneyimli, Türkçe konuşan sertifikalı bir kişisel antrenör ve hipertrofi uzmanısın. Görevin, belirtilen bölüm (section) için progresif ve etkili egzersizler önermek.
 
@@ -215,9 +217,10 @@ Kurallar:
 - Kullanıcı özel bir istek belirtmişse (KULLANICI İSTEĞİ bölümü), bu isteği mutlaka dikkate al
 - Sadece belirtilen bölüm için egzersizler oluştur, section ve sectionLabel değerlerini koru
 - notes alanını aktif kullan: teknik ipucu, tempo, yoğunluk tekniği yazabilirsin
-- Her egzersiz için şu alanları doldur: section, sectionLabel, name, sets, reps, restSeconds, durationMinutes, notes
+- Her egzersiz için şu alanları doldur: section, sectionLabel, name, englishName, sets, reps, restSeconds, durationMinutes, notes
+- name Türkçe; englishName ExerciseDB araması için İngilizce karşılık (bilinmiyorsa null)
 - sets ve reps null olabilir (süre bazlı egzersizlerde), durationMinutes null olabilir (set bazlı egzersizlerde)
-- JSON formatı: { "exercises": [{ "section": "...", "sectionLabel": "...", "name": "...", "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }] }`;
+- JSON formatı: { "exercises": [{ "section": "...", "sectionLabel": "...", "name": "...", "englishName": "string"|null, "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }] }`;
 
 export const DAILY_MEALS_PROMPT = `Sen 10+ yıl deneyimli, Türkçe konuşan sertifikalı bir spor diyetisyeni ve beslenme uzmanısın. Görevin, kullanıcının vücut kompozisyonunu, antrenman programını ve hedeflerini analiz ederek kişiye özel günlük beslenme programı oluşturmak.
 
@@ -415,7 +418,7 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
       "planType": "workout|swimming|rest",
       "workoutTitle": "string|null",
       "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }],
-      "exercises": [{ "section": "warmup|main|cooldown|sauna|swimming", "sectionLabel": "Isınma|Ana Antrenman|Soğuma|Sauna|Yüzme", "name": "...", "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }]
+      "exercises": [{ "section": "warmup|main|cooldown|sauna|swimming", "sectionLabel": "Isınma|Ana Antrenman|Soğuma|Sauna|Yüzme", "name": "...", "englishName": "string|null", "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }]
     }
   ]
 }`;
@@ -433,7 +436,8 @@ Kurallar:
 - Kullanıcı özel bir istek belirtmişse (KULLANICI İSTEĞİ bölümü), bu isteği mutlaka dikkate al
 - notes alanı max 1 kısa cümle (Türkçe, 10 kelimeyi geçmemeli)
 - sets ve reps null olabilir (süre bazlı egzersizlerde), durationMinutes null olabilir (set bazlı egzersizlerde)
-- JSON formatı: { "alternatives": [{ "name": "...", "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }, { ... }, { ... }] }`;
+- englishName: alternatif egzersizin standart İngilizce adı (name zaten İngilizceyse englishName aynı olabilir)
+- JSON formatı: { "alternatives": [{ "name": "...", "englishName": "string"|null, "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }, { ... }, { ... }] }`;
 
 export const EXERCISE_MATCH_PROMPT = `Sen bir egzersiz veritabanı eşleştirme asistanısın. Sana bir egzersiz adı ve bir egzersiz listesi veriyorum.
 
@@ -617,7 +621,7 @@ Her yeni hafta öncekinden bir adım ileri olmalı. Amacın kas hacmi artışı 
       "planType": "workout|swimming|rest",
       "workoutTitle": "string|null",
       "meals": [],
-      "exercises": [{ "section": "warmup|main|cooldown|sauna|swimming", "sectionLabel": "Isınma|Ana Antrenman|Soğuma|Sauna|Yüzme", "name": "...", "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }]
+      "exercises": [{ "section": "warmup|main|cooldown|sauna|swimming", "sectionLabel": "Isınma|Ana Antrenman|Soğuma|Sauna|Yüzme", "name": "...", "englishName": "string|null", "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }]
     }
   ]
 }`;

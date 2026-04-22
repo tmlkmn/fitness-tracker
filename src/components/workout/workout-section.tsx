@@ -19,6 +19,7 @@ interface Exercise {
   section: string;
   sectionLabel: string;
   name: string;
+  englishName?: string | null;
   sets?: number | null;
   reps?: string | null;
   restSeconds?: number | null;

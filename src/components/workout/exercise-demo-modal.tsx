@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import { useExerciseDemo } from "@/hooks/use-exercise-demo";
 
 interface ExerciseDemoModalProps {
   name: string;
+  englishName?: string | null;
 }
 
 const muscleLabels: Record<string, string> = {
@@ -50,18 +52,27 @@ function getMuscleLabel(muscle: string): string {
   return muscleLabels[key] ?? muscleLabels[muscle] ?? muscle;
 }
 
-export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
+export function ExerciseDemoModal({ name, englishName }: ExerciseDemoModalProps) {
   const [open, setOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [fullscreenSrc, setFullscreenSrc] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useExerciseDemo(name, open);
+  const { data, isLoading, error } = useExerciseDemo(name, open, englishName);
 
   const errorMessage = error
     ? error.message === "RATE_LIMITED"
       ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
       : "Demo yüklenirken bir hata oluştu."
     : null;
+
+  useEffect(() => {
+    if (!fullscreenSrc) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreenSrc(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fullscreenSrc]);
 
   return (
     <>
@@ -74,23 +85,25 @@ export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
         <Eye className="h-3.5 w-3.5" />
       </Button>
 
-      {/* Fullscreen overlay */}
-      {fullscreenSrc && (
-        <div
-          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center"
-          onClick={() => setFullscreenSrc(null)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={fullscreenSrc}
-            alt="Tam ekran görsel"
-            className="max-w-full max-h-full object-contain"
-          />
-          <div className="absolute top-4 right-4 p-1 rounded-full bg-white/10">
-            <X className="h-6 w-6 text-white" />
-          </div>
-        </div>
-      )}
+      {/* Fullscreen overlay — portal'a render edilerek stacking context'ten çıkar */}
+      {fullscreenSrc && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-200 bg-black/95 flex items-center justify-center"
+            onClick={() => setFullscreenSrc(null)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={fullscreenSrc}
+              alt="Tam ekran görsel"
+              className="max-w-full max-h-full object-contain"
+            />
+            <div className="absolute top-4 right-4 p-1 rounded-full bg-white/10">
+              <X className="h-6 w-6 text-white" />
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {open && (
         <Dialog open={open} onOpenChange={setOpen}>
