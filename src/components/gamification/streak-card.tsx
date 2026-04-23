@@ -42,12 +42,12 @@ export function StreakCard({ currentStreak, longestStreak }: StreakCardProps) {
               </>
             ) : (
               <>
-                <p className="text-sm font-semibold">
+                <p className="text-sm font-semibold tabular-nums">
                   {currentStreak} gün üst üste
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Progress value={percent} className="flex-1 h-1.5" />
-                  <span className="text-[10px] text-muted-foreground shrink-0">
+                  <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
                     En uzun: {longestStreak}
                   </span>
                 </div>

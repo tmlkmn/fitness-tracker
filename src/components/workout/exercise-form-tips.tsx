@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Loader2, AlertCircle } from "lucide-react";
 import { useExerciseFormTips } from "@/hooks/use-exercise-form-tips";
+import { formatAiError } from "@/lib/ai-errors";
 import ReactMarkdown from "react-markdown";
 
 interface ExerciseFormTipsProps {
@@ -26,11 +27,7 @@ export function ExerciseFormTips({ name, notes }: ExerciseFormTipsProps) {
     error: queryError,
   } = useExerciseFormTips(name, notes ?? null, open);
 
-  const errorMessage = queryError
-    ? queryError.message === "RATE_LIMITED"
-      ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
-      : "AI özelliği şu anda kullanılamıyor."
-    : null;
+  const errorMessage = queryError ? formatAiError(queryError) : null;
 
   const tips = data?.tips ?? "";
 

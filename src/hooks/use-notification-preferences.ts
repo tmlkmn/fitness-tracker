@@ -22,6 +22,9 @@ export function useUpdateNotificationPreferences() {
       pushEnabled?: boolean;
       defaultWorkoutTime?: string;
       timezone?: string;
+      quietHoursStart?: string | null;
+      quietHoursEnd?: string | null;
+      weekStartsOn?: "monday" | "sunday";
     }) => updateNotificationPreferences(data),
     onMutate: async (data) => {
       await qc.cancelQueries({ queryKey: ["notification-preferences"] });

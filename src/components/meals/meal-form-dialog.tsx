@@ -20,6 +20,7 @@ import { FoodReferencePopover } from "./food-reference-popover";
 import { IconPicker } from "@/components/ui/icon-picker";
 import { BookOpen, X } from "lucide-react";
 import { multiplyFood, formatScaledEntry, type FoodLike } from "@/lib/food-math";
+import { useDialogCloseGuard } from "@/hooks/use-dialog-close-guard";
 
 interface MealData {
   id?: number;
@@ -86,6 +87,19 @@ export function MealFormDialog({
   const [addedFoods, setAddedFoods] = useState<AddedFood[]>([]);
 
   const isPending = createMeal.isPending || updateMeal.isPending;
+
+  const isDirty =
+    !isPending &&
+    (mealLabel !== (meal?.mealLabel ?? "") ||
+      content !== (meal?.content ?? "") ||
+      calories !== (meal?.calories?.toString() ?? "") ||
+      protein !== (meal?.proteinG ?? "") ||
+      carbs !== (meal?.carbsG ?? "") ||
+      fat !== (meal?.fatG ?? "") ||
+      icon !== (meal?.icon ?? null) ||
+      addedFoods.length > 0);
+
+  const guardedOpenChange = useDialogCloseGuard(isDirty, onOpenChange);
 
   const handlePickerSelect = (data: {
     mealLabel: string;
@@ -183,7 +197,7 @@ export function MealFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={guardedOpenChange}>
       <DialogContent className="max-w-sm w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto p-4 gap-3">
         <DialogHeader className="space-y-0">
           <div className="flex items-center justify-between">

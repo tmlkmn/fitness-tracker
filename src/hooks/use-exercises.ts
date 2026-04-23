@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getExercisesByDay, toggleExerciseCompleted } from "@/actions/exercises";
+import { hapticSuccess, hapticError, hapticTap } from "@/lib/haptics";
 
 type Exercise = Awaited<ReturnType<typeof getExercisesByDay>>[number];
 
@@ -23,6 +24,8 @@ export function useToggleExercise() {
       isCompleted: boolean;
     }) => toggleExerciseCompleted(id, isCompleted),
     onMutate: async ({ id, isCompleted }) => {
+      if (isCompleted) hapticSuccess();
+      else hapticTap();
       await qc.cancelQueries({ queryKey: ["exercises"] });
       // Optimistically update all exercise query caches
       const queries = qc.getQueriesData<Exercise[]>({ queryKey: ["exercises"] });
@@ -43,6 +46,7 @@ export function useToggleExercise() {
           qc.setQueryData(key, data);
         }
       }
+      hapticError();
       toast.error("Egzersiz durumu güncellenemedi");
     },
     onSuccess: (_data, variables, context) => {

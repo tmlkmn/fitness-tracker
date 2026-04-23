@@ -13,6 +13,7 @@ import {
   useApplySectionReplacement,
 } from "@/hooks/use-workout-ai";
 import { useProfileCheck } from "@/hooks/use-profile-check";
+import { formatAiError } from "@/lib/ai-errors";
 
 interface Exercise {
   id: number;
@@ -80,11 +81,7 @@ export function WorkoutSection({
     }
   };
 
-  const error = generate.error
-    ? generate.error.message === "RATE_LIMITED"
-      ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
-      : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
-    : null;
+  const error = generate.error ? formatAiError(generate.error) : null;
 
   const sectionIcon = getSectionIcon(section);
 

@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Eye, AlertCircle, ChevronDown, ChevronUp, X } from "lucide-react";
 import Image from "next/image";
 import { useExerciseDemo } from "@/hooks/use-exercise-demo";
+import { formatAiError } from "@/lib/ai-errors";
 
 interface ExerciseDemoModalProps {
   name: string;
@@ -59,11 +60,7 @@ export function ExerciseDemoModal({ name, englishName }: ExerciseDemoModalProps)
 
   const { data, isLoading, error } = useExerciseDemo(name, open, englishName);
 
-  const errorMessage = error
-    ? error.message === "RATE_LIMITED"
-      ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
-      : "Demo yüklenirken bir hata oluştu."
-    : null;
+  const errorMessage = error ? formatAiError(error) : null;
 
   useEffect(() => {
     if (!fullscreenSrc) return;

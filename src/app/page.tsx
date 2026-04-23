@@ -338,7 +338,7 @@ export default function HomePage() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card>
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-1">
@@ -404,7 +404,7 @@ export default function HomePage() {
         </div>
 
         {/* Su & Uyku Widgets */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
           <WaterDashboardWidget />
           <SleepDashboardWidget />
         </div>
@@ -413,7 +413,7 @@ export default function HomePage() {
         <MacroTrendSparkline endDate={todayStr} metric="calories" />
 
         {/* Quick Access */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { href: "/takvim", icon: Calendar, label: "Takvim", desc: "Haftalık program" },
             { href: "/ilerleme", icon: TrendingUp, label: "İlerleme", desc: "Kilo & ölçümler" },

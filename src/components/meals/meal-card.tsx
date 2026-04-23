@@ -102,7 +102,7 @@ export function MealCard({
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {calories ? (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs tabular-nums">
                       {calories} kcal
                     </Badge>
                   ) : null}

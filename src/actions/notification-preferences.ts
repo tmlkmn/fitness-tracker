@@ -18,6 +18,9 @@ export async function getNotificationPreferences() {
     pushEnabled: true,
     defaultWorkoutTime: "19:00",
     timezone: "Europe/Istanbul",
+    quietHoursStart: null,
+    quietHoursEnd: null,
+    weekStartsOn: "monday",
   };
 }
 
@@ -27,6 +30,9 @@ export async function updateNotificationPreferences(data: {
   pushEnabled?: boolean;
   defaultWorkoutTime?: string;
   timezone?: string;
+  quietHoursStart?: string | null;
+  quietHoursEnd?: string | null;
+  weekStartsOn?: "monday" | "sunday";
 }) {
   const user = await getAuthUser();
 

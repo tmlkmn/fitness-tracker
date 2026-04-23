@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatDateStr } from "@/lib/utils";
+import { getWeekDayLabels, type WeekStart } from "@/lib/week";
 
 interface WeekStripProps {
   weekStartDate: Date;
@@ -10,9 +11,8 @@ interface WeekStripProps {
   onPrevWeek: () => void;
   onNextWeek: () => void;
   datesWithPlans?: Set<string>;
+  weekStartsOn?: WeekStart;
 }
-
-const DAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 
 function formatMonthRange(start: Date): string {
   const end = new Date(start);
@@ -32,15 +32,17 @@ export function WeekStrip({
   onPrevWeek,
   onNextWeek,
   datesWithPlans,
+  weekStartsOn = "monday",
 }: WeekStripProps) {
   const todayStr = formatDateStr(new Date());
+  const labels = getWeekDayLabels(weekStartsOn);
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() + i);
     return {
       dateStr: formatDateStr(d),
       dayNum: d.getDate(),
-      label: DAY_LABELS[i],
+      label: labels[i],
     };
   });
 

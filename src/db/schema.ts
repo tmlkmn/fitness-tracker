@@ -311,6 +311,9 @@ export const notificationPreferences = pgTable("notification_preferences", {
   pushEnabled: boolean("push_enabled").default(true),
   defaultWorkoutTime: text("default_workout_time"),
   timezone: text("timezone"),
+  quietHoursStart: text("quiet_hours_start"),
+  quietHoursEnd: text("quiet_hours_end"),
+  weekStartsOn: text("week_starts_on"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

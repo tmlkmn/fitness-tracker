@@ -160,8 +160,8 @@ export function AiWorkoutModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto overflow-x-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-sm mx-4 overflow-x-hidden">
+        <DialogHeader sticky>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             {title}

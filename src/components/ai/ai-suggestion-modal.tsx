@@ -30,6 +30,7 @@ import {
 } from "@/hooks/use-saved-meals";
 import { useInvalidateAiQuota } from "@/hooks/use-ai-quota";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
+import { formatAiError } from "@/lib/ai-errors";
 
 const INGREDIENT_TAGS = [
   "Tavuk", "Kırmızı et", "Balık", "Yumurta", "Ton balığı",
@@ -122,11 +123,7 @@ export function AiSuggestionModal({
         }
       }
     } catch (err) {
-      const message =
-        err instanceof Error && err.message === "RATE_LIMITED"
-          ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
-          : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin.";
-      setError(message);
+      setError(formatAiError(err));
     } finally {
       setLoading(false);
       invalidateQuota();

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getMealsByDay, toggleMealCompleted } from "@/actions/meals";
+import { hapticSuccess, hapticTap, hapticError } from "@/lib/haptics";
 
 type Meal = Awaited<ReturnType<typeof getMealsByDay>>[number];
 
@@ -23,6 +24,8 @@ export function useToggleMeal() {
       isCompleted: boolean;
     }) => toggleMealCompleted(id, isCompleted),
     onMutate: async ({ id, isCompleted }) => {
+      if (isCompleted) hapticSuccess();
+      else hapticTap();
       await qc.cancelQueries({ queryKey: ["meals.byDay"] });
       const queries = qc.getQueriesData<Meal[]>({ queryKey: ["meals.byDay"] });
       const snapshots: Array<[readonly unknown[], Meal[] | undefined]> = [];
@@ -42,6 +45,7 @@ export function useToggleMeal() {
           qc.setQueryData(key, data);
         }
       }
+      hapticError();
       toast.error("Öğün durumu güncellenemedi");
     },
     onSuccess: (_data, variables, context) => {

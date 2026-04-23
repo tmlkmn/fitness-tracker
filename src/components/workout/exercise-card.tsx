@@ -21,6 +21,7 @@ import {
 } from "@/hooks/use-workout-ai";
 import { useUpdateExercise } from "@/hooks/use-exercise-crud";
 import type { AIExerciseVariation } from "@/actions/ai-workout";
+import { formatAiError } from "@/lib/ai-errors";
 
 interface ExerciseCardProps {
   id: number;
@@ -85,11 +86,7 @@ export function ExerciseCard({
     if (!open) generate.reset();
   };
 
-  const error = generate.error
-    ? generate.error.message === "RATE_LIMITED"
-      ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
-      : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
-    : null;
+  const error = generate.error ? formatAiError(generate.error) : null;
 
   const cardElement = (
       <Card className={cn("transition-opacity", isCompleted && "opacity-60")}>

@@ -21,6 +21,7 @@ import { useCreateExercise, useUpdateExercise } from "@/hooks/use-exercise-crud"
 import { ExerciseLibraryPicker } from "./exercise-library-picker";
 import { NumericStepper } from "@/components/ui/numeric-stepper";
 import { Search } from "lucide-react";
+import { useDialogCloseGuard } from "@/hooks/use-dialog-close-guard";
 
 const SECTIONS = [
   { value: "warmup", label: "Isınma" },
@@ -70,6 +71,18 @@ export function ExerciseFormDialog({
 
   const isPending = createExercise.isPending || updateExercise.isPending;
 
+  const isDirty =
+    !isPending &&
+    (name !== (exercise?.name ?? "") ||
+      sets !== (exercise?.sets?.toString() ?? "") ||
+      reps !== (exercise?.reps ?? "") ||
+      restSeconds !== (exercise?.restSeconds?.toString() ?? "") ||
+      durationMinutes !== (exercise?.durationMinutes?.toString() ?? "") ||
+      notes !== (exercise?.notes ?? "") ||
+      section !== (exercise?.section ?? "main"));
+
+  const guardedOpenChange = useDialogCloseGuard(isDirty, onOpenChange);
+
   const sectionLabel =
     SECTIONS.find((s) => s.value === section)?.label ?? "Ana Antrenman";
 
@@ -101,7 +114,7 @@ export function ExerciseFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={guardedOpenChange}>
       <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>

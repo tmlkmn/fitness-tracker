@@ -1,0 +1,1 @@
+ALTER TABLE "notification_preferences" ADD COLUMN "week_starts_on" text;

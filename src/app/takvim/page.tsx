@@ -13,6 +13,8 @@ import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans, useEmptyWeeksBetween } from "@/hooks/use-plans";
 import { useGenerateWeeklyPlan, useApplyWeeklyPlan, useDeleteWeeklyPlan } from "@/hooks/use-weekly-ai";
 import { useUserProfile } from "@/hooks/use-user";
+import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
+import { getWeekStartDate, type WeekStart } from "@/lib/week";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,19 +51,19 @@ function formatTurkishDate(dateStr: string): string {
   });
 }
 
-function getMonday(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 export default function TakvimPage() {
+  const { data: prefs } = useNotificationPreferences();
+  const weekStartsOn: WeekStart = (prefs?.weekStartsOn as WeekStart) ?? "monday";
+  const getWeekStart = useCallback(
+    (date: Date) => getWeekStartDate(date, weekStartsOn),
+    [weekStartsOn],
+  );
   const today = useMemo(() => new Date(), []);
   const [selectedDate, setSelectedDate] = useState(() => formatDateStr(today));
-  const [weekStart, setWeekStart] = useState(() => getMonday(today));
+  const weekStart = useMemo(
+    () => getWeekStartDate(new Date(selectedDate + "T00:00:00"), weekStartsOn),
+    [selectedDate, weekStartsOn],
+  );
   const [showFullCalendar, setShowFullCalendar] = useState(false);
   const [viewYear, setViewYear] = useState(() => today.getFullYear());
   const [viewMonth, setViewMonth] = useState(() => today.getMonth() + 1);
@@ -99,50 +101,33 @@ export default function TakvimPage() {
     (d) => d.date === selectedDate
   );
 
-  const handlePrevWeek = useCallback(() => {
-    setWeekStart((prev) => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() - 7);
-      const mondayOfTarget = getMonday(d);
-      const currentWeekMonday = getMonday(today);
-      if (mondayOfTarget.getTime() === currentWeekMonday.getTime()) {
+  const shiftWeek = useCallback(
+    (direction: 1 | -1) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + direction * 7);
+      const targetStart = getWeekStart(d);
+      const currentStart = getWeekStart(today);
+      if (targetStart.getTime() === currentStart.getTime()) {
         setSelectedDate(formatDateStr(today));
       } else {
-        setSelectedDate(formatDateStr(mondayOfTarget));
+        setSelectedDate(formatDateStr(targetStart));
       }
       setCreatedDailyPlanId(null);
-      return d;
-    });
-  }, [today]);
+    },
+    [weekStart, today, getWeekStart],
+  );
 
-  const handleNextWeek = useCallback(() => {
-    setWeekStart((prev) => {
-      const d = new Date(prev);
-      d.setDate(d.getDate() + 7);
-      const mondayOfTarget = getMonday(d);
-      const currentWeekMonday = getMonday(today);
-      if (mondayOfTarget.getTime() === currentWeekMonday.getTime()) {
-        setSelectedDate(formatDateStr(today));
-      } else {
-        setSelectedDate(formatDateStr(mondayOfTarget));
-      }
-      setCreatedDailyPlanId(null);
-      return d;
-    });
-  }, [today]);
+  const handlePrevWeek = useCallback(() => shiftWeek(-1), [shiftWeek]);
+  const handleNextWeek = useCallback(() => shiftWeek(1), [shiftWeek]);
 
   const handleSelectDate = useCallback((dateStr: string) => {
     setSelectedDate(dateStr);
     setCreatedDailyPlanId(null);
-    const d = new Date(dateStr + "T00:00:00");
-    setWeekStart(getMonday(d));
   }, []);
 
   const handleMonthSelectDate = useCallback((dateStr: string) => {
     setSelectedDate(dateStr);
     setCreatedDailyPlanId(null);
-    const d = new Date(dateStr + "T00:00:00");
-    setWeekStart(getMonday(d));
     setShowFullCalendar(false);
   }, []);
 
@@ -172,11 +157,8 @@ export default function TakvimPage() {
   const hasEmptyWeekGap = isFutureWeek && (emptyWeeks?.length ?? 0) > 0;
 
   const handleGoToToday = useCallback(() => {
-    const now = new Date();
-    const todayDate = formatDateStr(now);
-    setSelectedDate(todayDate);
+    setSelectedDate(formatDateStr(new Date()));
     setCreatedDailyPlanId(null);
-    setWeekStart(getMonday(now));
     setShowFullCalendar(false);
   }, []);
 
@@ -270,6 +252,7 @@ export default function TakvimPage() {
                 setViewMonth(m);
               }}
               datesWithPlans={datesWithPlans}
+              weekStartsOn={weekStartsOn}
             />
             <Button
               variant="ghost"
@@ -301,6 +284,7 @@ export default function TakvimPage() {
               onPrevWeek={handlePrevWeek}
               onNextWeek={handleNextWeek}
               datesWithPlans={datesWithPlans}
+              weekStartsOn={weekStartsOn}
             />
             <div className="flex gap-2">
               <Button

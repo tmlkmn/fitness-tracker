@@ -12,6 +12,7 @@ import { AiWorkoutModal } from "./ai-workout-modal";
 import { BulkDeleteExercisesDialog } from "./bulk-delete-exercises-dialog";
 import { CopyWorkoutDialog } from "./copy-workout-dialog";
 import { MoveDayContentsDialog } from "./move-day-contents-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { BulkCompleteDialog } from "@/components/ui/bulk-complete-dialog";
 import { useBulkCompleteExercises } from "@/hooks/use-bulk-completion";
 import {
@@ -20,6 +21,7 @@ import {
 } from "@/hooks/use-workout-ai";
 import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
+import { formatAiError } from "@/lib/ai-errors";
 
 interface WorkoutListProps {
   dailyPlanId: number;
@@ -67,17 +69,34 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
     }
   };
 
-  const error = generate.error
-    ? generate.error.message === "RATE_LIMITED"
-      ? "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin."
-      : "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
-    : null;
+  const error = generate.error ? formatAiError(generate.error) : null;
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-3.5 w-24" />
+            <Skeleton className="h-3.5 w-10" />
+          </div>
+          <Skeleton className="h-2 w-full rounded-full" />
+        </div>
+        {[...Array(2)].map((_, s) => (
+          <div key={s} className="space-y-2">
+            <Skeleton className="h-3.5 w-20" />
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-border/60 bg-card p-3 flex gap-3 items-center"
+              >
+                <Skeleton className="h-5 w-5 rounded shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3.5 w-2/3" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
         ))}
       </div>
     );
@@ -86,29 +105,53 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
   if (!exerciseList?.length) {
     return (
       <>
-        <div className="text-center py-8 space-y-3">
-          <Dumbbell className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-          <p className="text-sm text-muted-foreground">
-            Bu gün için antrenman programı yok
-          </p>
-          {!readOnly && (
-            <div className="flex gap-2 justify-center flex-wrap">
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleOpenChange(true)} disabled={workoutQuota?.remaining === 0}>
+        <EmptyState
+          icon={Dumbbell}
+          title="Bu gün için antrenman programı yok"
+          description={
+            readOnly
+              ? "Geçmiş bir gün görüntülüyorsun."
+              : "AI ile saniyeler içinde oluştur veya geçen haftadan kopyala."
+          }
+          action={
+            !readOnly && (
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => handleOpenChange(true)}
+                disabled={workoutQuota?.remaining === 0}
+              >
                 <Sparkles className="h-3.5 w-3.5" />
                 AI ile Oluştur
                 <AiQuotaBadge feature="workout" />
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setCopyOpen(true)}>
-                <Copy className="h-3.5 w-3.5" />
-                Geçen Haftadan
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
-                <Plus className="h-3.5 w-3.5" />
-                Manuel Ekle
-              </Button>
-            </div>
-          )}
-        </div>
+            )
+          }
+          secondaryAction={
+            !readOnly && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setCopyOpen(true)}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Geçen Haftadan
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setAddOpen(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Manuel Ekle
+                </Button>
+              </>
+            )
+          }
+        />
         {addOpen && (
           <ExerciseFormDialog
             open={addOpen}
@@ -171,7 +214,7 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
       <div className="space-y-6">
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground tabular-nums">
               {completedExercises}/{totalExercises} tamamlandı
             </span>
             <div className="flex items-center gap-2">
@@ -187,7 +230,7 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
                   Tümünü Tamamla
                 </Button>
               )}
-              <span className="text-sm font-medium">%{percent}</span>
+              <span className="text-sm font-medium tabular-nums">%{percent}</span>
             </div>
           </div>
           <Progress value={percent} />

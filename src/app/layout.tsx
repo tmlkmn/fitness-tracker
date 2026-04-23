@@ -1,7 +1,21 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
 import { QueryProvider } from "@/lib/query-client";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { QuickActionFab } from "@/components/layout/quick-action-fab";
 import { Toaster } from "@/components/ui/sonner";
 import { SwRegister } from "./sw-register";
 import { PullToRefresh } from "@/components/layout/pull-to-refresh";
@@ -64,7 +78,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className="dark" suppressHydrationWarning>
+    <html
+      lang="tr"
+      className={`dark ${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           type="application/ld+json"
@@ -100,8 +118,9 @@ export default function RootLayout({
           <ThemeProvider>
             <NetworkStatus />
             <PullToRefresh>
-              <main className="pb-24 max-w-lg mx-auto">{children}</main>
+              <main className="pb-24 max-w-lg md:max-w-2xl mx-auto">{children}</main>
             </PullToRefresh>
+            <QuickActionFab />
             <BottomNav />
             <Toaster />
             <CookieConsent />

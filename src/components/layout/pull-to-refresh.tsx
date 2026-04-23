@@ -2,15 +2,18 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { hapticImpact } from "@/lib/haptics";
 
-function isIOSStandalone(): boolean {
+function isStandaloneDisplay(): boolean {
   if (typeof window === "undefined") return false;
-  const ua = navigator.userAgent;
-  const isIOS = /iPhone|iPad|iPod/.test(ua);
-  const isStandalone =
-    ("standalone" in navigator && (navigator as unknown as { standalone: boolean }).standalone) ||
-    window.matchMedia("(display-mode: standalone)").matches;
-  return isIOS && isStandalone;
+  const iosStandalone =
+    "standalone" in navigator &&
+    (navigator as unknown as { standalone: boolean }).standalone;
+  const dmStandalone = window.matchMedia(
+    "(display-mode: standalone)",
+  ).matches;
+  return Boolean(iosStandalone || dmStandalone);
 }
 
 export function PullToRefresh({ children }: { children: React.ReactNode }) {
@@ -20,9 +23,10 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
   const [enabled, setEnabled] = useState(false);
   const startY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const qc = useQueryClient();
 
   useEffect(() => {
-    setEnabled(isIOSStandalone());
+    setEnabled(isStandaloneDisplay());
   }, []);
 
   const THRESHOLD = 80;
@@ -38,13 +42,22 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
     [enabled, refreshing]
   );
 
+  const crossedThresholdRef = useRef(false);
+
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
       if (!pulling || refreshing) return;
       const delta = e.touches[0].clientY - startY.current;
       if (delta > 0) {
         // Apply resistance — pull distance grows slower the further you pull
-        setPullDistance(Math.min(delta * 0.4, 120));
+        const next = Math.min(delta * 0.4, 120);
+        setPullDistance(next);
+        if (next >= THRESHOLD && !crossedThresholdRef.current) {
+          crossedThresholdRef.current = true;
+          hapticImpact();
+        } else if (next < THRESHOLD && crossedThresholdRef.current) {
+          crossedThresholdRef.current = false;
+        }
       } else {
         setPullDistance(0);
       }
@@ -52,18 +65,24 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
     [pulling, refreshing]
   );
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback(async () => {
     if (!pulling) return;
     setPulling(false);
+    crossedThresholdRef.current = false;
 
     if (pullDistance >= THRESHOLD) {
       setRefreshing(true);
       setPullDistance(THRESHOLD * 0.5);
-      window.location.reload();
+      try {
+        await qc.invalidateQueries();
+      } finally {
+        setRefreshing(false);
+        setPullDistance(0);
+      }
     } else {
       setPullDistance(0);
     }
-  }, [pulling, pullDistance]);
+  }, [pulling, pullDistance, qc]);
 
   if (!enabled) return <>{children}</>;
 

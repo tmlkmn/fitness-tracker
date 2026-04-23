@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Sparkles, UtensilsCrossed, Trash2, CheckCheck, ArrowRightLeft } from "lucide-react";
 import { BulkDeleteMealsDialog } from "./bulk-delete-meals-dialog";
 import { MoveDayContentsDialog } from "@/components/workout/move-day-contents-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { BulkCompleteDialog } from "@/components/ui/bulk-complete-dialog";
 import { useBulkCompleteMeals } from "@/hooks/use-bulk-completion";
 import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
@@ -20,6 +21,7 @@ import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { useUserProfile } from "@/hooks/use-user";
 import { computeMealMacros } from "@/lib/meal-macros";
 import { resolveTargets } from "@/lib/macro-targets";
+import { formatAiError } from "@/lib/ai-errors";
 import type { AIMeal } from "@/actions/ai-meals";
 
 interface MealListProps {
@@ -63,14 +65,9 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
           fatG: m.fatG ?? null,
         }));
 
-  const aiError =
-    generateMeals.error instanceof Error
-      ? generateMeals.error.message === "AI_UNAVAILABLE"
-        ? "AI şu an kullanılamıyor. Lütfen tekrar deneyin."
-        : generateMeals.error.message === "RATE_LIMITED"
-          ? "Günlük AI kullanım limitine ulaştınız."
-          : "Bir hata oluştu. Lütfen tekrar deneyin."
-      : null;
+  const aiError = generateMeals.error
+    ? formatAiError(generateMeals.error)
+    : null;
 
   const handleAiGenerate = (userNote?: string) => {
     generateMeals.mutate({ dailyPlanId, userNote });
@@ -89,8 +86,21 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
   if (isLoading) {
     return (
       <div className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-20 w-full" />
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="rounded-lg border border-border/60 bg-card p-3 flex gap-3"
+          >
+            <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="flex justify-between">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-4/5" />
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -98,28 +108,43 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
 
   if (!mealList?.length) {
     return (
-      <div className="text-center py-8 space-y-3">
-        <UtensilsCrossed className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-        <p className="text-sm text-muted-foreground">Öğün bulunamadı</p>
-        {!readOnly && (
-          <div className="flex gap-2 justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setAiOpen(true)}
-              disabled={isDailyMealExhausted}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              AI ile Oluştur
-              <AiQuotaBadge feature="daily-meal" />
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
-              <Plus className="h-3.5 w-3.5" />
-              Manuel Ekle
-            </Button>
-          </div>
-        )}
+      <div>
+        <EmptyState
+          icon={UtensilsCrossed}
+          title="Bu güne ait öğün yok"
+          description={
+            readOnly
+              ? "Geçmiş bir gün görüntülüyorsun."
+              : "AI ile saniyeler içinde günlük plan oluştur veya manuel ekle."
+          }
+          action={
+            !readOnly && (
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setAiOpen(true)}
+                disabled={isDailyMealExhausted}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                AI ile Oluştur
+                <AiQuotaBadge feature="daily-meal" />
+              </Button>
+            )
+          }
+          secondaryAction={
+            !readOnly && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setAddOpen(true)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Manuel Ekle
+              </Button>
+            )
+          }
+        />
         {addOpen && (
           <MealFormDialog
             open={addOpen}
@@ -171,7 +196,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
 
       <div className="space-y-1.5">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground tabular-nums">
             {completedCount}/{mealList.length} tamamlandı
           </span>
           <div className="flex items-center gap-2">
@@ -187,7 +212,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
                 Tümünü Tamamla
               </Button>
             )}
-            <span className="text-sm font-medium">{totalCalories} kcal</span>
+            <span className="text-sm font-medium tabular-nums">{totalCalories} kcal</span>
           </div>
         </div>
         <Progress value={percent} />

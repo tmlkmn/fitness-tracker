@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { ShoppingCart, CheckCircle, Sparkles, RefreshCw, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { formatAiError } from "@/lib/ai-errors";
 
 function formatWeekLabel(startDate: string | null, weekNumber: number): string {
   if (!startDate) return `Hf ${weekNumber}`;
@@ -96,17 +97,11 @@ function AlisverisContent() {
     setError("");
     generateShopping.mutate(activeWeekId, {
       onError: (err) => {
-        const msg = err instanceof Error ? err.message : "";
-        if (msg === "RATE_LIMITED") {
-          setError("Çok fazla istek gönderdiniz. Lütfen biraz bekleyin.");
-        } else if (msg.startsWith("COOLDOWN:")) {
-          const secs = msg.split(":")[1];
-          setError(`Lütfen ${secs} saniye bekleyin.`);
-        } else if (msg === "NO_MEALS") {
+        if (err instanceof Error && err.message === "NO_MEALS") {
           setError("Bu haftada öğün bulunamadı. Önce beslenme programı oluşturun.");
-        } else {
-          setError("AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin.");
+          return;
         }
+        setError(formatAiError(err));
       },
     });
   };

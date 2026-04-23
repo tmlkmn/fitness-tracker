@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatDateStr } from "@/lib/utils";
+import { getWeekDayLabels, type WeekStart } from "@/lib/week";
 
 interface MonthCalendarProps {
   selectedDate: string;
@@ -10,20 +11,24 @@ interface MonthCalendarProps {
   viewMonth: number; // 1-indexed
   onChangeMonth: (year: number, month: number) => void;
   datesWithPlans?: Set<string>;
+  weekStartsOn?: WeekStart;
 }
-
-const DAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 
 function getMonthLabel(year: number, month: number): string {
   const d = new Date(year, month - 1, 1);
   return d.toLocaleDateString("tr-TR", { month: "long", year: "numeric" });
 }
 
-function getCalendarDays(year: number, month: number) {
+function getCalendarDays(year: number, month: number, startsOn: WeekStart) {
   const firstDay = new Date(year, month - 1, 1);
-  // Monday = 0, Sunday = 6
-  let startOffset = firstDay.getDay() - 1;
-  if (startOffset < 0) startOffset = 6;
+  let startOffset: number;
+  if (startsOn === "sunday") {
+    startOffset = firstDay.getDay();
+  } else {
+    // Monday-first: Monday = 0, Sunday = 6
+    startOffset = firstDay.getDay() - 1;
+    if (startOffset < 0) startOffset = 6;
+  }
 
   const startDate = new Date(firstDay);
   startDate.setDate(startDate.getDate() - startOffset);
@@ -63,9 +68,11 @@ export function MonthCalendar({
   viewMonth,
   onChangeMonth,
   datesWithPlans,
+  weekStartsOn = "monday",
 }: MonthCalendarProps) {
   const todayStr = formatDateStr(new Date());
-  const days = getCalendarDays(viewYear, viewMonth);
+  const days = getCalendarDays(viewYear, viewMonth, weekStartsOn);
+  const DAY_LABELS = getWeekDayLabels(weekStartsOn);
 
   const handlePrev = () => {
     if (viewMonth === 1) {

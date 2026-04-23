@@ -9,6 +9,30 @@ import { eq } from "drizzle-orm";
 import { sendNotificationEmail } from "@/lib/email";
 import { sendPushNotification } from "@/lib/web-push";
 
+function isInQuietHours(
+  start: string | null | undefined,
+  end: string | null | undefined,
+  timezone: string | null | undefined
+): boolean {
+  if (!start || !end) return false;
+  const tz = timezone ?? "Europe/Istanbul";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
+  const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
+  const now = parseInt(hh) * 60 + parseInt(mm);
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const s = sh * 60 + sm;
+  const e = eh * 60 + em;
+  if (s === e) return false;
+  return s < e ? now >= s && now < e : now >= s || now < e;
+}
+
 export async function sendNotification(params: {
   userId: string;
   type: string;
@@ -29,8 +53,9 @@ export async function sendNotification(params: {
   const inAppEnabled = prefs?.inAppEnabled ?? true;
   const emailEnabled = prefs?.emailEnabled ?? true;
   const pushEnabled = prefs?.pushEnabled ?? true;
+  const quiet = isInQuietHours(prefs?.quietHoursStart, prefs?.quietHoursEnd, prefs?.timezone);
 
-  console.log(`[notification] userId=${userId} type=${type} prefs: inApp=${inAppEnabled} email=${emailEnabled} push=${pushEnabled} skipEmail=${skipEmail}`);
+  console.log(`[notification] userId=${userId} type=${type} prefs: inApp=${inAppEnabled} email=${emailEnabled} push=${pushEnabled} skipEmail=${skipEmail} quiet=${quiet}`);
 
   // 1. In-app notification
   if (inAppEnabled) {
@@ -44,8 +69,8 @@ export async function sendNotification(params: {
     });
   }
 
-  // 2. Email notification
-  if (emailEnabled && !skipEmail) {
+  // 2. Email notification (suppressed during quiet hours)
+  if (emailEnabled && !skipEmail && !quiet) {
     const [user] = await db
       .select({ email: users.email })
       .from(users)
@@ -59,8 +84,8 @@ export async function sendNotification(params: {
     }
   }
 
-  // 3. Push notifications
-  if (pushEnabled) {
+  // 3. Push notifications (suppressed during quiet hours)
+  if (pushEnabled && !quiet) {
     const subs = await db
       .select()
       .from(pushSubscriptions)

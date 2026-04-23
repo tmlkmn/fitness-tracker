@@ -130,7 +130,7 @@ export default function IlerlemePage() {
         <div className="grid grid-cols-3 gap-3">
           <Card>
             <CardContent className="p-3 text-center">
-              <p className="text-lg font-bold">
+              <p className="text-lg font-bold tabular-nums">
                 {latestWeight ?? startingWeight ?? "—"}
               </p>
               <p className="text-xs text-muted-foreground">kg (şimdi)</p>
@@ -139,7 +139,7 @@ export default function IlerlemePage() {
           <Card>
             <CardContent className="p-3 text-center">
               <p
-                className={`text-lg font-bold ${
+                className={`text-lg font-bold tabular-nums ${
                   diff && parseFloat(diff) < 0
                     ? "text-green-500"
                     : diff && parseFloat(diff) > 0
@@ -160,7 +160,7 @@ export default function IlerlemePage() {
                   currentTarget={targetWeight}
                 />
               </div>
-              <p className="text-lg font-bold text-primary">
+              <p className="text-lg font-bold text-primary tabular-nums">
                 {targetWeight ?? "—"}
               </p>
               <p className="text-xs text-muted-foreground">kg hedef</p>

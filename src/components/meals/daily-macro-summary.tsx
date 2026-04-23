@@ -28,13 +28,13 @@ function MacroCell({
 
   return (
     <div className="text-center space-y-1">
-      <p className={cn("text-lg font-bold leading-none", highlight && "text-primary")}>
+      <p className={cn("text-lg font-bold leading-none tabular-nums", highlight && "text-primary")}>
         {value}
         <span className="text-xs font-normal opacity-70">{unit}</span>
       </p>
       {hasTarget ? (
         <>
-          <p className="text-[10px] text-muted-foreground leading-none">
+          <p className="text-[10px] text-muted-foreground leading-none tabular-nums">
             / {target}
             {unit}
           </p>

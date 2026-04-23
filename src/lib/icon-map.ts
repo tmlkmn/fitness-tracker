@@ -34,6 +34,8 @@ import {
   HeartPulse,
   Utensils,
   ChefHat,
+  StretchHorizontal,
+  PersonStanding,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
@@ -124,6 +126,11 @@ const iconNameMap: Record<string, LucideIcon> = {
   HeartPulse,
   Utensils,
   ChefHat,
+  StretchHorizontal,
+  PersonStanding,
+  Droplets,
+  Pill,
+  Moon,
 };
 
 interface DynamicIconProps extends LucideProps {
