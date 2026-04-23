@@ -38,7 +38,11 @@ export function NotificationBell() {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-88 max-w-[calc(100vw-1rem)] p-0 overflow-hidden"
+      >
         <NotificationDropdown />
       </PopoverContent>
     </Popover>
