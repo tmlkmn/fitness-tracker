@@ -218,7 +218,7 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
             }
           />
         ))}
-        {!readOnly && (
+        {!readOnly ? (
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -257,6 +257,16 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-1.5"
+            onClick={() => setMoveOpen(true)}
+          >
+            <ArrowRightLeft className="h-3.5 w-3.5" />
+            Bugüne veya İleri Güne Taşı
+          </Button>
         )}
       </div>
 

@@ -9,8 +9,9 @@ import { AiMealModal } from "./ai-meal-modal";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Sparkles, UtensilsCrossed, Trash2, CheckCheck } from "lucide-react";
+import { Plus, Sparkles, UtensilsCrossed, Trash2, CheckCheck, ArrowRightLeft } from "lucide-react";
 import { BulkDeleteMealsDialog } from "./bulk-delete-meals-dialog";
+import { MoveDayContentsDialog } from "@/components/workout/move-day-contents-dialog";
 import { BulkCompleteDialog } from "@/components/ui/bulk-complete-dialog";
 import { useBulkCompleteMeals } from "@/hooks/use-bulk-completion";
 import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
@@ -35,6 +36,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkCompleteOpen, setBulkCompleteOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
   const bulkComplete = useBulkCompleteMeals();
 
   const generateMeals = useGenerateDailyMeals();
@@ -219,7 +221,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
         />
       ))}
 
-      {!readOnly && (
+      {!readOnly ? (
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -233,13 +235,31 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
           <Button
             variant="outline"
             size="sm"
+            className="gap-1.5"
+            onClick={() => setMoveOpen(true)}
+            title="Başka güne taşı"
+          >
+            <ArrowRightLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             className="gap-1.5 text-destructive hover:text-destructive"
             onClick={() => setBulkDeleteOpen(true)}
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Tümünü Sil
           </Button>
         </div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-1.5"
+          onClick={() => setMoveOpen(true)}
+        >
+          <ArrowRightLeft className="h-3.5 w-3.5" />
+          Bugüne veya İleri Güne Taşı
+        </Button>
       )}
 
       {addOpen && (
@@ -287,6 +307,16 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
           error={aiError}
           onGenerate={handleAiGenerate}
           onApply={handleAiApply}
+        />
+      )}
+
+      {moveOpen && (
+        <MoveDayContentsDialog
+          open={moveOpen}
+          onOpenChange={setMoveOpen}
+          sourceDailyPlanId={dailyPlanId}
+          defaultIncludeWorkout={false}
+          defaultIncludeMeals={true}
         />
       )}
     </div>
