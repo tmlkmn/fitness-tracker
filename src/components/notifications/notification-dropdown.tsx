@@ -13,7 +13,6 @@ import {
   getNotificationConfig,
   type NotificationCategory,
 } from "./notification-types";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
@@ -97,7 +96,7 @@ export function NotificationDropdown() {
         </div>
       )}
 
-      <ScrollArea className="max-h-80">
+      <div className="max-h-[min(70vh,32rem)] overflow-y-auto overscroll-contain">
         {isLoading ? (
           <div className="p-3 space-y-3">
             {[1, 2, 3].map((i) => (
@@ -131,7 +130,7 @@ export function NotificationDropdown() {
             ))}
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }

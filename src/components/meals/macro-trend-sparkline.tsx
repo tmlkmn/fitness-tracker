@@ -6,6 +6,7 @@ import {
   AreaChart,
   Area,
   Tooltip,
+  XAxis,
   YAxis,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,13 +103,17 @@ export function MacroTrendSparkline({
                     <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
+                <XAxis dataKey="date" hide />
                 <YAxis hide domain={[0, "dataMax + 10"]} />
                 <Tooltip
                   contentStyle={CHART_TOOLTIP_STYLE}
                   labelStyle={CHART_TOOLTIP_LABEL_STYLE}
                   itemStyle={CHART_TOOLTIP_ITEM_STYLE}
                   cursor={CHART_TOOLTIP_CURSOR}
-                  labelFormatter={(l) => formatShortDate(l as string)}
+                  labelFormatter={(l) => {
+                    if (typeof l !== "string" || !l.includes("-")) return "";
+                    return formatShortDate(l);
+                  }}
                   formatter={(value) => [`${value}${unit}`, label]}
                 />
                 <Area

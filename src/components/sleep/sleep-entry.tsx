@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { SleepFormDialog } from "./sleep-form-dialog";
 interface SleepEntryProps {
   date: string;
   readOnly?: boolean;
+  autoOpen?: boolean;
 }
 
 function formatDuration(minutes: number): string {
@@ -21,10 +22,21 @@ function formatDuration(minutes: number): string {
   return `${h}sa ${m}dk`;
 }
 
-export function SleepEntry({ date, readOnly }: SleepEntryProps) {
+export function SleepEntry({ date, readOnly, autoOpen }: SleepEntryProps) {
   const { data: log } = useSleepByDate(date);
   const deleteSleep = useDeleteSleep();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const autoOpenHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (!autoOpen || autoOpenHandledRef.current || readOnly) return;
+    autoOpenHandledRef.current = true;
+    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!log) {
+      setDialogOpen(true);
+    }
+  }, [autoOpen, log, readOnly]);
 
   const handleDelete = () => {
     if (!log) return;
@@ -33,7 +45,7 @@ export function SleepEntry({ date, readOnly }: SleepEntryProps) {
 
   return (
     <>
-      <Card>
+      <Card ref={cardRef}>
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
             <Moon className="h-4 w-4 text-indigo-400" />

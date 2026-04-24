@@ -29,6 +29,7 @@ const HIDDEN_PATH_PREFIXES = [
   "/kvkk",
   "/kullanim-sartlari",
   "/tanitim",
+  "/asistan",
 ];
 
 interface QuickAction {
@@ -80,8 +81,6 @@ function QuickActionFabInner({ pathname }: { pathname: string }) {
   }, [open]);
 
   const todayHref = today?.dailyPlan ? `/gun/${today.dailyPlan.id}` : "/takvim";
-  const isOnTodayPage =
-    today?.dailyPlan && pathname === `/gun/${today.dailyPlan.id}`;
 
   const actions: QuickAction[] = [
     {
@@ -102,16 +101,13 @@ function QuickActionFabInner({ pathname }: { pathname: string }) {
       href: `${todayHref}?tab=meals`,
       color: "bg-emerald-500/15 text-emerald-400",
     },
-  ];
-
-  if (!isOnTodayPage) {
-    actions.push({
-      label: "Bugün",
+    {
+      label: "Takvim",
       icon: CalendarDays,
-      href: todayHref,
+      href: "/takvim",
       color: "bg-primary/15 text-primary",
-    });
-  }
+    },
+  ];
 
   return (
     <div

@@ -16,7 +16,11 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ dayId: string }>;
+  searchParams: Promise<{ tab?: string; focus?: string }>;
 }
+
+const VALID_TABS = ["meals", "workout", "supplements"] as const;
+type ValidTab = (typeof VALID_TABS)[number];
 
 const planTypeLabel: Record<string, string> = {
   workout: "Antrenman Günü",
@@ -24,10 +28,17 @@ const planTypeLabel: Record<string, string> = {
   rest: "Dinlenme Günü",
 };
 
-export default async function GunPage({ params }: PageProps) {
+export default async function GunPage({ params, searchParams }: PageProps) {
   const { dayId } = await params;
+  const { tab, focus } = await searchParams;
   const id = parseInt(dayId);
   const dailyPlan = await getDailyPlan(id);
+
+  const initialTab: ValidTab = (VALID_TABS as readonly string[]).includes(
+    tab ?? "",
+  )
+    ? (tab as ValidTab)
+    : "meals";
 
   if (!dailyPlan) notFound();
 
@@ -66,7 +77,7 @@ export default async function GunPage({ params }: PageProps) {
         }
       />
       <div className="p-4">
-        <Tabs defaultValue="meals">
+        <Tabs defaultValue={initialTab}>
           <TabsList className="grid grid-cols-3 w-full mb-4">
             <TabsTrigger value="meals" className="gap-1.5">
               <Utensils className="h-4 w-4" />
@@ -114,7 +125,13 @@ export default async function GunPage({ params }: PageProps) {
         {dailyPlan.date && (
           <div className="space-y-3 mt-4">
             <WaterTracker date={dailyPlan.date} readOnly={isPast} />
-            <SleepEntry date={dailyPlan.date} readOnly={isPast} />
+            <div id="uyku" className="scroll-mt-20">
+              <SleepEntry
+                date={dailyPlan.date}
+                readOnly={isPast}
+                autoOpen={focus === "sleep"}
+              />
+            </div>
           </div>
         )}
       </div>
