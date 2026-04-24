@@ -2,12 +2,16 @@
 
 import { db } from "@/db";
 import { exercises, exerciseAlternatives } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { buildWeeklyWorkoutContext } from "@/lib/ai-workout-context";
+import {
+  buildSectionContext,
+  buildExerciseAlternativesContext,
+} from "@/lib/ai-workout-slim-context";
 import {
   verifyDailyPlanOwnership,
   verifyExerciseOwnership,
@@ -115,13 +119,14 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
   await logAiUsage(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
-  const [userContext, { context: workoutContext, currentDayExercises }] =
+  const [userContext, { context: workoutContext, currentDayExercises, planType }] =
     await Promise.all([
       buildUserContext(user.id),
       buildWeeklyWorkoutContext(dailyPlanId),
     ]);
 
-  let userMessage = `${userContext}\n\n${workoutContext}\n\nBu günün antrenman programını yeniden oluştur. Önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
+  const mode = currentDayExercises.length > 0 ? "Replacement" : "Generation";
+  let userMessage = `${userContext}\n\n${workoutContext}\n\nBugünün planType: "${planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\nMod: ${mode}\n\nBu günün antrenman programını ${mode === "Replacement" ? "yeniden oluştur ve" : "sıfırdan oluştur;"} önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
 
   if (userNote?.trim()) {
     userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu antrenman için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
@@ -197,17 +202,15 @@ export async function generateSectionReplacement(
   await logAiUsage(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
-  const [userContext, { context: workoutContext, currentDayExercises }] =
-    await Promise.all([
-      buildUserContext(user.id),
-      buildWeeklyWorkoutContext(dailyPlanId),
-    ]);
+  // Slim context — just today's other sections + same section from 1 prev week.
+  // Full weekly context would waste ~60-70% of tokens for a section-level call.
+  const [userContext, slim] = await Promise.all([
+    buildUserContext(user.id),
+    buildSectionContext(dailyPlanId, section),
+  ]);
+  const sectionExercises = slim.sectionExercises;
 
-  const sectionExercises = currentDayExercises.filter(
-    (e) => e.section === section,
-  );
-
-  let userMessage = `${userContext}\n\n${workoutContext}\n\nSadece "${sectionLabel}" bölümü için yeni egzersizler oluştur. section="${section}", sectionLabel="${sectionLabel}" değerlerini koru. Önceki haftalara göre progresif yüklenme uygula.`;
+  let userMessage = `${userContext}\n\n${slim.context}\n\nBugünün planType: "${slim.planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\n\nSadece "${sectionLabel}" bölümü için yeni egzersizler oluştur. TÜM egzersizler section="${section}", sectionLabel="${sectionLabel}" olmalı — başka section DÖNDÜRME. Önceki haftalara göre progresif yüklenme uygula.`;
 
   if (userNote?.trim()) {
     userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu bölüm için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
@@ -229,6 +232,20 @@ export async function generateSectionReplacement(
       suggestedExercises = validateExerciseArray(parseJSON(text));
     }
 
+    // Guard: drop any exercise whose section doesn't match the requested one.
+    // Prompt instructs the AI to stay within section, but we must enforce it
+    // because applySectionReplacement only deletes the requested section.
+    const filtered = suggestedExercises.filter((ex) => ex.section === section);
+    if (filtered.length !== suggestedExercises.length) {
+      console.warn(
+        `[AI Workout] Dropped ${suggestedExercises.length - filtered.length} out-of-section exercises (expected section="${section}")`,
+      );
+    }
+    suggestedExercises = filtered.map((ex) => ({
+      ...ex,
+      sectionLabel,
+    }));
+
     return { currentExercises: sectionExercises, suggestedExercises };
   } catch (error) {
     console.error("[AI Workout] Error generating section replacement:", error);
@@ -243,6 +260,10 @@ export async function applySectionReplacement(
 ) {
   const user = await getAuthUser();
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
+
+  // Defensive filter: only insert exercises matching the requested section.
+  // Mirrors the guard in generateSectionReplacement; protects direct callers.
+  newExercises = newExercises.filter((ex) => ex.section === section);
 
   // Delete existing exercises for this section
   await db
@@ -281,6 +302,8 @@ export async function applySectionReplacement(
 
 // ─── Feature 3: Single Exercise Variation (3 alternatives, cached) ───────────
 
+const ALTERNATIVES_TTL_DAYS = 30;
+
 export async function generateExerciseVariation(
   exerciseId: number,
   dailyPlanId: number,
@@ -301,9 +324,14 @@ export async function generateExerciseVariation(
   }
 
   const nameNorm = currentExercise.name.toLowerCase().trim();
+  const hasUserNote = Boolean(userNote?.trim());
 
-  // Check DB cache (no TTL — alternatives for an exercise are stable)
-  if (!forceRefresh) {
+  // Cache lookup — skip when user provided a note (note-driven alternatives
+  // are request-specific and must not be cached). Also skip on forceRefresh.
+  if (!forceRefresh && !hasUserNote) {
+    const ttlCutoff = new Date(
+      Date.now() - ALTERNATIVES_TTL_DAYS * 24 * 60 * 60 * 1000,
+    );
     const [cached] = await db
       .select({ suggestions: exerciseAlternatives.suggestions })
       .from(exerciseAlternatives)
@@ -311,6 +339,7 @@ export async function generateExerciseVariation(
         and(
           eq(exerciseAlternatives.userId, user.id),
           eq(exerciseAlternatives.exerciseNameNorm, nameNorm),
+          gte(exerciseAlternatives.createdAt, ttlCutoff),
         ),
       );
 
@@ -327,9 +356,11 @@ export async function generateExerciseVariation(
   await checkRateLimit(user.id, "workout");
   await logAiUsage(user.id, "workout");
 
-  const [userContext, { context: workoutContext }] = await Promise.all([
+  // Slim context — just muscle group + today's siblings + staleness.
+  // Full weekly context was ~3000 tokens for a single-exercise call.
+  const [userContext, slimContext] = await Promise.all([
     buildUserContext(user.id),
-    buildWeeklyWorkoutContext(dailyPlanId),
+    buildExerciseAlternativesContext(exerciseId, dailyPlanId),
   ]);
 
   const exerciseDetail = [
@@ -347,10 +378,12 @@ export async function generateExerciseVariation(
     .filter(Boolean)
     .join(", ");
 
-  const userMessage = `${userContext}\n\n${workoutContext}\n\n"${exerciseDetail}" egzersizi yerine 3 farklı alternatif egzersiz öner.${userNote?.trim() ? `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu egzersiz için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.` : ""}`;
+  const userMessage = `${userContext}\n\n${slimContext}\n\n"${exerciseDetail}" egzersizi yerine 3 farklı alternatif egzersiz öner.${userNote?.trim() ? `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu egzersiz için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.` : ""}`;
 
   try {
-    let text = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 800);
+    // H1: use smart model — alternative selection needs anatomical reasoning
+    // and progressive overload sense that Haiku gets wrong often.
+    let text = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 800, true);
 
     let alternatives: AIExerciseVariation[];
     try {
@@ -360,22 +393,26 @@ export async function generateExerciseVariation(
         EXERCISE_VARIATION_PROMPT,
         `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "alternatives": [...] }`,
         800,
+        true,
       );
       alternatives = validateAlternativesArray(parseJSON(text));
     }
 
-    // Upsert to DB cache
-    await db
-      .insert(exerciseAlternatives)
-      .values({
-        userId: user.id,
-        exerciseNameNorm: nameNorm,
-        suggestions: alternatives,
-      })
-      .onConflictDoUpdate({
-        target: [exerciseAlternatives.userId, exerciseAlternatives.exerciseNameNorm],
-        set: { suggestions: alternatives, createdAt: new Date() },
-      });
+    // Upsert to DB cache — only when there's no user note (note-driven
+    // alternatives are one-off and shouldn't leak into future noteless calls)
+    if (!hasUserNote) {
+      await db
+        .insert(exerciseAlternatives)
+        .values({
+          userId: user.id,
+          exerciseNameNorm: nameNorm,
+          suggestions: alternatives,
+        })
+        .onConflictDoUpdate({
+          target: [exerciseAlternatives.userId, exerciseAlternatives.exerciseNameNorm],
+          set: { suggestions: alternatives, createdAt: new Date() },
+        });
+    }
 
     return { currentExercise, alternatives, fromCache: false };
   } catch (error) {

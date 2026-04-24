@@ -1,11 +1,14 @@
 "use server";
 
 import { db } from "@/db";
-import { weeklyPlans, dailyPlans, meals, exercises, progressLogs, users, waterLogs, sleepLogs } from "@/db/schema";
+import { weeklyPlans, dailyPlans, meals, exercises, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
 import { eq, and, sql, desc, asc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
-import { normalizeEvent } from "@/lib/routine-constants";
+import {
+  loadUserProfileRow,
+  renderUserProfileLines,
+} from "@/lib/ai-user-profile-block";
 import {
   type AIWeeklyPlan,
   type AIWeeklyDay,
@@ -37,75 +40,15 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
   const lines: string[] = [];
 
   // ─── 1. User profile ──────────────────────────────────────────────────
-  const [user] = await db
-    .select({
-      height: users.height,
-      weight: users.weight,
-      targetWeight: users.targetWeight,
-      healthNotes: users.healthNotes,
-      dailyRoutine: users.dailyRoutine,
-      weekendRoutine: users.weekendRoutine,
-      fitnessLevel: users.fitnessLevel,
-      sportHistory: users.sportHistory,
-      currentMedications: users.currentMedications,
-      serviceType: users.serviceType,
-      supplementSchedule: users.supplementSchedule,
-    })
-    .from(users)
-    .where(eq(users.id, userId));
+  const user = await loadUserProfileRow(userId);
 
   if (user) {
-    lines.push("═══ KULLANICI PROFİLİ ═══");
-    const parts: string[] = [];
-    if (user.height) parts.push(`Boy: ${user.height}cm`);
-    if (user.weight) parts.push(`Başlangıç kilo: ${user.weight}kg`);
-    if (user.targetWeight) parts.push(`Hedef kilo: ${user.targetWeight}kg`);
-    if (parts.length > 0) lines.push(parts.join(" | "));
-    if (user.healthNotes) {
-      try {
-        const notes = JSON.parse(user.healthNotes);
-        if (Array.isArray(notes) && notes.length > 0) {
-          lines.push(`Sağlık notları/kısıtlamalar: ${notes.join(". ")}`);
-        }
-      } catch {
-        lines.push(`Sağlık notları: ${user.healthNotes}`);
-      }
-    }
-    if (user.dailyRoutine && Array.isArray(user.dailyRoutine) && user.dailyRoutine.length > 0) {
-      const routineStr = (user.dailyRoutine as { time: string; event: string }[])
-        .map((r) => `${r.time} ${normalizeEvent(r.event)}`)
-        .join(", ");
-      const hasWeekend = user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0;
-      lines.push(`${hasWeekend ? "Hafta içi programı" : "Günlük program"}: ${routineStr}`);
-    }
-    if (user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0) {
-      const routineStr = (user.weekendRoutine as { time: string; event: string }[])
-        .map((r) => `${r.time} ${normalizeEvent(r.event)}`)
-        .join(", ");
-      lines.push(`Hafta sonu programı: ${routineStr}`);
-    }
-    // Supplement schedule
-    if (user.supplementSchedule && Array.isArray(user.supplementSchedule) && user.supplementSchedule.length > 0) {
-      const suppStr = (user.supplementSchedule as { period: string; supplements: string }[])
-        .map((s) => `${s.period}: ${s.supplements}`)
-        .join("; ");
-      lines.push(`Supplement takvimi: ${suppStr}`);
-    }
-    const fitnessLabels: Record<string, string> = {
-      beginner: "Yeni başlayan",
-      returning: "Ara vermiş, tekrar başlayan",
-      intermediate: "Orta düzey",
-      advanced: "İleri düzey",
-    };
-    if (user.fitnessLevel) {
-      lines.push(`Fitness seviyesi: ${fitnessLabels[user.fitnessLevel] ?? user.fitnessLevel}`);
-    }
-    if (user.sportHistory) {
-      lines.push(`Spor geçmişi: ${user.sportHistory}`);
-    }
-    if (user.currentMedications) {
-      lines.push(`İlaçlar/supplementler: ${user.currentMedications}`);
-    }
+    lines.push(
+      ...renderUserProfileLines(user, {
+        includeAgeAllergens: false,
+        compact: true,
+      }),
+    );
   }
 
   // ─── 2. Body composition trend ────────────────────────────────────────

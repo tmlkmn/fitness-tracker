@@ -1,9 +1,12 @@
 import { db } from "@/db";
 import { users, weeklyPlans, dailyPlans, meals, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
 import { eq, desc, and, gte, lte, asc, ne } from "drizzle-orm";
-import { normalizeEvent } from "@/lib/routine-constants";
 import { resolveTargets, type MacroTargets } from "@/lib/macro-targets";
 import { computeMealMacros } from "@/lib/meal-macros";
+import {
+  loadUserProfileRow,
+  renderUserProfileLines,
+} from "@/lib/ai-user-profile-block";
 
 // 5-minute TTL memory cache for user context
 const contextCache = new Map<string, { text: string; timestamp: number }>();
@@ -14,109 +17,14 @@ export async function buildUserContext(userId: string): Promise<string> {
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.text;
   }
-  const [user] = await db
-    .select({
-      height: users.height,
-      weight: users.weight,
-      targetWeight: users.targetWeight,
-      age: users.age,
-      healthNotes: users.healthNotes,
-      foodAllergens: users.foodAllergens,
-      dailyRoutine: users.dailyRoutine,
-      weekendRoutine: users.weekendRoutine,
-      fitnessLevel: users.fitnessLevel,
-      sportHistory: users.sportHistory,
-      currentMedications: users.currentMedications,
-      serviceType: users.serviceType,
-      supplementSchedule: users.supplementSchedule,
-    })
-    .from(users)
-    .where(eq(users.id, userId));
+  const user = await loadUserProfileRow(userId);
 
   if (!user) return "";
 
-  const lines: string[] = [];
-
-  // User profile
-  const parts: string[] = [];
-  if (user.age) parts.push(`Yaş: ${user.age}`);
-  if (user.height) parts.push(`Boy: ${user.height}cm`);
-  if (user.weight) parts.push(`Başlangıç kilo: ${user.weight}kg`);
-  if (user.targetWeight) parts.push(`Hedef: ${user.targetWeight}kg`);
-  if (parts.length > 0) lines.push(`Kullanıcı: ${parts.join(", ")}`);
-
-  // Health notes
-  if (user.healthNotes) {
-    try {
-      const notes = JSON.parse(user.healthNotes);
-      if (Array.isArray(notes) && notes.length > 0) {
-        lines.push(`Sağlık notları: ${notes.join(". ")}`);
-      }
-    } catch {
-      lines.push(`Sağlık notları: ${user.healthNotes}`);
-    }
-  }
-
-  // Food allergens
-  if (user.foodAllergens) {
-    try {
-      const allergens = JSON.parse(user.foodAllergens);
-      if (Array.isArray(allergens) && allergens.length > 0 && allergens[0] !== "Yok") {
-        lines.push(`⚠️ GIDA ALERJİLERİ (KESİNLİKLE KULLANMA): ${allergens.join(", ")}`);
-      }
-    } catch {
-      lines.push(`⚠️ GIDA ALERJİLERİ: ${user.foodAllergens}`);
-    }
-  }
-
-  // Daily routine
-  if (user.dailyRoutine && Array.isArray(user.dailyRoutine) && user.dailyRoutine.length > 0) {
-    const routineStr = (user.dailyRoutine as { time: string; event: string }[])
-      .map((r) => `${r.time} ${normalizeEvent(r.event)}`)
-      .join(", ");
-    const hasWeekend = user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0;
-    lines.push(`${hasWeekend ? "Hafta içi programı" : "Günlük program"}: ${routineStr}`);
-  }
-
-  // Weekend routine
-  if (user.weekendRoutine && Array.isArray(user.weekendRoutine) && user.weekendRoutine.length > 0) {
-    const routineStr = (user.weekendRoutine as { time: string; event: string }[])
-      .map((r) => `${r.time} ${normalizeEvent(r.event)}`)
-      .join(", ");
-    lines.push(`Hafta sonu programı: ${routineStr}`);
-  }
-
-  // Supplement schedule
-  if (user.supplementSchedule && Array.isArray(user.supplementSchedule) && user.supplementSchedule.length > 0) {
-    const suppStr = (user.supplementSchedule as { period: string; supplements: string }[])
-      .map((s) => `${s.period}: ${s.supplements}`)
-      .join("; ");
-    lines.push(`Supplement takvimi: ${suppStr}`);
-  }
-
-  // Fitness level
-  const fitnessLabels: Record<string, string> = {
-    beginner: "Yeni başlayan",
-    returning: "Ara vermiş, tekrar başlayan",
-    intermediate: "Orta düzey",
-    advanced: "İleri düzey",
-  };
-  if (user.fitnessLevel) {
-    lines.push(`Fitness seviyesi: ${fitnessLabels[user.fitnessLevel] ?? user.fitnessLevel}`);
-  }
-
-  // Sport history
-  if (user.sportHistory) {
-    lines.push(`Spor geçmişi: ${user.sportHistory}`);
-  }
-
-  // Medications
-  if (user.currentMedications) {
-    lines.push(`İlaçlar/supplementler: ${user.currentMedications}`);
-  }
-
-  // Service type
-  lines.push(`Hizmet tipi: ${user.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program (Antrenman + Beslenme)"}`);
+  const lines: string[] = renderUserProfileLines(user, {
+    includeAgeAllergens: true,
+    compact: false,
+  });
 
   // Current phase
   const { getTurkeyTodayStr } = await import("@/lib/utils");

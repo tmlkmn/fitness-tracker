@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { dailyPlans, exercises, weeklyPlans } from "@/db/schema";
-import { eq, asc, desc, and, lt } from "drizzle-orm";
+import { eq, asc, desc, and, lt, inArray } from "drizzle-orm";
 
 type ExerciseRow = typeof exercises.$inferSelect;
 
@@ -26,7 +26,11 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
     .where(eq(dailyPlans.id, dailyPlanId));
 
   if (!currentDay?.weeklyPlanId) {
-    return { context: "", currentDayExercises: [] as ExerciseRow[] };
+    return {
+      context: "",
+      currentDayExercises: [] as ExerciseRow[],
+      planType: currentDay?.planType ?? null,
+    };
   }
 
   // Get current weekly plan info (with userId for querying previous weeks)
@@ -43,7 +47,11 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
     .where(eq(weeklyPlans.id, currentDay.weeklyPlanId));
 
   if (!currentWeek) {
-    return { context: "", currentDayExercises: [] as ExerciseRow[] };
+    return {
+      context: "",
+      currentDayExercises: [] as ExerciseRow[],
+      planType: currentDay.planType,
+    };
   }
 
   const lines: string[] = [];
@@ -71,33 +79,38 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
   if (previousWeeks.length > 0) {
     lines.push("═══ ANTRENMAN GEÇMİŞİ (Önceki Haftalar) ═══");
 
-    // Process each previous week (chronological order)
-    for (const prevWeek of previousWeeks.reverse()) {
-      lines.push("");
-      lines.push(
-        `── Hafta ${prevWeek.weekNumber}: ${prevWeek.title} (${prevWeek.phase} fazı) ──`,
-      );
+    // Batch: all days for all previous weeks in a single query
+    const prevWeekIds = previousWeeks.map((w) => w.id);
+    const allPrevDays = await db
+      .select({
+        id: dailyPlans.id,
+        weeklyPlanId: dailyPlans.weeklyPlanId,
+        dayName: dailyPlans.dayName,
+        dayOfWeek: dailyPlans.dayOfWeek,
+        workoutTitle: dailyPlans.workoutTitle,
+        planType: dailyPlans.planType,
+      })
+      .from(dailyPlans)
+      .where(inArray(dailyPlans.weeklyPlanId, prevWeekIds))
+      .orderBy(asc(dailyPlans.dayOfWeek));
 
-      const prevDays = await db
-        .select({
-          id: dailyPlans.id,
-          dayName: dailyPlans.dayName,
-          dayOfWeek: dailyPlans.dayOfWeek,
-          workoutTitle: dailyPlans.workoutTitle,
-          planType: dailyPlans.planType,
-        })
-        .from(dailyPlans)
-        .where(eq(dailyPlans.weeklyPlanId, prevWeek.id))
-        .orderBy(asc(dailyPlans.dayOfWeek));
+    // Group days by weeklyPlanId
+    const daysByWeek = new Map<number, typeof allPrevDays>();
+    for (const day of allPrevDays) {
+      if (day.weeklyPlanId == null) continue;
+      const arr = daysByWeek.get(day.weeklyPlanId) ?? [];
+      arr.push(day);
+      daysByWeek.set(day.weeklyPlanId, arr);
+    }
 
-      for (const day of prevDays) {
-        if (day.planType === "rest") {
-          lines.push(`${day.dayName}: Dinlenme`);
-          continue;
-        }
-
-        const dayExs = await db
+    // Batch: all exercises for non-rest days in one query
+    const nonRestDayIds = allPrevDays
+      .filter((d) => d.planType !== "rest")
+      .map((d) => d.id);
+    const allPrevEx = nonRestDayIds.length
+      ? await db
           .select({
+            dailyPlanId: exercises.dailyPlanId,
             name: exercises.name,
             section: exercises.section,
             sectionLabel: exercises.sectionLabel,
@@ -108,8 +121,34 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
             notes: exercises.notes,
           })
           .from(exercises)
-          .where(eq(exercises.dailyPlanId, day.id))
-          .orderBy(asc(exercises.sortOrder));
+          .where(inArray(exercises.dailyPlanId, nonRestDayIds))
+          .orderBy(asc(exercises.sortOrder))
+      : [];
+
+    const exByDay = new Map<number, typeof allPrevEx>();
+    for (const ex of allPrevEx) {
+      if (ex.dailyPlanId == null) continue;
+      const arr = exByDay.get(ex.dailyPlanId) ?? [];
+      arr.push(ex);
+      exByDay.set(ex.dailyPlanId, arr);
+    }
+
+    // Process each previous week (chronological order)
+    for (const prevWeek of previousWeeks.reverse()) {
+      lines.push("");
+      lines.push(
+        `── Hafta ${prevWeek.weekNumber}: ${prevWeek.title} (${prevWeek.phase} fazı) ──`,
+      );
+
+      const prevDays = daysByWeek.get(prevWeek.id) ?? [];
+
+      for (const day of prevDays) {
+        if (day.planType === "rest") {
+          lines.push(`${day.dayName}: Dinlenme`);
+          continue;
+        }
+
+        const dayExs = exByDay.get(day.id) ?? [];
 
         if (dayExs.length === 0) {
           lines.push(
@@ -139,6 +178,35 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
           `${day.dayName} (${day.workoutTitle ?? ""}): ${sectionSummary}`,
         );
       }
+    }
+
+    // Staleness signal: count how many distinct weeks each exercise appears in.
+    // AI can't be trusted to count; precompute so the prompt has an explicit
+    // "change this" list.
+    const weeksPerExercise = new Map<string, Set<number>>();
+    const displayNameByKey = new Map<string, string>();
+    const dayToWeekId = new Map<number, number>();
+    for (const d of allPrevDays) {
+      if (d.weeklyPlanId != null) dayToWeekId.set(d.id, d.weeklyPlanId);
+    }
+    for (const ex of allPrevEx) {
+      if (ex.dailyPlanId == null) continue;
+      const weekId = dayToWeekId.get(ex.dailyPlanId);
+      if (weekId == null) continue;
+      const key = ex.name.toLowerCase().trim();
+      if (!weeksPerExercise.has(key)) weeksPerExercise.set(key, new Set<number>());
+      weeksPerExercise.get(key)!.add(weekId);
+      if (!displayNameByKey.has(key)) displayNameByKey.set(key, ex.name);
+    }
+    const staleEntries = Array.from(weeksPerExercise.entries())
+      .filter(([, weeks]) => weeks.size >= 4)
+      .map(([key, weeks]) => `${displayNameByKey.get(key) ?? key}: ${weeks.size} hafta`)
+      .sort();
+
+    if (staleEntries.length > 0) {
+      lines.push("");
+      lines.push("═══ STALE EGZERSİZLER (4+ hafta üst üste kullanıldı — varyasyonla DEĞİŞTİR) ═══");
+      for (const entry of staleEntries) lines.push(`  - ${entry}`);
     }
   }
 
@@ -177,6 +245,25 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
       "(Aşağıda bu günün önceki haftalardaki programları var. Progresif yüklenme için referans al)",
     );
 
+    // Batch: all exercises for non-rest same-day entries
+    const sameDayIds = sameDayPrevious
+      .filter((d) => d.planType !== "rest")
+      .map((d) => d.id);
+    const sameDayExercises = sameDayIds.length
+      ? await db
+          .select()
+          .from(exercises)
+          .where(inArray(exercises.dailyPlanId, sameDayIds))
+          .orderBy(asc(exercises.sortOrder))
+      : [];
+    const sameDayExByPlan = new Map<number, typeof sameDayExercises>();
+    for (const ex of sameDayExercises) {
+      if (ex.dailyPlanId == null) continue;
+      const arr = sameDayExByPlan.get(ex.dailyPlanId) ?? [];
+      arr.push(ex);
+      sameDayExByPlan.set(ex.dailyPlanId, arr);
+    }
+
     for (const prevDay of sameDayPrevious.reverse()) {
       if (prevDay.planType === "rest") {
         lines.push(
@@ -185,11 +272,7 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
         continue;
       }
 
-      const prevExs = await db
-        .select()
-        .from(exercises)
-        .where(eq(exercises.dailyPlanId, prevDay.id))
-        .orderBy(asc(exercises.sortOrder));
+      const prevExs = sameDayExByPlan.get(prevDay.id) ?? [];
 
       if (prevExs.length === 0) continue;
 
@@ -233,14 +316,21 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
     .where(eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId))
     .orderBy(asc(dailyPlans.dayOfWeek));
 
+  // Batch: all exercises for this week's days in one query
   const weekExercises = new Map<number, ExerciseRow[]>();
-  for (const day of allDays) {
-    const dayExercises = await db
+  const weekDayIds = allDays.map((d) => d.id);
+  if (weekDayIds.length > 0) {
+    const weekEx = await db
       .select()
       .from(exercises)
-      .where(eq(exercises.dailyPlanId, day.id))
+      .where(inArray(exercises.dailyPlanId, weekDayIds))
       .orderBy(asc(exercises.sortOrder));
-    weekExercises.set(day.id, dayExercises);
+    for (const ex of weekEx) {
+      if (ex.dailyPlanId == null) continue;
+      const arr = weekExercises.get(ex.dailyPlanId) ?? [];
+      arr.push(ex);
+      weekExercises.set(ex.dailyPlanId, arr);
+    }
   }
 
   const currentDayExercises = weekExercises.get(currentDay.id) ?? [];
@@ -309,5 +399,9 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
     `Hafta numarası: ${currentWeek.weekNumber} | Faz: ${currentWeek.phase} | Bugün: ${currentDay.dayName} (${currentDay.date ?? ""})`,
   );
 
-  return { context: lines.join("\n"), currentDayExercises };
+  return {
+    context: lines.join("\n"),
+    currentDayExercises,
+    planType: currentDay.planType,
+  };
 }

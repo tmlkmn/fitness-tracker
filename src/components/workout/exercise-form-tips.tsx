@@ -16,16 +16,17 @@ import ReactMarkdown from "react-markdown";
 interface ExerciseFormTipsProps {
   name: string;
   notes?: string | null;
+  englishName?: string | null;
 }
 
-export function ExerciseFormTips({ name, notes }: ExerciseFormTipsProps) {
+export function ExerciseFormTips({ name, notes, englishName }: ExerciseFormTipsProps) {
   const [open, setOpen] = useState(false);
 
   const {
     data,
     isLoading,
     error: queryError,
-  } = useExerciseFormTips(name, notes ?? null, open);
+  } = useExerciseFormTips(name, notes ?? null, open, englishName ?? null);
 
   const errorMessage = queryError ? formatAiError(queryError) : null;
 

@@ -105,7 +105,7 @@ export function ExerciseCard({
                   {name}
                 </p>
                 <ExerciseDemoModal name={name} englishName={englishName} />
-                {!readOnly && <ExerciseFormTips name={name} notes={notes} />}
+                {!readOnly && <ExerciseFormTips name={name} notes={notes} englishName={englishName} />}
               </div>
               <div className={cn("flex flex-wrap gap-1.5 mt-1", readOnly && isCompleted && "opacity-60")}>
                 {sets && reps ? (

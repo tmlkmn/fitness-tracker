@@ -196,12 +196,20 @@ export async function generateMealVariation(
   }
 }
 
+function normalizeNotes(notes: string | null): string {
+  return (notes ?? "").toLowerCase().trim().replace(/\s+/g, " ");
+}
+
 async function callAIForTips(
   exerciseName: string,
+  englishName: string | null,
   exerciseNotes: string | null,
   userContext: string,
 ) {
   const client = getAIClient();
+  const nameLine = englishName?.trim()
+    ? `Egzersiz: ${exerciseName} (${englishName.trim()})`
+    : `Egzersiz: ${exerciseName}`;
   const message = await client.messages.create({
     model: AI_MODELS.fast,
     max_tokens: 600,
@@ -215,7 +223,7 @@ async function callAIForTips(
     messages: [
       {
         role: "user",
-        content: `${userContext}\n\nEgzersiz: ${exerciseName}${exerciseNotes ? `\nEgzersiz notları: ${exerciseNotes}` : ""}\n\nBu egzersiz için doğru form ipuçları, nefes tekniği, hedef kas odağı ve yaygın hataları açıkla.`,
+        content: `${userContext}\n\n${nameLine}${exerciseNotes ? `\nEgzersiz notları: ${exerciseNotes}` : ""}\n\nBu egzersiz için doğru form ipuçları, nefes tekniği, hedef kas odağı ve yaygın hataları açıkla.`,
       },
     ],
   });
@@ -248,10 +256,11 @@ async function upsertTips(
 export async function getExerciseFormTips(
   exerciseName: string,
   exerciseNotes: string | null,
+  englishName: string | null = null,
 ) {
   const user = await getAuthUser();
   const nameNorm = exerciseName.toLowerCase().trim();
-  const notesNorm = (exerciseNotes ?? "").trim();
+  const notesNorm = normalizeNotes(exerciseNotes);
   const ttlCutoff = new Date(Date.now() - TIPS_TTL_DAYS * 24 * 60 * 60 * 1000);
 
   // Check DB for existing non-expired tips
@@ -277,7 +286,7 @@ export async function getExerciseFormTips(
 
   try {
     const userContext = await buildUserContext(user.id);
-    const text = await callAIForTips(exerciseName, exerciseNotes, userContext);
+    const text = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext);
 
     await upsertTips(user.id, nameNorm, notesNorm, text);
 
@@ -291,17 +300,18 @@ export async function getExerciseFormTips(
 export async function regenerateExerciseFormTips(
   exerciseName: string,
   exerciseNotes: string | null,
+  englishName: string | null = null,
 ) {
   const user = await getAuthUser();
   await checkRateLimit(user.id, "exercise");
   await logAiUsage(user.id, "exercise");
 
   const nameNorm = exerciseName.toLowerCase().trim();
-  const notesNorm = (exerciseNotes ?? "").trim();
+  const notesNorm = normalizeNotes(exerciseNotes);
 
   try {
     const userContext = await buildUserContext(user.id);
-    const text = await callAIForTips(exerciseName, exerciseNotes, userContext);
+    const text = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext);
 
     await upsertTips(user.id, nameNorm, notesNorm, text);
 

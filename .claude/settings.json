@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(xargs wc *)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Read(//c/Users/temel/.claude/projects/c--projects-fitness-tracker/**)",
+      "Bash(tail -500 \"C:/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl\")",
+      "Read(//tmp/**)",
+      "Bash(awk 'NR>=19354 && NR<=19366' \"C:/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl\")",
+      "Bash(awk 'NR>=19355 && NR<=19414' \"C:/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl\")",
+      "Bash(grep -oE '\"text\":\"[^\"]{200,}\"')"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
     ]
   }
 }
