@@ -133,10 +133,10 @@ export async function generateMealVariation(
     prevContext = `\n\nDaha önce bu öğün için şu öneriler yapıldı, bunları TEKRARLAMA:\n${previousSuggestions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
   }
 
-  // Build user note context
-  let noteContext = "";
+  // Build user note context — put up front as the top priority
+  let noteHeader = "";
   if (userNote?.trim()) {
-    noteContext = `\n\nKULLANICI İSTEĞİ: ${userNote.trim()}`;
+    noteHeader = `\n\n⚠️ KULLANICI İSTEĞİ (EN YÜKSEK ÖNCELİK — diğer tüm kurallardan önce gelir): ${userNote.trim()}`;
   }
 
   try {
@@ -154,7 +154,7 @@ export async function generateMealVariation(
       messages: [
         {
           role: "user",
-          content: `${userContext}\n\nMevcut öğün: ${mealLabel}\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${planTypeContext}${budgetContext}${weekContext}${prevContext}${noteContext}\n\nBu öğüne benzer makrolarla birbirinden FARKLI 3 alternatif öğün öner. Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı. Eğer kalan makro bütçesi verilmişse, önerilerini bu bütçeye uyumlu yap. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`,
+          content: `${userContext}${noteHeader}\n\nMevcut öğün: ${mealLabel} (öneriler AYNI öğün tipinde olmalı — kahvaltı için kahvaltılık, ana yemek için ana yemek)\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${planTypeContext}${budgetContext}${weekContext}${prevContext}\n\nBu öğüne benzer makrolarla, "${mealLabel}" öğün tipine uygun, birbirinden FARKLI 3 alternatif öneri yap.${userNote?.trim() ? ` Yukarıdaki KULLANICI İSTEĞİNİ tüm önerilerde birebir uygula; kullanıcı isteğiyle çelişen "farklı protein kaynağı" veya "farklı pişirme yöntemi" kuralları geçersizdir.` : " Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı."} Eğer kalan makro bütçesi verilmişse, önerilerini bu bütçeye uyumlu yap. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`,
         },
       ],
     });
