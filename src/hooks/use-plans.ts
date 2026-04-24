@@ -12,6 +12,7 @@ import {
   getDatesWithPlansForMonth,
   getTodayDashboardData,
   getEmptyWeeksBetween,
+  getEmptyWeeksInMonth,
   getUpcomingDailyPlans,
 } from "@/actions/plans";
 
@@ -120,5 +121,14 @@ export function useEmptyWeeksBetween(
     queryKey: ["emptyWeeks", todayStr, targetWeekStart],
     queryFn: () => getEmptyWeeksBetween(todayStr, targetWeekStart),
     enabled,
+  });
+}
+
+export function useEmptyWeeksInMonth(year: number, month: number, enabled = true) {
+  return useQuery({
+    queryKey: ["empty-weeks-month", year, month],
+    queryFn: () => getEmptyWeeksInMonth(year, month),
+    enabled: enabled && !!year && !!month,
+    staleTime: 60_000,
   });
 }

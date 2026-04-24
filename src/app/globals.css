@@ -181,6 +181,11 @@ a:focus:not(:focus-visible) {
   100% { transform: scale(1); }
 }
 
+@keyframes caret-blink {
+  0%, 70% { opacity: 1; }
+  71%, 100% { opacity: 0.15; }
+}
+
 .animate-fade-in {
   animation: fade-in 0.25s ease-out;
 }

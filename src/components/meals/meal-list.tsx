@@ -19,6 +19,8 @@ import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { useUserProfile } from "@/hooks/use-user";
+import { useMonthGate } from "@/hooks/use-month-gate";
+import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { computeMealMacros } from "@/lib/meal-macros";
 import { resolveTargets } from "@/lib/macro-targets";
 import { formatAiError } from "@/lib/ai-errors";
@@ -47,6 +49,8 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
   const { data: quotaData } = useAiQuota();
   const dailyMealQuota = getQuota(quotaData, "daily-meal");
   const isDailyMealExhausted = dailyMealQuota !== null && dailyMealQuota.remaining <= 0;
+  const monthGate = useMonthGate();
+  const isMonthBlocked = planDate ? monthGate.isBlockedForDate(planDate) : false;
   const { data: profile } = useUserProfile();
   const targets = useMemo(() => (profile ? resolveTargets(profile) : null), [profile]);
 
@@ -109,7 +113,14 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
 
   if (!mealList?.length) {
     return (
-      <div>
+      <div className="space-y-3">
+        {isMonthBlocked && monthGate.ready && (
+          <MonthGateWarning
+            currentMonthLabel={monthGate.currentMonthLabel}
+            emptyWeekCount={monthGate.emptyWeeksInCurrentMonth.length}
+            compact
+          />
+        )}
         <EmptyState
           icon={UtensilsCrossed}
           title="Bu güne ait öğün yok"
@@ -119,7 +130,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
               : "AI ile saniyeler içinde günlük plan oluştur veya manuel ekle."
           }
           action={
-            !readOnly && (
+            !readOnly && !isMonthBlocked && (
               <Button
                 size="sm"
                 className="gap-1.5"
@@ -221,7 +232,15 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
         <Progress value={percent} />
       </div>
 
-      {!readOnly && (
+      {!readOnly && isMonthBlocked && monthGate.ready && (
+        <MonthGateWarning
+          currentMonthLabel={monthGate.currentMonthLabel}
+          emptyWeekCount={monthGate.emptyWeeksInCurrentMonth.length}
+          compact
+        />
+      )}
+
+      {!readOnly && !isMonthBlocked && (
         <Button
           variant="outline"
           size="sm"

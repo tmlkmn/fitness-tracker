@@ -21,14 +21,17 @@ import {
 } from "@/hooks/use-workout-ai";
 import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
+import { useMonthGate } from "@/hooks/use-month-gate";
+import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { formatAiError } from "@/lib/ai-errors";
 
 interface WorkoutListProps {
   dailyPlanId: number;
   readOnly?: boolean;
+  planDate?: string;
 }
 
-export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
+export function WorkoutList({ dailyPlanId, readOnly, planDate }: WorkoutListProps) {
   const { data: exerciseList, isLoading } = useExercises(dailyPlanId);
   const toggleExercise = useToggleExercise();
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,6 +46,8 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
   const { data: quotaData } = useAiQuota();
   const invalidateQuota = useInvalidateAiQuota();
   const workoutQuota = getQuota(quotaData, "workout");
+  const monthGate = useMonthGate();
+  const isMonthBlocked = planDate ? monthGate.isBlockedForDate(planDate) : false;
 
   const handleGenerate = (userNote?: string) => {
     generate.mutate({ dailyPlanId, userNote });
@@ -105,6 +110,15 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
   if (!exerciseList?.length) {
     return (
       <>
+        {isMonthBlocked && monthGate.ready && (
+          <div className="mb-3">
+            <MonthGateWarning
+              currentMonthLabel={monthGate.currentMonthLabel}
+              emptyWeekCount={monthGate.emptyWeeksInCurrentMonth.length}
+              compact
+            />
+          </div>
+        )}
         <EmptyState
           icon={Dumbbell}
           title="Bu gün için antrenman programı yok"
@@ -114,7 +128,7 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
               : "AI ile saniyeler içinde oluştur veya geçen haftadan kopyala."
           }
           action={
-            !readOnly && (
+            !readOnly && !isMonthBlocked && (
               <Button
                 size="sm"
                 className="gap-1.5"
@@ -235,7 +249,14 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
           </div>
           <Progress value={percent} />
         </div>
-        {!readOnly && (
+        {!readOnly && isMonthBlocked && monthGate.ready && (
+          <MonthGateWarning
+            currentMonthLabel={monthGate.currentMonthLabel}
+            emptyWeekCount={monthGate.emptyWeeksInCurrentMonth.length}
+            compact
+          />
+        )}
+        {!readOnly && !isMonthBlocked && (
           <Button
             variant="outline"
             size="sm"

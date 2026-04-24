@@ -81,8 +81,8 @@ export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
             {isStreaming && (
               <span
                 className={cn(
-                  "inline-block w-1.5 h-4 animate-pulse rounded-sm",
-                  content ? "bg-foreground/40 ml-0.5" : "bg-primary"
+                  "inline-block w-0.5 h-3.5 align-[-1px] rounded-[1px] animate-[caret-blink_1s_ease-in-out_infinite]",
+                  content ? "bg-foreground/50 ml-0.5" : "bg-primary"
                 )}
               />
             )}

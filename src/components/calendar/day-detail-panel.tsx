@@ -54,6 +54,7 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
             <WorkoutList
               dailyPlanId={dailyPlan.id}
               readOnly={readOnly}
+              planDate={dailyPlan.date ?? undefined}
             />
           </TabsContent>
         </Tabs>

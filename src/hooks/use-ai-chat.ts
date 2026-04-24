@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { getChatHistory, clearChatHistory, saveChatMessage } from "@/actions/chat";
 
 interface Message {
@@ -9,13 +10,23 @@ interface Message {
   content: string;
 }
 
+// Typewriter: characters revealed per animation frame. Tuned for ~60 cps
+// while keeping up during network bursts by batching overflow.
+const CHARS_PER_FRAME = 2;
+const MAX_BATCH_LAG = 80; // if buffer gets too far ahead, burst-flush
+
+function prefersReducedMotion() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
+
 export function useAIChat() {
+  const qc = useQueryClient();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Load chat history from DB on mount
   useEffect(() => {
     (async () => {
       try {
@@ -57,8 +68,39 @@ export function useAIChat() {
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // Typewriter state
+      let networkBuffer = "";
+      let visibleLength = 0;
+      let streamDone = false;
+      let rafId: number | null = null;
+      const reducedMotion = prefersReducedMotion();
+
+      const commit = (text: string) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsg.id ? { ...m, content: text } : m,
+          ),
+        );
+      };
+
+      const pump = () => {
+        const remaining = networkBuffer.length - visibleLength;
+        if (remaining > 0) {
+          const step =
+            remaining > MAX_BATCH_LAG
+              ? Math.ceil(remaining / 8)
+              : CHARS_PER_FRAME;
+          visibleLength = Math.min(networkBuffer.length, visibleLength + step);
+          commit(networkBuffer.slice(0, visibleLength));
+        }
+        if (streamDone && visibleLength >= networkBuffer.length) {
+          rafId = null;
+          return;
+        }
+        rafId = requestAnimationFrame(pump);
+      };
+
       try {
-        // Build message history for API
         const allMessages = [...messages, userMsg].map((m) => ({
           role: m.role,
           content: m.content,
@@ -72,32 +114,12 @@ export function useAIChat() {
         });
 
         if (res.status === 429) {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMsg.id
-                ? {
-                    ...m,
-                    content:
-                      "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin.",
-                  }
-                : m
-            )
-          );
+          commit("Çok fazla istek gönderdiniz. Lütfen biraz bekleyin.");
           return;
         }
 
         if (!res.ok) {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMsg.id
-                ? {
-                    ...m,
-                    content:
-                      "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
-                  }
-                : m
-            )
-          );
+          commit("Bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
           return;
         }
 
@@ -105,46 +127,62 @@ export function useAIChat() {
         if (!reader) return;
 
         const decoder = new TextDecoder();
-        let text = "";
+
+        if (!reducedMotion) {
+          rafId = requestAnimationFrame(pump);
+        }
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          text += decoder.decode(value, { stream: true });
-          const currentText = text;
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMsg.id ? { ...m, content: currentText } : m
-            )
-          );
+          const chunk = decoder.decode(value, { stream: true });
+          networkBuffer += chunk;
+          if (reducedMotion) {
+            commit(networkBuffer);
+            visibleLength = networkBuffer.length;
+          }
         }
 
-        // Stream tamamlandı, asistan mesajını DB'ye kaydet
-        if (text) {
-          saveChatMessage("assistant", text).catch(() => {});
+        streamDone = true;
+        // Flush in case typewriter hasn't caught up on unmount/error paths
+        if (reducedMotion) {
+          commit(networkBuffer);
+          visibleLength = networkBuffer.length;
+        }
+
+        if (networkBuffer) {
+          saveChatMessage("assistant", networkBuffer).catch(() => {});
         }
       } catch (err) {
+        streamDone = true;
         if (err instanceof DOMException && err.name === "AbortError") {
-          // User cancelled
+          // User cancelled — keep whatever was visible
         } else {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMsg.id
-                ? {
-                    ...m,
-                    content:
-                      m.content || "Bağlantı hatası. Tekrar deneyin.",
-                  }
-                : m
-            )
-          );
+          if (!networkBuffer) {
+            commit("Bağlantı hatası. Tekrar deneyin.");
+          }
         }
       } finally {
+        // Wait briefly for the typewriter to drain the buffer, but don't
+        // block forever. Max 2s catch-up, then force-flush.
+        const drainStart = Date.now();
+        while (
+          !reducedMotion &&
+          visibleLength < networkBuffer.length &&
+          Date.now() - drainStart < 2000
+        ) {
+          await new Promise((r) => setTimeout(r, 16));
+        }
+        if (visibleLength < networkBuffer.length) {
+          commit(networkBuffer);
+        }
+        if (rafId !== null) cancelAnimationFrame(rafId);
         setIsStreaming(false);
         abortRef.current = null;
+        qc.invalidateQueries({ queryKey: ["ai.quota"] });
       }
     },
-    [messages]
+    [messages, qc]
   );
 
   const abort = useCallback(() => {

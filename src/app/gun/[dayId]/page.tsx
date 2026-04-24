@@ -85,10 +85,19 @@ export default async function GunPage({ params }: PageProps) {
             {dailyPlan.date && (
               <MacroTrendSparkline endDate={dailyPlan.date} metric="calories" />
             )}
-            <MealList dailyPlanId={id} readOnly={isPast} dailyPlanType={dailyPlan.planType} />
+            <MealList
+              dailyPlanId={id}
+              readOnly={isPast}
+              planDate={dailyPlan.date ?? undefined}
+              dailyPlanType={dailyPlan.planType}
+            />
           </TabsContent>
           <TabsContent value="workout">
-            <WorkoutList dailyPlanId={id} readOnly={isPast} />
+            <WorkoutList
+              dailyPlanId={id}
+              readOnly={isPast}
+              planDate={dailyPlan.date ?? undefined}
+            />
           </TabsContent>
           <TabsContent value="supplements">
             {dailyPlan.weeklyPlanId && (

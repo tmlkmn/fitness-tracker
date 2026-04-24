@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   const client = getAIClient();
   const stream = client.messages.stream({
     model: AI_MODELS.smart,
-    max_tokens: 512,
+    max_tokens: 1500,
     system: [
       {
         type: "text",
@@ -103,6 +103,7 @@ export async function POST(request: Request) {
   const readableStream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
+      let stopReason: string | null = null;
       try {
         for await (const event of stream) {
           if (
@@ -110,7 +111,14 @@ export async function POST(request: Request) {
             event.delta.type === "text_delta"
           ) {
             controller.enqueue(encoder.encode(event.delta.text));
+          } else if (event.type === "message_delta" && event.delta.stop_reason) {
+            stopReason = event.delta.stop_reason;
           }
+        }
+        if (stopReason === "max_tokens") {
+          controller.enqueue(
+            encoder.encode("\n\n_(Yanıt uzun geldi, devamı için tekrar sor.)_"),
+          );
         }
       } catch (err) {
         console.error("AI chat stream error:", err);

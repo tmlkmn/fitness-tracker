@@ -13,6 +13,8 @@ import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans, useEmptyWeeksBetween } from "@/hooks/use-plans";
 import { useGenerateWeeklyPlan, useApplyWeeklyPlan, useDeleteWeeklyPlan } from "@/hooks/use-weekly-ai";
 import { useUserProfile } from "@/hooks/use-user";
+import { useMonthGate } from "@/hooks/use-month-gate";
+import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { getWeekStartDate, type WeekStart } from "@/lib/week";
 
@@ -156,6 +158,10 @@ export default function TakvimPage() {
   const { data: emptyWeeks } = useEmptyWeeksBetween(todayStr, weekStartStr, isFutureWeek);
   const hasEmptyWeekGap = isFutureWeek && (emptyWeeks?.length ?? 0) > 0;
 
+  // Month gate: block AI generation for future months until current month full
+  const monthGate = useMonthGate();
+  const isMonthBlocked = monthGate.isBlockedForDate(selectedDate);
+
   const handleGoToToday = useCallback(() => {
     setSelectedDate(formatDateStr(new Date()));
     setCreatedDailyPlanId(null);
@@ -183,6 +189,7 @@ export default function TakvimPage() {
   };
 
   const handleApplySaved = (plan: import("@/actions/ai-weekly").AIWeeklyPlan) => {
+    if (isMonthBlocked) return;
     applyWeekly.mutate(
       { dateStr: selectedDate, plan, applyMode: generateMode },
       {
@@ -195,6 +202,7 @@ export default function TakvimPage() {
   };
 
   const handleWeeklyModalOpenChange = (open: boolean) => {
+    if (open && isMonthBlocked) return;
     if (open && missingFields.length > 0) {
       setProfileWarningOpen(true);
       return;
@@ -319,8 +327,9 @@ export default function TakvimPage() {
         {/* AI Weekly Plan Button + Delete */}
         {!isPastWeek && !isLoading && (
           <div className="flex gap-2">
-            {/* AI button: hide for past week; current week: show only if no plan or Monday; future week: always show */}
-            {(isFutureWeek || !data?.weeklyPlan || isMonday) && (
+            {/* AI button: hide for past week; current week: show only if no plan or Monday; future week: always show.
+                Also hidden entirely when month gate blocks this future month. */}
+            {!isMonthBlocked && (isFutureWeek || !data?.weeklyPlan || isMonday) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -364,6 +373,14 @@ export default function TakvimPage() {
               </Button>
             </Link>
           </div>
+        )}
+
+        {/* Month gate warning: current month has empty weeks, user is on a future month */}
+        {isMonthBlocked && monthGate.ready && (
+          <MonthGateWarning
+            currentMonthLabel={monthGate.currentMonthLabel}
+            emptyWeekCount={monthGate.emptyWeeksInCurrentMonth.length}
+          />
         )}
 
         {/* Empty week gap warning */}
@@ -429,16 +446,18 @@ export default function TakvimPage() {
             </p>
             {!isPastDay && (
               <div className="flex gap-2 justify-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => handleWeeklyModalOpenChange(true)}
-                  disabled={hasEmptyWeekGap}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  AI ile Haftalık Plan
-                </Button>
+                {!isMonthBlocked && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => handleWeeklyModalOpenChange(true)}
+                    disabled={hasEmptyWeekGap}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    AI ile Haftalık Plan
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
