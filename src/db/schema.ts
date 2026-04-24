@@ -48,6 +48,8 @@ export const users = pgTable("user", {
   targetProteinG: numeric("target_protein_g"),
   targetCarbsG: numeric("target_carbs_g"),
   targetFatG: numeric("target_fat_g"),
+  weightUnit: text("weight_unit").default("kg"),
+  energyUnit: text("energy_unit").default("kcal"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -10,6 +10,9 @@ const cspScriptSrc = isDev
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@anthropic-ai/sdk"],
+  experimental: {
+    viewTransition: true,
+  },
   images: {
     remotePatterns: [
       {

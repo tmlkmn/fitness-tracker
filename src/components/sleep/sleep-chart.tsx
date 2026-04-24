@@ -5,13 +5,27 @@ import { Moon } from "lucide-react";
 import { useSleepLogs } from "@/hooks/use-sleep";
 import {
   ResponsiveContainer,
-  LineChart,
+  Area,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  ComposedChart,
 } from "recharts";
+import {
+  CHART_AXIS_TICK,
+  CHART_GRID_STROKE,
+  CHART_TOOLTIP_CURSOR,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_TOOLTIP_STYLE,
+  chartGradientId,
+} from "@/lib/chart-theme";
+
+const SLEEP_HOURS_GRADIENT = chartGradientId("sleep-hours");
+const SLEEP_HOURS_COLOR = "hsl(240, 75%, 70%)";
+const SLEEP_QUALITY_COLOR = "hsl(280, 70%, 70%)";
 
 export function SleepChart() {
   const { data: logs } = useSleepLogs();
@@ -41,35 +55,38 @@ export function SleepChart() {
         </div>
         <div className="h-[180px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart
+            <ComposedChart
               data={chartData}
               margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
             >
+              <defs>
+                <linearGradient id={SLEEP_HOURS_GRADIENT} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={SLEEP_HOURS_COLOR} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={SLEEP_HOURS_COLOR} stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border))"
+                strokeDasharray="2 4"
+                stroke={CHART_GRID_STROKE}
+                vertical={false}
               />
               <XAxis
                 dataKey="date"
-                tick={{
-                  fontSize: 10,
-                  fill: "hsl(var(--muted-foreground))",
-                }}
+                tick={CHART_AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
               />
               <YAxis
-                tick={{
-                  fontSize: 10,
-                  fill: "hsl(var(--muted-foreground))",
-                }}
+                tick={CHART_AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
                 domain={[0, "auto"]}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                  fontSize: 12,
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
+                labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                cursor={CHART_TOOLTIP_CURSOR}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(value: any, name: any) => {
                   if (name === "hours") return [`${value} saat`, "Süre"];
@@ -77,35 +94,40 @@ export function SleepChart() {
                   return [value, name];
                 }}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="hours"
-                stroke="hsl(240, 60%, 65%)"
-                strokeWidth={2}
-                dot={{ r: 3 }}
+                stroke={SLEEP_HOURS_COLOR}
+                strokeWidth={2.25}
+                fill={`url(#${SLEEP_HOURS_GRADIENT})`}
+                dot={{ r: 3, stroke: "hsl(var(--background))", strokeWidth: 1.5 }}
+                activeDot={{ r: 5, stroke: "hsl(var(--background))", strokeWidth: 2 }}
                 connectNulls
               />
               <Line
                 type="monotone"
                 dataKey="quality"
-                stroke="hsl(280, 60%, 65%)"
+                stroke={SLEEP_QUALITY_COLOR}
                 strokeWidth={1.5}
-                strokeDasharray="4 2"
+                strokeDasharray="4 3"
                 dot={{ r: 2 }}
                 connectNulls
               />
-            </LineChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
         <div className="flex items-center gap-4 mt-2 justify-center">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-0.5 rounded bg-[hsl(240,60%,65%)]" />
+            <div className="w-3 h-0.5 rounded" style={{ background: SLEEP_HOURS_COLOR }} />
             <span className="text-[10px] text-muted-foreground">
               Süre (saat)
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-0.5 rounded bg-[hsl(280,60%,65%)] opacity-70" />
+            <div
+              className="w-3 h-0.5 rounded opacity-70"
+              style={{ background: SLEEP_QUALITY_COLOR }}
+            />
             <span className="text-[10px] text-muted-foreground">
               Kalite (1-5)
             </span>

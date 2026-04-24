@@ -33,9 +33,12 @@ import { useEffect, useState } from "react";
 import { useActivityStats } from "@/hooks/use-activity-stats";
 import { StreakCard } from "@/components/gamification/streak-card";
 import { AchievementBadges } from "@/components/gamification/achievement-badges";
+import { FriendStreakCard } from "@/components/gamification/friend-streak-card";
 import { WaterDashboardWidget } from "@/components/water/water-dashboard-widget";
 import { SleepDashboardWidget } from "@/components/sleep/sleep-dashboard-widget";
 import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
+import { DailyRingsCard } from "@/components/meals/daily-rings-card";
+import { useDashboardPrefs } from "@/hooks/use-dashboard-prefs";
 
 const PLAN_TYPE_CONFIG: Record<string, { icon: typeof Dumbbell; label: string; color: string }> = {
   workout: { icon: Dumbbell, label: "Antrenman", color: "text-green-400 bg-green-400/10" },
@@ -80,6 +83,7 @@ export default function HomePage() {
   const { data: weekData } = useWeekPlansByDate(todayStr);
   const { data: weeks } = useAllWeeks();
   const { data: activityStats } = useActivityStats();
+  const { isVisible } = useDashboardPrefs();
 
   // Onboarding carousel — auto-open on first login
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -338,7 +342,8 @@ export default function HomePage() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {isVisible("stats") && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-list">
           <Card>
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-1">
@@ -402,18 +407,27 @@ export default function HomePage() {
             </CardContent>
           </Card>
         </div>
+        )}
+
+        {/* Apple Fitness style activity rings */}
+        {isVisible("rings") && <DailyRingsCard />}
 
         {/* Su & Uyku Widgets */}
+        {isVisible("water_sleep") && (
         <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
           <WaterDashboardWidget />
           <SleepDashboardWidget />
         </div>
+        )}
 
         {/* 7 Günlük Kalori Trendi */}
-        <MacroTrendSparkline endDate={todayStr} metric="calories" />
+        {isVisible("macro_trend") && (
+          <MacroTrendSparkline endDate={todayStr} metric="calories" />
+        )}
 
         {/* Quick Access */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {isVisible("quick_access") && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-list">
           {[
             { href: "/takvim", icon: Calendar, label: "Takvim", desc: "Haftalık program" },
             { href: "/ilerleme", icon: TrendingUp, label: "İlerleme", desc: "Kilo & ölçümler" },
@@ -434,9 +448,10 @@ export default function HomePage() {
             </Link>
           ))}
         </div>
+        )}
 
         {/* Streak & Achievements */}
-        {activityStats && (
+        {isVisible("streak") && activityStats && (
           <>
             <StreakCard
               currentStreak={activityStats.currentStreak}
@@ -445,6 +460,8 @@ export default function HomePage() {
             <AchievementBadges stats={activityStats} />
           </>
         )}
+
+        {isVisible("friends") && <FriendStreakCard />}
       </div>
     </div>
   );

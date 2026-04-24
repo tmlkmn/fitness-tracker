@@ -38,5 +38,28 @@
     }
   ],
   "categories": ["health", "fitness"],
-  "lang": "tr"
+  "lang": "tr",
+  "shortcuts": [
+    {
+      "name": "Bugün",
+      "short_name": "Bugün",
+      "description": "Bugünkü antrenman ve beslenme planı",
+      "url": "/?utm_source=pwa_shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Asistan",
+      "short_name": "AI",
+      "description": "AI fitness koçuyla sohbet et",
+      "url": "/asistan?utm_source=pwa_shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "İlerleme",
+      "short_name": "İlerleme",
+      "description": "Kilo ve ölçüm takibi",
+      "url": "/ilerleme?utm_source=pwa_shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

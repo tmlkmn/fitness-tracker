@@ -248,19 +248,21 @@ export function WorkoutList({ dailyPlanId, readOnly }: WorkoutListProps) {
             <AiQuotaBadge feature="workout" />
           </Button>
         )}
-        {sortedSections.map(([section, { label, exercises }]) => (
-          <WorkoutSection
-            key={section}
-            sectionLabel={label}
-            section={section}
-            dailyPlanId={dailyPlanId}
-            exercises={exercises}
-            readOnly={readOnly}
-            onToggle={readOnly ? undefined : (id, completed) =>
-              toggleExercise.mutate({ id, isCompleted: completed })
-            }
-          />
-        ))}
+        <div className="stagger-list space-y-4">
+          {sortedSections.map(([section, { label, exercises }]) => (
+            <WorkoutSection
+              key={section}
+              sectionLabel={label}
+              section={section}
+              dailyPlanId={dailyPlanId}
+              exercises={exercises}
+              readOnly={readOnly}
+              onToggle={readOnly ? undefined : (id, completed) =>
+                toggleExercise.mutate({ id, isCompleted: completed })
+              }
+            />
+          ))}
+        </div>
         {!readOnly ? (
           <div className="flex gap-2">
             <Button

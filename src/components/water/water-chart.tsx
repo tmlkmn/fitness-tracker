@@ -13,6 +13,17 @@ import {
   Tooltip,
   ReferenceLine,
 } from "recharts";
+import {
+  CHART_AXIS_TICK,
+  CHART_GRID_STROKE,
+  CHART_TOOLTIP_CURSOR_BAR,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_TOOLTIP_STYLE,
+  chartGradientId,
+} from "@/lib/chart-theme";
+
+const WATER_GRADIENT_ID = chartGradientId("water-bar");
 
 export function WaterChart() {
   const { data: logs } = useWaterLogs();
@@ -47,31 +58,44 @@ export function WaterChart() {
         <div className="h-[180px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <defs>
+                <linearGradient id={WATER_GRADIENT_ID} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(210, 90%, 65%)" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="hsl(210, 90%, 55%)" stopOpacity={0.7} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="2 4"
+                stroke={CHART_GRID_STROKE}
+                vertical={false}
+              />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tick={CHART_AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tick={CHART_AXIS_TICK}
+                tickLine={false}
+                axisLine={false}
                 allowDecimals={false}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                  fontSize: 12,
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
+                labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                cursor={CHART_TOOLTIP_CURSOR_BAR}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(value: any) => [`${value} bardak`, "Su"]}
               />
               <ReferenceLine
                 y={avgTarget}
                 stroke="hsl(var(--primary))"
-                strokeDasharray="3 3"
+                strokeDasharray="4 4"
+                strokeOpacity={0.7}
                 label={{
-                  value: `Hedef: ${avgTarget}`,
+                  value: `Hedef ${avgTarget}`,
                   position: "right",
                   fontSize: 10,
                   fill: "hsl(var(--muted-foreground))",
@@ -79,8 +103,8 @@ export function WaterChart() {
               />
               <Bar
                 dataKey="glasses"
-                fill="hsl(210, 80%, 60%)"
-                radius={[4, 4, 0, 0]}
+                fill={`url(#${WATER_GRADIENT_ID})`}
+                radius={[6, 6, 0, 0]}
                 maxBarSize={32}
               />
             </BarChart>

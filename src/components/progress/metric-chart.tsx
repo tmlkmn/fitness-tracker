@@ -2,13 +2,22 @@
 
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import {
+  CHART_AXIS_TICK,
+  CHART_GRID_STROKE,
+  CHART_TOOLTIP_CURSOR,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_TOOLTIP_STYLE,
+  chartGradientId,
+} from "@/lib/chart-theme";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LogEntry = Record<string, any>;
@@ -55,54 +64,64 @@ export function MetricChart({ data, metric, label, unit }: MetricChartProps) {
   }
 
   const unitSuffix = unit ? ` ${unit}` : "";
+  const gradId = chartGradientId(`metric-${metric}`);
 
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <LineChart
+      <AreaChart
         data={chartData}
         margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
       >
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <CartesianGrid
-          strokeDasharray="3 3"
-          stroke="hsl(var(--border))"
+          strokeDasharray="2 4"
+          stroke={CHART_GRID_STROKE}
+          vertical={false}
         />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+          tick={CHART_AXIS_TICK}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
           domain={["dataMin - 1", "dataMax + 1"]}
-          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+          tick={CHART_AXIS_TICK}
           tickLine={false}
           axisLine={false}
           unit={unitSuffix}
         />
         <Tooltip
-          contentStyle={{
-            backgroundColor: "hsl(var(--card))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: "var(--radius)",
-            fontSize: 12,
-          }}
-          labelStyle={{ color: "hsl(var(--muted-foreground))" }}
+          contentStyle={CHART_TOOLTIP_STYLE}
+          labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+          itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+          cursor={CHART_TOOLTIP_CURSOR}
           formatter={(value) => [`${value}${unitSuffix}`, label]}
         />
-        <Line
+        <Area
           type="monotone"
           dataKey="value"
           stroke="hsl(var(--primary))"
-          strokeWidth={2}
+          strokeWidth={2.25}
+          fill={`url(#${gradId})`}
           dot={{
-            r: 4,
+            r: 3,
             fill: "hsl(var(--primary))",
+            stroke: "hsl(var(--background))",
+            strokeWidth: 1.5,
+          }}
+          activeDot={{
+            r: 6,
             stroke: "hsl(var(--background))",
             strokeWidth: 2,
           }}
-          activeDot={{ r: 6 }}
         />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ViewTransition } from "react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,6 +25,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CookieConsent } from "@/components/cookie-consent";
+import { GlobalSearchProvider } from "@/components/layout/global-search-provider";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://fitmusc.com";
 
@@ -41,11 +43,21 @@ export const metadata: Metadata = {
     type: "website",
     locale: "tr_TR",
     siteName: "FitMusc",
+    url: BASE_URL,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "FitMusc — Kişisel Fitness Takip",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "FitMusc — Kişisel Fitness Takip",
     description: "AI destekli kişisel fitness antrenman ve beslenme takip uygulaması.",
+    images: ["/opengraph-image"],
   },
   icons: {
     icon: [
@@ -116,15 +128,19 @@ export default function RootLayout({
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         <QueryProvider>
           <ThemeProvider>
-            <NetworkStatus />
-            <PullToRefresh>
-              <main className="pb-24 max-w-lg md:max-w-2xl mx-auto">{children}</main>
-            </PullToRefresh>
-            <QuickActionFab />
-            <BottomNav />
-            <Toaster />
-            <CookieConsent />
-            <SwRegister />
+            <GlobalSearchProvider>
+              <NetworkStatus />
+              <PullToRefresh>
+                <main className="pb-24 max-w-lg md:max-w-2xl mx-auto">
+                  <ViewTransition default="page-fade">{children}</ViewTransition>
+                </main>
+              </PullToRefresh>
+              <QuickActionFab />
+              <BottomNav />
+              <Toaster />
+              <CookieConsent />
+              <SwRegister />
+            </GlobalSearchProvider>
           </ThemeProvider>
         </QueryProvider>
         <Analytics />

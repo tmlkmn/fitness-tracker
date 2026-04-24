@@ -3,8 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   Tooltip,
   YAxis,
 } from "recharts";
@@ -14,6 +14,13 @@ import { getWeeklyMacroTotals, type DailyMacroPoint } from "@/actions/meals";
 import { useUserProfile } from "@/hooks/use-user";
 import { resolveTargets } from "@/lib/macro-targets";
 import { useMemo } from "react";
+import {
+  CHART_TOOLTIP_CURSOR,
+  CHART_TOOLTIP_ITEM_STYLE,
+  CHART_TOOLTIP_LABEL_STYLE,
+  CHART_TOOLTIP_STYLE,
+  chartGradientId,
+} from "@/lib/chart-theme";
 
 type Metric = "calories" | "protein" | "carbs" | "fat";
 
@@ -85,31 +92,35 @@ export function MacroTrendSparkline({
         ) : (
           <div className="space-y-1">
             <ResponsiveContainer width="100%" height={60}>
-              <LineChart
+              <AreaChart
                 data={chartData}
                 margin={{ top: 4, right: 4, left: 4, bottom: 4 }}
               >
+                <defs>
+                  <linearGradient id={chartGradientId(`spark-${metric}`)} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <YAxis hide domain={[0, "dataMax + 10"]} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "var(--radius)",
-                    fontSize: 11,
-                    padding: "4px 8px",
-                  }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                  labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                  itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                  cursor={CHART_TOOLTIP_CURSOR}
                   labelFormatter={(l) => formatShortDate(l as string)}
                   formatter={(value) => [`${value}${unit}`, label]}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="value"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
-                  dot={{ r: 2, fill: "hsl(var(--primary))" }}
-                  activeDot={{ r: 4 }}
+                  fill={`url(#${chartGradientId(`spark-${metric}`)})`}
+                  dot={false}
+                  activeDot={{ r: 4, stroke: "hsl(var(--background))", strokeWidth: 1.5 }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
             <div className="flex items-center justify-between text-[10px] text-muted-foreground">
               <span>

@@ -31,10 +31,30 @@ export async function getUserProfile() {
       targetProteinG: users.targetProteinG,
       targetCarbsG: users.targetCarbsG,
       targetFatG: users.targetFatG,
+      weightUnit: users.weightUnit,
+      energyUnit: users.energyUnit,
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false, targetCalories: null, targetProteinG: null, targetCarbsG: null, targetFatG: null };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false, targetCalories: null, targetProteinG: null, targetCarbsG: null, targetFatG: null, weightUnit: "kg", energyUnit: "kcal" };
+}
+
+export async function updateUnitPreferences(data: {
+  weightUnit: "kg" | "lb";
+  energyUnit: "kcal" | "kj";
+}) {
+  const user = await getAuthUser();
+  await db
+    .update(users)
+    .set({
+      weightUnit: data.weightUnit,
+      energyUnit: data.energyUnit,
+    })
+    .where(eq(users.id, user.id));
+  revalidatePath("/");
+  revalidatePath("/ayarlar");
+  revalidatePath("/ilerleme");
+  revalidatePath("/gun", "layout");
 }
 
 export async function updateMacroTargets(data: {

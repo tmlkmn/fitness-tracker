@@ -45,6 +45,8 @@ import { ShareManager } from "@/components/sharing/share-manager";
 import { NotificationPreferencesCard } from "@/components/notifications/notification-preferences-card";
 import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
 import { MacroTargetsCard } from "@/components/meals/macro-targets-card";
+import { UnitPreferencesCard } from "@/components/settings/unit-preferences-card";
+import { DashboardPrefsCard } from "@/components/settings/dashboard-prefs-card";
 import { PwaInstallCard } from "@/components/layout/pwa-install-card";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 import {
@@ -1102,6 +1104,10 @@ function AyarlarContent() {
         <ProfileEditor profile={profile} userEmail={user?.email} />
 
         <MacroTargetsCard />
+
+        <UnitPreferencesCard />
+
+        <DashboardPrefsCard />
 
         <Link href="/ogunlerim" className="block">
           <Card className="hover:bg-accent transition-colors cursor-pointer">

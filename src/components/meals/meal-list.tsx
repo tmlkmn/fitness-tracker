@@ -22,6 +22,7 @@ import { useUserProfile } from "@/hooks/use-user";
 import { computeMealMacros } from "@/lib/meal-macros";
 import { resolveTargets } from "@/lib/macro-targets";
 import { formatAiError } from "@/lib/ai-errors";
+import { formatEnergy, type EnergyUnit } from "@/lib/units";
 import type { AIMeal } from "@/actions/ai-meals";
 
 interface MealListProps {
@@ -212,7 +213,9 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
                 Tümünü Tamamla
               </Button>
             )}
-            <span className="text-sm font-medium tabular-nums">{totalCalories} kcal</span>
+            <span className="text-sm font-medium tabular-nums">
+              {formatEnergy(totalCalories, (profile?.energyUnit as EnergyUnit) ?? "kcal")}
+            </span>
           </div>
         </div>
         <Progress value={percent} />
@@ -232,19 +235,21 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
         </Button>
       )}
 
-      {mealList.map((meal) => (
-        <MealCard
-          key={meal.id}
-          {...meal}
-          dailyPlanId={dailyPlanId}
-          isCompleted={meal.isCompleted ?? false}
-          readOnly={readOnly}
-          planDate={planDate}
-          onToggle={readOnly ? undefined : (id, completed) =>
-            toggleMeal.mutate({ id, isCompleted: completed })
-          }
-        />
-      ))}
+      <div className="stagger-list space-y-3">
+        {mealList.map((meal) => (
+          <MealCard
+            key={meal.id}
+            {...meal}
+            dailyPlanId={dailyPlanId}
+            isCompleted={meal.isCompleted ?? false}
+            readOnly={readOnly}
+            planDate={planDate}
+            onToggle={readOnly ? undefined : (id, completed) =>
+              toggleMeal.mutate({ id, isCompleted: completed })
+            }
+          />
+        ))}
+      </div>
 
       {!readOnly ? (
         <div className="flex gap-2">

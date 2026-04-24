@@ -22,7 +22,9 @@ import {
   Sun,
   Moon,
   LogOut,
+  Search,
 } from "lucide-react";
+import { useGlobalSearch } from "./global-search-provider";
 
 export function HeaderMenu() {
   const { data: session } = useSession();
@@ -32,6 +34,7 @@ export function HeaderMenu() {
 
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const { open: openSearch } = useGlobalSearch();
 
   const handleSignOut = async () => {
     await signOut();
@@ -40,6 +43,13 @@ export function HeaderMenu() {
 
   return (
     <>
+      <button
+        className="h-9 w-9 inline-flex items-center justify-center rounded-lg hover:bg-accent transition-colors"
+        aria-label="Ara"
+        onClick={openSearch}
+      >
+        <Search className="h-5 w-5" />
+      </button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button

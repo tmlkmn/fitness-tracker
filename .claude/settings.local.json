@@ -5,7 +5,20 @@
       "Bash(npx tsc *)",
       "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
       "Bash(npx eslint *)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(grep -o \"Faz [1-5][^\\\\\"]\\\\{0,800\\\\}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -o \"Faz 5[^\\\\\"]\\\\{0,500\\\\}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -o \"9.[^\\\\\"]\\\\{0,200\\\\}\\\\|10\\\\\\\\\\\\\\\\.[^\\\\\"]\\\\{0,200\\\\}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -oE \"9\\\\.\\\\\\\\\\\\\\\\n? *[A-ZÇĞİÖŞÜ][^\\\\\\\\\\\\\\\\\\\\\"]{5,150}|10\\\\.\\\\\\\\\\\\\\\\n? *[A-ZÇĞİÖŞÜ][^\\\\\\\\\\\\\\\\\\\\\"]{5,150}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -oE \"Faz 1 — [^\\\\\\\\\\\\\\\\\\\\\"]{5,200}|Faz 2 — [^\\\\\\\\\\\\\\\\\\\\\"]{5,200}|Faz 3 — [^\\\\\\\\\\\\\\\\\\\\\"]{5,200}|Faz 4 — [^\\\\\\\\\\\\\\\\\\\\\"]{5,200}|Faz 5 — [^\\\\\\\\\\\\\\\\\\\\\"]{5,200}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -oE \"Faz 5 — Genel UX İyileştirmeleri[^\\\\\\\\\\\\\\\\\\\\\"]{0,1500}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -oE \"Faz 5 — Genel UX[^\\\\\"]{0,3000}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -oE \"1\\\\. Tipografi sistemi[^\\\\\"]{0,2500}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -oE \"8\\\\. AI kotası[^\\\\\"]{0,1500}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -oE \"Faz 1 — Temel[^\\\\\"]{0,3500}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -oE \"Faz 1 — Temel[^A]{0,3000}\" /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(awk 'BEGIN{RS=\"\\\\\\\\\\\\\\\\n\"} /AI kotası geri sayım/,/Faz 2 — Yapısal/' /c/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl)",
+      "Bash(grep -E \"\\\\.tsx?$\")"
     ]
   }
 }

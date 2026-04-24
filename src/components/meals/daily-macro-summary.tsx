@@ -1,6 +1,14 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import type { MacroTargets } from "@/lib/macro-targets";
 import { macroProgressColor } from "@/lib/macro-targets";
+import { useUserProfile } from "@/hooks/use-user";
+import {
+  energyUnitLabel,
+  kcalToDisplay,
+  type EnergyUnit,
+} from "@/lib/units";
 
 interface MacroSummaryProps {
   calories: number;
@@ -62,13 +70,19 @@ export function DailyMacroSummary({
   fat,
   targets,
 }: MacroSummaryProps) {
+  const { data: profile } = useUserProfile();
+  const energyUnit = (profile?.energyUnit as EnergyUnit) ?? "kcal";
+  const displayCalories = Math.round(kcalToDisplay(calories, energyUnit));
+  const displayTarget = targets?.calories
+    ? Math.round(kcalToDisplay(targets.calories, energyUnit))
+    : undefined;
   return (
     <div className="grid grid-cols-4 gap-2 p-3 bg-muted rounded-lg">
       <MacroCell
-        value={calories}
+        value={displayCalories}
         unit=""
-        label="kcal"
-        target={targets?.calories}
+        label={energyUnitLabel(energyUnit)}
+        target={displayTarget}
         highlight
       />
       <MacroCell value={protein} unit="g" label="Protein" target={targets?.protein} />
