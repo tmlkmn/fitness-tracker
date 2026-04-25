@@ -3,17 +3,21 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Droplets, Plus, Minus } from "lucide-react";
-import { useTodayWater, useIncrementWater } from "@/hooks/use-water";
+import {
+  useTodayWater,
+  useIncrementWater,
+  useDailyWaterTarget,
+} from "@/hooks/use-water";
 import { getTurkeyTodayStr } from "@/lib/utils";
 
 export function WaterDashboardWidget() {
+  const [todayStr] = useState(() => getTurkeyTodayStr());
   const { data: log } = useTodayWater();
+  const { data: personalizedTarget } = useDailyWaterTarget(todayStr);
   const increment = useIncrementWater();
 
-  const [todayStr] = useState(() => getTurkeyTodayStr());
-
   const glasses = log?.glasses ?? 0;
-  const target = log?.targetGlasses ?? 8;
+  const target = log?.targetGlasses ?? personalizedTarget ?? 8;
   const pct = target > 0 ? Math.min(100, Math.round((glasses / target) * 100)) : 0;
 
   const handleIncrement = (delta: number) => {

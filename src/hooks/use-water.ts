@@ -3,6 +3,7 @@ import {
   getWaterLog,
   getTodayWaterLog,
   getWaterLogs,
+  getDailyWaterTarget,
   incrementWater,
 } from "@/actions/water";
 
@@ -22,6 +23,14 @@ export function useTodayWater() {
   });
 }
 
+export function useDailyWaterTarget(dateStr: string) {
+  return useQuery({
+    queryKey: ["water-target", dateStr],
+    queryFn: () => getDailyWaterTarget(dateStr),
+    staleTime: 5 * 60_000, // target depends on profile + plan; 5 min cache is fine
+  });
+}
+
 export function useWaterLogs() {
   return useQuery({
     queryKey: ["water-logs"],
@@ -29,6 +38,11 @@ export function useWaterLogs() {
     staleTime: 60_000,
   });
 }
+
+type WaterCacheRow = {
+  glasses: number;
+  targetGlasses?: number;
+} | null | undefined;
 
 export function useIncrementWater() {
   const qc = useQueryClient();
@@ -38,25 +52,30 @@ export function useIncrementWater() {
     onMutate: async ({ dateStr, delta }) => {
       await qc.cancelQueries({ queryKey: ["water", dateStr] });
       await qc.cancelQueries({ queryKey: ["water-today"] });
-      const prev = qc.getQueryData<{ glasses: number }>(["water", dateStr]);
-      const prevToday = qc.getQueryData<{ glasses: number }>(["water-today"]);
-      if (prev) {
-        qc.setQueryData(["water", dateStr], {
-          ...prev,
-          glasses: Math.max(0, prev.glasses + delta),
-        });
-      }
-      if (prevToday) {
-        qc.setQueryData(["water-today"], {
-          ...prevToday,
-          glasses: Math.max(0, prevToday.glasses + delta),
-        });
-      }
+      const prev = qc.getQueryData<WaterCacheRow>(["water", dateStr]);
+      const prevToday = qc.getQueryData<WaterCacheRow>(["water-today"]);
+
+      // Synthesize a base row when no log exists yet so the UI updates
+      // immediately on the first +/- click. Without this, prev=null skipped
+      // the optimistic write and the user saw no response until the refetch.
+      const baseGlasses = prev?.glasses ?? 0;
+      const nextGlasses = Math.max(0, baseGlasses + delta);
+      qc.setQueryData(["water", dateStr], {
+        ...(prev ?? {}),
+        glasses: nextGlasses,
+      });
+
+      const baseTodayGlasses = prevToday?.glasses ?? 0;
+      qc.setQueryData(["water-today"], {
+        ...(prevToday ?? {}),
+        glasses: Math.max(0, baseTodayGlasses + delta),
+      });
+
       return { prev, prevToday };
     },
     onError: (_err, { dateStr }, context) => {
-      if (context?.prev) qc.setQueryData(["water", dateStr], context.prev);
-      if (context?.prevToday) qc.setQueryData(["water-today"], context.prevToday);
+      qc.setQueryData(["water", dateStr], context?.prev ?? null);
+      qc.setQueryData(["water-today"], context?.prevToday ?? null);
     },
     onSettled: (_data, _err, { dateStr }) => {
       qc.invalidateQueries({ queryKey: ["water", dateStr] });

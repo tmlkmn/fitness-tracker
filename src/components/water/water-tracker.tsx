@@ -3,7 +3,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Droplets, Minus, Plus } from "lucide-react";
-import { useWaterLog, useIncrementWater } from "@/hooks/use-water";
+import {
+  useWaterLog,
+  useIncrementWater,
+  useDailyWaterTarget,
+} from "@/hooks/use-water";
 
 interface WaterTrackerProps {
   date: string;
@@ -12,10 +16,14 @@ interface WaterTrackerProps {
 
 export function WaterTracker({ date, readOnly }: WaterTrackerProps) {
   const { data: log } = useWaterLog(date);
+  const { data: personalizedTarget } = useDailyWaterTarget(date);
   const increment = useIncrementWater();
 
   const glasses = log?.glasses ?? 0;
-  const target = log?.targetGlasses ?? 8;
+  // Prefer the persisted target on the row; fall back to the personalized
+  // target computed from profile (weight + plan type + goal). Last-resort
+  // 8 only if both are absent.
+  const target = log?.targetGlasses ?? personalizedTarget ?? 8;
   const liters = (glasses * 0.25).toFixed(2).replace(/\.?0+$/, "");
   const targetLiters = (target * 0.25).toFixed(1).replace(/\.?0+$/, "");
   const pct = target > 0 ? Math.min(100, Math.round((glasses / target) * 100)) : 0;
