@@ -45,11 +45,16 @@ function renderShareImage(
   canvas: HTMLCanvasElement,
   props: Omit<ShareStreakDialogProps, "open" | "onOpenChange">,
 ) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
+  // Set dimensions BEFORE getContext so the backing store is sized correctly
+  // before any draw operations. (Setting width/height after acquiring the
+  // context resets all state — fillStyle, transforms — which is wasted work.)
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
+
+  // Opaque canvas — bg fills entire surface, no alpha needed; helps iOS
+  // backing store reliability.
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) return;
 
   // Gradient background
   const bg = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
@@ -149,14 +154,31 @@ export function ShareStreakDialog({
     if (!open) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    renderShareImage(canvas, {
-      userName,
-      currentStreak,
-      longestStreak,
-      unlockedBadges,
-      totalBadges,
+
+    let cancelled = false;
+    // Wait for fonts so fillText() actually rasterizes text instead of
+    // silently falling back to invisible glyphs / a bare default font that
+    // some browsers can't render at requested sizes.
+    const ready =
+      typeof document !== "undefined" && "fonts" in document
+        ? document.fonts.ready
+        : Promise.resolve();
+
+    ready.then(() => {
+      if (cancelled || !canvas) return;
+      renderShareImage(canvas, {
+        userName,
+        currentStreak,
+        longestStreak,
+        unlockedBadges,
+        totalBadges,
+      });
+      setPreviewUrl(canvas.toDataURL("image/png"));
     });
-    setPreviewUrl(canvas.toDataURL("image/png"));
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, userName, currentStreak, longestStreak, unlockedBadges, totalBadges]);
 
   const handleDownload = () => {
@@ -203,7 +225,25 @@ export function ShareStreakDialog({
           <DialogTitle>Serini Paylaş</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <canvas ref={canvasRef} className="hidden" />
+          {/*
+            Canvas needs a real layout (not display:none) on iOS Safari + some
+            mobile WebViews; otherwise toDataURL returns an empty/black backing
+            store. Position offscreen so it's still rasterized normally.
+          */}
+          <canvas
+            ref={canvasRef}
+            width={WIDTH}
+            height={HEIGHT}
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: "-99999px",
+              top: "-99999px",
+              width: "1px",
+              height: "1px",
+              pointerEvents: "none",
+            }}
+          />
           {previewUrl && (
             <div className="rounded-lg overflow-hidden border border-border">
               {/* eslint-disable-next-line @next/next/no-img-element */}
