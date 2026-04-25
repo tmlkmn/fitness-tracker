@@ -10,13 +10,19 @@ export interface UserBasics {
   height?: number | null;
   age?: number | null;
   fitnessLevel?: string | null;
+  serviceType?: string | null;
 }
 
+// Activity multipliers by fitness level (TDEE = BMR × multiplier).
+// Nutrition-only users cap lower (max 1.4) since they aren't programming
+// structured workouts in the app.
 const ACTIVITY_BY_LEVEL: Record<string, number> = {
-  beginner: 1.375,
-  intermediate: 1.55,
-  advanced: 1.725,
+  beginner: 1.3,
+  returning: 1.375,
+  intermediate: 1.5,
+  advanced: 1.65,
 };
+const NUTRITION_ONLY_MAX = 1.4;
 
 export function computeDefaultTargets(user: UserBasics): MacroTargets | null {
   const w = typeof user.weight === "string" ? parseFloat(user.weight) : user.weight ?? null;
@@ -25,7 +31,10 @@ export function computeDefaultTargets(user: UserBasics): MacroTargets | null {
   if (!w || !h || !age) return null;
 
   const bmr = 10 * w + 6.25 * h - 5 * age + 5;
-  const activity = ACTIVITY_BY_LEVEL[user.fitnessLevel ?? "intermediate"] ?? 1.55;
+  let activity = ACTIVITY_BY_LEVEL[user.fitnessLevel ?? "intermediate"] ?? 1.5;
+  if (user.serviceType === "nutrition") {
+    activity = Math.min(activity, NUTRITION_ONLY_MAX);
+  }
   const calories = Math.round(bmr * activity);
 
   const protein = Math.round(w * 1.8);

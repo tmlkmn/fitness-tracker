@@ -4,11 +4,14 @@ import {
   exercises,
   meals,
   weeklyPlans,
-  progressLogs,
-  users,
 } from "@/db/schema";
-import { eq, asc, desc, and, ne, isNotNull } from "drizzle-orm";
+import { eq, asc, desc, and, ne, isNotNull, inArray } from "drizzle-orm";
 import { normalizeEvent, MEAL_EVENTS } from "@/lib/routine-constants";
+import {
+  loadUserProfileRow,
+  renderUserProfileLines,
+} from "@/lib/ai-user-profile-block";
+import { loadRecentProgressLines } from "@/lib/ai-progress-block";
 
 /**
  * Builds comprehensive AI context for daily meal generation.
@@ -36,185 +39,48 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
   const lines: string[] = [];
 
   // ─── 1. User profile & body composition ─────────────────────────────
-
-  const [user] = await db
-    .select({
-      name: users.name,
-      height: users.height,
-      weight: users.weight,
-      targetWeight: users.targetWeight,
-      healthNotes: users.healthNotes,
-      foodAllergens: users.foodAllergens,
-      serviceType: users.serviceType,
-      dailyRoutine: users.dailyRoutine,
-      weekendRoutine: users.weekendRoutine,
-      supplementSchedule: users.supplementSchedule,
-    })
-    .from(users)
-    .where(eq(users.id, userId));
+  // Use the shared profile-block helper so allergens, manual macro targets,
+  // routine, supplements, and fitness level all render in one consistent
+  // format across meal-context / weekly-context / user-context.
+  const user = await loadUserProfileRow(userId);
 
   if (user) {
-    lines.push("═══ KULLANICI PROFİLİ ═══");
-    const profile: string[] = [];
-    if (user.height) profile.push(`Boy: ${user.height}cm`);
-    if (user.weight) profile.push(`Başlangıç kilo: ${user.weight}kg`);
-    if (user.targetWeight) profile.push(`Hedef kilo: ${user.targetWeight}kg`);
-    if (profile.length > 0) lines.push(profile.join(" | "));
+    lines.push(
+      ...renderUserProfileLines(user, {
+        includeAgeAndService: true,
+        compact: true,
+      }),
+    );
 
-    if (user.healthNotes) {
-      try {
-        const notes = JSON.parse(user.healthNotes);
-        if (Array.isArray(notes) && notes.length > 0) {
-          lines.push(`Sağlık notları/kısıtlamalar: ${notes.join(". ")}`);
-        }
-      } catch {
-        lines.push(`Sağlık notları: ${user.healthNotes}`);
-      }
-    }
-
-    // Food allergens
-    if (user.foodAllergens) {
-      try {
-        const allergens = JSON.parse(user.foodAllergens);
-        if (Array.isArray(allergens) && allergens.length > 0 && allergens[0] !== "Yok") {
-          lines.push(`⚠️ GIDA ALERJİLERİ (KESİNLİKLE KULLANMA): ${allergens.join(", ")}`);
-        }
-      } catch {
-        lines.push(`⚠️ GIDA ALERJİLERİ: ${user.foodAllergens}`);
-      }
-    }
-
-    // Calculate BMR estimate if height and weight available
-    if (user.height && user.weight) {
-      const weightNum = parseFloat(String(user.weight));
-      const heightNum = user.height;
-      // Mifflin-St Jeor (male estimate, AI can adjust)
-      const bmr = Math.round(10 * weightNum + 6.25 * heightNum - 5 * 30 + 5);
-      lines.push(
-        `Tahmini BMR: ~${bmr} kcal (Mifflin-St Jeor, yaklaşık)`,
-      );
-    }
-  }
-
-  // ─── 1b. Daily routine & supplement schedule ──────────────────────
-  if (user) {
-    // Determine if weekend
+    // Today-specific: highlight which meal labels the user has defined for
+    // this particular day (week vs weekend routine). The shared block lists
+    // both routines but doesn't pick one for "today" — we do that here.
     const isWeekend = currentDay.dayOfWeek === 5 || currentDay.dayOfWeek === 6;
     const routineRaw = isWeekend
       ? (user.weekendRoutine as { time: string; event: string }[] | null) ?? (user.dailyRoutine as { time: string; event: string }[] | null)
       : (user.dailyRoutine as { time: string; event: string }[] | null);
 
     if (routineRaw && Array.isArray(routineRaw) && routineRaw.length > 0) {
-      const routine = routineRaw.map((r) => ({
-        time: r.time,
-        event: normalizeEvent(r.event),
-      }));
+      const definedMeals = routineRaw
+        .map((r) => normalizeEvent(r.event))
+        .filter((event) => MEAL_EVENTS.includes(event));
       lines.push("");
-      lines.push("═══ GÜNLÜK PROGRAM ═══");
-      lines.push(
-        `Bugünün programı (${isWeekend ? "hafta sonu" : "hafta içi"}): ${routine.map((r) => `${r.time} ${r.event}`).join(", ")}`,
-      );
-      const definedMeals = routine
-        .filter((r) => MEAL_EVENTS.includes(r.event))
-        .map((r) => r.event);
       if (definedMeals.length > 0) {
-        lines.push(`Tanımlı öğünler: ${definedMeals.join(", ")}`);
         lines.push(
-          'NOT: Kullanıcı yukarıdaki öğünleri tanımlamış — bu saatlerdeki öğünleri bu etiketlerle oluştur. Tanımlanmamış saatlerde ek öğün gerekirse "Ara Öğün" olarak etiketle.',
+          `Bugün (${isWeekend ? "hafta sonu" : "hafta içi"}) tanımlı öğünler: ${definedMeals.join(", ")}. Tanımlanmamış saatlerdeki öğünleri "Ara Öğün" olarak etiketle.`,
         );
       } else {
         lines.push(
-          'NOT: Kullanıcı standart öğün etiketi tanımlamamış — öğünleri "Ara Öğün" olarak etiketle.',
+          'Bugün için standart öğün etiketi tanımlanmamış — öğünleri "Ara Öğün" olarak etiketle.',
         );
       }
-    }
-
-    // Supplement schedule
-    const suppRaw = user.supplementSchedule as { period: string; supplements: string }[] | null;
-    if (suppRaw && Array.isArray(suppRaw) && suppRaw.length > 0) {
-      lines.push("");
-      lines.push("═══ SUPPLEMENT TAKVİMİ ═══");
-      for (const s of suppRaw) {
-        lines.push(`${s.period}: ${s.supplements}`);
-      }
-      lines.push(
-        "NOT: Protein tozu/whey ANTRENMAN SONRASI önerilmeli. Supplement'leri öğün içeriğine YAZMA, sadece zamanlamayı uyumla.",
-      );
     }
   }
 
-  const recentLogs = await db
-    .select({
-      logDate: progressLogs.logDate,
-      weight: progressLogs.weight,
-      fatPercent: progressLogs.fatPercent,
-      fatKg: progressLogs.fatKg,
-      fluidPercent: progressLogs.fluidPercent,
-      bmi: progressLogs.bmi,
-      torsoFatPercent: progressLogs.torsoFatPercent,
-      torsoMuscleKg: progressLogs.torsoMuscleKg,
-      leftArmMuscleKg: progressLogs.leftArmMuscleKg,
-      rightArmMuscleKg: progressLogs.rightArmMuscleKg,
-      leftLegMuscleKg: progressLogs.leftLegMuscleKg,
-      rightLegMuscleKg: progressLogs.rightLegMuscleKg,
-      waistCm: progressLogs.waistCm,
-      notes: progressLogs.notes,
-    })
-    .from(progressLogs)
-    .where(eq(progressLogs.userId, userId))
-    .orderBy(desc(progressLogs.logDate))
-    .limit(5);
-
-  if (recentLogs.length > 0) {
+  const progressLines = await loadRecentProgressLines(userId, { limit: 5 });
+  if (progressLines.length > 0) {
     lines.push("");
-    lines.push("═══ VÜCUT KOMPOZİSYONU İLERLEME (Son Ölçümler) ═══");
-
-    for (const log of recentLogs.reverse()) {
-      const parts: string[] = [`${log.logDate}:`];
-      if (log.weight) parts.push(`${log.weight}kg`);
-      if (log.fatPercent) parts.push(`%${log.fatPercent} yağ`);
-      if (log.fatKg) parts.push(`${log.fatKg}kg yağ`);
-      if (log.bmi) parts.push(`BMI ${log.bmi}`);
-      if (log.fluidPercent) parts.push(`%${log.fluidPercent} sıvı`);
-      if (log.waistCm) parts.push(`bel: ${log.waistCm}cm`);
-      lines.push(parts.join(" | "));
-    }
-
-    // Add muscle distribution from latest log
-    const latest = recentLogs[0]; // most recent (desc order, index 0)
-    const muscleParts: string[] = [];
-    if (latest.torsoMuscleKg)
-      muscleParts.push(`Gövde: ${latest.torsoMuscleKg}kg`);
-    if (latest.leftArmMuscleKg)
-      muscleParts.push(`Sol kol: ${latest.leftArmMuscleKg}kg`);
-    if (latest.rightArmMuscleKg)
-      muscleParts.push(`Sağ kol: ${latest.rightArmMuscleKg}kg`);
-    if (latest.leftLegMuscleKg)
-      muscleParts.push(`Sol bacak: ${latest.leftLegMuscleKg}kg`);
-    if (latest.rightLegMuscleKg)
-      muscleParts.push(`Sağ bacak: ${latest.rightLegMuscleKg}kg`);
-    if (muscleParts.length > 0) {
-      lines.push(`Kas dağılımı (son): ${muscleParts.join(" | ")}`);
-    }
-
-    if (latest.torsoFatPercent) {
-      lines.push(`Gövde yağ oranı: %${latest.torsoFatPercent}`);
-    }
-
-    // Weight trend
-    if (recentLogs.length >= 2) {
-      const oldest = recentLogs[recentLogs.length - 1]; // chronologically first
-      if (oldest.weight && latest.weight) {
-        const diff =
-          parseFloat(String(latest.weight)) -
-          parseFloat(String(oldest.weight));
-        const direction =
-          diff > 0 ? "artış" : diff < 0 ? "düşüş" : "sabit";
-        lines.push(
-          `Kilo trendi: ${Math.abs(diff).toFixed(1)}kg ${direction} (${oldest.logDate} → ${latest.logDate})`,
-        );
-      }
-    }
+    lines.push(...progressLines);
   }
 
   // ─── 3. Today's workout program (skip for nutrition-only users) ─────
@@ -309,18 +175,34 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
       .where(eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId))
       .orderBy(asc(dailyPlans.dayOfWeek));
 
+    // Batch: all meals for non-current days in a single query
+    const otherDayIds = weekDays
+      .filter((d) => d.id !== currentDay.id)
+      .map((d) => d.id);
+    const allWeekMeals = otherDayIds.length
+      ? await db
+          .select({
+            dailyPlanId: meals.dailyPlanId,
+            mealTime: meals.mealTime,
+            mealLabel: meals.mealLabel,
+            content: meals.content,
+            calories: meals.calories,
+          })
+          .from(meals)
+          .where(inArray(meals.dailyPlanId, otherDayIds))
+          .orderBy(asc(meals.sortOrder))
+      : [];
+    const weekMealsByDay = new Map<number, typeof allWeekMeals>();
+    for (const m of allWeekMeals) {
+      if (m.dailyPlanId == null) continue;
+      const arr = weekMealsByDay.get(m.dailyPlanId) ?? [];
+      arr.push(m);
+      weekMealsByDay.set(m.dailyPlanId, arr);
+    }
+
     for (const day of weekDays) {
       if (day.id === currentDay.id) continue;
-      const dayMeals = await db
-        .select({
-          mealTime: meals.mealTime,
-          mealLabel: meals.mealLabel,
-          content: meals.content,
-          calories: meals.calories,
-        })
-        .from(meals)
-        .where(eq(meals.dailyPlanId, day.id))
-        .orderBy(asc(meals.sortOrder));
+      const dayMeals = weekMealsByDay.get(day.id) ?? [];
 
       if (dayMeals.length > 0) {
         const totalCal = dayMeals.reduce(
@@ -371,20 +253,32 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
         "(Öğün saatleri ve düzenini referans al, ama yemek çeşitliliği sağla)",
       );
 
+      // Batch: all prev-same-day meals in a single query
+      const prevDayIds = previousSameDayPlans.map((d) => d.id);
+      const allPrevMeals = await db
+        .select({
+          dailyPlanId: meals.dailyPlanId,
+          mealTime: meals.mealTime,
+          mealLabel: meals.mealLabel,
+          content: meals.content,
+          calories: meals.calories,
+          proteinG: meals.proteinG,
+          carbsG: meals.carbsG,
+          fatG: meals.fatG,
+        })
+        .from(meals)
+        .where(inArray(meals.dailyPlanId, prevDayIds))
+        .orderBy(asc(meals.sortOrder));
+      const prevMealsByDay = new Map<number, typeof allPrevMeals>();
+      for (const m of allPrevMeals) {
+        if (m.dailyPlanId == null) continue;
+        const arr = prevMealsByDay.get(m.dailyPlanId) ?? [];
+        arr.push(m);
+        prevMealsByDay.set(m.dailyPlanId, arr);
+      }
+
       for (const prevDay of previousSameDayPlans) {
-        const prevMeals = await db
-          .select({
-            mealTime: meals.mealTime,
-            mealLabel: meals.mealLabel,
-            content: meals.content,
-            calories: meals.calories,
-            proteinG: meals.proteinG,
-            carbsG: meals.carbsG,
-            fatG: meals.fatG,
-          })
-          .from(meals)
-          .where(eq(meals.dailyPlanId, prevDay.id))
-          .orderBy(asc(meals.sortOrder));
+        const prevMeals = prevMealsByDay.get(prevDay.id) ?? [];
 
         if (prevMeals.length > 0) {
           const totalCal = prevMeals.reduce(

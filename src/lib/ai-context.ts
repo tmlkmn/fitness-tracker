@@ -22,7 +22,7 @@ export async function buildUserContext(userId: string): Promise<string> {
   if (!user) return "";
 
   const lines: string[] = renderUserProfileLines(user, {
-    includeAgeAllergens: true,
+    includeAgeAndService: true,
     compact: false,
   });
 
@@ -219,6 +219,7 @@ export async function getMealMacroBudget(
       height: users.height,
       age: users.age,
       fitnessLevel: users.fitnessLevel,
+      serviceType: users.serviceType,
       targetCalories: users.targetCalories,
       targetProteinG: users.targetProteinG,
       targetCarbsG: users.targetCarbsG,

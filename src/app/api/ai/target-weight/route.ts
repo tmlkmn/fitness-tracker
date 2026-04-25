@@ -26,14 +26,13 @@ export async function POST() {
     return Response.json({ error: msg }, { status: 429 });
   }
 
-  // Fetch user profile
+  // Fetch user profile (only fields actually used here; the rest comes via
+  // buildUserContext below — fitness level + service type already render there)
   const [user] = await db
     .select({
       height: users.height,
       weight: users.weight,
       age: users.age,
-      fitnessLevel: users.fitnessLevel,
-      serviceType: users.serviceType,
       healthNotes: users.healthNotes,
     })
     .from(users)
@@ -70,14 +69,13 @@ export async function POST() {
 
   const userContext = await buildUserContext(userId);
 
+  // userContext (via buildUserContext) already includes fitness level / service
+  // type / health notes in human-readable form. We only re-state the latest
+  // physical metrics here so the prompt has them concentrated near the call.
   const profileParts: string[] = [];
   if (user.height) profileParts.push(`Boy: ${user.height}cm`);
   if (user.age) profileParts.push(`Yaş: ${user.age}`);
   if (user.weight) profileParts.push(`Başlangıç kilo: ${user.weight}kg`);
-  profileParts.push(
-    `Hizmet: ${user.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program"}`,
-  );
-  if (user.fitnessLevel) profileParts.push(`Fitness: ${user.fitnessLevel}`);
 
   const logParts: string[] = [`Tarih: ${latestLog.logDate}`];
   if (latestLog.weight) logParts.push(`Kilo: ${latestLog.weight}kg`);

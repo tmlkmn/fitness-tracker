@@ -33,17 +33,36 @@ function parseJSON(text: string): unknown {
   return JSON.parse(cleaned);
 }
 
+export interface GenerateMealVariationOptions {
+  mealLabel: string;
+  currentContent: string;
+  calories?: number | null;
+  proteinG?: string | null;
+  carbsG?: string | null;
+  fatG?: string | null;
+  mealId?: number | null;
+  dailyPlanId?: number | null;
+  previousSuggestions?: string[];
+  userNote?: string | null;
+}
+
+const PREVIOUS_SUGGESTIONS_MAX = 5;
+
 export async function generateMealVariation(
-  mealLabel: string,
-  currentContent: string,
-  calories?: number | null,
-  proteinG?: string | null,
-  carbsG?: string | null,
-  fatG?: string | null,
-  mealId?: number | null,
-  previousSuggestions?: string[],
-  userNote?: string | null
+  options: GenerateMealVariationOptions,
 ): Promise<{ suggestions: MealVariationSuggestion[] }> {
+  const {
+    mealLabel,
+    currentContent,
+    calories,
+    proteinG,
+    carbsG,
+    fatG,
+    mealId,
+    dailyPlanId: dailyPlanIdOpt,
+    previousSuggestions,
+    userNote,
+  } = options;
   const user = await getAuthUser();
   await checkRateLimit(user.id, "meal");
   await logAiUsage(user.id, "meal");
@@ -59,67 +78,80 @@ export async function generateMealVariation(
     .filter(Boolean)
     .join(", ");
 
-  // Build week context: what other meals of the same label exist this week
-  let weekContext = "";
-  let planTypeContext = "";
-  let budgetContext = "";
-  if (mealId) {
+  // Resolve the dailyPlanId either from the meal row (when mealId is known)
+  // or directly from the caller (when the user is adding a brand-new meal
+  // that hasn't been persisted yet — N2 fix: budget must still apply).
+  let resolvedDailyPlanId: number | null = dailyPlanIdOpt ?? null;
+  if (!resolvedDailyPlanId && mealId) {
     try {
       const [currentMeal] = await db
         .select({ dailyPlanId: meals.dailyPlanId })
         .from(meals)
         .where(eq(meals.id, mealId));
+      resolvedDailyPlanId = currentMeal?.dailyPlanId ?? null;
+    } catch {
+      // Best effort
+    }
+  }
 
-      if (currentMeal?.dailyPlanId) {
-        try {
-          const budget = await getMealMacroBudget(user.id, currentMeal.dailyPlanId, mealId);
-          if (budget.text) {
-            budgetContext = `\n\n${budget.text}`;
-          }
-        } catch {
-          // Best effort — proceed without budget
+  // Build week context: what other meals of the same label exist this week
+  let weekContext = "";
+  let planTypeContext = "";
+  let budgetContext = "";
+  if (resolvedDailyPlanId) {
+    try {
+      try {
+        const budget = await getMealMacroBudget(user.id, resolvedDailyPlanId, mealId ?? null);
+        if (budget.text) {
+          budgetContext = `\n\n${budget.text}`;
         }
+      } catch {
+        // Best effort — proceed without budget
+      }
 
-        const [currentDay] = await db
-          .select({ weeklyPlanId: dailyPlans.weeklyPlanId, planType: dailyPlans.planType })
-          .from(dailyPlans)
-          .where(eq(dailyPlans.id, currentMeal.dailyPlanId));
+      const [currentDay] = await db
+        .select({ weeklyPlanId: dailyPlans.weeklyPlanId, planType: dailyPlans.planType })
+        .from(dailyPlans)
+        .where(eq(dailyPlans.id, resolvedDailyPlanId));
 
-        if (currentDay?.planType) {
-          const planTypeLabels: Record<string, string> = {
-            workout: "Antrenman günü",
-            rest: "Dinlenme günü",
-            swimming: "Yüzme günü",
-            nutrition: "Beslenme günü",
-          };
-          planTypeContext = `\nGünün tipi: ${planTypeLabels[currentDay.planType] ?? currentDay.planType}`;
-        }
+      if (currentDay?.planType) {
+        const planTypeLabels: Record<string, string> = {
+          workout: "Antrenman günü",
+          rest: "Dinlenme günü",
+          swimming: "Yüzme günü",
+          nutrition: "Beslenme günü",
+        };
+        planTypeContext = `\nGünün tipi: ${planTypeLabels[currentDay.planType] ?? currentDay.planType}`;
+      }
 
-        if (currentDay?.weeklyPlanId) {
-          const sameLabelRows = await db
-            .select({
-              dayName: dailyPlans.dayName,
-              dayOfWeek: dailyPlans.dayOfWeek,
-              mealTime: meals.mealTime,
-              content: meals.content,
-            })
-            .from(meals)
-            .innerJoin(dailyPlans, eq(meals.dailyPlanId, dailyPlans.id))
-            .where(
-              and(
-                eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId),
-                eq(meals.mealLabel, mealLabel),
-                ne(meals.id, mealId),
-              ),
+      if (currentDay?.weeklyPlanId) {
+        const sameLabelWhere = mealId
+          ? and(
+              eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId),
+              eq(meals.mealLabel, mealLabel),
+              ne(meals.id, mealId),
             )
-            .orderBy(asc(dailyPlans.dayOfWeek), asc(meals.mealTime));
-
-          if (sameLabelRows.length > 0) {
-            const sameLabelMeals = sameLabelRows.map(
-              (r) => `${r.dayName}: ${r.content}`,
+          : and(
+              eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId),
+              eq(meals.mealLabel, mealLabel),
             );
-            weekContext = `\n\nBu hafta aynı öğün tipinde (${mealLabel}) zaten şunlar var, bunları TEKRARLAMA:\n${sameLabelMeals.join("\n")}`;
-          }
+        const sameLabelRows = await db
+          .select({
+            dayName: dailyPlans.dayName,
+            dayOfWeek: dailyPlans.dayOfWeek,
+            mealTime: meals.mealTime,
+            content: meals.content,
+          })
+          .from(meals)
+          .innerJoin(dailyPlans, eq(meals.dailyPlanId, dailyPlans.id))
+          .where(sameLabelWhere)
+          .orderBy(asc(dailyPlans.dayOfWeek), asc(meals.mealTime));
+
+        if (sameLabelRows.length > 0) {
+          const sameLabelMeals = sameLabelRows.map(
+            (r) => `${r.dayName}: ${r.content}`,
+          );
+          weekContext = `\n\nBu hafta aynı öğün tipinde (${mealLabel}) zaten şunlar var, bunları TEKRARLAMA:\n${sameLabelMeals.join("\n")}`;
         }
       }
     } catch {
@@ -127,10 +159,11 @@ export async function generateMealVariation(
     }
   }
 
-  // Build previous suggestions context
+  // Build previous suggestions context — cap at last N to avoid token blowup
   let prevContext = "";
   if (previousSuggestions && previousSuggestions.length > 0) {
-    prevContext = `\n\nDaha önce bu öğün için şu öneriler yapıldı, bunları TEKRARLAMA:\n${previousSuggestions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
+    const recent = previousSuggestions.slice(-PREVIOUS_SUGGESTIONS_MAX);
+    prevContext = `\n\nDaha önce bu öğün için şu öneriler yapıldı, bunları TEKRARLAMA:\n${recent.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
   }
 
   // Build user note context — put up front as the top priority

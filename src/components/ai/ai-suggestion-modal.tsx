@@ -103,7 +103,7 @@ export function AiSuggestionModal({
     setLoading(true);
     setError("");
     try {
-      const result = await generateMealVariation(
+      const result = await generateMealVariation({
         mealLabel,
         currentContent,
         calories,
@@ -111,9 +111,9 @@ export function AiSuggestionModal({
         carbsG,
         fatG,
         mealId,
-        previousSuggestionsRef.current,
-        buildUserNote()
-      );
+        previousSuggestions: previousSuggestionsRef.current,
+        userNote: buildUserNote(),
+      });
       setSuggestions(result.suggestions);
       setView("suggestions");
       // Track suggestions for future calls

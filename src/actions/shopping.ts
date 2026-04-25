@@ -11,6 +11,7 @@ import {
 } from "@/lib/ownership";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { SHOPPING_LIST_PROMPT } from "@/lib/ai-prompts";
+import { parseAiJson, repairTruncatedJson } from "@/lib/ai-json-repair";
 
 export async function toggleShoppingItem(id: number, isPurchased: boolean) {
   const user = await getAuthUser();
@@ -65,8 +66,8 @@ export async function generateShoppingList(weeklyPlanId: number) {
   try {
     const client = getAIClient();
     const message = await client.messages.create({
-      model: AI_MODELS.fast,
-      max_tokens: 2500,
+      model: AI_MODELS.smart,
+      max_tokens: 4000,
       system: [
         {
           type: "text",
@@ -84,25 +85,44 @@ export async function generateShoppingList(weeklyPlanId: number) {
 
     const text =
       message.content[0].type === "text" ? message.content[0].text : "";
+    const wasTruncated = message.stop_reason !== "end_turn";
 
-    // Check for truncated response
-    if (message.stop_reason === "max_tokens") {
-      console.error("[AI] Shopping list response was truncated (max_tokens)");
-      throw new Error("AI_UNAVAILABLE");
-    }
-
-    // Parse JSON
-    let cleaned = text
-      .replace(/^```(?:json)?\s*\n?/i, "")
-      .replace(/\n?```\s*$/i, "")
-      .trim();
-    cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
-
-    const parsed = JSON.parse(cleaned) as {
+    let parsed: {
       items: { category: string; itemName: string; quantity: string; notes: string | null; mealIds?: number[] }[];
     };
 
+    if (!wasTruncated) {
+      // Full response — parse normally with shared helper (handles markdown
+      // fences, trailing commas, single quotes)
+      try {
+        parsed = parseAiJson(text) as typeof parsed;
+      } catch {
+        // Sometimes model emits valid-ish JSON but trips parseAiJson — fall
+        // back to repair (which is more aggressive about closing structures)
+        parsed = JSON.parse(repairTruncatedJson(text)) as typeof parsed;
+      }
+    } else {
+      // Truncated — repair what we have rather than failing outright
+      console.warn("[AI] Shopping list response truncated, attempting repair");
+      parsed = JSON.parse(repairTruncatedJson(text)) as typeof parsed;
+    }
+
     if (!Array.isArray(parsed.items) || parsed.items.length === 0) {
+      throw new Error("AI_EMPTY_RESPONSE");
+    }
+
+    // Drop pantry staples — prompt tells AI to skip these but it often ignores.
+    // Keep this list minimal: only items every kitchen genuinely has and that
+    // a shopper would never need to be reminded of.
+    const PANTRY_STAPLES = new Set([
+      "tuz", "su", "karabiber", "kara biber", "pul biber",
+      "kekik", "kimyon", "nane", "maydanoz",
+    ]);
+    const filteredItems = parsed.items.filter((item) => {
+      const name = (item.itemName ?? "").toLowerCase().trim();
+      return !PANTRY_STAPLES.has(name);
+    });
+    if (filteredItems.length === 0) {
       throw new Error("AI_EMPTY_RESPONSE");
     }
 
@@ -112,7 +132,7 @@ export async function generateShoppingList(weeklyPlanId: number) {
       .where(eq(shoppingLists.weeklyPlanId, weeklyPlanId));
 
     // Insert new items — filter mealIds to only valid ones from this week
-    const values = parsed.items.map((item, idx) => {
+    const values = filteredItems.map((item, idx) => {
       const cleanIds = Array.isArray(item.mealIds)
         ? item.mealIds.filter((id) => typeof id === "number" && validMealIds.has(id))
         : null;

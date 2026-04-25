@@ -24,29 +24,33 @@ export interface UserProfileRow {
   currentMedications: string | null;
   serviceType: string | null;
   supplementSchedule: unknown;
+  targetCalories: number | null;
+  targetProteinG: string | null;
+  targetCarbsG: string | null;
+  targetFatG: string | null;
 }
 
 /**
- * Renders the static profile block used by both user-context and weekly-plan
- * context builders. Callers still query their own dynamic data (trends,
- * current phase, water/sleep, meals) — only the profile is shared.
+ * Renders the static profile block used by user-context, meal-context, and
+ * weekly-plan context builders. Callers still query their own dynamic data
+ * (trends, current phase, water/sleep, meals) — only the profile is shared.
  *
- * Pass `options.includeAgeAllergens = true` for buildUserContext-style block
- * (age and food allergens included). Pass `includeAgeAllergens = false` for
- * weekly-plan style (skips these — weekly builder never used them).
+ * Food allergens are ALWAYS rendered (safety-critical — skipping them lets
+ * the AI suggest allergen-containing meals). Age and service type are opt-in
+ * via `includeAgeAndService` because they're not needed by every caller.
  */
 export function renderUserProfileLines(
   user: UserProfileRow,
-  options: { includeAgeAllergens: boolean; compact: boolean },
+  options: { includeAgeAndService: boolean; compact: boolean },
 ): string[] {
   const lines: string[] = [];
-  const { includeAgeAllergens, compact } = options;
+  const { includeAgeAndService, compact } = options;
 
   const header = compact ? "═══ KULLANICI PROFİLİ ═══" : null;
   if (header) lines.push(header);
 
   const parts: string[] = [];
-  if (includeAgeAllergens && user.age) parts.push(`Yaş: ${user.age}`);
+  if (includeAgeAndService && user.age) parts.push(`Yaş: ${user.age}`);
   if (user.height) parts.push(`Boy: ${user.height}cm`);
   if (user.weight) parts.push(`Başlangıç kilo: ${user.weight}kg`);
   if (user.targetWeight) parts.push(`Hedef: ${user.targetWeight}kg`);
@@ -65,7 +69,8 @@ export function renderUserProfileLines(
     }
   }
 
-  if (includeAgeAllergens && user.foodAllergens) {
+  // Food allergens — safety-critical, ALWAYS rendered regardless of caller
+  if (user.foodAllergens) {
     try {
       const allergens = JSON.parse(user.foodAllergens);
       if (Array.isArray(allergens) && allergens.length > 0 && allergens[0] !== "Yok") {
@@ -74,6 +79,19 @@ export function renderUserProfileLines(
     } catch {
       lines.push(`⚠️ GIDA ALERJİLERİ: ${user.foodAllergens}`);
     }
+  }
+
+  // Manual macro targets — if user has set any, render them. These override
+  // AI's own Mifflin-St Jeor estimates and must be honored in all meal plans.
+  const targetParts: string[] = [];
+  if (user.targetCalories) targetParts.push(`${user.targetCalories} kcal`);
+  if (user.targetProteinG) targetParts.push(`${user.targetProteinG}g protein`);
+  if (user.targetCarbsG) targetParts.push(`${user.targetCarbsG}g karb`);
+  if (user.targetFatG) targetParts.push(`${user.targetFatG}g yağ`);
+  if (targetParts.length > 0) {
+    lines.push(
+      `🎯 Kullanıcının belirlediği günlük hedefler: ${targetParts.join(", ")}. Beslenme önerilerinde bu hedefleri baz al.`,
+    );
   }
 
   if (Array.isArray(user.dailyRoutine) && user.dailyRoutine.length > 0) {
@@ -112,7 +130,7 @@ export function renderUserProfileLines(
     lines.push(`İlaçlar/supplementler: ${user.currentMedications}`);
   }
 
-  if (includeAgeAllergens && user.serviceType) {
+  if (includeAgeAndService && user.serviceType) {
     lines.push(
       `Hizmet tipi: ${user.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program (Antrenman + Beslenme)"}`,
     );
@@ -137,6 +155,10 @@ export async function loadUserProfileRow(userId: string): Promise<UserProfileRow
       currentMedications: users.currentMedications,
       serviceType: users.serviceType,
       supplementSchedule: users.supplementSchedule,
+      targetCalories: users.targetCalories,
+      targetProteinG: users.targetProteinG,
+      targetCarbsG: users.targetCarbsG,
+      targetFatG: users.targetFatG,
     })
     .from(users)
     .where(eq(users.id, userId));

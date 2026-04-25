@@ -45,7 +45,7 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
   if (user) {
     lines.push(
       ...renderUserProfileLines(user, {
-        includeAgeAllergens: false,
+        includeAgeAndService: false,
         compact: true,
       }),
     );

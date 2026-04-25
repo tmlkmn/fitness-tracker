@@ -115,9 +115,11 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     try {
       suggestedMeals = validateMealArray(parseJSON(text));
     } catch {
+      // Retry with bigger budget + explicit conciseness nudge — most parse
+      // failures here are truncations from chef-style content running long.
       const retry = await client.messages.create({
         model: AI_MODELS.smart,
-        max_tokens: 2500,
+        max_tokens: 3500,
         system: [
           {
             type: "text",
@@ -128,7 +130,7 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
         messages: [
           {
             role: "user",
-            content: `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "meals": [...] }`,
+            content: `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. İçerikleri KISA tut: content max 40 kelime, mekanik liste yerine tek cümle tarif. Sadece geçerli JSON yanıt ver: { "meals": [...] }`,
           },
         ],
       });
