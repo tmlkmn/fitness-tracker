@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { users, weeklyPlans, dailyPlans, meals, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
-import { eq, desc, and, gte, lte, asc, ne } from "drizzle-orm";
+import { users, weeklyPlans, dailyPlans, meals, exercises, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
+import { eq, desc, and, lte, asc, ne, inArray } from "drizzle-orm";
 import { resolveTargets, type MacroTargets } from "@/lib/macro-targets";
 import { computeMealMacros } from "@/lib/meal-macros";
 import {
@@ -26,70 +26,206 @@ export async function buildUserContext(userId: string): Promise<string> {
     compact: false,
   });
 
-  // Current phase
+  // Current week — week containing today (startDate <= today). Single source
+  // of truth for both phase + meal/workout listings; the previous version
+  // used gte() which incorrectly returned future weeks instead of the
+  // current one, so the assistant never saw the active program.
   const { getTurkeyTodayStr } = await import("@/lib/utils");
   const today = getTurkeyTodayStr();
-  const [currentWeek] = await db
+  const [activeWeek] = await db
     .select({
+      id: weeklyPlans.id,
       weekNumber: weeklyPlans.weekNumber,
       phase: weeklyPlans.phase,
       title: weeklyPlans.title,
+      startDate: weeklyPlans.startDate,
     })
     .from(weeklyPlans)
     .where(
       and(
         eq(weeklyPlans.userId, userId),
-        gte(weeklyPlans.startDate, today)
-      )
-    )
-    .orderBy(weeklyPlans.startDate)
-    .limit(1);
-
-  if (currentWeek) {
-    lines.push(
-      `Program: Hafta ${currentWeek.weekNumber}, ${currentWeek.phase} fazı (${currentWeek.title})`
-    );
-  }
-
-  // Weekly meal plan for the current week (startDate <= today, most recent)
-  const [activeWeek] = await db
-    .select({ id: weeklyPlans.id })
-    .from(weeklyPlans)
-    .where(
-      and(
-        eq(weeklyPlans.userId, userId),
-        lte(weeklyPlans.startDate, today)
-      )
+        lte(weeklyPlans.startDate, today),
+      ),
     )
     .orderBy(desc(weeklyPlans.startDate))
     .limit(1);
 
   if (activeWeek) {
-    const weekMeals = await db
-      .select({
-        dayName: dailyPlans.dayName,
-        planType: dailyPlans.planType,
-        mealLabel: meals.mealLabel,
-        content: meals.content,
-        calories: meals.calories,
-      })
-      .from(meals)
-      .innerJoin(dailyPlans, eq(meals.dailyPlanId, dailyPlans.id))
-      .where(eq(dailyPlans.weeklyPlanId, activeWeek.id))
-      .orderBy(asc(dailyPlans.dayOfWeek), asc(meals.mealTime));
+    lines.push(
+      `Program: Hafta ${activeWeek.weekNumber}, ${activeWeek.phase} fazı (${activeWeek.title}, başlangıç: ${activeWeek.startDate ?? "?"})`,
+    );
 
-    if (weekMeals.length > 0) {
-      const byDay = new Map<string, string[]>();
-      for (const m of weekMeals) {
-        const key = `${m.dayName} (${m.planType})`;
-        if (!byDay.has(key)) byDay.set(key, []);
-        byDay.get(key)!.push(`${m.mealLabel}: ${m.content} (${m.calories} kcal)`);
+    // Fetch all daily plans for this week
+    const weekDays = await db
+      .select({
+        id: dailyPlans.id,
+        date: dailyPlans.date,
+        dayName: dailyPlans.dayName,
+        dayOfWeek: dailyPlans.dayOfWeek,
+        planType: dailyPlans.planType,
+        workoutTitle: dailyPlans.workoutTitle,
+      })
+      .from(dailyPlans)
+      .where(eq(dailyPlans.weeklyPlanId, activeWeek.id))
+      .orderBy(asc(dailyPlans.dayOfWeek));
+
+    const todayDay = weekDays.find((d) => d.date === today) ?? null;
+    const dayIds = weekDays.map((d) => d.id);
+
+    // Batch: meals and exercises for all days in this week
+    const [allMeals, allExercises] = await Promise.all([
+      dayIds.length
+        ? db
+            .select({
+              dailyPlanId: meals.dailyPlanId,
+              mealTime: meals.mealTime,
+              mealLabel: meals.mealLabel,
+              content: meals.content,
+              calories: meals.calories,
+              proteinG: meals.proteinG,
+              carbsG: meals.carbsG,
+              fatG: meals.fatG,
+              isCompleted: meals.isCompleted,
+            })
+            .from(meals)
+            .where(inArray(meals.dailyPlanId, dayIds))
+            .orderBy(asc(meals.sortOrder))
+        : Promise.resolve([]),
+      dayIds.length
+        ? db
+            .select({
+              dailyPlanId: exercises.dailyPlanId,
+              section: exercises.section,
+              sectionLabel: exercises.sectionLabel,
+              name: exercises.name,
+              sets: exercises.sets,
+              reps: exercises.reps,
+              durationMinutes: exercises.durationMinutes,
+              restSeconds: exercises.restSeconds,
+              isCompleted: exercises.isCompleted,
+            })
+            .from(exercises)
+            .where(inArray(exercises.dailyPlanId, dayIds))
+            .orderBy(asc(exercises.sortOrder))
+        : Promise.resolve([]),
+    ]);
+
+    type WeekMealRow = (typeof allMeals)[number];
+    type WeekExerciseRow = (typeof allExercises)[number];
+
+    const mealsByDay = new Map<number, WeekMealRow[]>();
+    for (const m of allMeals) {
+      if (m.dailyPlanId == null) continue;
+      const arr = mealsByDay.get(m.dailyPlanId) ?? [];
+      arr.push(m);
+      mealsByDay.set(m.dailyPlanId, arr);
+    }
+    const exByDay = new Map<number, WeekExerciseRow[]>();
+    for (const ex of allExercises) {
+      if (ex.dailyPlanId == null) continue;
+      const arr = exByDay.get(ex.dailyPlanId) ?? [];
+      arr.push(ex);
+      exByDay.set(ex.dailyPlanId, arr);
+    }
+
+    // ─── Today's plan — call it out prominently so chat answers
+    // questions like "what should I eat today?" / "what's my workout?"
+    // can rely on a clearly labeled BUGÜN block.
+    if (todayDay) {
+      lines.push("");
+      lines.push(
+        `═══ BUGÜN (${todayDay.date} - ${todayDay.dayName}, ${todayDay.planType}${todayDay.workoutTitle ? ` - ${todayDay.workoutTitle}` : ""}) ═══`,
+      );
+
+      const todayMeals = mealsByDay.get(todayDay.id) ?? [];
+      if (todayMeals.length > 0) {
+        lines.push("Bugünün öğünleri:");
+        for (const m of todayMeals) {
+          const status = m.isCompleted ? " ✓" : "";
+          const macros: string[] = [];
+          if (m.calories) macros.push(`${m.calories}kcal`);
+          if (m.proteinG) macros.push(`P:${m.proteinG}g`);
+          if (m.carbsG) macros.push(`K:${m.carbsG}g`);
+          if (m.fatG) macros.push(`Y:${m.fatG}g`);
+          const macroStr = macros.length ? ` [${macros.join(", ")}]` : "";
+          lines.push(`  - ${m.mealTime} ${m.mealLabel}${status}: ${m.content}${macroStr}`);
+        }
       }
-      const mealLines: string[] = [];
-      for (const [day, dayMeals] of byDay) {
-        mealLines.push(`${day}: ${dayMeals.join(" | ")}`);
+
+      const todayExercises = exByDay.get(todayDay.id) ?? [];
+      if (todayExercises.length > 0) {
+        lines.push("Bugünün antrenmanı:");
+        const bySection: Record<string, string[]> = {};
+        for (const ex of todayExercises) {
+          if (!bySection[ex.sectionLabel]) bySection[ex.sectionLabel] = [];
+          const status = ex.isCompleted ? " ✓" : "";
+          const detail =
+            ex.sets && ex.reps
+              ? `${ex.name} ${ex.sets}x${ex.reps}${ex.restSeconds ? ` (${ex.restSeconds}sn dinlenme)` : ""}`
+              : ex.durationMinutes
+                ? `${ex.name} ${ex.durationMinutes}dk`
+                : ex.name;
+          bySection[ex.sectionLabel].push(`${detail}${status}`);
+        }
+        for (const [label, items] of Object.entries(bySection)) {
+          lines.push(`  ${label}:`);
+          for (const item of items) lines.push(`    - ${item}`);
+        }
       }
-      lines.push(`\nMevcut haftalık beslenme planı:\n${mealLines.join("\n")}`);
+
+      if (todayMeals.length === 0 && todayExercises.length === 0) {
+        lines.push("Not: Bugün için planlanmış öğün veya egzersiz yok.");
+      }
+    }
+
+    // ─── Full week meal plan
+    const mealLines: string[] = [];
+    for (const day of weekDays) {
+      const dayMeals = mealsByDay.get(day.id) ?? [];
+      if (dayMeals.length === 0) continue;
+      const summary = dayMeals
+        .map((m) => `${m.mealLabel}: ${m.content}${m.calories ? ` (${m.calories} kcal)` : ""}`)
+        .join(" | ");
+      mealLines.push(`${day.dayName} (${day.planType}): ${summary}`);
+    }
+    if (mealLines.length > 0) {
+      lines.push("");
+      lines.push("═══ HAFTALIK BESLENME PLANI ═══");
+      lines.push(...mealLines);
+    }
+
+    // ─── Full week workout plan
+    const workoutLines: string[] = [];
+    for (const day of weekDays) {
+      if (day.planType === "rest") {
+        workoutLines.push(`${day.dayName}: Dinlenme`);
+        continue;
+      }
+      const dayExs = exByDay.get(day.id) ?? [];
+      if (dayExs.length === 0) {
+        workoutLines.push(`${day.dayName} (${day.workoutTitle ?? day.planType}): Program tanımlı değil`);
+        continue;
+      }
+      const sections: Record<string, string[]> = {};
+      for (const ex of dayExs) {
+        if (!sections[ex.sectionLabel]) sections[ex.sectionLabel] = [];
+        const detail =
+          ex.sets && ex.reps
+            ? `${ex.name} ${ex.sets}x${ex.reps}`
+            : ex.durationMinutes
+              ? `${ex.name} ${ex.durationMinutes}dk`
+              : ex.name;
+        sections[ex.sectionLabel].push(detail);
+      }
+      const summary = Object.entries(sections)
+        .map(([label, exs]) => `${label}: ${exs.join(", ")}`)
+        .join(" | ");
+      workoutLines.push(`${day.dayName} (${day.workoutTitle ?? day.planType}): ${summary}`);
+    }
+    if (workoutLines.length > 0) {
+      lines.push("");
+      lines.push("═══ HAFTALIK ANTRENMAN PROGRAMI ═══");
+      lines.push(...workoutLines);
     }
   }
 
