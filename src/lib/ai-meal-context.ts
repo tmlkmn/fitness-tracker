@@ -12,6 +12,11 @@ import {
   renderUserProfileLines,
 } from "@/lib/ai-user-profile-block";
 import { loadRecentProgressLines } from "@/lib/ai-progress-block";
+import {
+  computeMealTimingPolicy,
+  isFitnessGoal,
+  type FitnessGoal,
+} from "@/lib/meal-timing";
 
 /**
  * Builds comprehensive AI context for daily meal generation.
@@ -75,6 +80,22 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
         );
       }
     }
+
+    // ─── Meal-timing policy block (today-specific) ──────────────────────
+    const fitnessGoal: FitnessGoal | null = isFitnessGoal(user.fitnessGoal)
+      ? user.fitnessGoal
+      : null;
+    const policy = computeMealTimingPolicy({
+      routine: routineRaw ?? null,
+      serviceType: user.serviceType,
+      fitnessGoal,
+      weight: user.weight ? parseFloat(user.weight) : null,
+      targetWeight: user.targetWeight ? parseFloat(user.targetWeight) : null,
+      planType: currentDay.planType,
+    });
+    lines.push("");
+    lines.push("═══ ÖĞÜN ZAMANLAMA POLİTİKASI ═══");
+    lines.push(policy.summary);
   }
 
   const progressLines = await loadRecentProgressLines(userId, { limit: 5 });

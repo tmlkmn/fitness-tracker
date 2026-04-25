@@ -10,6 +10,11 @@ import {
   renderUserProfileLines,
 } from "@/lib/ai-user-profile-block";
 import {
+  computeMealTimingPolicy,
+  isFitnessGoal,
+  type FitnessGoal,
+} from "@/lib/meal-timing";
+import {
   type AIWeeklyPlan,
   type AIWeeklyDay,
 } from "@/lib/ai-weekly-types";
@@ -49,6 +54,43 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
         compact: true,
       }),
     );
+
+    // ─── Meal-timing policy: weekday + weekend (separate routines may differ)
+    const fitnessGoal: FitnessGoal | null = isFitnessGoal(user.fitnessGoal)
+      ? user.fitnessGoal
+      : null;
+    const weight = user.weight ? parseFloat(user.weight) : null;
+    const targetWeight = user.targetWeight ? parseFloat(user.targetWeight) : null;
+
+    const weekdayRoutine =
+      (user.dailyRoutine as { time: string; event: string }[] | null) ?? null;
+    const weekendRoutine =
+      (user.weekendRoutine as { time: string; event: string }[] | null) ??
+      weekdayRoutine;
+
+    const weekdayPolicy = computeMealTimingPolicy({
+      routine: weekdayRoutine,
+      serviceType: user.serviceType,
+      fitnessGoal,
+      weight,
+      targetWeight,
+      planType: null,
+    });
+    const weekendPolicy = computeMealTimingPolicy({
+      routine: weekendRoutine,
+      serviceType: user.serviceType,
+      fitnessGoal,
+      weight,
+      targetWeight,
+      planType: null,
+    });
+
+    lines.push("");
+    lines.push("═══ ÖĞÜN ZAMANLAMA POLİTİKASI (Hafta içi: Pzt-Cum) ═══");
+    lines.push(weekdayPolicy.summary);
+    lines.push("");
+    lines.push("═══ ÖĞÜN ZAMANLAMA POLİTİKASI (Hafta sonu: Cmt-Paz) ═══");
+    lines.push(weekendPolicy.summary);
   }
 
   // ─── 2. Body composition trend ────────────────────────────────────────

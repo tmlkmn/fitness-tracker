@@ -20,6 +20,7 @@ export async function getUserProfile() {
       weekendRoutine: users.weekendRoutine,
       supplementSchedule: users.supplementSchedule,
       fitnessLevel: users.fitnessLevel,
+      fitnessGoal: users.fitnessGoal,
       sportHistory: users.sportHistory,
       currentMedications: users.currentMedications,
       serviceType: users.serviceType,
@@ -36,7 +37,7 @@ export async function getUserProfile() {
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false, targetCalories: null, targetProteinG: null, targetCarbsG: null, targetFatG: null, weightUnit: "kg", energyUnit: "kcal" };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, fitnessGoal: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false, targetCalories: null, targetProteinG: null, targetCarbsG: null, targetFatG: null, weightUnit: "kg", energyUnit: "kcal" };
 }
 
 export async function updateUnitPreferences(data: {
@@ -103,6 +104,7 @@ export async function updateUserOnboarding(data: {
   dailyRoutine?: { time: string; event: string }[];
   weekendRoutine?: { time: string; event: string }[];
   fitnessLevel?: string;
+  fitnessGoal?: string;
   sportHistory?: string;
   currentMedications?: string;
   serviceType?: string;
@@ -120,6 +122,7 @@ export async function updateUserOnboarding(data: {
       dailyRoutine: data.dailyRoutine ?? undefined,
       weekendRoutine: data.weekendRoutine ?? undefined,
       fitnessLevel: data.fitnessLevel ?? undefined,
+      fitnessGoal: data.fitnessGoal ?? undefined,
       sportHistory: data.sportHistory ?? undefined,
       currentMedications: data.currentMedications ?? undefined,
       serviceType: data.serviceType ?? undefined,
@@ -165,6 +168,7 @@ export async function updateUserProfile(data: {
   healthNotes?: string;
   foodAllergens?: string;
   fitnessLevel?: string;
+  fitnessGoal?: string;
   sportHistory?: string;
   currentMedications?: string;
   serviceType?: string;
@@ -180,6 +184,7 @@ export async function updateUserProfile(data: {
       healthNotes: data.healthNotes !== undefined ? data.healthNotes : undefined,
       foodAllergens: data.foodAllergens !== undefined ? data.foodAllergens : undefined,
       fitnessLevel: data.fitnessLevel !== undefined ? data.fitnessLevel : undefined,
+      fitnessGoal: data.fitnessGoal !== undefined ? data.fitnessGoal : undefined,
       sportHistory: data.sportHistory !== undefined ? data.sportHistory : undefined,
       currentMedications: data.currentMedications !== undefined ? data.currentMedications : undefined,
       serviceType: data.serviceType ?? undefined,

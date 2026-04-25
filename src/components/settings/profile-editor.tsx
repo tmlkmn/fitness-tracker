@@ -29,6 +29,14 @@ export const FITNESS_LEVEL_OPTIONS = [
   { value: "advanced", label: "İleri düzey" },
 ];
 
+export const FITNESS_GOAL_OPTIONS = [
+  { value: "loss",        label: "Kilo Verme",                description: "Yağ yakma + kalori açığı" },
+  { value: "recomp",      label: "Yağ Yakma + Kas Koruma",    description: "Vücut rekompozisyonu, idame kalori" },
+  { value: "maintain",    label: "Form Koruma",               description: "Mevcut formu koruma" },
+  { value: "muscle_gain", label: "Kas Kazanımı",              description: "Hipertrofi, hafif kalori fazlası" },
+  { value: "weight_gain", label: "Kilo Alma",                 description: "Genel kilo artışı, hızlı surplus" },
+];
+
 interface Props {
   profile: ReturnType<typeof useUserProfile>["data"];
   userEmail?: string;
@@ -45,6 +53,7 @@ export function ProfileEditor({ profile, userEmail, onClose }: Props) {
   const [age, setAge] = useState("");
   const [healthNotes, setHealthNotes] = useState("");
   const [fitnessLevel, setFitnessLevel] = useState("");
+  const [fitnessGoal, setFitnessGoal] = useState("");
   const [sportHistory, setSportHistory] = useState("");
   const [currentMedications, setCurrentMedications] = useState("");
   const [serviceType, setServiceType] = useState("full");
@@ -60,6 +69,7 @@ export function ProfileEditor({ profile, userEmail, onClose }: Props) {
       setAge(profile.age ? String(profile.age) : "");
       setHealthNotes(profile.healthNotes ?? "");
       setFitnessLevel(profile.fitnessLevel ?? "");
+      setFitnessGoal(profile.fitnessGoal ?? "");
       setSportHistory(profile.sportHistory ?? "");
       setCurrentMedications(profile.currentMedications ?? "");
       setServiceType(profile.serviceType ?? "full");
@@ -111,6 +121,7 @@ export function ProfileEditor({ profile, userEmail, onClose }: Props) {
         age: age ? parseInt(age, 10) : null,
         healthNotes: healthNotes.trim(),
         fitnessLevel: fitnessLevel || undefined,
+        fitnessGoal: fitnessGoal || undefined,
         sportHistory: sportHistory.trim() || undefined,
         currentMedications: currentMedications.trim() || undefined,
         serviceType,
@@ -238,6 +249,29 @@ export function ProfileEditor({ profile, userEmail, onClose }: Props) {
           </select>
         </div>
       )}
+
+      <div className="space-y-1.5">
+        <label className="text-xs text-muted-foreground">
+          Hedef <span className="text-red-400">*</span>
+        </label>
+        <select
+          value={fitnessGoal}
+          onChange={(e) => setFitnessGoal(e.target.value)}
+          className={inputClass}
+        >
+          <option value="">Seçiniz</option>
+          {FITNESS_GOAL_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        {fitnessGoal && (
+          <p className="text-[11px] text-muted-foreground">
+            {FITNESS_GOAL_OPTIONS.find((o) => o.value === fitnessGoal)?.description}
+          </p>
+        )}
+      </div>
 
       {serviceType === "full" && (
         <div className="space-y-1.5">

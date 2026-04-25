@@ -8,7 +8,19 @@
       "Read(//tmp/**)",
       "Bash(awk 'NR>=19354 && NR<=19366' \"C:/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl\")",
       "Bash(awk 'NR>=19355 && NR<=19414' \"C:/Users/temel/.claude/projects/c--projects-fitness-tracker/68ce1244-e3d4-48c3-a8ce-759bd01adee2.jsonl\")",
-      "Bash(grep -oE '\"text\":\"[^\"]{200,}\"')"
+      "Bash(grep -oE '\"text\":\"[^\"]{200,}\"')",
+      "Bash(grep -n \"Anti-Katabolik\\\\|Ara Öğün\\\\|Öğün Zamanlama\\\\|Öğün Etiketleme\\\\|2 saatten\\\\|3 saat\\\\|2.5 saat\\\\|aralıklı açlık\\\\|intermittent\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\lib\\\\\\\\ai-prompts.ts\")",
+      "Bash(grep -n \"fitnessLevel\\\\|fitness_level\\\\|FITNESS_LEVEL\\\\|FitnessLevel\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\db\\\\\\\\schema.ts\")",
+      "Bash(grep -rn \"fitnessLevel\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\" --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(grep -n \"FITNESS_LEVEL_OPTIONS\\\\|fitness.*beginner.*intermediate\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\" -r --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(cat \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\drizzle\\\\\\\\0028_true_umar.sql\")",
+      "Bash(cat \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\drizzle\\\\\\\\meta\\\\\\\\_journal.json\")",
+      "Bash(grep -n \"Fitness seviyesi\\\\|FITNESS_LABELS\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\lib\\\\\\\\ai-user-profile-block.ts\")",
+      "Bash(grep -n \"## Öğün Zamanlama\\\\|## Anti-Katabolik\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\lib\\\\\\\\ai-prompts.ts\")",
+      "Bash(grep -n \"## Öğün Zamanlama\\\\|## Anti-Katabolik\\\\|## Günlük Program Uyumu\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\lib\\\\\\\\ai-prompts.ts\")",
+      "Bash(grep -n \"## Öğün Zamanlama\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\lib\\\\\\\\ai-prompts.ts\")",
+      "Bash(grep -n \"fitnessLevel\\\\|sportHistory\\\\|FITNESS_LEVEL_OPTIONS\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\app\\\\\\\\profil-tamamla\\\\\\\\page.tsx\")",
+      "Bash(grep -n \"AI_FEATURES\\\\|workout.*15\\\\|exercise.*15\\\\|RATE_LIMITS\\\\|FEATURE_LIMITS\\\\|checkRateLimit\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\lib\\\\\\\\ai.ts\")"
     ],
     "additionalDirectories": [
       "\\tmp"

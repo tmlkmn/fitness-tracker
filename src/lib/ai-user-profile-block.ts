@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { normalizeEvent } from "@/lib/routine-constants";
+import { FITNESS_GOAL_LABELS, isFitnessGoal } from "@/lib/meal-timing";
 
 const FITNESS_LABELS: Record<string, string> = {
   beginner: "Yeni başlayan",
@@ -20,6 +21,7 @@ export interface UserProfileRow {
   dailyRoutine: unknown;
   weekendRoutine: unknown;
   fitnessLevel: string | null;
+  fitnessGoal: string | null;
   sportHistory: string | null;
   currentMedications: string | null;
   serviceType: string | null;
@@ -122,6 +124,10 @@ export function renderUserProfileLines(
     );
   }
 
+  if (isFitnessGoal(user.fitnessGoal)) {
+    lines.push(`🎯 Hedef: ${FITNESS_GOAL_LABELS[user.fitnessGoal]}`);
+  }
+
   if (user.sportHistory) {
     lines.push(`Spor geçmişi: ${user.sportHistory}`);
   }
@@ -151,6 +157,7 @@ export async function loadUserProfileRow(userId: string): Promise<UserProfileRow
       dailyRoutine: users.dailyRoutine,
       weekendRoutine: users.weekendRoutine,
       fitnessLevel: users.fitnessLevel,
+      fitnessGoal: users.fitnessGoal,
       sportHistory: users.sportHistory,
       currentMedications: users.currentMedications,
       serviceType: users.serviceType,

@@ -54,6 +54,7 @@ export default function ProfilTamamlaPage() {
 
   // Fitness background
   const [fitnessLevel, setFitnessLevel] = useState("");
+  const [fitnessGoal, setFitnessGoal] = useState("");
   const [sportHistory, setSportHistory] = useState("");
   const [currentMedications, setCurrentMedications] = useState("");
 
@@ -78,6 +79,7 @@ export default function ProfilTamamlaPage() {
       if (profile.healthNotes) setHealthNotes(profile.healthNotes);
       if (profile.age) setAge(String(profile.age));
       if (profile.fitnessLevel) setFitnessLevel(profile.fitnessLevel);
+      if (profile.fitnessGoal) setFitnessGoal(profile.fitnessGoal);
       if (profile.sportHistory) setSportHistory(profile.sportHistory);
       if (profile.currentMedications) setCurrentMedications(profile.currentMedications);
       if (profile.serviceType) setServiceType(profile.serviceType);
@@ -231,6 +233,7 @@ export default function ProfilTamamlaPage() {
         dailyRoutine: routineEntries.length > 0 ? routineEntries : undefined,
         weekendRoutine: weekendEntries.length > 0 ? weekendEntries : undefined,
         fitnessLevel: fitnessLevel || undefined,
+        fitnessGoal: fitnessGoal || undefined,
         sportHistory: sportHistory.trim() || undefined,
         currentMedications: currentMedications.trim() || undefined,
         serviceType,
@@ -603,6 +606,44 @@ export default function ProfilTamamlaPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <Separator />
+
+            {/* Goal Section — applies to both nutrition-only and full program users */}
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                Hedefin
+                <span className="text-xs text-red-400 font-normal">*</span>
+              </h2>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">
+                  Beslenme programı senin hedefine göre uyarlanacak
+                </label>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    { value: "loss",        label: "Kilo Verme",                description: "Yağ yakma + kalori açığı" },
+                    { value: "recomp",      label: "Yağ Yakma + Kas Koruma",    description: "Vücut rekompozisyonu, idame kalori" },
+                    { value: "maintain",    label: "Form Koruma",                description: "Mevcut formu koruma" },
+                    { value: "muscle_gain", label: "Kas Kazanımı",              description: "Hipertrofi, hafif kalori fazlası" },
+                    { value: "weight_gain", label: "Kilo Alma",                  description: "Genel kilo artışı, hızlı surplus" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFitnessGoal(fitnessGoal === opt.value ? "" : opt.value)}
+                      className={`p-2.5 rounded-lg border text-left transition-all ${
+                        fitnessGoal === opt.value
+                          ? "ring-2 ring-primary border-primary bg-primary/5"
+                          : "border-input hover:bg-accent"
+                      }`}
+                    >
+                      <div className="text-xs font-medium">{opt.label}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{opt.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <Separator />

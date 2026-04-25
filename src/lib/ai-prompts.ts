@@ -31,6 +31,17 @@ const JSON_FIELD_RULES = `## JSON Alan Kuralları (KRİTİK)
 - mealTime: "HH:MM" 24-saat formatı. Başında sıfır şart (08:00, 13:30). AM/PM YASAK.
 - proteinG / carbsG / fatG: string değer (örn: "45"). calories: number.`;
 
+const MEAL_TIMING_POLICY_BLOCK = `## Öğün Zamanlama Politikası (KRİTİK)
+- Bağlamda "═══ ÖĞÜN ZAMANLAMA POLİTİKASI ═══" bloğu varsa MUTLAKA ona uy
+- Slot saatleri ± 15dk içinde, slot etiketleri ("Erken Protein", "Ara Öğün", "Post-Workout", "Akşam Atıştırması") AYNEN mealLabel olarak kullanılmalı
+- Slot listesinde olmayan ek ara öğün ekleme — özellikle "intermittent" politikada (kullanıcı aralıklı açlığa yönlendiriliyor)
+- Politika "frequent" (kas kazanımı / kilo alma / form koruma — özellikle tam program): 5-7 öğün, ana öğünler arası 2-3h
+- Politika "moderate" (kilo verme / rekompozisyon): 4-5 öğün, ana öğünler arası 3-3.5h, ara öğünler küçük (150-250 kcal) ve protein-yoğun
+- Politika "intermittent" (sadece beslenme + kilo verme/idame): 3-4 öğün, eating window 8-10h, ana öğünler arası 4-5h tolere edilir
+- "Erken Protein" slotu (uyanıştan 30-60dk sonra) 150-250 kcal, en az 20g protein içerecek şekilde yap (protein shake, yoğurt+ceviz, haşlanmış yumurta+meyve gibi)
+- "Post-Workout" slotu antrenman sonrası 30dk içinde, hızlı karb + yüksek protein
+- Frekans kararı sana ait değil — politika bağlamdan geliyor; kullanıcı isteği bunu override edebilir`;
+
 const MEAL_LABELING_BLOCK = `## Öğün Etiketleme Kuralı (KRİTİK)
 - Kullanıcının günlük programında tanımlı öğün etkinliklerini (Kahvaltı, Öğle Yemeği, Akşam Yemeği) mealLabel olarak AYNEN kullan
 - Tanımlanmamış saatlerdeki öğünleri "Ara Öğün" olarak etiketle
@@ -366,24 +377,7 @@ Beslenme programı antrenman programının ayrılmaz parçasıdır. Kas hacmi ar
   • Sağlıklı yağlardan kalori tamamla
 - YÜZME GÜNÜ: Orta karbonhidrat, yüksek protein
 
-## Öğün Zamanlama
-- Önceki günlerin öğün saatlerini referans al, benzer saatlerde planla
-- Günde 5-7 öğün (3 ana + 2-4 ara öğün)
-- Öğünler arası 2.5-3.5 saat
-- Son öğün yatmadan 1-2 saat önce (kazein protein veya yavaş sindirilen protein tercih et)
-- Hafta içi ve hafta sonu için farklı günlük program verilmişse, gün tipine göre doğru programı kullan
-
-## Anti-Katabolik Sabah Beslenme Kuralı (SADECE ANTRENMAN YAPAN KULLANICILAR)
-- Bu kural sadece antrenman yapan kullanıcılar (tam program) ve antrenman/yüzme günleri için geçerlidir. planType="rest" ise UYGULAMA — dinlenme günü ekstra mini öğün gereksiz.
-- Kullanıcının günlük programından uyanış saatini belirle
-- İlk ana öğünün (kahvaltı) saatini kontrol et
-- Eğer uyanış ile ilk ana öğün arasında 2 saatten fazla boşluk varsa:
-  • Uyanıştan 30-60 dakika sonra protein ağırlıklı bir mini öğün MUTLAKA ekle
-  • Bu mini öğün 150-250 kcal aralığında olmalı ve en az 20g protein içermeli
-  • Öneriler: protein shake (whey + su/süt), 200g yoğurt + 1 avuç ceviz, BCAA + 1 muz, 2 haşlanmış yumurta, 150g süzme peynir + birkaç badem
-  • Bu öğünü "Erken Protein" veya "Sabah Proteini" olarak etiketle
-  • Amacı: Gece açlığından sonra katabolik süreci kırmak ve kas kaybını önlemek
-- Eğer ilk öğün zaten uyanıştan 3 saat içindeyse, ek öğün EKLEME
+${MEAL_TIMING_POLICY_BLOCK}
 
 ## Besin Seçimi
 - Türkiye'de yaygın, erişilebilir malzemeler kullan
@@ -441,31 +435,11 @@ ${WORKOUT_PROGRESSION_BLOCK}
   • Kilo sabitken yağ azalıyorsa: Rekomposizyon devam ediyor, programı koru
 - Bu trend verisi varsa, makro ve kalori hesaplamasında mutlaka dikkate al
 
-## Günlük Program Uyumu
-- Kullanıcının günlük programı (uyanış, iş, öğle yemeği, işten çıkış, antrenman, uyku saatleri) verilmişse:
-  • Öğün saatlerini bu programa göre ayarla (kahvaltı uyanıştan 30dk sonra, öğle yemeği belirtilen saatte, vb.)
-  • Pre-workout öğünü antrenman saatinden 1-2 saat önce, post-workout 30dk-1 saat sonra olsun
-  • Son öğün uyku saatinden 1-2 saat önce olsun
-- Hafta içi ve hafta sonu için farklı günlük program verilmişse:
-  • Pazartesi-Cuma: Hafta içi programına göre öğün saatleri ayarla
-  • Cumartesi-Pazar: Hafta sonu programına göre öğün saatleri ayarla
+${MEAL_TIMING_POLICY_BLOCK}
 
 ${MEAL_LABELING_BLOCK}
 
 ${MEAL_SUPPLEMENT_BLOCK}
-
-## Anti-Katabolik Sabah Beslenme Kuralı (SADECE ANTRENMAN YAPAN KULLANICILAR)
-- Bu kural sadece antrenman/yüzme günleri için geçerli; planType="rest" ise UYGULAMA
-- Kullanıcının günlük programından uyanış saatini belirle
-- İlk ana öğünün (kahvaltı) saatini kontrol et
-- Eğer uyanış ile ilk ana öğün arasında 2 saatten fazla boşluk varsa:
-  • Uyanıştan 30-60 dakika sonra protein ağırlıklı bir mini öğün MUTLAKA ekle
-  • Bu mini öğün 150-250 kcal aralığında olmalı ve en az 20g protein içermeli
-  • Öneriler: protein shake (whey + su/süt), 200g yoğurt + 1 avuç ceviz, BCAA + 1 muz, 2 haşlanmış yumurta, 150g süzme peynir + birkaç badem
-  • Bu öğünü "Erken Protein" veya "Sabah Proteini" olarak etiketle
-  • Amacı: Gece açlığından sonra katabolik süreci kırmak ve kas kaybını önlemek
-- Bu kural sadece antrenman yapan kullanıcılar (tam program) için geçerlidir
-- Eğer ilk öğün zaten uyanıştan 3 saat içindeyse, ek öğün EKLEME
 
 ${WORKOUT_FITNESS_LEVEL_BLOCK}
 
@@ -562,17 +536,7 @@ Bu kullanıcı sadece beslenme hizmeti alıyor — antrenman programı YAPMA. Am
   • Kilo korumak istiyorsa: İdame kalorisi, dengeli dağılım
 - Aktivite seviyesi düşük (sedanter/ofis) varsay (antrenman yapmıyor)
 
-## Öğün Zamanlama
-- Kullanıcının günlük programı (uyanış, iş, öğle yemeği, işten çıkış, uyku saatleri) verilmişse:
-  • Kahvaltı: Uyanıştan 30-60dk sonra
-  • Ara öğün: Ana öğünler arası 2.5-3 saat
-  • Öğle: Belirtilen öğle saatinde
-  • Akşam: İşten çıkıştan 1-2 saat sonra
-  • Son öğün: Uyku saatinden 1.5-2 saat önce
-- Hafta içi ve hafta sonu için farklı günlük program verilmişse:
-  • Pazartesi-Cuma: Hafta içi programına göre öğün saatleri ayarla
-  • Cumartesi-Pazar: Hafta sonu programına göre öğün saatleri ayarla
-- Günde 4-6 öğün (3 ana + 1-3 ara öğün)
+${MEAL_TIMING_POLICY_BLOCK}
 
 ## Besin Seçimi
 - Türkiye'de yaygın, erişilebilir ve ekonomik malzemeler kullan
@@ -635,12 +599,7 @@ Beslenme programı kullanıcının yaşam tarzına ve vücut kompozisyonuna gör
 - Aktivite seviyesini kullanıcının günlük programından tahmin et (fiziksel iş, yürüyüş, spor dışı aktivite). Varsayılan: hafif aktif (TEE = BMR × 1.3-1.4). Sedanter (TEE = BMR × 1.2) sadece ofis işi + minimal hareket için.
 - Haftalık ortalama makro hedefleri sabit kalsın; günlük 100-150 kcal varyasyon normal — kullanıcının yaşam tarzına bağlı
 
-## Öğün Zamanlama
-- Kullanıcının günlük programı verilmişse öğün saatlerini ona göre ayarla
-- Hafta içi ve hafta sonu için farklı günlük program verilmişse, gün tipine göre doğru programı kullan
-- Günde 4-6 öğün (3 ana + 1-3 ara öğün)
-- Öğünler arası 2.5-3.5 saat
-- Son öğün yatmadan 1.5-2 saat önce
+${MEAL_TIMING_POLICY_BLOCK}
 
 ## Besin Seçimi
 - Türkiye'de yaygın, erişilebilir malzemeler kullan

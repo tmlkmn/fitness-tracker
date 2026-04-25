@@ -28,6 +28,7 @@ export const users = pgTable("user", {
   weekendRoutine: jsonb("weekend_routine"),
   supplementSchedule: jsonb("supplement_schedule"),
   fitnessLevel: text("fitness_level"),
+  fitnessGoal: text("fitness_goal"),
   sportHistory: text("sport_history"),
   currentMedications: text("current_medications"),
   serviceType: text("service_type").default("full"),
