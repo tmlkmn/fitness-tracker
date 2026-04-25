@@ -218,7 +218,7 @@ export function ExerciseAlternativeModal({
               >
                 <Sparkles className="h-4 w-4" />
                 Öneri Al
-                <AiQuotaBadge feature="exercise" />
+                <AiQuotaBadge feature="workout" />
               </Button>
             </div>
           )}

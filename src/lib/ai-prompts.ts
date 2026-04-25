@@ -1,12 +1,12 @@
 // ─── Shared blocks (reused across workout prompts) ─────────────────────────
 
-const EXERCISE_NAMING_RULES = `## İsim Kuralları (KRİTİK — ExerciseDB uyumu için)
-- name: Türkçe egzersiz adı, başlık biçimi, kullanıcıya gösterilir (örn: "Eğik Dumbbell Göğüs Presi", "Barfiks")
-- englishName: ExerciseDB araması için İngilizce karşılık. Kurallar:
-  • Küçük harfle yaz: "bench press" — "Bench Press" DEĞİL
-  • Ekipmanı tam ad olarak yaz: "dumbbell" — "db" DEĞİL, "barbell" — "bb" DEĞİL
-  • Hareket sırasını koru: "incline dumbbell bench press" — "dumbbell incline bench press" DEĞİL
-  • Bilinmiyorsa null`;
+const EXERCISE_NAMING_RULES = `## İsim Kuralları (KRİTİK — egzersiz isimleri HER ZAMAN İngilizce)
+- name: Egzersizin İngilizce adı, başlık biçimi (Title Case), kullanıcıya gösterilir
+  • DOĞRU örnekler: "Incline Dumbbell Bench Press", "Pull-up", "Romanian Deadlift", "Bulgarian Split Squat"
+  • YANLIŞ örnekler: "Eğik Dumbbell Göğüs Presi", "Barfiks", "Çekiç Curl" — TÜRKÇE İSİM YASAK
+  • Kısaltma kullanma: "Dumbbell" — "DB" değil, "Barbell" — "BB" değil
+- englishName: Aynı egzersizin ExerciseDB araması için küçük harfli versiyonu (örn: "incline dumbbell bench press"). Kısaltma yok.
+- notes (varsa): Türkçe yazılabilir — kullanıcıya özel teknik ipucu, tempo, yoğunluk tekniği. Sadece notes Türkçe; name ve englishName HER ZAMAN İngilizce.`;
 
 const WORKOUT_PROGRESSION_BLOCK = `## Progresif Yüklenme
 - Önceki haftaların verileri verilmişse, onları referans alarak daha ilerici bir program oluştur
@@ -500,9 +500,9 @@ ${EXERCISE_NAMING_RULES}
 - 3 farklı alternatif öner — her biri farklı bir açıdan veya zorlukta olsun
 - Aynı kas grubunu hedefleyen, tercihen daha zorlu veya farklı açıdan çalıştıran egzersizler seç
 - Önceki haftalardaki programı dikkate al, tekrara düşme
-- notes alanı max 1 kısa cümle (Türkçe, 10 kelimeyi geçmemeli)
+- notes alanı max 1 kısa cümle (Türkçe, 10 kelimeyi geçmemeli) — sadece bu alan Türkçe; name ve englishName İngilizce
 - sets ve reps null olabilir (süre bazlı egzersizlerde), durationMinutes null olabilir (set bazlı egzersizlerde)
-- JSON formatı: { "alternatives": [{ "name": "Türkçe ad", "englishName": "english name"|null, "sets": number|null, "reps": "string"|null, "restSeconds": number|null, "durationMinutes": number|null, "notes": "string"|null }, ... ] }`;
+- JSON formatı: { "alternatives": [{ "name": "Incline Dumbbell Bench Press", "englishName": "incline dumbbell bench press", "sets": 4, "reps": "8-10", "restSeconds": 90, "durationMinutes": null, "notes": "Üst göğse fokus, dirsekleri 45° tut" }, ... ] }`;
 
 export const EXERCISE_MATCH_PROMPT = `Sen bir egzersiz veritabanı eşleştirme asistanısın. Sana bir egzersiz adı ve bir egzersiz listesi veriyorum.
 
