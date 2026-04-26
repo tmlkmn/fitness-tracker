@@ -2,11 +2,12 @@
 
 import { db } from "@/db";
 import { shares, weeklyPlans, users } from "@/db/schema";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, and, ne, gte, or, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { verifyWeeklyPlanOwnership } from "@/lib/ownership";
 import { sendNotification } from "@/lib/notifications";
+import { addDaysStr, getTurkeyTodayStr, isWeekPast } from "@/lib/utils";
 
 export async function shareWeeklyPlan(
   weeklyPlanId: number,
@@ -17,6 +18,15 @@ export async function shareWeeklyPlan(
 
   if (sharedWithUserId === user.id) {
     throw new Error("Kendi planınızı kendinizle paylaşamazsınız");
+  }
+
+  // Block sharing past weeks (week end < today)
+  const [planRow] = await db
+    .select({ startDate: weeklyPlans.startDate })
+    .from(weeklyPlans)
+    .where(eq(weeklyPlans.id, weeklyPlanId));
+  if (planRow?.startDate && isWeekPast(planRow.startDate)) {
+    throw new Error("Geçmiş haftalar paylaşılamaz");
   }
 
   // Check if already shared
@@ -99,6 +109,11 @@ export async function getMySharesForPlan(weeklyPlanId: number) {
 export async function getPlansSharedWithMe() {
   const user = await getAuthUser();
 
+  // A week is "active" if its Sunday end >= today, i.e. startDate >= today - 6 days.
+  // Plans with null startDate are kept (legacy/unscheduled) so they remain visible.
+  const today = getTurkeyTodayStr();
+  const minStartDate = addDaysStr(today, -6);
+
   return db
     .select({
       shareId: shares.id,
@@ -113,7 +128,15 @@ export async function getPlansSharedWithMe() {
     .from(shares)
     .innerJoin(weeklyPlans, eq(shares.weeklyPlanId, weeklyPlans.id))
     .innerJoin(users, eq(shares.ownerUserId, users.id))
-    .where(eq(shares.sharedWithUserId, user.id));
+    .where(
+      and(
+        eq(shares.sharedWithUserId, user.id),
+        or(
+          isNull(weeklyPlans.startDate),
+          gte(weeklyPlans.startDate, minStartDate),
+        ),
+      ),
+    );
 }
 
 export async function getShareableUsers() {

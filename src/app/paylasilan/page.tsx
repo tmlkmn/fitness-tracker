@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Users } from "lucide-react";
 import { usePlansSharedWithMe } from "@/hooks/use-sharing";
+import { formatWeekRange } from "@/lib/utils";
 import Link from "next/link";
 
 export default function PaylasilanPage() {
@@ -50,6 +51,11 @@ export default function PaylasilanPage() {
                       <p className="text-xs text-muted-foreground">
                         Hafta {plan.weekNumber} — {plan.phase}
                       </p>
+                      {plan.startDate && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatWeekRange(plan.startDate)}
+                        </p>
+                      )}
                     </div>
                     <Badge variant="secondary" className="text-xs">
                       {plan.ownerName}

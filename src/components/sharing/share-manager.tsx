@@ -5,16 +5,30 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Share2, X } from "lucide-react";
 import { useAllWeeks } from "@/hooks/use-plans";
 import { useMySharesForPlan, useRevokeShare } from "@/hooks/use-sharing";
+import { formatWeekRange, isWeekPast } from "@/lib/utils";
 import { ShareDialog } from "./share-dialog";
 
-function PlanShareRow({ weeklyPlanId, title }: { weeklyPlanId: number; title: string }) {
+function PlanShareRow({
+  weeklyPlanId,
+  title,
+  dateRange,
+}: {
+  weeklyPlanId: number;
+  title: string;
+  dateRange: string | null;
+}) {
   const { data: shares, isLoading } = useMySharesForPlan(weeklyPlanId);
   const revokeMutation = useRevokeShare();
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{title}</span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-sm font-medium truncate">{title}</p>
+          {dateRange && (
+            <p className="text-xs text-muted-foreground">{dateRange}</p>
+          )}
+        </div>
         <ShareDialog
           weeklyPlanId={weeklyPlanId}
           existingShareUserIds={shares?.map((s) => s.sharedWithUserId) ?? []}
@@ -51,6 +65,11 @@ function PlanShareRow({ weeklyPlanId, title }: { weeklyPlanId: number; title: st
 export function ShareManager() {
   const { data: weeks, isLoading } = useAllWeeks();
 
+  // Only weeks that are still active (Sunday end >= today) can be shared.
+  const activeWeeks = weeks?.filter(
+    (w) => !w.startDate || !isWeekPast(w.startDate),
+  );
+
   return (
     <Card>
       <CardHeader className="p-4 pb-2">
@@ -62,16 +81,17 @@ export function ShareManager() {
       <CardContent className="p-4 pt-2 space-y-4">
         {isLoading ? (
           <Loader2 className="h-5 w-5 animate-spin mx-auto" />
-        ) : !weeks?.length ? (
+        ) : !activeWeeks?.length ? (
           <p className="text-sm text-muted-foreground">
-            Paylaşılacak plan yok
+            Paylaşılacak aktif plan yok
           </p>
         ) : (
-          weeks.map((week) => (
+          activeWeeks.map((week) => (
             <PlanShareRow
               key={week.id}
               weeklyPlanId={week.id}
               title={`Hafta ${week.weekNumber}: ${week.title}`}
+              dateRange={week.startDate ? formatWeekRange(week.startDate) : null}
             />
           ))
         )}

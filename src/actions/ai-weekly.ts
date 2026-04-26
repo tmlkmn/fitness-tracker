@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { weeklyPlans, dailyPlans, meals, exercises, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
+import { weeklyPlans, dailyPlans, meals, exercises, supplements, shoppingLists, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
 import { eq, and, sql, desc, asc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
@@ -540,6 +540,8 @@ export async function deleteWeeklyPlan(weeklyPlanId: number) {
   await db
     .delete(dailyPlans)
     .where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
+  await db.delete(supplements).where(eq(supplements.weeklyPlanId, weeklyPlanId));
+  await db.delete(shoppingLists).where(eq(shoppingLists.weeklyPlanId, weeklyPlanId));
   await db.delete(weeklyPlans).where(eq(weeklyPlans.id, weeklyPlanId));
 
   revalidatePath("/");

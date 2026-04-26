@@ -71,6 +71,7 @@ export function useDeleteWeeklyPlan() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["plans"] });
+      qc.invalidateQueries({ queryKey: ["weeks"] });
       qc.invalidateQueries({ queryKey: ["week-plans-date"] });
       qc.invalidateQueries({ queryKey: ["today-dashboard"] });
       qc.invalidateQueries({ queryKey: ["dates-with-plans"] });

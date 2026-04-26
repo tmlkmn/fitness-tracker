@@ -8,6 +8,7 @@ import {
   shares,
 } from "@/db/schema";
 import { eq, and, or, isNotNull } from "drizzle-orm";
+import { isWeekPast } from "@/lib/utils";
 
 export async function verifyWeeklyPlanOwnership(
   weeklyPlanId: number,
@@ -76,7 +77,12 @@ export async function verifyWeeklyPlanReadAccess(
   userId: string
 ) {
   const rows = await db
-    .select({ id: weeklyPlans.id })
+    .select({
+      id: weeklyPlans.id,
+      ownerUserId: weeklyPlans.userId,
+      startDate: weeklyPlans.startDate,
+      isShared: shares.id,
+    })
     .from(weeklyPlans)
     .leftJoin(
       shares,
@@ -92,6 +98,12 @@ export async function verifyWeeklyPlanReadAccess(
       )
     );
   if (rows.length === 0) throw new Error("Unauthorized");
+
+  const row = rows[0];
+  // Recipient (non-owner): block past weeks
+  if (row.ownerUserId !== userId && row.startDate && isWeekPast(row.startDate)) {
+    throw new Error("Unauthorized");
+  }
 }
 
 export async function verifyDailyPlanReadAccess(
@@ -99,7 +111,12 @@ export async function verifyDailyPlanReadAccess(
   userId: string
 ) {
   const rows = await db
-    .select({ id: dailyPlans.id })
+    .select({
+      id: dailyPlans.id,
+      ownerUserId: weeklyPlans.userId,
+      startDate: weeklyPlans.startDate,
+      isShared: shares.id,
+    })
     .from(dailyPlans)
     .innerJoin(weeklyPlans, eq(dailyPlans.weeklyPlanId, weeklyPlans.id))
     .leftJoin(
@@ -116,4 +133,9 @@ export async function verifyDailyPlanReadAccess(
       )
     );
   if (rows.length === 0) throw new Error("Unauthorized");
+
+  const row = rows[0];
+  if (row.ownerUserId !== userId && row.startDate && isWeekPast(row.startDate)) {
+    throw new Error("Unauthorized");
+  }
 }

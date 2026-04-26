@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, weeklyPlans } from "@/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { WEEKLY_PLAN_PROMPT, NUTRITION_ONLY_WEEKLY_PROMPT, WORKOUT_ONLY_WEEKLY_PROMPT } from "@/lib/ai-prompts";
 import { buildWeeklyPlanContext } from "@/actions/ai-weekly";
@@ -166,14 +166,34 @@ export async function POST(request: Request) {
   const monday = getMondayStr(dateStr);
   const weeklyContext = await buildWeeklyPlanContext(userId);
 
+  // Determine the correct week number for this Monday:
+  // - If a plan already exists for this Monday → reuse its weekNumber
+  // - Otherwise → max(weekNumber) + 1
+  const [existingForMonday] = await db
+    .select({ weekNumber: weeklyPlans.weekNumber })
+    .from(weeklyPlans)
+    .where(and(eq(weeklyPlans.userId, userId), eq(weeklyPlans.startDate, monday)));
+  let nextWeekNumber: number;
+  if (existingForMonday) {
+    nextWeekNumber = existingForMonday.weekNumber;
+  } else {
+    const [maxRow] = await db
+      .select({ max: sql<number>`coalesce(max(${weeklyPlans.weekNumber}), 0)` })
+      .from(weeklyPlans)
+      .where(eq(weeklyPlans.userId, userId));
+    nextWeekNumber = (maxRow?.max ?? 0) + 1;
+  }
+
   // Build user message
   let userMessage: string;
+  const weekHeader = `Hafta başlangıç tarihi: ${monday}\nBu plan ${nextWeekNumber}. hafta için oluşturulacak. weekTitle alanı MUTLAKA "Hafta ${nextWeekNumber} — ..." formatında başlamalı.`;
+
   if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
-    userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`;
+    userMessage = `${weeklyContext}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`;
   } else if (generateMode === "workout") {
-    userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.`;
+    userMessage = `${weeklyContext}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.`;
   } else {
-    userMessage = `${weeklyContext}\n\nHafta başlangıç tarihi: ${monday}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
+    userMessage = `${weeklyContext}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
   }
 
   if (userNote?.trim()) {
