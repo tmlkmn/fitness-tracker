@@ -123,7 +123,7 @@ export async function getSavedSuggestionById(id: number): Promise<{
 
   if (!row) throw new Error("NOT_FOUND");
 
-  const plan = validateWeeklyPlan(row.plan);
+  const { plan } = validateWeeklyPlan(row.plan);
 
   return {
     id: row.id,

@@ -5,10 +5,20 @@ import { meals, users, aiDailyMealSuggestions } from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
+import {
+  getAIClient,
+  AI_MODELS,
+  checkRateLimit,
+  logAiUsage,
+  buildUserNotePriorityBlock,
+  discriminateAiError,
+  PROMPT_VERSION,
+} from "@/lib/ai";
 import { verifyDailyPlanOwnership } from "@/lib/ownership";
 import { DAILY_MEALS_PROMPT, NUTRITION_ONLY_MEALS_PROMPT } from "@/lib/ai-prompts";
 import { buildMealContext } from "@/lib/ai-meal-context";
+import { resolveTargets } from "@/lib/macro-targets";
+import { coerceMealLabel } from "@/lib/meal-labels";
 
 export interface AIMeal {
   mealTime: string;
@@ -51,7 +61,6 @@ function validateMealArray(data: unknown): AIMeal[] {
 export async function generateDailyMeals(dailyPlanId: number, userNote?: string) {
   const user = await getAuthUser();
   await checkRateLimit(user.id, "daily-meal");
-  await logAiUsage(user.id, "daily-meal");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
   // Get current meals for comparison display
@@ -71,9 +80,22 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     fatG: m.fatG ?? null,
   }));
 
-  // Get user's service type for prompt selection
+  // Get user profile (service type for prompt + macro fields for targets)
   const [userRow] = await db
-    .select({ serviceType: users.serviceType })
+    .select({
+      serviceType: users.serviceType,
+      weight: users.weight,
+      targetWeight: users.targetWeight,
+      height: users.height,
+      age: users.age,
+      gender: users.gender,
+      dailyActivityLevel: users.dailyActivityLevel,
+      fitnessGoal: users.fitnessGoal,
+      targetCalories: users.targetCalories,
+      targetProteinG: users.targetProteinG,
+      targetCarbsG: users.targetCarbsG,
+      targetFatG: users.targetFatG,
+    })
     .from(users)
     .where(eq(users.id, user.id));
   const isNutritionOnly = userRow?.serviceType === "nutrition";
@@ -81,13 +103,31 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
 
   const { context: mealContext } = await buildMealContext(dailyPlanId, user.id);
 
+  // Compute resolved macro targets and inject as a separate block
+  let targetsBlock = "";
+  if (userRow) {
+    const targets = await resolveTargets(userRow, user.id);
+    if (targets) {
+      targetsBlock = `\n\n═══ HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ ═══
+Kalori: ${targets.calories} kcal
+Protein: ${targets.protein}g
+Karbonhidrat: ${targets.carbs}g
+Yağ: ${targets.fat}g
+Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitness hedefine göre Mifflin-St Jeor + LBM bazlı hesaplanmıştır. Beslenme programı bu hedeflere ±%5 toleransla uymalı.`;
+    }
+  }
+
   let userMessage = isNutritionOnly
-    ? `${mealContext}\n\nBu gün için beslenme programı oluştur. Vücut kompozisyonunu, kilo trendini, yaşam tarzını ve önceki günlerin öğün düzenini dikkate al.`
-    : `${mealContext}\n\nBu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.`;
+    ? `${mealContext}${targetsBlock}\n\nBu gün için beslenme programı oluştur. Vücut kompozisyonunu, kilo trendini, yaşam tarzını ve önceki günlerin öğün düzenini dikkate al.`
+    : `${mealContext}${targetsBlock}\n\nBu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.`;
 
   if (userNote?.trim()) {
-    userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu öğün planı için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
+    userMessage += buildUserNotePriorityBlock(userNote);
   }
+
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
 
   try {
     const client = getAIClient();
@@ -108,6 +148,9 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
         },
       ],
     });
+
+    inputTokens = message.usage.input_tokens;
+    outputTokens = message.usage.output_tokens;
 
     let text = message.content[0].type === "text" ? message.content[0].text : "";
 
@@ -134,12 +177,34 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
           },
         ],
       });
+      inputTokens += retry.usage.input_tokens;
+      outputTokens += retry.usage.output_tokens;
       text = retry.content[0].type === "text" ? retry.content[0].text : "";
       suggestedMeals = validateMealArray(parseJSON(text));
     }
 
+    await logAiUsage(user.id, "daily-meal", {
+      status: "success",
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
+
     return { suggestedMeals, currentMeals };
   } catch (error) {
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(user.id, "daily-meal", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
+
     console.error("[AI Meals] Error generating daily meals:", error);
     throw new Error("AI_UNAVAILABLE");
   }
@@ -161,7 +226,7 @@ export async function applyDailyMeals(
       newMeals.map((m, i) => ({
         dailyPlanId,
         mealTime: m.mealTime,
-        mealLabel: m.mealLabel,
+        mealLabel: coerceMealLabel(m.mealLabel),
         content: m.content,
         calories: m.calories,
         proteinG: m.proteinG,

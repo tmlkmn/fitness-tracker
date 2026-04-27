@@ -12,9 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp } from "lucide-react";
 import { getWeeklyMacroTotals, type DailyMacroPoint } from "@/actions/meals";
-import { useUserProfile } from "@/hooks/use-user";
-import { resolveTargets } from "@/lib/macro-targets";
-import { useMemo } from "react";
+import { useResolvedMacroTargets } from "@/hooks/use-user";
 import {
   CHART_TOOLTIP_CURSOR,
   CHART_TOOLTIP_ITEM_STYLE,
@@ -52,11 +50,7 @@ export function MacroTrendSparkline({
     queryKey: ["weekly-macro-totals", endDate],
     queryFn: () => getWeeklyMacroTotals(endDate),
   });
-  const { data: profile } = useUserProfile();
-  const targets = useMemo(
-    () => (profile ? resolveTargets(profile) : null),
-    [profile],
-  );
+  const { data: targets } = useResolvedMacroTargets();
 
   const { label, unit } = METRIC_LABELS[metric];
   const chartData = (data ?? []).map((p: DailyMacroPoint) => ({

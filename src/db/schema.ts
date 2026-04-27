@@ -9,51 +9,80 @@ import {
   date,
   jsonb,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ── Auth tables (better-auth) ──
 
-export const users = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").default(false).notNull(),
-  image: text("image"),
-  height: integer("height"),
-  weight: numeric("weight"),
-  targetWeight: numeric("target_weight"),
-  healthNotes: text("health_notes"),
-  foodAllergens: text("food_allergens"),
-  dailyRoutine: jsonb("daily_routine"),
-  weekendRoutine: jsonb("weekend_routine"),
-  supplementSchedule: jsonb("supplement_schedule"),
-  fitnessLevel: text("fitness_level"),
-  fitnessGoal: text("fitness_goal"),
-  sportHistory: text("sport_history"),
-  currentMedications: text("current_medications"),
-  serviceType: text("service_type").default("full"),
-  age: integer("age"),
-  isApproved: boolean("is_approved").default(false).notNull(),
-  role: text("role").default("user"),
-  banned: boolean("banned").default(false),
-  banReason: text("ban_reason"),
-  banExpires: timestamp("ban_expires"),
-  mustChangePassword: boolean("must_change_password").default(false),
-  inviteExpiresAt: timestamp("invite_expires_at"),
-  membershipType: text("membership_type"),
-  membershipStartDate: timestamp("membership_start_date"),
-  membershipEndDate: timestamp("membership_end_date"),
-  membershipNotifiedAt: timestamp("membership_notified_at"),
-  hasSeenOnboarding: boolean("has_seen_onboarding").default(false),
-  targetCalories: integer("target_calories"),
-  targetProteinG: numeric("target_protein_g"),
-  targetCarbsG: numeric("target_carbs_g"),
-  targetFatG: numeric("target_fat_g"),
-  weightUnit: text("weight_unit").default("kg"),
-  energyUnit: text("energy_unit").default("kcal"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const users = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").default(false).notNull(),
+    image: text("image"),
+    height: integer("height"),
+    weight: numeric("weight"),
+    targetWeight: numeric("target_weight"),
+    healthNotes: text("health_notes"),
+    foodAllergens: text("food_allergens"),
+    dailyRoutine: jsonb("daily_routine"),
+    weekendRoutine: jsonb("weekend_routine"),
+    supplementSchedule: jsonb("supplement_schedule"),
+    fitnessLevel: text("fitness_level"),
+    fitnessGoal: text("fitness_goal"),
+    sportHistory: text("sport_history"),
+    currentMedications: text("current_medications"),
+    serviceType: text("service_type").default("full"),
+    age: integer("age"),
+    isApproved: boolean("is_approved").default(false).notNull(),
+    role: text("role").default("user"),
+    banned: boolean("banned").default(false),
+    banReason: text("ban_reason"),
+    banExpires: timestamp("ban_expires"),
+    mustChangePassword: boolean("must_change_password").default(false),
+    inviteExpiresAt: timestamp("invite_expires_at"),
+    membershipType: text("membership_type"),
+    membershipStartDate: timestamp("membership_start_date"),
+    membershipEndDate: timestamp("membership_end_date"),
+    membershipNotifiedAt: timestamp("membership_notified_at"),
+    hasSeenOnboarding: boolean("has_seen_onboarding").default(false),
+    targetCalories: integer("target_calories"),
+    targetProteinG: numeric("target_protein_g"),
+    targetCarbsG: numeric("target_carbs_g"),
+    targetFatG: numeric("target_fat_g"),
+    weightUnit: text("weight_unit").default("kg"),
+    energyUnit: text("energy_unit").default("kcal"),
+    gender: text("gender"),
+    dailyActivityLevel: text("daily_activity_level"),
+    hasEatingDisorderHistory: boolean("has_eating_disorder_history").default(false),
+    isPregnantOrBreastfeeding: boolean("is_pregnant_or_breastfeeding").default(false),
+    hasDiabetes: boolean("has_diabetes").default(false),
+    hasThyroidCondition: boolean("has_thyroid_condition").default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    check(
+      "user_gender_check",
+      sql`${t.gender} IS NULL OR ${t.gender} IN ('male', 'female', 'prefer_not_to_say')`,
+    ),
+    check(
+      "user_daily_activity_level_check",
+      sql`${t.dailyActivityLevel} IS NULL OR ${t.dailyActivityLevel} IN ('sedentary', 'light', 'moderate', 'very_active')`,
+    ),
+    check(
+      "user_fitness_goal_check",
+      sql`${t.fitnessGoal} IS NULL OR ${t.fitnessGoal} IN ('loss', 'recomp', 'maintain', 'muscle_gain', 'weight_gain')`,
+    ),
+    check(
+      "user_service_type_check",
+      sql`${t.serviceType} IN ('full', 'nutrition')`,
+    ),
+  ],
+);
 
 export const userFoods = pgTable("user_foods", {
   id: serial("id").primaryKey(),
@@ -113,61 +142,94 @@ export const verifications = pgTable("verification", {
 
 // ── App tables ──
 
-export const weeklyPlans = pgTable("weekly_plans", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id),
-  weekNumber: integer("week_number").notNull(),
-  title: text("title").notNull(),
-  phase: text("phase").notNull(),
-  notes: text("notes"),
-  supplements: jsonb("supplements"),
-  startDate: date("start_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const weeklyPlans = pgTable(
+  "weekly_plans",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    weekNumber: integer("week_number").notNull(),
+    title: text("title").notNull(),
+    phase: text("phase").notNull(),
+    notes: text("notes"),
+    supplements: jsonb("supplements"),
+    startDate: date("start_date"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("weekly_plans_user_week_idx").on(table.userId, table.weekNumber),
+  ],
+);
 
-export const dailyPlans = pgTable("daily_plans", {
-  id: serial("id").primaryKey(),
-  weeklyPlanId: integer("weekly_plan_id").references(() => weeklyPlans.id),
-  dayOfWeek: integer("day_of_week").notNull(),
-  dayName: text("day_name").notNull(),
-  planType: text("plan_type").notNull(),
-  workoutTitle: text("workout_title"),
-  date: date("date"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const dailyPlans = pgTable(
+  "daily_plans",
+  {
+    id: serial("id").primaryKey(),
+    weeklyPlanId: integer("weekly_plan_id").references(() => weeklyPlans.id),
+    dayOfWeek: integer("day_of_week").notNull(),
+    dayName: text("day_name").notNull(),
+    planType: text("plan_type").notNull(),
+    workoutTitle: text("workout_title"),
+    date: date("date"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [
+    check(
+      "daily_plans_plan_type_check",
+      sql`${t.planType} IN ('workout', 'swimming', 'rest', 'nutrition')`,
+    ),
+  ],
+);
 
-export const meals = pgTable("meals", {
-  id: serial("id").primaryKey(),
-  dailyPlanId: integer("daily_plan_id").references(() => dailyPlans.id),
-  mealTime: text("meal_time").notNull(),
-  mealLabel: text("meal_label").notNull(),
-  content: text("content").notNull(),
-  calories: integer("calories"),
-  proteinG: numeric("protein_g"),
-  carbsG: numeric("carbs_g"),
-  fatG: numeric("fat_g"),
-  icon: text("icon"),
-  isCompleted: boolean("is_completed").default(false),
-  sortOrder: integer("sort_order").notNull().default(0),
-});
+export const meals = pgTable(
+  "meals",
+  {
+    id: serial("id").primaryKey(),
+    dailyPlanId: integer("daily_plan_id").references(() => dailyPlans.id),
+    mealTime: text("meal_time").notNull(),
+    mealLabel: text("meal_label").notNull(),
+    content: text("content").notNull(),
+    calories: integer("calories"),
+    proteinG: numeric("protein_g"),
+    carbsG: numeric("carbs_g"),
+    fatG: numeric("fat_g"),
+    icon: text("icon"),
+    isCompleted: boolean("is_completed").default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => [
+    check(
+      "meals_meal_label_check",
+      sql`${t.mealLabel} IN ('Kahvaltı', 'Öğle Yemeği', 'Akşam Yemeği', 'Ara Öğün', 'Erken Protein', 'Pre-Workout', 'Post-Workout', 'Akşam Atıştırması')`,
+    ),
+  ],
+);
 
-export const exercises = pgTable("exercises", {
-  id: serial("id").primaryKey(),
-  dailyPlanId: integer("daily_plan_id").references(() => dailyPlans.id),
-  section: text("section").notNull(),
-  sectionLabel: text("section_label").notNull(),
-  name: text("name").notNull(),
-  englishName: text("english_name"),
-  sets: integer("sets"),
-  reps: text("reps"),
-  restSeconds: integer("rest_seconds"),
-  durationMinutes: integer("duration_minutes"),
-  notes: text("notes"),
-  isCompleted: boolean("is_completed").default(false),
-  sortOrder: integer("sort_order").notNull().default(0),
-});
+export const exercises = pgTable(
+  "exercises",
+  {
+    id: serial("id").primaryKey(),
+    dailyPlanId: integer("daily_plan_id").references(() => dailyPlans.id),
+    section: text("section").notNull(),
+    sectionLabel: text("section_label").notNull(),
+    name: text("name").notNull(),
+    englishName: text("english_name"),
+    sets: integer("sets"),
+    reps: text("reps"),
+    restSeconds: integer("rest_seconds"),
+    durationMinutes: integer("duration_minutes"),
+    notes: text("notes"),
+    isCompleted: boolean("is_completed").default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => [
+    check(
+      "exercises_section_check",
+      sql`${t.section} IN ('warmup', 'main', 'cooldown', 'sauna', 'swimming')`,
+    ),
+  ],
+);
 
 export const supplements = pgTable("supplements", {
   id: serial("id").primaryKey(),
@@ -400,6 +462,14 @@ export const aiUsageLogs = pgTable("ai_usage_logs", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   feature: text("feature").notNull(),
+  promptVersion: text("prompt_version"),
+  model: text("model"),
+  inputTokens: integer("input_tokens"),
+  outputTokens: integer("output_tokens"),
+  durationMs: integer("duration_ms"),
+  status: text("status").default("success").notNull(),
+  errorMessage: text("error_message"),
+  estCostUsd: numeric("est_cost_usd"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

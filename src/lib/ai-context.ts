@@ -352,9 +352,12 @@ export async function getMealMacroBudget(
   const [userRow] = await db
     .select({
       weight: users.weight,
+      targetWeight: users.targetWeight,
       height: users.height,
       age: users.age,
-      fitnessLevel: users.fitnessLevel,
+      fitnessGoal: users.fitnessGoal,
+      gender: users.gender,
+      dailyActivityLevel: users.dailyActivityLevel,
       serviceType: users.serviceType,
       targetCalories: users.targetCalories,
       targetProteinG: users.targetProteinG,
@@ -364,7 +367,7 @@ export async function getMealMacroBudget(
     .from(users)
     .where(eq(users.id, userId));
 
-  const targets = userRow ? resolveTargets(userRow) : null;
+  const targets = userRow ? await resolveTargets(userRow, userId) : null;
 
   const whereClause = excludeMealId
     ? and(eq(meals.dailyPlanId, dailyPlanId), ne(meals.id, excludeMealId))

@@ -11,6 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MEAL_LABELS, isMealLabel, type MealLabel } from "@/lib/meal-labels";
 import { useCreateMeal, useUpdateMeal } from "@/hooks/use-meal-crud";
 import { useUserProfile } from "@/hooks/use-user";
 import { getDefaultMealTime, isWeekendDate } from "@/lib/meal-time-defaults";
@@ -66,7 +74,12 @@ export function MealFormDialog({
   };
 
   const [mealTime, setMealTime] = useState(getSmartDefault);
-  const [mealLabel, setMealLabel] = useState(meal?.mealLabel ?? "");
+  // mealLabel is constrained to the canonical vocabulary (matches the DB
+  // CHECK constraint). Existing meals that aren't in the set fall back to
+  // empty so the user must pick a valid label before saving.
+  const [mealLabel, setMealLabel] = useState<MealLabel | "">(
+    isMealLabel(meal?.mealLabel) ? meal.mealLabel : "",
+  );
   const [content, setContent] = useState(meal?.content ?? "");
   const [calories, setCalories] = useState(meal?.calories?.toString() ?? "");
   const [protein, setProtein] = useState(meal?.proteinG ?? "");
@@ -88,9 +101,12 @@ export function MealFormDialog({
 
   const isPending = createMeal.isPending || updateMeal.isPending;
 
+  const initialMealLabel: MealLabel | "" = isMealLabel(meal?.mealLabel)
+    ? meal.mealLabel
+    : "";
   const isDirty =
     !isPending &&
-    (mealLabel !== (meal?.mealLabel ?? "") ||
+    (mealLabel !== initialMealLabel ||
       content !== (meal?.content ?? "") ||
       calories !== (meal?.calories?.toString() ?? "") ||
       protein !== (meal?.proteinG ?? "") ||
@@ -109,7 +125,9 @@ export function MealFormDialog({
     carbs: string;
     fat: string;
   }) => {
-    setMealLabel(data.mealLabel);
+    // Picker sources (saved meals, history) may carry legacy free-form
+    // labels. Coerce to canonical or empty so the user re-confirms.
+    setMealLabel(isMealLabel(data.mealLabel) ? data.mealLabel : "");
     setContent(data.content);
     setCalories(data.calories);
     setProtein(data.protein);
@@ -157,11 +175,11 @@ export function MealFormDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mealLabel.trim() || !content.trim()) return;
+    if (!isMealLabel(mealLabel) || !content.trim()) return;
 
     const data = {
       mealTime: mealTime || "08:00",
-      mealLabel: mealLabel.trim(),
+      mealLabel,
       content: content.trim(),
       calories: calories ? parseInt(calories) : null,
       proteinG: protein || null,
@@ -240,14 +258,21 @@ export function MealFormDialog({
               </Label>
               <div className="flex gap-1.5">
                 <IconPicker value={icon} onChange={setIcon} className="h-9 w-9" />
-                <Input
-                  id="mealLabel"
-                  placeholder="Kahvaltı"
-                  value={mealLabel}
-                  onChange={(e) => setMealLabel(e.target.value)}
-                  required
-                  className="h-9 flex-1"
-                />
+                <Select
+                  value={mealLabel || undefined}
+                  onValueChange={(v) => setMealLabel(v as MealLabel)}
+                >
+                  <SelectTrigger id="mealLabel" className="h-9 flex-1">
+                    <SelectValue placeholder="Seç..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MEAL_LABELS.map((label) => (
+                      <SelectItem key={label} value={label}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

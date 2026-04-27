@@ -5,6 +5,46 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
+import {
+  computeDefaultTargets,
+  resolveTargets,
+  type MacroTargets,
+} from "@/lib/macro-targets";
+
+const TARGET_PROFILE_FIELDS = {
+  weight: users.weight,
+  targetWeight: users.targetWeight,
+  height: users.height,
+  age: users.age,
+  gender: users.gender,
+  dailyActivityLevel: users.dailyActivityLevel,
+  fitnessGoal: users.fitnessGoal,
+  serviceType: users.serviceType,
+  targetCalories: users.targetCalories,
+  targetProteinG: users.targetProteinG,
+  targetCarbsG: users.targetCarbsG,
+  targetFatG: users.targetFatG,
+} as const;
+
+export async function getResolvedMacroTargets(): Promise<MacroTargets | null> {
+  const user = await getAuthUser();
+  const [profile] = await db
+    .select(TARGET_PROFILE_FIELDS)
+    .from(users)
+    .where(eq(users.id, user.id));
+  if (!profile) return null;
+  return resolveTargets(profile, user.id);
+}
+
+export async function getDefaultMacroTargets(): Promise<MacroTargets | null> {
+  const user = await getAuthUser();
+  const [profile] = await db
+    .select(TARGET_PROFILE_FIELDS)
+    .from(users)
+    .where(eq(users.id, user.id));
+  if (!profile) return null;
+  return computeDefaultTargets(profile, user.id);
+}
 
 export async function getUserProfile() {
   const user = await getAuthUser();
@@ -34,10 +74,16 @@ export async function getUserProfile() {
       targetFatG: users.targetFatG,
       weightUnit: users.weightUnit,
       energyUnit: users.energyUnit,
+      gender: users.gender,
+      dailyActivityLevel: users.dailyActivityLevel,
+      hasEatingDisorderHistory: users.hasEatingDisorderHistory,
+      isPregnantOrBreastfeeding: users.isPregnantOrBreastfeeding,
+      hasDiabetes: users.hasDiabetes,
+      hasThyroidCondition: users.hasThyroidCondition,
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, fitnessGoal: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false, targetCalories: null, targetProteinG: null, targetCarbsG: null, targetFatG: null, weightUnit: "kg", energyUnit: "kcal" };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, fitnessGoal: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false, targetCalories: null, targetProteinG: null, targetCarbsG: null, targetFatG: null, weightUnit: "kg", energyUnit: "kcal", gender: null, dailyActivityLevel: null, hasEatingDisorderHistory: false, isPregnantOrBreastfeeding: false, hasDiabetes: false, hasThyroidCondition: false };
 }
 
 export async function updateUnitPreferences(data: {
@@ -76,6 +122,52 @@ export async function updateMacroTargets(data: {
     .where(eq(users.id, user.id));
   revalidatePath("/");
   revalidatePath("/ayarlar");
+  revalidatePath("/gun", "layout");
+}
+
+// ─── Health profile (Mifflin-St Jeor + IF safety inputs) ───────────────────
+
+const GENDER_VALUES = new Set(["male", "female", "prefer_not_to_say"]);
+const ACTIVITY_VALUES = new Set(["sedentary", "light", "moderate", "very_active"]);
+
+export interface UpdateHealthProfileInput {
+  gender: "male" | "female" | "prefer_not_to_say";
+  dailyActivityLevel: "sedentary" | "light" | "moderate" | "very_active";
+  hasEatingDisorderHistory: boolean;
+  isPregnantOrBreastfeeding: boolean;
+  hasDiabetes: boolean;
+  hasThyroidCondition: boolean;
+}
+
+export async function updateHealthProfile(data: UpdateHealthProfileInput) {
+  const user = await getAuthUser();
+
+  // Validate enums explicitly — these come from a client form so they could
+  // be tampered with even though the UI only renders allowed values.
+  if (!GENDER_VALUES.has(data.gender)) {
+    throw new Error("Invalid gender value");
+  }
+  if (!ACTIVITY_VALUES.has(data.dailyActivityLevel)) {
+    throw new Error("Invalid dailyActivityLevel value");
+  }
+
+  await db
+    .update(users)
+    .set({
+      gender: data.gender,
+      dailyActivityLevel: data.dailyActivityLevel,
+      hasEatingDisorderHistory: Boolean(data.hasEatingDisorderHistory),
+      isPregnantOrBreastfeeding: Boolean(data.isPregnantOrBreastfeeding),
+      hasDiabetes: Boolean(data.hasDiabetes),
+      hasThyroidCondition: Boolean(data.hasThyroidCondition),
+    })
+    .where(eq(users.id, user.id));
+
+  // Macro targets depend on gender + activity + LBM, so resolved targets and
+  // any AI prompts that use them must refresh.
+  revalidatePath("/");
+  revalidatePath("/ayarlar");
+  revalidatePath("/ayarlar/saglik");
   revalidatePath("/gun", "layout");
 }
 

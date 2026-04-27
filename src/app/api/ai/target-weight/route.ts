@@ -3,7 +3,14 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { progressLogs, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
+import {
+  getAIClient,
+  AI_MODELS,
+  checkRateLimit,
+  logAiUsage,
+  discriminateAiError,
+  PROMPT_VERSION,
+} from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { TARGET_WEIGHT_PROMPT } from "@/lib/ai-prompts";
 
@@ -65,8 +72,6 @@ export async function POST() {
     );
   }
 
-  await logAiUsage(userId, "target-weight");
-
   const userContext = await buildUserContext(userId);
 
   // userContext (via buildUserContext) already includes fitness level / service
@@ -105,6 +110,9 @@ Son ölçüm: ${logParts.join(", ")}${healthNotesStr}
 Bu verilere göre gerçekçi bir hedef kilo öner.`;
 
   const client = getAIClient();
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
 
   try {
     const response = await client.messages.create({
@@ -120,12 +128,24 @@ Bu verilere göre gerçekçi bir hedef kilo öner.`;
       messages: [{ role: "user", content: prompt }],
     });
 
+    inputTokens = response.usage.input_tokens;
+    outputTokens = response.usage.output_tokens;
+
     const text =
       response.content[0].type === "text" ? response.content[0].text : "";
 
     // Parse JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      await logAiUsage(userId, "target-weight", {
+        status: "parse_error",
+        errorMessage: "no JSON object in response",
+        inputTokens,
+        outputTokens,
+        durationMs: Date.now() - startTime,
+        model: AI_MODELS.smart,
+        promptVersion: PROMPT_VERSION,
+      });
       return Response.json(
         { error: "AI yanıtı işlenemedi. Lütfen tekrar deneyin." },
         { status: 500 },
@@ -133,12 +153,32 @@ Bu verilere göre gerçekçi bir hedef kilo öner.`;
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
+
+    await logAiUsage(userId, "target-weight", {
+      status: "success",
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
+
     return Response.json({
       targetWeight: Number(parsed.targetWeight),
       reasoning: String(parsed.reasoning),
       timelineWeeks: Number(parsed.timelineWeeks),
     });
-  } catch {
+  } catch (error) {
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(userId, "target-weight", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
     return Response.json(
       { error: "AI servisi şu anda kullanılamıyor." },
       { status: 500 },

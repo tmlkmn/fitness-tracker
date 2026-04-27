@@ -18,11 +18,10 @@ import { useBulkCompleteMeals } from "@/hooks/use-bulk-completion";
 import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
-import { useUserProfile } from "@/hooks/use-user";
+import { useUserProfile, useResolvedMacroTargets } from "@/hooks/use-user";
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { computeMealMacros } from "@/lib/meal-macros";
-import { resolveTargets } from "@/lib/macro-targets";
 import { formatAiError } from "@/lib/ai-errors";
 import { formatEnergy, type EnergyUnit } from "@/lib/units";
 import type { AIMeal } from "@/actions/ai-meals";
@@ -52,7 +51,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
   const monthGate = useMonthGate();
   const isMonthBlocked = planDate ? monthGate.isBlockedForDate(planDate) : false;
   const { data: profile } = useUserProfile();
-  const targets = useMemo(() => (profile ? resolveTargets(profile) : null), [profile]);
+  const { data: targets } = useResolvedMacroTargets();
 
   const suggestedMeals: AIMeal[] | null = generateMeals.data?.suggestedMeals ?? null;
   const currentMealsFromAI: AIMeal[] = generateMeals.data?.currentMeals ?? [];

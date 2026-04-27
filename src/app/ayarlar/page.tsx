@@ -18,6 +18,7 @@ import {
   BookOpen,
   Target,
   Sliders,
+  ShieldCheck,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
@@ -66,6 +67,8 @@ function AyarlarContent() {
     !Array.isArray(profile.supplementSchedule) ||
     (profile.supplementSchedule as unknown[]).length === 0;
 
+  const healthProfileMissing = profile != null && profile.gender == null;
+
   return (
     <div className="animate-fade-in">
       <Header
@@ -108,6 +111,13 @@ function AyarlarContent() {
         <ProfileSummaryCard />
 
         <SettingsGroup label="Profil & Sağlık">
+          <SettingsMenuItem
+            icon={ShieldCheck}
+            title="Yeni profil bilgileri"
+            subtitle="Cinsiyet, günlük aktivite, sağlık durumları"
+            href="/ayarlar/saglik"
+            warning={healthProfileMissing}
+          />
           <SettingsMenuItem
             icon={Clock}
             title="Günlük Akış"

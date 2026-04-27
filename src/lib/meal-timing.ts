@@ -1,4 +1,5 @@
 import { normalizeEvent } from "@/lib/routine-constants";
+import { GOAL_STRATEGIES } from "@/lib/strategy/goal-strategy";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,8 @@ export interface MealTimingSlot {
   label: string; // "Erken Protein" | "Ara Öğün" | "Post-Workout" | "Akşam Atıştırması"
   rationale: string;
   size: "small" | "medium";
+  calorieRange: { min: number; max: number };
+  proteinMinG: number;
 }
 
 export interface MealTimingPolicy {
@@ -47,27 +50,63 @@ export interface MealTimingPolicy {
   slots: MealTimingSlot[];
   summary: string;
   routineSource: "user" | "default"; // did we fall back to defaults?
+  ifContraindicated: boolean;
 }
 
 // ─── Policy selection ────────────────────────────────────────────────────────
 
-export function selectPolicy(
-  serviceType: string | null,
-  goal: FitnessGoal,
-): MealFrequencyPolicy {
-  const isNutritionOnly = serviceType === "nutrition";
-  switch (goal) {
-    case "loss":
-      return isNutritionOnly ? "intermittent" : "moderate";
-    case "recomp":
-      return "moderate";
-    case "maintain":
-      return isNutritionOnly ? "intermittent" : "frequent";
-    case "muscle_gain":
-      return "frequent";
-    case "weight_gain":
-      return "frequent";
+export interface SelectPolicyInput {
+  serviceType: string | null;
+  goal: FitnessGoal;
+  age: number | null;
+  hasEatingDisorderHistory: boolean | null;
+  isPregnantOrBreastfeeding: boolean | null;
+  hasDiabetes: boolean | null;
+  hasThyroidCondition: boolean | null;
+}
+
+/**
+ * Returns true if intermittent fasting is medically inadvisable for this user.
+ * Triggers: history of disordered eating, pregnancy/lactation, diabetes,
+ * thyroid issues, or age boundaries (<18 growing, ≥65 sarcopenia risk).
+ */
+export function isIFContraindicated(input: {
+  age: number | null;
+  hasEatingDisorderHistory: boolean | null;
+  isPregnantOrBreastfeeding: boolean | null;
+  hasDiabetes: boolean | null;
+  hasThyroidCondition: boolean | null;
+}): boolean {
+  if (input.hasEatingDisorderHistory) return true;
+  if (input.isPregnantOrBreastfeeding) return true;
+  if (input.hasDiabetes) return true;
+  if (input.hasThyroidCondition) return true;
+  if (input.age != null && (input.age < 18 || input.age >= 65)) return true;
+  return false;
+}
+
+export function selectPolicy(input: SelectPolicyInput): {
+  policy: MealFrequencyPolicy;
+  ifContraindicated: boolean;
+} {
+  const isNutritionOnly = input.serviceType === "nutrition";
+  const strategy = GOAL_STRATEGIES[input.goal];
+  const policyFromStrategy = isNutritionOnly
+    ? strategy.mealPolicy.nutritionOnly
+    : strategy.mealPolicy.default;
+
+  const ifContraindicated = isIFContraindicated(input);
+
+  if (policyFromStrategy === "intermittent" && ifContraindicated) {
+    // Substitute the safe alternative based on goal: deficit goals fall back
+    // to moderate (still controlled), maintenance falls back to frequent
+    // (more steady fueling).
+    const safeFallback: MealFrequencyPolicy =
+      input.goal === "loss" || input.goal === "recomp" ? "moderate" : "frequent";
+    return { policy: safeFallback, ifContraindicated: true };
   }
+
+  return { policy: policyFromStrategy, ifContraindicated };
 }
 
 export function deriveGoalFallback(
@@ -225,6 +264,18 @@ function thresholdsForPolicy(policy: MealFrequencyPolicy): SlotThresholds {
   }
 }
 
+// Per-slot calorie / protein hints. These are PHYSIOLOGICAL targets, not
+// derived from the user's macro budget — the AI uses them to size each slot
+// within sensible bounds (N6 fix: explicit guardrails so models stop
+// generating 600-kcal "snacks").
+const SLOT_NUTRITION = {
+  earlyProtein: { calorieRange: { min: 150, max: 250 }, proteinMinG: 20 },
+  interMainModerate: { calorieRange: { min: 150, max: 250 }, proteinMinG: 10 },
+  interMainFrequent: { calorieRange: { min: 200, max: 350 }, proteinMinG: 15 },
+  postWorkout: { calorieRange: { min: 250, max: 400 }, proteinMinG: 25 },
+  eveningSnack: { calorieRange: { min: 100, max: 200 }, proteinMinG: 8 },
+} as const;
+
 function generateSlots(
   times: RoutineTimes,
   policy: MealFrequencyPolicy,
@@ -248,6 +299,7 @@ function generateSlots(
         label: "Erken Protein",
         rationale: `Uyanış ${formatTime(times.wake)} → Kahvaltı ${formatTime(times.breakfast)} arası ${(gapMin / 60).toFixed(1)}h`,
         size: "small",
+        ...SLOT_NUTRITION.earlyProtein,
       });
     }
   }
@@ -290,14 +342,20 @@ function generateSlots(
           label: "Post-Workout",
           rationale: `Antrenman ${formatTime(times.workout)} sonrası 30dk içinde protein+karb`,
           size: "medium",
+          ...SLOT_NUTRITION.postWorkout,
         });
       } else {
         const mid = roundTo5(pair.from + Math.floor(gap / 2));
+        const interMain =
+          policy === "moderate"
+            ? SLOT_NUTRITION.interMainModerate
+            : SLOT_NUTRITION.interMainFrequent;
         slots.push({
           time: formatTime(mid),
           label: "Ara Öğün",
           rationale: `${pair.fromLabel} ${formatTime(pair.from)} → ${pair.toLabel} ${formatTime(pair.to)} arası ${(gap / 60).toFixed(1)}h boşluk`,
           size: policy === "moderate" ? "small" : "medium",
+          ...interMain,
         });
       }
     }
@@ -320,6 +378,7 @@ function generateSlots(
         label: "Akşam Atıştırması",
         rationale: `Akşam ${formatTime(times.dinner)} → Uyku ${formatTime(times.sleep)} arası ${(gap / 60).toFixed(1)}h`,
         size: "small",
+        ...SLOT_NUTRITION.eveningSnack,
       });
     }
   }
@@ -354,6 +413,11 @@ export interface ComputeMealTimingInput {
   weight: number | null;
   targetWeight: number | null;
   planType: string | null;
+  age: number | null;
+  hasEatingDisorderHistory: boolean | null;
+  isPregnantOrBreastfeeding: boolean | null;
+  hasDiabetes: boolean | null;
+  hasThyroidCondition: boolean | null;
 }
 
 export function computeMealTimingPolicy(
@@ -364,7 +428,15 @@ export function computeMealTimingPolicy(
     : "derived";
   const goal: FitnessGoal = input.fitnessGoal
     ?? deriveGoalFallback(input.weight, input.targetWeight, input.serviceType);
-  const policy = selectPolicy(input.serviceType, goal);
+  const { policy, ifContraindicated } = selectPolicy({
+    serviceType: input.serviceType,
+    goal,
+    age: input.age,
+    hasEatingDisorderHistory: input.hasEatingDisorderHistory,
+    isPregnantOrBreastfeeding: input.isPregnantOrBreastfeeding,
+    hasDiabetes: input.hasDiabetes,
+    hasThyroidCondition: input.hasThyroidCondition,
+  });
   const { times, source: routineSource } = extractRoutineTimes(input.routine);
   const isFullProgram = input.serviceType !== "nutrition";
   const slots = generateSlots(times, policy, input.planType, isFullProgram);
@@ -389,6 +461,11 @@ export function computeMealTimingPolicy(
   if (eatingWindowHours != null) {
     lines.push(`Yeme penceresi hedefi: ${eatingWindowHours} saat (aralıklı açlık)`);
   }
+  if (ifContraindicated && input.serviceType === "nutrition") {
+    lines.push(
+      "⚠️ NOT: Sağlık durumu nedeniyle aralıklı açlık önerilmedi (yeme bozukluğu geçmişi, gebelik/emzirme, diyabet, tiroid veya yaş <18 / ≥65 risk faktörlerinden biri var). Düzenli, dengeli öğünler tercih edildi.",
+    );
+  }
   if (routineSource === "default") {
     lines.push(
       "NOT: Kullanıcı rutin tanımlamamış — varsayılan saatler kullanıldı (Uyanış 07:00, Kahvaltı 08:30, Öğle 13:00, Akşam 19:00, Uyku 23:00).",
@@ -397,10 +474,12 @@ export function computeMealTimingPolicy(
   if (slots.length > 0) {
     lines.push("Tespit edilen ara öğün slotları:");
     for (const s of slots) {
-      lines.push(`  - ${s.time} ${s.label} [${s.size}] — ${s.rationale}`);
+      lines.push(
+        `  - ${s.time} ${s.label} [${s.calorieRange.min}-${s.calorieRange.max} kcal, min ${s.proteinMinG}g protein] — ${s.rationale}`,
+      );
     }
     lines.push(
-      "Bu slotlara birebir uygun öğün üret; saat ± 15dk içinde kalsın, etiket aynen kullanılsın.",
+      "Bu slotlara birebir uygun öğün üret; saat ± 15dk içinde kalsın, etiket aynen kullanılsın. Slot için verilen kcal aralığı ve min protein zorunlu — ana öğün bütçesinden ayrı, fizyolojik tavan/taban olarak uygula.",
     );
   } else {
     if (policy === "intermittent") {
@@ -423,5 +502,6 @@ export function computeMealTimingPolicy(
     slots,
     summary: lines.join("\n"),
     routineSource,
+    ifContraindicated,
   };
 }

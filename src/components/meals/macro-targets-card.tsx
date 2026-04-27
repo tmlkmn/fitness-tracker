@@ -7,14 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calculator, Save, Target } from "lucide-react";
 import { toast } from "sonner";
-import { useUserProfile } from "@/hooks/use-user";
+import { useUserProfile, useDefaultMacroTargets } from "@/hooks/use-user";
 import { updateMacroTargets } from "@/actions/user";
-import { computeDefaultTargets } from "@/lib/macro-targets";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function MacroTargetsCard() {
   const { data: profile } = useUserProfile();
   const qc = useQueryClient();
+  const computeDefaults = useDefaultMacroTargets();
   const [calories, setCalories] = useState("");
   const [protein, setProtein] = useState("");
   const [carbs, setCarbs] = useState("");
@@ -29,17 +29,20 @@ export function MacroTargetsCard() {
     setFat(profile.targetFatG ?? "");
   }, [profile]);
 
-  const handleAuto = () => {
-    if (!profile) return;
-    const defaults = computeDefaultTargets(profile);
-    if (!defaults) {
-      toast.error("Otomatik hesap için boy, kilo ve yaş gerekli");
-      return;
+  const handleAuto = async () => {
+    try {
+      const defaults = await computeDefaults.mutateAsync();
+      if (!defaults) {
+        toast.error("Otomatik hesap için boy, kilo ve yaş gerekli");
+        return;
+      }
+      setCalories(String(defaults.calories));
+      setProtein(String(defaults.protein));
+      setCarbs(String(defaults.carbs));
+      setFat(String(defaults.fat));
+    } catch {
+      toast.error("Hesaplanamadı");
     }
-    setCalories(String(defaults.calories));
-    setProtein(String(defaults.protein));
-    setCarbs(String(defaults.carbs));
-    setFat(String(defaults.fat));
   };
 
   const handleSave = async () => {
@@ -51,7 +54,8 @@ export function MacroTargetsCard() {
         targetCarbsG: carbs || null,
         targetFatG: fat || null,
       });
-      qc.invalidateQueries({ queryKey: ["userProfile"] });
+      qc.invalidateQueries({ queryKey: ["user-profile"] });
+      qc.invalidateQueries({ queryKey: ["macro.resolved"] });
       toast.success("Makro hedefleri güncellendi");
     } catch {
       toast.error("Kaydedilemedi");

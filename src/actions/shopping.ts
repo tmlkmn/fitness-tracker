@@ -9,7 +9,14 @@ import {
   verifyShoppingItemOwnership,
   verifyWeeklyPlanOwnership,
 } from "@/lib/ownership";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
+import {
+  getAIClient,
+  AI_MODELS,
+  checkRateLimit,
+  logAiUsage,
+  discriminateAiError,
+  PROMPT_VERSION,
+} from "@/lib/ai";
 import { SHOPPING_LIST_PROMPT } from "@/lib/ai-prompts";
 import { parseAiJson, repairTruncatedJson } from "@/lib/ai-json-repair";
 
@@ -37,7 +44,6 @@ export async function generateShoppingList(weeklyPlanId: number) {
   const user = await getAuthUser();
   await verifyWeeklyPlanOwnership(weeklyPlanId, user.id);
   await checkRateLimit(user.id, "shopping");
-  await logAiUsage(user.id, "shopping");
 
   // Fetch all meals for this week
   const weekMeals = await db
@@ -63,6 +69,10 @@ export async function generateShoppingList(weeklyPlanId: number) {
     .map((m) => `[id:${m.id}] ${m.dayName} - ${m.mealLabel}: ${m.content}`)
     .join("\n");
 
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
+
   try {
     const client = getAIClient();
     const message = await client.messages.create({
@@ -82,6 +92,9 @@ export async function generateShoppingList(weeklyPlanId: number) {
         },
       ],
     });
+
+    inputTokens = message.usage.input_tokens;
+    outputTokens = message.usage.output_tokens;
 
     const text =
       message.content[0].type === "text" ? message.content[0].text : "";
@@ -149,10 +162,29 @@ export async function generateShoppingList(weeklyPlanId: number) {
 
     await db.insert(shoppingLists).values(values);
     revalidatePath("/alisveris");
+
+    await logAiUsage(user.id, "shopping", {
+      status: "success",
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
   } catch (error) {
     if (error instanceof Error && (error.message === "RATE_LIMITED" || error.message.startsWith("COOLDOWN:"))) {
       throw error;
     }
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(user.id, "shopping", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
     console.error("[AI] Error generating shopping list:", error);
     throw new Error("AI_UNAVAILABLE");
   }

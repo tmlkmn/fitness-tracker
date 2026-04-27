@@ -9,6 +9,7 @@ import {
   verifyMealOwnership,
   verifyDailyPlanOwnership,
 } from "@/lib/ownership";
+import { coerceMealLabel } from "@/lib/meal-labels";
 
 interface MealInput {
   mealTime: string;
@@ -30,7 +31,9 @@ export async function createMeal(dailyPlanId: number, data: MealInput) {
     .values({
       dailyPlanId,
       mealTime: data.mealTime,
-      mealLabel: data.mealLabel,
+      // Coerce to canonical vocabulary — defense against UI bypass (direct
+      // server-action calls). Matches DB CHECK constraint from migration 0031.
+      mealLabel: coerceMealLabel(data.mealLabel),
       content: data.content,
       calories: data.calories ?? null,
       proteinG: data.proteinG ?? null,
@@ -54,7 +57,7 @@ export async function updateMeal(mealId: number, data: MealInput) {
     .update(meals)
     .set({
       mealTime: data.mealTime,
-      mealLabel: data.mealLabel,
+      mealLabel: coerceMealLabel(data.mealLabel),
       content: data.content,
       calories: data.calories ?? null,
       proteinG: data.proteinG ?? null,
@@ -100,7 +103,7 @@ export async function bulkCreateMeals(dailyPlanId: number, items: MealInput[]) {
     await db.insert(meals).values({
       dailyPlanId,
       mealTime: data.mealTime,
-      mealLabel: data.mealLabel,
+      mealLabel: coerceMealLabel(data.mealLabel),
       content: data.content,
       calories: data.calories ?? null,
       proteinG: data.proteinG ?? null,

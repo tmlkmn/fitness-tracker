@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
 import { OnboardingCarousel } from "@/components/onboarding/onboarding-carousel";
+import { HealthProfileWizard } from "@/components/onboarding/health-profile-wizard";
 import { getTurkeyTodayStr } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +90,16 @@ export default function HomePage() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [onboardingTriggered, setOnboardingTriggered] = useState(false);
 
+  // Health profile wizard — one-time mandatory setup. Triggered when gender
+  // is null (the column was added in migration 0029, so any user without it
+  // set hasn't completed the wizard yet). Render-time derived: open whenever
+  // the marketing carousel isn't blocking it AND the user hasn't been
+  // explicitly dismissed the wizard this session.
+  const [healthWizardDismissed, setHealthWizardDismissed] = useState(false);
+  const needsHealthProfile = profile != null && profile.gender == null;
+  const healthWizardOpen =
+    needsHealthProfile && !onboardingOpen && !healthWizardDismissed;
+
   useEffect(() => {
     if (profile && profile.hasSeenOnboarding === false && !onboardingTriggered) {
       setOnboardingOpen(true);
@@ -166,6 +177,15 @@ export default function HomePage() {
         open={onboardingOpen}
         onOpenChange={setOnboardingOpen}
         isFirstTime={profile?.hasSeenOnboarding === false}
+      />
+
+      {/* Health profile wizard — one-time, mandatory once shown. Closes via
+          gender becoming non-null (after submit) or via session dismissal. */}
+      <HealthProfileWizard
+        open={healthWizardOpen}
+        onOpenChange={(val) => {
+          if (!val) setHealthWizardDismissed(true);
+        }}
       />
 
       <div className="p-4 space-y-4">

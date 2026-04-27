@@ -4,7 +4,15 @@ import { db } from "@/db";
 import { exerciseTips, meals, dailyPlans } from "@/db/schema";
 import { and, eq, gte, asc, ne } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
+import {
+  getAIClient,
+  AI_MODELS,
+  checkRateLimit,
+  logAiUsage,
+  buildUserNotePriorityBlock,
+  discriminateAiError,
+  PROMPT_VERSION,
+} from "@/lib/ai";
 import { buildUserContext, getMealMacroBudget } from "@/lib/ai-context";
 import {
   MEAL_VARIATION_PROMPT,
@@ -65,7 +73,6 @@ export async function generateMealVariation(
   } = options;
   const user = await getAuthUser();
   await checkRateLimit(user.id, "meal");
-  await logAiUsage(user.id, "meal");
 
   const userContext = await buildUserContext(user.id);
 
@@ -166,11 +173,16 @@ export async function generateMealVariation(
     prevContext = `\n\nDaha önce bu öğün için şu öneriler yapıldı, bunları TEKRARLAMA:\n${recent.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
   }
 
-  // Build user note context — put up front as the top priority
-  let noteHeader = "";
+  // Build user message — note priority block is appended at the end so it
+  // sits closest to "this is what to do" instructions for stronger steering.
+  let userMessage = `${userContext}\n\nMevcut öğün: ${mealLabel} (öneriler AYNI öğün tipinde olmalı — kahvaltı için kahvaltılık, ana yemek için ana yemek)\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${planTypeContext}${budgetContext}${weekContext}${prevContext}\n\nBu öğüne benzer makrolarla, "${mealLabel}" öğün tipine uygun, birbirinden FARKLI 3 alternatif öneri yap. Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı (kullanıcı isteği bunu override edebilir). Eğer kalan makro bütçesi verilmişse, önerilerini bu bütçeye uyumlu yap. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`;
   if (userNote?.trim()) {
-    noteHeader = `\n\n⚠️ KULLANICI İSTEĞİ (EN YÜKSEK ÖNCELİK — diğer tüm kurallardan önce gelir): ${userNote.trim()}`;
+    userMessage += buildUserNotePriorityBlock(userNote);
   }
+
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
 
   try {
     const client = getAIClient();
@@ -184,17 +196,16 @@ export async function generateMealVariation(
           cache_control: { type: "ephemeral" },
         },
       ],
-      messages: [
-        {
-          role: "user",
-          content: `${userContext}${noteHeader}\n\nMevcut öğün: ${mealLabel} (öneriler AYNI öğün tipinde olmalı — kahvaltı için kahvaltılık, ana yemek için ana yemek)\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${planTypeContext}${budgetContext}${weekContext}${prevContext}\n\nBu öğüne benzer makrolarla, "${mealLabel}" öğün tipine uygun, birbirinden FARKLI 3 alternatif öneri yap.${userNote?.trim() ? ` Yukarıdaki KULLANICI İSTEĞİNİ tüm önerilerde birebir uygula; kullanıcı isteğiyle çelişen "farklı protein kaynağı" veya "farklı pişirme yöntemi" kuralları geçersizdir.` : " Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı."} Eğer kalan makro bütçesi verilmişse, önerilerini bu bütçeye uyumlu yap. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`,
-        },
-      ],
+      messages: [{ role: "user", content: userMessage }],
     });
+
+    inputTokens = message.usage.input_tokens;
+    outputTokens = message.usage.output_tokens;
 
     const text =
       message.content[0].type === "text" ? message.content[0].text : "";
 
+    let result: { suggestions: MealVariationSuggestion[] };
     try {
       const parsed = parseJSON(text) as Record<string, unknown>;
       const suggestionsRaw = Array.isArray(parsed.suggestions) ? parsed.suggestions : [parsed];
@@ -210,10 +221,10 @@ export async function generateMealVariation(
           fatG: s.fatG != null ? String(s.fatG) : null,
         };
       });
-      return { suggestions };
+      result = { suggestions };
     } catch {
       // Fallback: treat entire response as single suggestion
-      return {
+      result = {
         suggestions: [{
           content: text,
           calories: calories ?? null,
@@ -223,7 +234,28 @@ export async function generateMealVariation(
         }],
       };
     }
+
+    await logAiUsage(user.id, "meal", {
+      status: "success",
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.fast,
+      promptVersion: PROMPT_VERSION,
+    });
+
+    return result;
   } catch (error) {
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(user.id, "meal", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.fast,
+      promptVersion: PROMPT_VERSION,
+    });
     console.error("[AI] Error generating meal variation:", error);
     throw new Error("AI_UNAVAILABLE");
   }
@@ -238,7 +270,7 @@ async function callAIForTips(
   englishName: string | null,
   exerciseNotes: string | null,
   userContext: string,
-) {
+): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const client = getAIClient();
   const nameLine = englishName?.trim()
     ? `Egzersiz: ${exerciseName} (${englishName.trim()})`
@@ -260,7 +292,11 @@ async function callAIForTips(
       },
     ],
   });
-  return message.content[0].type === "text" ? message.content[0].text : "";
+  return {
+    text: message.content[0].type === "text" ? message.content[0].text : "",
+    inputTokens: message.usage.input_tokens,
+    outputTokens: message.usage.output_tokens,
+  };
 }
 
 async function upsertTips(
@@ -315,16 +351,40 @@ export async function getExerciseFormTips(
 
   // Rate limit before AI call
   await checkRateLimit(user.id, "exercise");
-  await logAiUsage(user.id, "exercise");
+
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
 
   try {
     const userContext = await buildUserContext(user.id);
-    const text = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext);
+    const result = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext);
+    inputTokens = result.inputTokens;
+    outputTokens = result.outputTokens;
 
-    await upsertTips(user.id, nameNorm, notesNorm, text);
+    await upsertTips(user.id, nameNorm, notesNorm, result.text);
 
-    return { tips: text };
+    await logAiUsage(user.id, "exercise", {
+      status: "success",
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.fast,
+      promptVersion: PROMPT_VERSION,
+    });
+
+    return { tips: result.text };
   } catch (error) {
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(user.id, "exercise", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.fast,
+      promptVersion: PROMPT_VERSION,
+    });
     console.error("[AI] Error generating exercise tips:", error);
     throw new Error("AI_UNAVAILABLE");
   }
@@ -337,19 +397,43 @@ export async function regenerateExerciseFormTips(
 ) {
   const user = await getAuthUser();
   await checkRateLimit(user.id, "exercise");
-  await logAiUsage(user.id, "exercise");
 
   const nameNorm = exerciseName.toLowerCase().trim();
   const notesNorm = normalizeNotes(exerciseNotes);
 
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
+
   try {
     const userContext = await buildUserContext(user.id);
-    const text = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext);
+    const result = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext);
+    inputTokens = result.inputTokens;
+    outputTokens = result.outputTokens;
 
-    await upsertTips(user.id, nameNorm, notesNorm, text);
+    await upsertTips(user.id, nameNorm, notesNorm, result.text);
 
-    return { tips: text };
+    await logAiUsage(user.id, "exercise", {
+      status: "success",
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.fast,
+      promptVersion: PROMPT_VERSION,
+    });
+
+    return { tips: result.text };
   } catch (error) {
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(user.id, "exercise", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.fast,
+      promptVersion: PROMPT_VERSION,
+    });
     console.error("[AI] Error regenerating exercise tips:", error);
     throw new Error("AI_UNAVAILABLE");
   }

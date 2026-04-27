@@ -92,6 +92,11 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
       weight: user.weight ? parseFloat(user.weight) : null,
       targetWeight: user.targetWeight ? parseFloat(user.targetWeight) : null,
       planType: currentDay.planType,
+      age: user.age,
+      hasEatingDisorderHistory: user.hasEatingDisorderHistory,
+      isPregnantOrBreastfeeding: user.isPregnantOrBreastfeeding,
+      hasDiabetes: user.hasDiabetes,
+      hasThyroidCondition: user.hasThyroidCondition,
     });
     lines.push("");
     lines.push("═══ ÖĞÜN ZAMANLAMA POLİTİKASI ═══");

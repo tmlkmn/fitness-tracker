@@ -5,32 +5,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MultiProgressRing } from "@/components/ui/progress-ring";
 import { Flame, Drumstick, CheckCircle2 } from "lucide-react";
 import { computeMealMacros } from "@/lib/meal-macros";
-import { resolveTargets } from "@/lib/macro-targets";
-import { useUserProfile } from "@/hooks/use-user";
+import { useUserProfile, useResolvedMacroTargets } from "@/hooks/use-user";
 import { useTodayDashboard } from "@/hooks/use-plans";
 
 export function DailyRingsCard() {
   const { data: profile } = useUserProfile();
   const { data: today } = useTodayDashboard();
+  const { data: targets } = useResolvedMacroTargets();
 
   const meals = today?.meals ?? [];
   const exercises = today?.exercises ?? [];
 
   const macros = useMemo(() => computeMealMacros(meals), [meals]);
-
-  const targets = useMemo(() => {
-    if (!profile) return null;
-    return resolveTargets({
-      weight: profile.weight,
-      height: profile.height,
-      age: profile.age,
-      fitnessLevel: profile.fitnessLevel,
-      targetCalories: profile.targetCalories,
-      targetProteinG: profile.targetProteinG,
-      targetCarbsG: profile.targetCarbsG,
-      targetFatG: profile.targetFatG,
-    });
-  }, [profile]);
 
   const mealsCompleted = macros.completedCount;
   const mealsTotal = macros.total;

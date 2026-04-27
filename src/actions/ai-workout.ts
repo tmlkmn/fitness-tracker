@@ -5,7 +5,15 @@ import { exercises, exerciseAlternatives } from "@/db/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
+import {
+  getAIClient,
+  AI_MODELS,
+  checkRateLimit,
+  logAiUsage,
+  buildUserNotePriorityBlock,
+  discriminateAiError,
+  PROMPT_VERSION,
+} from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { buildWeeklyWorkoutContext } from "@/lib/ai-workout-context";
 import {
@@ -92,11 +100,12 @@ async function callAI(
   userMessage: string,
   maxTokens: number = 2500,
   useSmartModel: boolean = false,
-) {
+): Promise<{ text: string; inputTokens: number; outputTokens: number; model: string }> {
   const client = getAIClient();
+  const model = useSmartModel ? AI_MODELS.smart : AI_MODELS.fast;
 
   const message = await client.messages.create({
-    model: useSmartModel ? AI_MODELS.smart : AI_MODELS.fast,
+    model,
     max_tokens: maxTokens,
     system: [
       {
@@ -108,7 +117,12 @@ async function callAI(
     messages: [{ role: "user", content: userMessage }],
   });
 
-  return message.content[0].type === "text" ? message.content[0].text : "";
+  return {
+    text: message.content[0].type === "text" ? message.content[0].text : "",
+    inputTokens: message.usage.input_tokens,
+    outputTokens: message.usage.output_tokens,
+    model,
+  };
 }
 
 // ─── Feature 1: Full Workout Replacement ────────────────────────────────────
@@ -116,7 +130,6 @@ async function callAI(
 export async function generateWorkoutReplacement(dailyPlanId: number, userNote?: string) {
   const user = await getAuthUser();
   await checkRateLimit(user.id, "workout");
-  await logAiUsage(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
   const [userContext, { context: workoutContext, currentDayExercises, planType }] =
@@ -129,28 +142,57 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
   let userMessage = `${userContext}\n\n${workoutContext}\n\nBugünün planType: "${planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\nMod: ${mode}\n\nBu günün antrenman programını ${mode === "Replacement" ? "yeniden oluştur ve" : "sıfırdan oluştur;"} önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
 
   if (userNote?.trim()) {
-    userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu antrenman için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
+    userMessage += buildUserNotePriorityBlock(userNote);
   }
 
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
+
   try {
-    let text = await callAI(WORKOUT_REPLACE_PROMPT, userMessage, 2500, true);
+    const first = await callAI(WORKOUT_REPLACE_PROMPT, userMessage, 2500, true);
+    let text = first.text;
+    inputTokens = first.inputTokens;
+    outputTokens = first.outputTokens;
 
     let suggestedExercises: AIExercise[];
     try {
       suggestedExercises = validateExerciseArray(parseJSON(text));
     } catch {
       // Retry once with error feedback
-      text = await callAI(
+      const retry = await callAI(
         WORKOUT_REPLACE_PROMPT,
         `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
         2500,
         true,
       );
+      text = retry.text;
+      inputTokens += retry.inputTokens;
+      outputTokens += retry.outputTokens;
       suggestedExercises = validateExerciseArray(parseJSON(text));
     }
 
+    await logAiUsage(user.id, "workout", {
+      status: "success",
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
+
     return { currentExercises: currentDayExercises, suggestedExercises };
   } catch (error) {
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(user.id, "workout", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
     console.error("[AI Workout] Error generating workout replacement:", error);
     throw new Error("AI_UNAVAILABLE");
   }
@@ -199,7 +241,6 @@ export async function generateSectionReplacement(
 ) {
   const user = await getAuthUser();
   await checkRateLimit(user.id, "workout");
-  await logAiUsage(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
   // Slim context — just today's other sections + same section from 1 prev week.
@@ -213,22 +254,32 @@ export async function generateSectionReplacement(
   let userMessage = `${userContext}\n\n${slim.context}\n\nBugünün planType: "${slim.planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\n\nSadece "${sectionLabel}" bölümü için yeni egzersizler oluştur. TÜM egzersizler section="${section}", sectionLabel="${sectionLabel}" olmalı — başka section DÖNDÜRME. Önceki haftalara göre progresif yüklenme uygula.`;
 
   if (userNote?.trim()) {
-    userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu bölüm için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
+    userMessage += buildUserNotePriorityBlock(userNote);
   }
 
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
+
   try {
-    let text = await callAI(SECTION_REPLACE_PROMPT, userMessage, 1500, true);
+    const first = await callAI(SECTION_REPLACE_PROMPT, userMessage, 1500, true);
+    let text = first.text;
+    inputTokens = first.inputTokens;
+    outputTokens = first.outputTokens;
 
     let suggestedExercises: AIExercise[];
     try {
       suggestedExercises = validateExerciseArray(parseJSON(text));
     } catch {
-      text = await callAI(
+      const retry = await callAI(
         SECTION_REPLACE_PROMPT,
         `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
         1500,
         true,
       );
+      text = retry.text;
+      inputTokens += retry.inputTokens;
+      outputTokens += retry.outputTokens;
       suggestedExercises = validateExerciseArray(parseJSON(text));
     }
 
@@ -246,8 +297,27 @@ export async function generateSectionReplacement(
       sectionLabel,
     }));
 
+    await logAiUsage(user.id, "workout", {
+      status: "success",
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
+
     return { currentExercises: sectionExercises, suggestedExercises };
   } catch (error) {
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(user.id, "workout", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
     console.error("[AI Workout] Error generating section replacement:", error);
     throw new Error("AI_UNAVAILABLE");
   }
@@ -354,7 +424,6 @@ export async function generateExerciseVariation(
 
   // No cache or force refresh — call AI
   await checkRateLimit(user.id, "workout");
-  await logAiUsage(user.id, "workout");
 
   // Slim context — just muscle group + today's siblings + staleness.
   // Full weekly context was ~3000 tokens for a single-exercise call.
@@ -378,23 +447,36 @@ export async function generateExerciseVariation(
     .filter(Boolean)
     .join(", ");
 
-  const userMessage = `${userContext}\n\n${slimContext}\n\n"${exerciseDetail}" egzersizi yerine 3 farklı alternatif egzersiz öner.${userNote?.trim() ? `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu egzersiz için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.` : ""}`;
+  let userMessage = `${userContext}\n\n${slimContext}\n\n"${exerciseDetail}" egzersizi yerine 3 farklı alternatif egzersiz öner.`;
+  if (userNote?.trim()) {
+    userMessage += buildUserNotePriorityBlock(userNote);
+  }
+
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
 
   try {
     // H1: use smart model — alternative selection needs anatomical reasoning
     // and progressive overload sense that Haiku gets wrong often.
-    let text = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 800, true);
+    const first = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 800, true);
+    let text = first.text;
+    inputTokens = first.inputTokens;
+    outputTokens = first.outputTokens;
 
     let alternatives: AIExerciseVariation[];
     try {
       alternatives = validateAlternativesArray(parseJSON(text));
     } catch {
-      text = await callAI(
+      const retry = await callAI(
         EXERCISE_VARIATION_PROMPT,
         `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "alternatives": [...] }`,
         800,
         true,
       );
+      text = retry.text;
+      inputTokens += retry.inputTokens;
+      outputTokens += retry.outputTokens;
       alternatives = validateAlternativesArray(parseJSON(text));
     }
 
@@ -414,8 +496,27 @@ export async function generateExerciseVariation(
         });
     }
 
+    await logAiUsage(user.id, "workout", {
+      status: "success",
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
+
     return { currentExercise, alternatives, fromCache: false };
   } catch (error) {
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(user.id, "workout", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
     console.error("[AI Workout] Error generating exercise variation:", error);
     throw new Error("AI_UNAVAILABLE");
   }

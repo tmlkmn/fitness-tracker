@@ -18,6 +18,7 @@ import {
   type AIWeeklyPlan,
   type AIWeeklyDay,
 } from "@/lib/ai-weekly-types";
+import { coerceMealLabel } from "@/lib/meal-labels";
 
 export type { AIWeeklyPlan, AIWeeklyDay } from "@/lib/ai-weekly-types";
 
@@ -68,6 +69,13 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
       (user.weekendRoutine as { time: string; event: string }[] | null) ??
       weekdayRoutine;
 
+    const healthFlags = {
+      age: user.age,
+      hasEatingDisorderHistory: user.hasEatingDisorderHistory,
+      isPregnantOrBreastfeeding: user.isPregnantOrBreastfeeding,
+      hasDiabetes: user.hasDiabetes,
+      hasThyroidCondition: user.hasThyroidCondition,
+    };
     const weekdayPolicy = computeMealTimingPolicy({
       routine: weekdayRoutine,
       serviceType: user.serviceType,
@@ -75,6 +83,7 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
       weight,
       targetWeight,
       planType: null,
+      ...healthFlags,
     });
     const weekendPolicy = computeMealTimingPolicy({
       routine: weekendRoutine,
@@ -83,6 +92,7 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
       weight,
       targetWeight,
       planType: null,
+      ...healthFlags,
     });
 
     lines.push("");
@@ -397,7 +407,7 @@ export async function applyWeeklyPlan(
             day.meals.map((m, i) => ({
               dailyPlanId: dayId,
               mealTime: m.mealTime,
-              mealLabel: m.mealLabel,
+              mealLabel: coerceMealLabel(m.mealLabel),
               content: m.content,
               calories: m.calories,
               proteinG: m.proteinG,
@@ -479,7 +489,7 @@ export async function applyWeeklyPlan(
         day.meals.map((m, i) => ({
           dailyPlanId: newDay.id,
           mealTime: m.mealTime,
-          mealLabel: m.mealLabel,
+          mealLabel: coerceMealLabel(m.mealLabel),
           content: m.content,
           calories: m.calories,
           proteinG: m.proteinG,

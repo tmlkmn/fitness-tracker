@@ -2,13 +2,25 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { normalizeEvent } from "@/lib/routine-constants";
-import { FITNESS_GOAL_LABELS, isFitnessGoal } from "@/lib/meal-timing";
+import {
+  deriveGoalFallback,
+  isFitnessGoal,
+  type FitnessGoal,
+} from "@/lib/meal-timing";
+import { renderGoalStrategyBlock } from "@/lib/strategy/goal-strategy";
 
 const FITNESS_LABELS: Record<string, string> = {
   beginner: "Yeni başlayan",
   returning: "Ara vermiş, tekrar başlayan",
   intermediate: "Orta düzey",
   advanced: "İleri düzey",
+};
+
+const ACTIVITY_LABELS: Record<string, string> = {
+  sedentary: "Çoğunlukla oturan",
+  light: "Hafif aktif",
+  moderate: "Ayakta çalışan",
+  very_active: "Çok aktif (fiziksel iş)",
 };
 
 export interface UserProfileRow {
@@ -30,6 +42,12 @@ export interface UserProfileRow {
   targetProteinG: string | null;
   targetCarbsG: string | null;
   targetFatG: string | null;
+  gender: string | null;
+  dailyActivityLevel: string | null;
+  hasEatingDisorderHistory: boolean | null;
+  isPregnantOrBreastfeeding: boolean | null;
+  hasDiabetes: boolean | null;
+  hasThyroidCondition: boolean | null;
 }
 
 /**
@@ -60,6 +78,21 @@ export function renderUserProfileLines(
     lines.push(compact ? parts.join(" | ") : `Kullanıcı: ${parts.join(", ")}`);
   }
 
+  // Gender — surfaced for AI calorie/protein math (Mifflin-St Jeor sex
+  // constant, gender-based LBM fallback). "prefer_not_to_say" stays hidden
+  // because the math falls back to the gender-neutral midpoint anyway.
+  if (user.gender && user.gender !== "prefer_not_to_say") {
+    lines.push(
+      `Cinsiyet (kalori hesabı için): ${user.gender === "male" ? "Erkek" : "Kadın"}`,
+    );
+  }
+
+  if (user.dailyActivityLevel) {
+    lines.push(
+      `Günlük aktivite: ${ACTIVITY_LABELS[user.dailyActivityLevel] ?? user.dailyActivityLevel}`,
+    );
+  }
+
   if (user.healthNotes) {
     try {
       const notes = JSON.parse(user.healthNotes);
@@ -81,6 +114,20 @@ export function renderUserProfileLines(
     } catch {
       lines.push(`⚠️ GIDA ALERJİLERİ: ${user.foodAllergens}`);
     }
+  }
+
+  // Health flags — safety-critical, render only the TRUE ones (false/null
+  // are skipped to keep the prompt tight). These trigger IF contraindication
+  // and conservative macro programming downstream.
+  const healthFlags: string[] = [];
+  if (user.hasEatingDisorderHistory) healthFlags.push("yeme bozukluğu öyküsü");
+  if (user.isPregnantOrBreastfeeding) healthFlags.push("hamilelik/emzirme");
+  if (user.hasDiabetes) healthFlags.push("diyabet");
+  if (user.hasThyroidCondition) healthFlags.push("tiroid rahatsızlığı");
+  if (healthFlags.length > 0) {
+    lines.push(
+      `⚠️ Sağlık durumları: ${healthFlags.join(", ")} (aralıklı açlık önerilmiyor, makro programı muhafazakar)`,
+    );
   }
 
   // Manual macro targets — if user has set any, render them. These override
@@ -124,8 +171,21 @@ export function renderUserProfileLines(
     );
   }
 
+  // Goal + strategy block — single source of truth for calorie/protein/fat
+  // policy. If user hasn't picked a goal explicitly, derive it from
+  // weight/targetWeight delta and label the block as derived.
+  let resolvedGoal: FitnessGoal | null = null;
+  let goalSource: "explicit" | "derived" = "explicit";
   if (isFitnessGoal(user.fitnessGoal)) {
-    lines.push(`🎯 Hedef: ${FITNESS_GOAL_LABELS[user.fitnessGoal]}`);
+    resolvedGoal = user.fitnessGoal;
+  } else if (user.weight || user.targetWeight) {
+    const w = user.weight ? parseFloat(user.weight) : null;
+    const tw = user.targetWeight ? parseFloat(user.targetWeight) : null;
+    resolvedGoal = deriveGoalFallback(w, tw, user.serviceType);
+    goalSource = "derived";
+  }
+  if (resolvedGoal) {
+    lines.push(renderGoalStrategyBlock(resolvedGoal, goalSource));
   }
 
   if (user.sportHistory) {
@@ -166,6 +226,12 @@ export async function loadUserProfileRow(userId: string): Promise<UserProfileRow
       targetProteinG: users.targetProteinG,
       targetCarbsG: users.targetCarbsG,
       targetFatG: users.targetFatG,
+      gender: users.gender,
+      dailyActivityLevel: users.dailyActivityLevel,
+      hasEatingDisorderHistory: users.hasEatingDisorderHistory,
+      isPregnantOrBreastfeeding: users.isPregnantOrBreastfeeding,
+      hasDiabetes: users.hasDiabetes,
+      hasThyroidCondition: users.hasThyroidCondition,
     })
     .from(users)
     .where(eq(users.id, userId));

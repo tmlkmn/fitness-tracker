@@ -1,0 +1,7 @@
+ALTER TABLE "daily_plans" ADD CONSTRAINT "daily_plans_plan_type_check" CHECK ("daily_plans"."plan_type" IN ('workout', 'swimming', 'rest', 'nutrition'));--> statement-breakpoint
+ALTER TABLE "exercises" ADD CONSTRAINT "exercises_section_check" CHECK ("exercises"."section" IN ('warmup', 'main', 'cooldown', 'sauna', 'swimming'));--> statement-breakpoint
+ALTER TABLE "meals" ADD CONSTRAINT "meals_meal_label_check" CHECK ("meals"."meal_label" IN ('Kahvaltı', 'Öğle Yemeği', 'Akşam Yemeği', 'Ara Öğün', 'Erken Protein', 'Pre-Workout', 'Post-Workout', 'Akşam Atıştırması'));--> statement-breakpoint
+ALTER TABLE "user" ADD CONSTRAINT "user_gender_check" CHECK ("user"."gender" IS NULL OR "user"."gender" IN ('male', 'female', 'prefer_not_to_say'));--> statement-breakpoint
+ALTER TABLE "user" ADD CONSTRAINT "user_daily_activity_level_check" CHECK ("user"."daily_activity_level" IS NULL OR "user"."daily_activity_level" IN ('sedentary', 'light', 'moderate', 'very_active'));--> statement-breakpoint
+ALTER TABLE "user" ADD CONSTRAINT "user_fitness_goal_check" CHECK ("user"."fitness_goal" IS NULL OR "user"."fitness_goal" IN ('loss', 'recomp', 'maintain', 'muscle_gain', 'weight_gain'));--> statement-breakpoint
+ALTER TABLE "user" ADD CONSTRAINT "user_service_type_check" CHECK ("user"."service_type" IN ('full', 'nutrition'));

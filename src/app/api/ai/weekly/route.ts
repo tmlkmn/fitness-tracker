@@ -3,11 +3,24 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, weeklyPlans } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
+import {
+  getAIClient,
+  AI_MODELS,
+  checkRateLimit,
+  logAiUsage,
+  buildUserNotePriorityBlock,
+  discriminateAiError,
+  PROMPT_VERSION,
+} from "@/lib/ai";
 import { WEEKLY_PLAN_PROMPT, NUTRITION_ONLY_WEEKLY_PROMPT, WORKOUT_ONLY_WEEKLY_PROMPT } from "@/lib/ai-prompts";
 import { buildWeeklyPlanContext } from "@/actions/ai-weekly";
 import { saveAiSuggestion } from "@/actions/ai-suggestions";
-import { validateWeeklyPlan, type AIWeeklyPlan } from "@/lib/ai-weekly-types";
+import {
+  validateWeeklyPlan,
+  type AIWeeklyPlan,
+  type ExpectedTargets,
+} from "@/lib/ai-weekly-types";
+import { resolveTargets, type MacroTargets } from "@/lib/macro-targets";
 
 export const maxDuration = 180;
 
@@ -144,9 +157,22 @@ export async function POST(request: Request) {
     return Response.json({ error: msg }, { status: 429 });
   }
 
-  // Get user's service type
+  // Load full user profile for both prompt selection and target computation.
   const [userRow] = await db
-    .select({ serviceType: users.serviceType })
+    .select({
+      serviceType: users.serviceType,
+      weight: users.weight,
+      targetWeight: users.targetWeight,
+      height: users.height,
+      age: users.age,
+      gender: users.gender,
+      dailyActivityLevel: users.dailyActivityLevel,
+      fitnessGoal: users.fitnessGoal,
+      targetCalories: users.targetCalories,
+      targetProteinG: users.targetProteinG,
+      targetCarbsG: users.targetCarbsG,
+      targetFatG: users.targetFatG,
+    })
     .from(users)
     .where(eq(users.id, userId));
   const isNutritionOnly = userRow?.serviceType === "nutrition";
@@ -184,21 +210,51 @@ export async function POST(request: Request) {
     nextWeekNumber = (maxRow?.max ?? 0) + 1;
   }
 
+  // Compute resolved macro targets and inject when this run includes nutrition.
+  let targetsBlock = "";
+  let resolvedTargets: MacroTargets | null = null;
+  const includeNutrition = generateMode !== "workout";
+  if (includeNutrition && userRow) {
+    resolvedTargets = await resolveTargets(userRow, userId);
+    if (resolvedTargets) {
+      targetsBlock = `\n\n═══ HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ ═══
+Kalori: ${resolvedTargets.calories} kcal
+Protein: ${resolvedTargets.protein}g
+Karbonhidrat: ${resolvedTargets.carbs}g
+Yağ: ${resolvedTargets.fat}g
+Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitness hedefine göre Mifflin-St Jeor + LBM bazlı hesaplanmıştır. Beslenme programı bu hedeflere ±%5 toleransla uymalı.`;
+    }
+  }
+
+  // Pass to validator so weekly-average calorie drift can be flagged.
+  const expectedTargets: ExpectedTargets | undefined = resolvedTargets
+    ? {
+        calories: resolvedTargets.calories,
+        protein: resolvedTargets.protein,
+        carbs: resolvedTargets.carbs,
+        fat: resolvedTargets.fat,
+      }
+    : undefined;
+
   // Build user message
   let userMessage: string;
   const weekHeader = `Hafta başlangıç tarihi: ${monday}\nBu plan ${nextWeekNumber}. hafta için oluşturulacak. weekTitle alanı MUTLAKA "Hafta ${nextWeekNumber} — ..." formatında başlamalı.`;
 
   if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
-    userMessage = `${weeklyContext}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`;
+    userMessage = `${weeklyContext}${targetsBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`;
   } else if (generateMode === "workout") {
     userMessage = `${weeklyContext}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.`;
   } else {
-    userMessage = `${weeklyContext}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
+    userMessage = `${weeklyContext}${targetsBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
   }
 
   if (userNote?.trim()) {
-    userMessage += `\n\n═══ KULLANICI İSTEĞİ ═══\nKullanıcı bu hafta için şunları belirtti: ${userNote.trim()}\nBu isteği mutlaka dikkate al.`;
+    userMessage += buildUserNotePriorityBlock(userNote);
   }
+
+  const startTime = Date.now();
+  let inputTokens: number | undefined;
+  let outputTokens: number | undefined;
 
   try {
     const client = getAIClient();
@@ -225,39 +281,56 @@ export async function POST(request: Request) {
       clearTimeout(timeout);
     }
 
-    let text = message.content[0].type === "text" ? message.content[0].text : "";
+    inputTokens = message.usage.input_tokens;
+    outputTokens = message.usage.output_tokens;
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "";
     const wasTruncated = message.stop_reason !== "end_turn";
 
     let suggestedPlan: AIWeeklyPlan;
+    let validationWarnings: string[] = [];
+
+    const validate = (raw: unknown, withFill: boolean): AIWeeklyPlan => {
+      const result = validateWeeklyPlan(raw, expectedTargets);
+      validationWarnings = result.warnings;
+      return withFill ? fillMissingDays(result.plan) : result.plan;
+    };
 
     if (!wasTruncated) {
       // Full response — try to parse
       try {
-        suggestedPlan = validateWeeklyPlan(parseJSON(text));
+        suggestedPlan = validate(parseJSON(text), false);
       } catch {
         // JSON invalid — try repair
         try {
           const repaired = repairTruncatedJson(text);
-          suggestedPlan = fillMissingDays(validateWeeklyPlan(JSON.parse(repaired)));
+          suggestedPlan = validate(JSON.parse(repaired), true);
         } catch {
-          // Repair failed — ask Haiku to fix it (fast, seconds)
-          const fixResponse = await client.messages.create({
-            model: AI_MODELS.fast,
-            max_tokens: 8000,
-            messages: [{
-              role: "user",
-              content: `Aşağıdaki bozuk JSON'ı düzelt ve geçerli JSON olarak döndür. Sadece JSON döndür, başka bir şey yazma.\n\n${text}`,
-            }],
-          });
-          const fixedText = fixResponse.content[0].type === "text" ? fixResponse.content[0].text : "";
-          suggestedPlan = validateWeeklyPlan(parseJSON(fixedText));
+          // Repair failed — ask Haiku to fix it (fast, seconds). 30s timeout
+          // so a hung Haiku call can't extend the request indefinitely (R4).
+          const fixController = new AbortController();
+          const fixTimeout = setTimeout(() => fixController.abort(), 30_000);
+          try {
+            const fixResponse = await client.messages.create({
+              model: AI_MODELS.fast,
+              max_tokens: 8000,
+              messages: [{
+                role: "user",
+                content: `Aşağıdaki bozuk JSON'ı düzelt ve geçerli JSON olarak döndür. Sadece JSON döndür, başka bir şey yazma.\n\n${text}`,
+              }],
+            }, { signal: fixController.signal });
+            const fixedText = fixResponse.content[0].type === "text" ? fixResponse.content[0].text : "";
+            suggestedPlan = validate(parseJSON(fixedText), false);
+          } finally {
+            clearTimeout(fixTimeout);
+          }
         }
       }
     } else {
       // Truncated — try to repair without retry
       try {
         const repaired = repairTruncatedJson(text);
-        suggestedPlan = fillMissingDays(validateWeeklyPlan(JSON.parse(repaired)));
+        suggestedPlan = validate(JSON.parse(repaired), true);
       } catch {
         // Repair failed — single retry with conciseness nudge
         const retryController = new AbortController();
@@ -279,8 +352,11 @@ export async function POST(request: Request) {
             }],
           }, { signal: retryController.signal });
 
+          inputTokens = (inputTokens ?? 0) + retry.usage.input_tokens;
+          outputTokens = (outputTokens ?? 0) + retry.usage.output_tokens;
+
           const retryText = retry.content[0].type === "text" ? retry.content[0].text : "";
-          suggestedPlan = validateWeeklyPlan(parseJSON(retryText));
+          suggestedPlan = validate(parseJSON(retryText), false);
         } finally {
           clearTimeout(retryTimeout);
         }
@@ -295,10 +371,32 @@ export async function POST(request: Request) {
     }).catch(() => {});
 
     // Log usage only after successful generation — failed requests don't consume quota
-    await logAiUsage(userId, "weekly");
+    const hasWarnings = validationWarnings.length > 0;
+    await logAiUsage(userId, "weekly", {
+      status: hasWarnings ? "success_with_warnings" : "success",
+      errorMessage: hasWarnings
+        ? JSON.stringify({ warnings: validationWarnings }).slice(0, 500)
+        : undefined,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
 
     return Response.json({ suggestedPlan });
   } catch (error) {
+    const { status, errorMessage } = discriminateAiError(error);
+    await logAiUsage(userId, "weekly", {
+      status,
+      errorMessage,
+      inputTokens,
+      outputTokens,
+      durationMs: Date.now() - startTime,
+      model: AI_MODELS.smart,
+      promptVersion: PROMPT_VERSION,
+    });
+
     console.error("[AI Weekly] Error generating plan:", error);
     return Response.json(
       { error: "AI servisi şu anda kullanılamıyor. Lütfen tekrar deneyin." },
