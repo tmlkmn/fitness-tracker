@@ -188,7 +188,7 @@ export async function generateMealVariation(
     const client = getAIClient();
     const message = await client.messages.create({
       model: AI_MODELS.fast,
-      max_tokens: 800,
+      max_tokens: 1500,
       system: [
         {
           type: "text",
@@ -277,7 +277,7 @@ async function callAIForTips(
     : `Egzersiz: ${exerciseName}`;
   const message = await client.messages.create({
     model: AI_MODELS.fast,
-    max_tokens: 600,
+    max_tokens: 1200,
     system: [
       {
         type: "text",

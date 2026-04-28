@@ -17,8 +17,9 @@ import { buildWeeklyPlanContext } from "@/actions/ai-weekly";
 import { saveAiSuggestion } from "@/actions/ai-suggestions";
 import {
   validateWeeklyPlan,
-  type AIWeeklyPlan,
   type ExpectedTargets,
+  type DayModeChoice,
+  type ValidateWeeklyPlanResult,
 } from "@/lib/ai-weekly-types";
 import { resolveTargets, type MacroTargets } from "@/lib/macro-targets";
 
@@ -96,28 +97,55 @@ function repairTruncatedJson(text: string): string {
   return cleaned;
 }
 
+const TURKISH_DAY_NAMES = [
+  "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar",
+] as const;
+
 /**
- * Fill missing days (if plan has <7 days) with rest days.
+ * Build the GÜNLÜK PLAN TİPLERİ block injected into user message so the AI
+ * has a concrete per-day contract to honor.
  */
-function fillMissingDays(plan: AIWeeklyPlan): AIWeeklyPlan {
-  const dayNames = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-  const existingDows = new Set(plan.days.map(d => d.dayOfWeek));
+function buildDayModesBlock(
+  dayModes: Partial<Record<number, DayModeChoice>>,
+): string {
+  const lines = TURKISH_DAY_NAMES.map((name, dow) => {
+    const mode = dayModes[dow] ?? "rest";
+    return `  ${name}: ${mode}`;
+  });
+  return `\n\n═══ GÜNLÜK PLAN TİPLERİ (KRİTİK — birebir uygula) ═══
+${lines.join("\n")}
+HER GÜN için planType yukarıdaki listeyle BİREBİR aynı olmalı. workout/swimming için exercises dolu, rest için exercises boş array. Beslenme programı (meals) HER GÜN için DOLU olmalı — rest günleri DAHİL.`;
+}
 
-  for (let i = 0; i < 7; i++) {
-    if (!existingDows.has(i)) {
-      plan.days.push({
-        dayOfWeek: i,
-        dayName: dayNames[i],
-        planType: "rest",
-        workoutTitle: null,
-        meals: [],
-        exercises: [],
-      });
-    }
+/**
+ * Detect whether validator results need a content-quality retry. Triggers:
+ * - missing days (AI returned <7 → validator filled with empty rest)
+ * - planType mismatches (AI ignored user's day mode selection)
+ * - empty meal days (any day with meals.length === 0)
+ */
+function needsContentRetry(result: ValidateWeeklyPlanResult): boolean {
+  return (
+    result.missingDays.length > 0 ||
+    result.planTypeMismatches.length > 0 ||
+    result.emptyMealDays.length > 0
+  );
+}
+
+function buildRetryNudge(result: ValidateWeeklyPlanResult): string {
+  const issues: string[] = [];
+  if (result.missingDays.length > 0) {
+    const names = result.missingDays.map((d) => TURKISH_DAY_NAMES[d]).join(", ");
+    issues.push(`EKSİK GÜNLER: ${names}. Bu günler için TAM içerik üret (planType + meals + exercises).`);
   }
-
-  plan.days.sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-  return plan;
+  if (result.planTypeMismatches.length > 0) {
+    const names = result.planTypeMismatches.map((d) => TURKISH_DAY_NAMES[d]).join(", ");
+    issues.push(`YANLIŞ planType GÜNLERİ: ${names}. Bu günlerde GÜNLÜK PLAN TİPLERİ bloğundaki tipi BİREBİR uygula.`);
+  }
+  if (result.emptyMealDays.length > 0) {
+    const names = result.emptyMealDays.map((d) => TURKISH_DAY_NAMES[d]).join(", ");
+    issues.push(`MEAL'i BOŞ GÜNLER: ${names}. Bu günlere MUTLAKA 3-5 öğün ekle (rest günleri dahil).`);
+  }
+  return `\n\nÖNCEKİ YANITINDA ŞU SORUNLAR VAR — DÜZELT:\n${issues.join("\n")}\nTüm 7 günü içeren EKSİKSİZ ve TUTARLI bir JSON döndür.`;
 }
 
 // ─── POST handler ───────────────────────────────────────────────────────────
@@ -134,11 +162,23 @@ export async function POST(request: Request) {
   let dateStr: string;
   let userNote: string | undefined;
   let generateMode: "both" | "nutrition" | "workout" | undefined;
+  let dayModesInput: Partial<Record<number, DayModeChoice>> | undefined;
   try {
     const body = await request.json();
     dateStr = String(body.dateStr ?? "");
     userNote = body.userNote ? String(body.userNote) : undefined;
     generateMode = body.generateMode;
+    if (body.dayModes && typeof body.dayModes === "object") {
+      const allowed: DayModeChoice[] = ["workout", "swimming", "rest", "nutrition"];
+      const parsed: Partial<Record<number, DayModeChoice>> = {};
+      for (const [k, v] of Object.entries(body.dayModes as Record<string, unknown>)) {
+        const dow = Number(k);
+        if (Number.isInteger(dow) && dow >= 0 && dow <= 6 && allowed.includes(v as DayModeChoice)) {
+          parsed[dow] = v as DayModeChoice;
+        }
+      }
+      if (Object.keys(parsed).length > 0) dayModesInput = parsed;
+    }
   } catch {
     return Response.json({ error: "Geçersiz istek." }, { status: 400 });
   }
@@ -236,16 +276,32 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       }
     : undefined;
 
+  // Resolve dayModes: explicit body input wins; nutrition-only defaults all
+  // 7 days to "nutrition"; otherwise default Pzt-Cum workout, Cmt-Paz rest.
+  let expectedDayModes: Partial<Record<number, DayModeChoice>>;
+  if (dayModesInput) {
+    expectedDayModes = dayModesInput;
+  } else if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
+    expectedDayModes = { 0: "nutrition", 1: "nutrition", 2: "nutrition", 3: "nutrition", 4: "nutrition", 5: "nutrition", 6: "nutrition" };
+  } else {
+    expectedDayModes = { 0: "workout", 1: "workout", 2: "workout", 3: "workout", 4: "workout", 5: "rest", 6: "rest" };
+  }
+  // Nutrition-only mode never uses workout/swimming — coerce to "nutrition".
+  if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
+    for (let i = 0; i < 7; i++) expectedDayModes[i] = "nutrition";
+  }
+  const dayModesBlock = buildDayModesBlock(expectedDayModes);
+
   // Build user message
   let userMessage: string;
   const weekHeader = `Hafta başlangıç tarihi: ${monday}\nBu plan ${nextWeekNumber}. hafta için oluşturulacak. weekTitle alanı MUTLAKA "Hafta ${nextWeekNumber} — ..." formatında başlamalı.`;
 
   if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
-    userMessage = `${weeklyContext}${targetsBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`;
+    userMessage = `${weeklyContext}${targetsBlock}${dayModesBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.`;
   } else if (generateMode === "workout") {
-    userMessage = `${weeklyContext}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.`;
+    userMessage = `${weeklyContext}${dayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.`;
   } else {
-    userMessage = `${weeklyContext}${targetsBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
+    userMessage = `${weeklyContext}${targetsBlock}${dayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman ve beslenme programı oluştur. Vücut kompozisyonu trendine göre kalori stratejisi belirle. Hacim artır, yeni hareketler ekle, zorluk seviyesini yükselt.`;
   }
 
   if (userNote?.trim()) {
@@ -267,7 +323,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     try {
       message = await client.messages.create({
         model: AI_MODELS.smart,
-        max_tokens: 8000,
+        max_tokens: 16000,
         system: [
           {
             type: "text",
@@ -287,24 +343,25 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     const text = message.content[0].type === "text" ? message.content[0].text : "";
     const wasTruncated = message.stop_reason !== "end_turn";
 
-    let suggestedPlan: AIWeeklyPlan;
+    let validationResult: ValidateWeeklyPlanResult;
     let validationWarnings: string[] = [];
 
-    const validate = (raw: unknown, withFill: boolean): AIWeeklyPlan => {
-      const result = validateWeeklyPlan(raw, expectedTargets);
+    const validate = (raw: unknown): ValidateWeeklyPlanResult => {
+      const result = validateWeeklyPlan(raw, expectedTargets, { expectedDayModes });
+      validationResult = result;
       validationWarnings = result.warnings;
-      return withFill ? fillMissingDays(result.plan) : result.plan;
+      return result;
     };
 
     if (!wasTruncated) {
       // Full response — try to parse
       try {
-        suggestedPlan = validate(parseJSON(text), false);
+        validationResult = validate(parseJSON(text));
       } catch {
         // JSON invalid — try repair
         try {
           const repaired = repairTruncatedJson(text);
-          suggestedPlan = validate(JSON.parse(repaired), true);
+          validationResult = validate(JSON.parse(repaired));
         } catch {
           // Repair failed — ask Haiku to fix it (fast, seconds). 30s timeout
           // so a hung Haiku call can't extend the request indefinitely (R4).
@@ -313,14 +370,14 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
           try {
             const fixResponse = await client.messages.create({
               model: AI_MODELS.fast,
-              max_tokens: 8000,
+              max_tokens: 16000,
               messages: [{
                 role: "user",
                 content: `Aşağıdaki bozuk JSON'ı düzelt ve geçerli JSON olarak döndür. Sadece JSON döndür, başka bir şey yazma.\n\n${text}`,
               }],
             }, { signal: fixController.signal });
             const fixedText = fixResponse.content[0].type === "text" ? fixResponse.content[0].text : "";
-            suggestedPlan = validate(parseJSON(fixedText), false);
+            validationResult = validate(parseJSON(fixedText));
           } finally {
             clearTimeout(fixTimeout);
           }
@@ -330,7 +387,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       // Truncated — try to repair without retry
       try {
         const repaired = repairTruncatedJson(text);
-        suggestedPlan = validate(JSON.parse(repaired), true);
+        validationResult = validate(JSON.parse(repaired));
       } catch {
         // Repair failed — single retry with conciseness nudge
         const retryController = new AbortController();
@@ -338,7 +395,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
         try {
           const retry = await client.messages.create({
             model: AI_MODELS.smart,
-            max_tokens: 8000,
+            max_tokens: 16000,
             system: [
               {
                 type: "text",
@@ -356,12 +413,64 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
           outputTokens = (outputTokens ?? 0) + retry.usage.output_tokens;
 
           const retryText = retry.content[0].type === "text" ? retry.content[0].text : "";
-          suggestedPlan = validate(parseJSON(retryText), false);
+          validationResult = validate(parseJSON(retryText));
         } finally {
           clearTimeout(retryTimeout);
         }
       }
     }
+
+    // ─── Content-quality retry: missing days, planType mismatch, empty meals
+    // The first response parsed but the validator detected gaps that would
+    // present user-visible "boş gün" / wrong planType bugs. One retry with
+    // explicit instructions to fix the specific gaps.
+    if (needsContentRetry(validationResult)) {
+      const retryController = new AbortController();
+      const retryTimeout = setTimeout(() => retryController.abort(), 120_000);
+      try {
+        const fixupRetry = await client.messages.create({
+          model: AI_MODELS.smart,
+          max_tokens: 16000,
+          system: [
+            {
+              type: "text",
+              text: systemPrompt,
+              cache_control: { type: "ephemeral" },
+            },
+          ],
+          messages: [{
+            role: "user",
+            content: `${userMessage}${buildRetryNudge(validationResult)}`,
+          }],
+        }, { signal: retryController.signal });
+
+        inputTokens = (inputTokens ?? 0) + fixupRetry.usage.input_tokens;
+        outputTokens = (outputTokens ?? 0) + fixupRetry.usage.output_tokens;
+
+        const fixupText = fixupRetry.content[0].type === "text" ? fixupRetry.content[0].text : "";
+        try {
+          const fixupResult = validate(parseJSON(fixupText));
+          // Only swap to the retry result if it has FEWER gaps than the first.
+          // Otherwise keep the original — the retry made things worse.
+          const originalGaps = validationResult.missingDays.length + validationResult.planTypeMismatches.length + validationResult.emptyMealDays.length;
+          const retryGaps = fixupResult.missingDays.length + fixupResult.planTypeMismatches.length + fixupResult.emptyMealDays.length;
+          if (retryGaps < originalGaps) {
+            validationResult = fixupResult;
+          } else {
+            // Keep original; record that retry didn't help
+            validationWarnings.push(
+              `content-retry no improvement: ${originalGaps} gap(s) before, ${retryGaps} after — kept original`,
+            );
+          }
+        } catch {
+          validationWarnings.push("content-retry parse failed — kept original response");
+        }
+      } finally {
+        clearTimeout(retryTimeout);
+      }
+    }
+
+    const suggestedPlan = validationResult.plan;
 
     // Auto-save suggestion (fire-and-forget)
     saveAiSuggestion({

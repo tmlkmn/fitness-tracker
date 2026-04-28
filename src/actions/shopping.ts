@@ -77,7 +77,7 @@ export async function generateShoppingList(weeklyPlanId: number) {
     const client = getAIClient();
     const message = await client.messages.create({
       model: AI_MODELS.smart,
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: [
         {
           type: "text",

@@ -4,6 +4,7 @@ import {
   deleteWeeklyPlan as deleteWeeklyPlanAction,
   type AIWeeklyPlan,
 } from "@/actions/ai-weekly";
+import type { DayModeChoice } from "@/lib/ai-weekly-types";
 import {
   getSavedSuggestions,
   getSavedSuggestionById,
@@ -12,7 +13,17 @@ import {
 
 export function useGenerateWeeklyPlan() {
   return useMutation({
-    mutationFn: async ({ dateStr, userNote, generateMode }: { dateStr: string; userNote?: string; generateMode?: "both" | "nutrition" | "workout" }) => {
+    mutationFn: async ({
+      dateStr,
+      userNote,
+      generateMode,
+      dayModes,
+    }: {
+      dateStr: string;
+      userNote?: string;
+      generateMode?: "both" | "nutrition" | "workout";
+      dayModes?: Partial<Record<number, DayModeChoice>>;
+    }) => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 180_000);
 
@@ -20,7 +31,7 @@ export function useGenerateWeeklyPlan() {
         const res = await fetch("/api/ai/weekly", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dateStr, userNote, generateMode }),
+          body: JSON.stringify({ dateStr, userNote, generateMode, dayModes }),
           signal: controller.signal,
         });
 

@@ -19,6 +19,12 @@ import { DAILY_MEALS_PROMPT, NUTRITION_ONLY_MEALS_PROMPT } from "@/lib/ai-prompt
 import { buildMealContext } from "@/lib/ai-meal-context";
 import { resolveTargets } from "@/lib/macro-targets";
 import { coerceMealLabel } from "@/lib/meal-labels";
+import {
+  validateDailyMealArray,
+  dailyMealsNeedRetry,
+  buildDailyMealsRetryNudge,
+  type ValidateDailyMealsResult,
+} from "@/lib/ai-daily-validators";
 
 export interface AIMeal {
   mealTime: string;
@@ -42,20 +48,13 @@ function parseJSON(text: string): unknown {
   return JSON.parse(cleaned);
 }
 
-function validateMealArray(data: unknown): AIMeal[] {
-  const obj = data as Record<string, unknown>;
-  if (!obj || typeof obj !== "object" || !Array.isArray(obj.meals)) {
-    throw new Error("Invalid response format: expected { meals: [...] }");
-  }
-  return (obj.meals as Record<string, unknown>[]).map((m) => ({
-    mealTime: String(m.mealTime ?? "08:00"),
-    mealLabel: String(m.mealLabel ?? "Öğün"),
-    content: String(m.content ?? ""),
-    calories: m.calories != null ? Number(m.calories) : null,
-    proteinG: m.proteinG != null ? String(m.proteinG) : null,
-    carbsG: m.carbsG != null ? String(m.carbsG) : null,
-    fatG: m.fatG != null ? String(m.fatG) : null,
-  }));
+// Estimate the minimum meal count this user should receive based on
+// service type — nutrition-only/loss tend toward intermittent (3-4),
+// muscle-gain toward frequent (5-7). Default conservative floor of 3.
+function estimateMinMealsExpected(serviceType: string | null | undefined, fitnessGoal: string | null | undefined): number {
+  if (fitnessGoal === "muscle_gain" || fitnessGoal === "weight_gain") return 5;
+  if (serviceType === "nutrition" && (fitnessGoal === "loss" || fitnessGoal === "maintain")) return 3;
+  return 4;
 }
 
 export async function generateDailyMeals(dailyPlanId: number, userNote?: string) {
@@ -128,12 +127,16 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
   const startTime = Date.now();
   let inputTokens: number | undefined;
   let outputTokens: number | undefined;
+  const minMealsExpected = estimateMinMealsExpected(
+    userRow?.serviceType,
+    userRow?.fitnessGoal,
+  );
 
   try {
     const client = getAIClient();
     const message = await client.messages.create({
       model: AI_MODELS.smart,
-      max_tokens: 2500,
+      max_tokens: 5000,
       system: [
         {
           type: "text",
@@ -153,16 +156,14 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     outputTokens = message.usage.output_tokens;
 
     let text = message.content[0].type === "text" ? message.content[0].text : "";
-
-    let suggestedMeals: AIMeal[];
+    let validation: ValidateDailyMealsResult;
     try {
-      suggestedMeals = validateMealArray(parseJSON(text));
+      validation = validateDailyMealArray(parseJSON(text), { minMealsExpected });
     } catch {
-      // Retry with bigger budget + explicit conciseness nudge — most parse
-      // failures here are truncations from chef-style content running long.
+      // JSON parse failure — single retry with conciseness nudge.
       const retry = await client.messages.create({
         model: AI_MODELS.smart,
-        max_tokens: 3500,
+        max_tokens: 5000,
         system: [
           {
             type: "text",
@@ -180,11 +181,59 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       inputTokens += retry.usage.input_tokens;
       outputTokens += retry.usage.output_tokens;
       text = retry.content[0].type === "text" ? retry.content[0].text : "";
-      suggestedMeals = validateMealArray(parseJSON(text));
+      validation = validateDailyMealArray(parseJSON(text), { minMealsExpected });
     }
 
+    // Content-quality retry: too few meals or empty content meals → ask AI
+    // to fix specific gaps. Same pattern as the weekly route.
+    if (dailyMealsNeedRetry(validation)) {
+      const fixupResponse = await client.messages.create({
+        model: AI_MODELS.smart,
+        max_tokens: 5000,
+        system: [
+          {
+            type: "text",
+            text: systemPrompt,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+        messages: [
+          {
+            role: "user",
+            content: `${userMessage}${buildDailyMealsRetryNudge(validation, minMealsExpected)}`,
+          },
+        ],
+      });
+      inputTokens += fixupResponse.usage.input_tokens;
+      outputTokens += fixupResponse.usage.output_tokens;
+      const fixupText =
+        fixupResponse.content[0].type === "text" ? fixupResponse.content[0].text : "";
+      try {
+        const fixupValidation = validateDailyMealArray(parseJSON(fixupText), {
+          minMealsExpected,
+        });
+        const originalGaps =
+          (validation.belowExpectedCount ? 1 : 0) +
+          validation.emptyContentMeals.length;
+        const retryGaps =
+          (fixupValidation.belowExpectedCount ? 1 : 0) +
+          fixupValidation.emptyContentMeals.length;
+        if (retryGaps < originalGaps) {
+          validation = fixupValidation;
+        }
+      } catch {
+        // Retry parse failed — keep the original validation.
+      }
+    }
+
+    const suggestedMeals: AIMeal[] = validation.meals;
+    const hasWarnings = validation.warnings.length > 0;
+
     await logAiUsage(user.id, "daily-meal", {
-      status: "success",
+      status: hasWarnings ? "success_with_warnings" : "success",
+      errorMessage: hasWarnings
+        ? JSON.stringify({ warnings: validation.warnings }).slice(0, 500)
+        : undefined,
       inputTokens,
       outputTokens,
       durationMs: Date.now() - startTime,

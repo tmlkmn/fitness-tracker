@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   const client = getAIClient();
   const stream = client.messages.stream({
     model: AI_MODELS.smart,
-    max_tokens: 1500,
+    max_tokens: 3000,
     system: [
       {
         type: "text",

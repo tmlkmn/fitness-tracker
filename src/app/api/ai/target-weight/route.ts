@@ -117,7 +117,7 @@ Bu verilere göre gerçekçi bir hedef kilo öner.`;
   try {
     const response = await client.messages.create({
       model: AI_MODELS.smart,
-      max_tokens: 500,
+      max_tokens: 1000,
       system: [
         {
           type: "text",

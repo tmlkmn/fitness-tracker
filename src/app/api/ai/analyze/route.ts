@@ -87,7 +87,7 @@ Bu verileri analiz et ve kullanıcıya detaylı geri bildirim ver.`;
   const client = getAIClient();
   const stream = client.messages.stream({
     model: AI_MODELS.smart,
-    max_tokens: 1500,
+    max_tokens: 3000,
     system: [
       {
         type: "text",

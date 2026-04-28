@@ -169,10 +169,14 @@ export default function TakvimPage() {
   }, []);
 
   // AI Weekly Plan handlers
-  const handleGenerateWeekly = (userNote?: string, mode?: "both" | "nutrition" | "workout") => {
+  const handleGenerateWeekly = (
+    userNote?: string,
+    mode?: "both" | "nutrition" | "workout",
+    dayModes?: Record<number, "workout" | "swimming" | "rest">,
+  ) => {
     const m = mode ?? generateMode;
     setGenerateMode(m);
-    generateWeekly.mutate({ dateStr: selectedDate, userNote, generateMode: m });
+    generateWeekly.mutate({ dateStr: selectedDate, userNote, generateMode: m, dayModes });
   };
 
   const handleApplyWeekly = () => {

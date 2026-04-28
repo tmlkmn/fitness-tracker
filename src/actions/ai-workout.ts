@@ -29,6 +29,17 @@ import {
   SECTION_REPLACE_PROMPT,
   EXERCISE_VARIATION_PROMPT,
 } from "@/lib/ai-prompts";
+import {
+  validateDailyExerciseArray,
+  dailyExercisesNeedRetry,
+  buildDailyExercisesRetryNudge,
+  type ValidateDailyExercisesOptions,
+  type ValidateDailyExercisesResult,
+} from "@/lib/ai-daily-validators";
+import {
+  sanitizeRestSeconds,
+  sanitizeDurationMinutes,
+} from "@/lib/ai-shape-validators";
 
 // Types for AI-generated exercise data
 export interface AIExercise {
@@ -61,44 +72,35 @@ function parseJSON(text: string): unknown {
   return JSON.parse(cleaned);
 }
 
-function validateExerciseArray(data: unknown): AIExercise[] {
-  const obj = data as Record<string, unknown>;
-  if (!obj || typeof obj !== "object" || !Array.isArray(obj.exercises)) {
-    throw new Error("Invalid response format: expected { exercises: [...] }");
-  }
-  return (obj.exercises as Record<string, unknown>[]).map((ex) => ({
-    name: String(ex.name ?? ""),
-    englishName: ex.englishName != null && String(ex.englishName).trim() !== "" ? String(ex.englishName) : null,
-    section: String(ex.section ?? "main"),
-    sectionLabel: String(ex.sectionLabel ?? "Ana Antrenman"),
-    sets: ex.sets != null ? Number(ex.sets) : null,
-    reps: ex.reps != null ? String(ex.reps) : null,
-    restSeconds: ex.restSeconds != null ? Number(ex.restSeconds) : null,
-    durationMinutes: ex.durationMinutes != null ? Number(ex.durationMinutes) : null,
-    notes: ex.notes != null ? String(ex.notes) : null,
-  }));
-}
-
+/**
+ * Alternatives have a different envelope (no section field). Inline
+ * sanitization for restSeconds/durationMinutes keeps DB CHECK happy.
+ */
 function validateAlternativesArray(data: unknown): AIExerciseVariation[] {
   const obj = data as Record<string, unknown>;
   if (!obj || typeof obj !== "object" || !Array.isArray(obj.alternatives)) {
     throw new Error("Invalid response format: expected { alternatives: [...] }");
   }
-  return (obj.alternatives as Record<string, unknown>[]).map((ex) => ({
+  const warnings: string[] = [];
+  const result: AIExerciseVariation[] = (obj.alternatives as Record<string, unknown>[]).map((ex, i) => ({
     name: String(ex.name ?? ""),
     englishName: ex.englishName != null && String(ex.englishName).trim() !== "" ? String(ex.englishName) : null,
     sets: ex.sets != null ? Number(ex.sets) : null,
     reps: ex.reps != null ? String(ex.reps) : null,
-    restSeconds: ex.restSeconds != null ? Number(ex.restSeconds) : null,
-    durationMinutes: ex.durationMinutes != null ? Number(ex.durationMinutes) : null,
+    restSeconds: sanitizeRestSeconds(ex.restSeconds, `alternatives[${i}]`, warnings),
+    durationMinutes: sanitizeDurationMinutes(ex.durationMinutes, `alternatives[${i}]`, warnings),
     notes: ex.notes != null ? String(ex.notes) : null,
   }));
+  if (warnings.length > 0) {
+    console.warn(`[validateAlternativesArray] ${warnings.length} warning(s):`, warnings);
+  }
+  return result;
 }
 
 async function callAI(
   systemPrompt: string,
   userMessage: string,
-  maxTokens: number = 2500,
+  maxTokens: number = 5000,
   useSmartModel: boolean = false,
 ): Promise<{ text: string; inputTokens: number; outputTokens: number; model: string }> {
   const client = getAIClient();
@@ -149,31 +151,84 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
   let inputTokens: number | undefined;
   let outputTokens: number | undefined;
 
+  // Required sections per planType: full workout day must have warmup +
+  // main + cooldown; swimming day needs warmup + swimming + cooldown.
+  // Rest days call this function rarely but if they do, no requirements.
+  const requiredSections =
+    planType === "swimming"
+      ? ["warmup", "swimming", "cooldown"]
+      : planType === "rest"
+        ? []
+        : ["warmup", "main", "cooldown"];
+  const minExerciseCount = planType === "rest" ? 0 : 5;
+
   try {
-    const first = await callAI(WORKOUT_REPLACE_PROMPT, userMessage, 2500, true);
+    const first = await callAI(WORKOUT_REPLACE_PROMPT, userMessage, 5000, true);
     let text = first.text;
     inputTokens = first.inputTokens;
     outputTokens = first.outputTokens;
 
-    let suggestedExercises: AIExercise[];
+    let validation: ValidateDailyExercisesResult;
     try {
-      suggestedExercises = validateExerciseArray(parseJSON(text));
+      validation = validateDailyExerciseArray(parseJSON(text), {
+        requiredSections,
+        minExerciseCount,
+      });
     } catch {
-      // Retry once with error feedback
+      // JSON parse failure — single retry
       const retry = await callAI(
         WORKOUT_REPLACE_PROMPT,
         `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
-        2500,
+        5000,
         true,
       );
       text = retry.text;
       inputTokens += retry.inputTokens;
       outputTokens += retry.outputTokens;
-      suggestedExercises = validateExerciseArray(parseJSON(text));
+      validation = validateDailyExerciseArray(parseJSON(text), {
+        requiredSections,
+        minExerciseCount,
+      });
     }
 
+    // Content-quality retry: missing sections, too few exercises, or
+    // dropped-empty-name exercises → ask AI to fix specific gaps.
+    if (dailyExercisesNeedRetry(validation)) {
+      const fixupRetry = await callAI(
+        WORKOUT_REPLACE_PROMPT,
+        `${userMessage}${buildDailyExercisesRetryNudge(validation, minExerciseCount)}`,
+        5000,
+        true,
+      );
+      inputTokens += fixupRetry.inputTokens;
+      outputTokens += fixupRetry.outputTokens;
+      try {
+        const fixupValidation = validateDailyExerciseArray(parseJSON(fixupRetry.text), {
+          requiredSections,
+          minExerciseCount,
+        });
+        const originalGaps =
+          validation.missingSections.length +
+          (validation.belowExpectedCount ? 1 : 0) +
+          validation.droppedForEmptyName;
+        const retryGaps =
+          fixupValidation.missingSections.length +
+          (fixupValidation.belowExpectedCount ? 1 : 0) +
+          fixupValidation.droppedForEmptyName;
+        if (retryGaps < originalGaps) validation = fixupValidation;
+      } catch {
+        // Keep original if retry parse fails
+      }
+    }
+
+    const suggestedExercises: AIExercise[] = validation.exercises as AIExercise[];
+    const hasWarnings = validation.warnings.length > 0;
+
     await logAiUsage(user.id, "workout", {
-      status: "success",
+      status: hasWarnings ? "success_with_warnings" : "success",
+      errorMessage: hasWarnings
+        ? JSON.stringify({ warnings: validation.warnings }).slice(0, 500)
+        : undefined,
       inputTokens,
       outputTokens,
       durationMs: Date.now() - startTime,
@@ -261,44 +316,69 @@ export async function generateSectionReplacement(
   let inputTokens: number | undefined;
   let outputTokens: number | undefined;
 
+  // forcedSection drops any exercise whose section ≠ requested AND rewrites
+  // sectionLabel for the survivors. Replaces the previous manual filter+map.
+  const validatorOptions: ValidateDailyExercisesOptions = {
+    forcedSection: section,
+    forcedSectionLabel: sectionLabel,
+    minExerciseCount: 2,
+  };
+
   try {
-    const first = await callAI(SECTION_REPLACE_PROMPT, userMessage, 1500, true);
+    const first = await callAI(SECTION_REPLACE_PROMPT, userMessage, 3000, true);
     let text = first.text;
     inputTokens = first.inputTokens;
     outputTokens = first.outputTokens;
 
-    let suggestedExercises: AIExercise[];
+    let validation: ValidateDailyExercisesResult;
     try {
-      suggestedExercises = validateExerciseArray(parseJSON(text));
+      validation = validateDailyExerciseArray(parseJSON(text), validatorOptions);
     } catch {
       const retry = await callAI(
         SECTION_REPLACE_PROMPT,
         `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
-        1500,
+        3000,
         true,
       );
       text = retry.text;
       inputTokens += retry.inputTokens;
       outputTokens += retry.outputTokens;
-      suggestedExercises = validateExerciseArray(parseJSON(text));
+      validation = validateDailyExerciseArray(parseJSON(text), validatorOptions);
     }
 
-    // Guard: drop any exercise whose section doesn't match the requested one.
-    // Prompt instructs the AI to stay within section, but we must enforce it
-    // because applySectionReplacement only deletes the requested section.
-    const filtered = suggestedExercises.filter((ex) => ex.section === section);
-    if (filtered.length !== suggestedExercises.length) {
-      console.warn(
-        `[AI Workout] Dropped ${suggestedExercises.length - filtered.length} out-of-section exercises (expected section="${section}")`,
+    // Content-quality retry: too few exercises after section filter, or all
+    // dropped because the AI ignored the section constraint.
+    if (dailyExercisesNeedRetry(validation)) {
+      const fixupRetry = await callAI(
+        SECTION_REPLACE_PROMPT,
+        `${userMessage}${buildDailyExercisesRetryNudge(validation, validatorOptions.minExerciseCount)}`,
+        3000,
+        true,
       );
+      inputTokens += fixupRetry.inputTokens;
+      outputTokens += fixupRetry.outputTokens;
+      try {
+        const fixupValidation = validateDailyExerciseArray(parseJSON(fixupRetry.text), validatorOptions);
+        const originalGaps =
+          (validation.belowExpectedCount ? 1 : 0) +
+          validation.droppedForEmptyName;
+        const retryGaps =
+          (fixupValidation.belowExpectedCount ? 1 : 0) +
+          fixupValidation.droppedForEmptyName;
+        if (retryGaps < originalGaps) validation = fixupValidation;
+      } catch {
+        // Keep original
+      }
     }
-    suggestedExercises = filtered.map((ex) => ({
-      ...ex,
-      sectionLabel,
-    }));
+
+    const suggestedExercises: AIExercise[] = validation.exercises as AIExercise[];
+    const hasWarnings = validation.warnings.length > 0;
 
     await logAiUsage(user.id, "workout", {
-      status: "success",
+      status: hasWarnings ? "success_with_warnings" : "success",
+      errorMessage: hasWarnings
+        ? JSON.stringify({ warnings: validation.warnings }).slice(0, 500)
+        : undefined,
       inputTokens,
       outputTokens,
       durationMs: Date.now() - startTime,
@@ -459,7 +539,7 @@ export async function generateExerciseVariation(
   try {
     // H1: use smart model — alternative selection needs anatomical reasoning
     // and progressive overload sense that Haiku gets wrong often.
-    const first = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 800, true);
+    const first = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 1500, true);
     let text = first.text;
     inputTokens = first.inputTokens;
     outputTokens = first.outputTokens;
@@ -471,13 +551,33 @@ export async function generateExerciseVariation(
       const retry = await callAI(
         EXERCISE_VARIATION_PROMPT,
         `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "alternatives": [...] }`,
-        800,
+        1500,
         true,
       );
       text = retry.text;
       inputTokens += retry.inputTokens;
       outputTokens += retry.outputTokens;
       alternatives = validateAlternativesArray(parseJSON(text));
+    }
+
+    // Content-quality retry: prompt asks for exactly 3 alternatives. If we
+    // got fewer, ask for the missing count.
+    if (alternatives.length < 3) {
+      const missing = 3 - alternatives.length;
+      const fixupRetry = await callAI(
+        EXERCISE_VARIATION_PROMPT,
+        `${userMessage}\n\nÖNCEKİ YANITTA ${alternatives.length} alternatif döndün, TAM 3 alternatif gerek. ${missing} alternatif EKLE.`,
+        1500,
+        true,
+      );
+      inputTokens += fixupRetry.inputTokens;
+      outputTokens += fixupRetry.outputTokens;
+      try {
+        const retried = validateAlternativesArray(parseJSON(fixupRetry.text));
+        if (retried.length > alternatives.length) alternatives = retried;
+      } catch {
+        // Keep original
+      }
     }
 
     // Upsert to DB cache — only when there's no user note (note-driven

@@ -36,9 +36,17 @@ export interface AIWeeklyPlan {
   days: AIWeeklyDay[];
 }
 
+export type DayModeChoice = "workout" | "swimming" | "rest" | "nutrition";
+
 export interface ValidateWeeklyPlanResult {
   plan: AIWeeklyPlan;
   warnings: string[];
+  /** Days the AI didn't produce (we filled with rest, but route may retry). */
+  missingDays: number[];
+  /** Days where response.planType ≠ user's selected dayMode (auto-coerced). */
+  planTypeMismatches: number[];
+  /** Days where meals.length === 0 — every day MUST have meals per spec. */
+  emptyMealDays: number[];
 }
 
 export interface ExpectedTargets {
@@ -51,38 +59,24 @@ export interface ExpectedTargets {
 export interface ValidateWeeklyPlanOptions {
   /** Override env-based STRICT_MACRO_VALIDATION flag. */
   strictMacroValidation?: boolean;
+  /**
+   * User's per-day plan-type selection from the modal. When set, validator
+   * coerces response.planType to match (warning emitted) and reports
+   * planTypeMismatches so the route can retry with explicit instructions.
+   */
+  expectedDayModes?: Partial<Record<number, DayModeChoice>>;
 }
 
-// ─── Allowed-value enums (vocabulary the AI must stay within) ──────────────
-
-const ALLOWED_MEAL_LABELS = new Set([
-  "Kahvaltı",
-  "Öğle Yemeği",
-  "Akşam Yemeği",
-  "Ara Öğün",
-  "Erken Protein",
-  "Pre-Workout",
-  "Post-Workout",
-  "Akşam Atıştırması",
-]);
-const FALLBACK_MEAL_LABEL = "Ara Öğün";
-
-const ALLOWED_PLAN_TYPES = new Set(["workout", "swimming", "rest", "nutrition"]);
-const FALLBACK_PLAN_TYPE = "rest";
-
-const ALLOWED_SECTIONS = new Set(["warmup", "main", "cooldown", "sauna", "swimming"]);
-const FALLBACK_SECTION = "main";
-
-// ─── Macro reasonableness bounds (per single meal) ─────────────────────────
-
-const MEAL_CALORIE_MIN_EXCLUSIVE = 0;
-const MEAL_CALORIE_MAX_EXCLUSIVE = 2500;
-const MEAL_PROTEIN_MIN = 0;
-const MEAL_PROTEIN_MAX = 150;
-
-// Macro consistency: reported kcal vs computed (P*4 + C*4 + F*9). 15% slack
-// covers fiber, alcohol, rounding, and chef's-prerogative wiggle.
-const MACRO_CONSISTENCY_TOLERANCE = 0.15;
+import {
+  sanitizeMealLabel,
+  sanitizePlanType,
+  sanitizeSection,
+  sanitizeCalories,
+  sanitizeProteinG,
+  passthroughMacro,
+  reconcileMacros,
+  isStrictMacroValidationEnabled as defaultStrictMacroEnabled,
+} from "@/lib/ai-shape-validators";
 
 // Weekly-average vs expected target tolerance.
 const TARGET_AVG_TOLERANCE = 0.15;
@@ -109,109 +103,15 @@ function resolveDayOfWeek(dayName: string, aiDayOfWeek: number, index: number): 
   return index;
 }
 
-function safeParseFloat(value: unknown): number | null {
-  if (value == null) return null;
-  const n = typeof value === "number" ? value : parseFloat(String(value));
-  return Number.isFinite(n) ? n : null;
-}
-
-// ─── Per-field sanitizers ──────────────────────────────────────────────────
-
-function sanitizeMealLabel(raw: unknown, ctx: string, warnings: string[]): string {
-  const value = String(raw ?? "").trim();
-  if (ALLOWED_MEAL_LABELS.has(value)) return value;
-  warnings.push(
-    `${ctx}: invalid mealLabel "${value || "<empty>"}" → coerced to "${FALLBACK_MEAL_LABEL}"`,
-  );
-  return FALLBACK_MEAL_LABEL;
-}
-
-function sanitizePlanType(raw: unknown, ctx: string, warnings: string[]): string {
-  const value = String(raw ?? "").trim();
-  if (ALLOWED_PLAN_TYPES.has(value)) return value;
-  warnings.push(
-    `${ctx}: invalid planType "${value || "<empty>"}" → coerced to "${FALLBACK_PLAN_TYPE}"`,
-  );
-  return FALLBACK_PLAN_TYPE;
-}
-
-function sanitizeSection(raw: unknown, ctx: string, warnings: string[]): string {
-  const value = String(raw ?? "").trim();
-  if (ALLOWED_SECTIONS.has(value)) return value;
-  warnings.push(
-    `${ctx}: invalid section "${value || "<empty>"}" → coerced to "${FALLBACK_SECTION}"`,
-  );
-  return FALLBACK_SECTION;
-}
-
-function sanitizeCalories(raw: unknown, ctx: string, warnings: string[]): number | null {
-  if (raw == null) return null;
-  const n = safeParseFloat(raw);
-  if (n == null) {
-    warnings.push(`${ctx}: non-numeric calories "${raw}" → null`);
-    return null;
-  }
-  if (n <= MEAL_CALORIE_MIN_EXCLUSIVE || n >= MEAL_CALORIE_MAX_EXCLUSIVE) {
-    warnings.push(
-      `${ctx}: calories ${n} out of bounds (0, ${MEAL_CALORIE_MAX_EXCLUSIVE}) → null`,
-    );
-    return null;
-  }
-  return Math.round(n);
-}
-
-function sanitizeProteinG(raw: unknown, ctx: string, warnings: string[]): string | null {
-  if (raw == null) return null;
-  const n = safeParseFloat(raw);
-  if (n == null) {
-    warnings.push(`${ctx}: non-numeric proteinG "${raw}" → null`);
-    return null;
-  }
-  if (n < MEAL_PROTEIN_MIN || n > MEAL_PROTEIN_MAX) {
-    warnings.push(
-      `${ctx}: proteinG ${n} out of bounds [${MEAL_PROTEIN_MIN}, ${MEAL_PROTEIN_MAX}] → null`,
-    );
-    return null;
-  }
-  return String(n);
-}
-
-function passthroughMacro(raw: unknown): string | null {
-  return raw != null ? String(raw) : null;
-}
-
-function reconcileMealMacros(
-  meal: AIMealItem,
-  ctx: string,
-  warnings: string[],
-  strict: boolean,
-): AIMealItem {
-  const cal = meal.calories;
-  const protein = safeParseFloat(meal.proteinG);
-  const carbs = safeParseFloat(meal.carbsG);
-  const fat = safeParseFloat(meal.fatG);
-
-  if (cal == null || protein == null || carbs == null || fat == null) return meal;
-
-  const computed = protein * 4 + carbs * 4 + fat * 9;
-  if (computed <= 0) return meal;
-  const ratio = cal / computed;
-  const drift = Math.abs(ratio - 1);
-  if (drift <= MACRO_CONSISTENCY_TOLERANCE) return meal;
-
-  warnings.push(
-    `${ctx}: macro/kcal mismatch — reported ${cal} kcal vs computed ${Math.round(computed)} kcal (drift ${(drift * 100).toFixed(0)}%)`,
-  );
-
-  if (!strict) return meal;
-  return { ...meal, calories: Math.round(computed) };
-}
-
 // ─── Public entry point ────────────────────────────────────────────────────
+
+const TURKISH_DAY_NAMES_ORDERED = [
+  "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar",
+] as const;
 
 function isStrictMacroValidationEnabled(opts?: ValidateWeeklyPlanOptions): boolean {
   if (opts?.strictMacroValidation != null) return opts.strictMacroValidation;
-  return process.env.STRICT_MACRO_VALIDATION === "true";
+  return defaultStrictMacroEnabled();
 }
 
 export function validateWeeklyPlan(
@@ -225,9 +125,12 @@ export function validateWeeklyPlan(
   }
 
   const warnings: string[] = [];
+  const planTypeMismatches: number[] = [];
+  const emptyMealDays: number[] = [];
   const strict = isStrictMacroValidationEnabled(options);
+  const expectedDayModes = options?.expectedDayModes;
 
-  const days: AIWeeklyDay[] = (obj.days as Record<string, unknown>[]).map((day, index) => {
+  const rawDays: AIWeeklyDay[] = (obj.days as Record<string, unknown>[]).map((day, index) => {
     const dayName = String(day.dayName ?? "");
     const dayCtx = `day[${index}] (${dayName || "?"})`;
 
@@ -243,7 +146,7 @@ export function validateWeeklyPlan(
             carbsG: passthroughMacro(m.carbsG),
             fatG: passthroughMacro(m.fatG),
           };
-          return reconcileMealMacros(sanitized, mealCtx, warnings, strict);
+          return reconcileMacros(sanitized, mealCtx, warnings, strict);
         })
       : [];
 
@@ -264,19 +167,76 @@ export function validateWeeklyPlan(
         }))
       : [];
 
+    const resolvedDow = resolveDayOfWeek(dayName, Number(day.dayOfWeek ?? index), index);
+    let planType = sanitizePlanType(day.planType, dayCtx, warnings);
+
+    // Coerce planType to user's selection if it disagrees. Auto-fix because
+    // the route would just retry otherwise; we still report mismatch so the
+    // route knows whether to retry for a content-quality reason (workout
+    // exercises showing up on a "rest" day, etc.)
+    if (expectedDayModes && expectedDayModes[resolvedDow] != null) {
+      const expected = expectedDayModes[resolvedDow]!;
+      if (planType !== expected) {
+        warnings.push(
+          `${dayCtx}: planType "${planType}" mismatches user-selected "${expected}" → coerced`,
+        );
+        planTypeMismatches.push(resolvedDow);
+        planType = expected;
+      }
+    }
+
     return {
-      dayOfWeek: resolveDayOfWeek(dayName, Number(day.dayOfWeek ?? index), index),
+      dayOfWeek: resolvedDow,
       dayName,
-      planType: sanitizePlanType(day.planType, dayCtx, warnings),
+      planType,
       workoutTitle: day.workoutTitle != null ? String(day.workoutTitle) : null,
       meals,
       exercises,
     };
   });
 
+  // ─── Detect missing days (AI returned <7 entries) ────────────────────
+  const presentDows = new Set(rawDays.map((d) => d.dayOfWeek));
+  const missingDays: number[] = [];
+  for (let i = 0; i < 7; i++) {
+    if (!presentDows.has(i)) missingDays.push(i);
+  }
+
+  // Fill missing days as user's expected mode (or rest as fallback). This
+  // keeps the UI from breaking on <7-day plans, but warnings are emitted so
+  // the route can retry to get real content for these days.
+  for (const dow of missingDays) {
+    const expected = expectedDayModes?.[dow] ?? "rest";
+    warnings.push(
+      `day ${dow} (${TURKISH_DAY_NAMES_ORDERED[dow]}) missing from response → filled as "${expected}" with empty meals/exercises`,
+    );
+    rawDays.push({
+      dayOfWeek: dow,
+      dayName: TURKISH_DAY_NAMES_ORDERED[dow],
+      planType: expected,
+      workoutTitle: null,
+      meals: [],
+      exercises: [],
+    });
+  }
+
+  // Sort by dow so output is always Mon→Sun
+  rawDays.sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+
+  // ─── Detect days with empty meals ────────────────────────────────────
+  // Every day must have at least one meal regardless of training status.
+  for (const d of rawDays) {
+    if (d.meals.length === 0) {
+      emptyMealDays.push(d.dayOfWeek);
+      warnings.push(
+        `day ${d.dayOfWeek} (${d.dayName || TURKISH_DAY_NAMES_ORDERED[d.dayOfWeek]}): no meals — every day must have a meal plan`,
+      );
+    }
+  }
+
   // ─── Weekly average vs expected calorie target ────────────────────────
   if (expectedTargets?.calories) {
-    const dailyTotals = days
+    const dailyTotals = rawDays
       .map((d) => d.meals.reduce((sum, m) => sum + (m.calories ?? 0), 0))
       .filter((t) => t > 0);
     if (dailyTotals.length > 0) {
@@ -299,8 +259,11 @@ export function validateWeeklyPlan(
       weekTitle: String(obj.weekTitle ?? "Haftalık Plan"),
       phase: String(obj.phase ?? "custom"),
       notes: obj.notes != null ? String(obj.notes) : null,
-      days,
+      days: rawDays,
     },
     warnings,
+    missingDays,
+    planTypeMismatches,
+    emptyMealDays,
   };
 }

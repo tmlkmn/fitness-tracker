@@ -413,16 +413,27 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK}
 
 ${WORKOUT_PROGRESSION_BLOCK}
 
+## Gün Sayısı ve Tip Sözleşmesi (KRİTİK — istisnasız)
+- "days" dizisi MUTLAKA TAM 7 ELEMAN içermelidir (dayOfWeek 0..6, Pazartesi'den Pazar'a). 6 veya 8 ELEMAN KABUL EDİLMEZ — JSON cevabı reddedilir.
+- Bağlamda "═══ GÜNLÜK PLAN TİPLERİ ═══" bloğu varsa: HER GÜN için listede yazan planType'ı BİREBİR uygula. workout listede yoksa o güne workout koyma; swimming listede yoksa swimming koyma; rest listede ise exercises BOŞ olmalı.
+- Bağlamda blok yoksa: kullanıcının haftalık günlük rutinine göre kendin karar ver — varsayılan dağılım Pzt-Cum workout, Cmt-Paz rest.
+- Her gün için planType "workout", "swimming", "rest" veya "nutrition"dan biri olmalı (case-sensitive).
+
+## Beslenme Sözleşmesi (KRİTİK — istisnasız)
+- HER 7 GÜN için meals dizisi DOLU olmalı — rest günleri DAHİL. Hiçbir gün meals:[] OLAMAZ.
+- Rest günü: exercises:[] olabilir AMA meals MUTLAKA dolu (3-5 öğün). Beslenme programı dinlenme gününde de devam eder; AI bu kuralı atlamamalı.
+- Hafta içi ve hafta sonu için ayrı routine bilgisi verilmişse (bağlamda iki farklı ÖĞÜN ZAMANLAMA POLİTİKASI bloğu): Pzt-Cum hafta içi politikasını, Cmt-Paz hafta sonu politikasını uygula.
+
 ## Antrenman Kuralları
-- Eğer KULLANICI İSTEĞİ bölümünde belirli antrenman günleri belirtilmişse, SADECE o günlere antrenman koy. Belirtilmeyen günleri dinlenme ("rest") günü yap. Antrenman günü sayısına göre split'i ayarla:
+- Antrenman günü sayısına göre split'i ayarla:
   • 2-3 gün: Full Body veya Push/Pull/Legs
   • 4 gün: Upper/Lower veya Push/Pull split
   • 5+ gün: PPL veya bölgesel split
-- Eğer belirli gün belirtilmemişse: Haftada 4-5 antrenman günü, 2-3 dinlenme günü. Kullanıcı yüzme isterse KULLANICI İSTEĞİ ile belirtir.
 - Her antrenman: Isınma + Ana Antrenman + Soğuma zorunlu
 - Kas gruplarını dengeli dağıt (Push/Pull/Legs veya Upper/Lower split)
 - Compound önce, izolasyon sonra
 - notes alanına teknik ipuçları ve yoğunluk teknikleri yaz (10-15 kelimeyi geçme)
+- Yüzme günü: warmup + swimming + cooldown sectionları kullan; ana yüzme bloğu (durationMinutes ile mesafe/süre).
 
 ## Beslenme Kuralları
 - Günlük kalori ve protein hedefleri HEDEF-ODAKLI STRATEJİ bloğundan gelir — kendi tahminin değil, blok geçerli
@@ -631,13 +642,22 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK}
 
 ${WORKOUT_PROGRESSION_BLOCK}
 
+## Gün Sayısı ve Tip Sözleşmesi (KRİTİK — istisnasız)
+- "days" dizisi MUTLAKA TAM 7 ELEMAN içermelidir (dayOfWeek 0..6, Pazartesi'den Pazar'a).
+- Bağlamda "═══ GÜNLÜK PLAN TİPLERİ ═══" bloğu varsa: HER GÜN için listede yazan planType'ı BİREBİR uygula.
+- workout: warmup+main+cooldown; swimming: warmup+swimming+cooldown; rest: exercises BOŞ array.
+- Her gün için planType "workout", "swimming" veya "rest" — başkası KABUL EDİLMEZ.
+
 ## Antrenman Kuralları
-- Eğer KULLANICI İSTEĞİ bölümünde belirli antrenman günleri belirtilmişse, SADECE o günlere antrenman koy. Belirtilmeyen günleri dinlenme ("rest") günü yap.
-- Eğer belirli gün belirtilmemişse: Haftada 4-5 antrenman günü, 2-3 dinlenme günü. Kullanıcı yüzme isterse KULLANICI İSTEĞİ ile belirtir.
+- Antrenman günü sayısına göre split'i ayarla:
+  • 2-3 gün: Full Body veya Push/Pull/Legs
+  • 4 gün: Upper/Lower veya Push/Pull split
+  • 5+ gün: PPL veya bölgesel split
 - Her antrenman: Isınma + Ana Antrenman + Soğuma zorunlu
 - Kas gruplarını dengeli dağıt (Push/Pull/Legs veya Upper/Lower split)
 - Compound önce, izolasyon sonra
 - notes alanına teknik ipuçları ve yoğunluk teknikleri yaz (10-15 kelimeyi geçme)
+- Yüzme günü: warmup + swimming + cooldown sectionları kullan.
 
 ${WORKOUT_FITNESS_LEVEL_BLOCK}
 

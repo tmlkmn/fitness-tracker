@@ -236,7 +236,11 @@ interface AiWeeklyPlanModalProps {
   loading: boolean;
   applying: boolean;
   error: string | null;
-  onGenerate: (userNote?: string, generateMode?: "both" | "nutrition" | "workout") => void;
+  onGenerate: (
+    userNote?: string,
+    generateMode?: "both" | "nutrition" | "workout",
+    dayModes?: Record<number, "workout" | "swimming" | "rest">,
+  ) => void;
   onApply: () => void;
   onApplySaved: (plan: AIWeeklyPlan) => void;
   onReset: () => void;
@@ -440,7 +444,12 @@ export function AiWeeklyPlanModal({
   serviceType,
 }: AiWeeklyPlanModalProps) {
   const [userNote, setUserNote] = useState("");
-  const [selectedDays, setSelectedDays] = useState<number[]>([0, 1, 2, 3, 4]);
+  // Per-day plan type: workout / swimming / rest. Default Pzt-Cum workout,
+  // Cmt-Paz rest. User cycles each day through the 3 states.
+  const [dayModes, setDayModes] = useState<Record<number, "workout" | "swimming" | "rest">>({
+    0: "workout", 1: "workout", 2: "workout", 3: "workout", 4: "workout",
+    5: "rest", 6: "rest",
+  });
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>(() => loadWorkoutPrefs().equipment);
@@ -516,13 +525,17 @@ export function AiWeeklyPlanModal({
     );
   };
 
-  const toggleDay = (day: number) => {
-    setSelectedDays((prev) => {
-      if (prev.includes(day)) {
-        if (prev.length <= 1) return prev; // En az 1 gün seçili olmalı
-        return prev.filter((d) => d !== day);
-      }
-      return [...prev, day].sort((a, b) => a - b);
+  // Cycle a day through workout → swimming → rest → workout. For users on
+  // nutrition-only plans, swimming is skipped (cycle is workout ↔ rest only).
+  const cycleDayMode = (dow: number) => {
+    setDayModes((prev) => {
+      const current = prev[dow];
+      const allowSwimming = serviceType !== "nutrition";
+      let next: "workout" | "swimming" | "rest";
+      if (current === "workout") next = allowSwimming ? "swimming" : "rest";
+      else if (current === "swimming") next = "rest";
+      else next = "workout";
+      return { ...prev, [dow]: next };
     });
   };
 
@@ -541,14 +554,14 @@ export function AiWeeklyPlanModal({
   const handleGenerate = () => {
     saveWorkoutPrefs({ location, equipment: selectedEquipment });
     const parts: string[] = [];
-    // Workout days
-    const dayNames = selectedDays.map(d => WORKOUT_DAYS.find(x => x.value === d)!.full);
-    parts.push(`Antrenman günleri: ${dayNames.join(", ")}. Sadece bu günlerde antrenman olsun, diğer günler dinlenme veya sadece beslenme günü olsun`);
-    // Location + equipment
-    if (location === "home") {
-      parts.push(`Antrenman yeri: Ev. Mevcut ekipman: ${selectedEquipment.length > 0 ? selectedEquipment.join(", ") : "Vücut ağırlığı"}`);
-    } else {
-      parts.push("Antrenman yeri: Salon (tüm ekipman mevcut)");
+    // Location + equipment (only when at least one workout day exists)
+    const hasWorkoutOrSwim = Object.values(dayModes).some((m) => m === "workout" || m === "swimming");
+    if (hasWorkoutOrSwim) {
+      if (location === "home") {
+        parts.push(`Antrenman yeri: Ev. Mevcut ekipman: ${selectedEquipment.length > 0 ? selectedEquipment.join(", ") : "Vücut ağırlığı"}`);
+      } else {
+        parts.push("Antrenman yeri: Salon (tüm ekipman mevcut)");
+      }
     }
     // Ingredients
     if (ingredientMode === "specific" && selectedIngredients.length > 0) {
@@ -559,7 +572,11 @@ export function AiWeeklyPlanModal({
     // Free text
     const note = userNote.trim();
     if (note) parts.push(note);
-    onGenerate(parts.length > 0 ? parts.join(". ") : undefined, generateMode);
+    onGenerate(
+      parts.length > 0 ? parts.join(". ") : undefined,
+      generateMode,
+      dayModes,
+    );
     invalidateQuota();
   };
 
@@ -636,26 +653,36 @@ export function AiWeeklyPlanModal({
               <>
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Antrenman günleri:
+                  Günlük plan tipi <span className="text-muted-foreground/60">(üzerine basarak değiştir)</span>:
                 </p>
                 <div className="grid grid-cols-7 gap-1.5">
                   {WORKOUT_DAYS.map(({ value, label }) => {
-                    const isSelected = selectedDays.includes(value);
+                    const mode = dayModes[value] ?? "rest";
+                    const styles =
+                      mode === "workout"
+                        ? "bg-primary/15 border-primary/40 text-primary"
+                        : mode === "swimming"
+                          ? "bg-blue-500/15 border-blue-500/40 text-blue-500"
+                          : "bg-muted/50 border-transparent text-muted-foreground";
+                    const Icon =
+                      mode === "workout" ? Dumbbell : mode === "swimming" ? Waves : Moon;
                     return (
                       <button
                         key={value}
-                        onClick={() => toggleDay(value)}
-                        className={`flex items-center justify-center py-2 rounded-md text-xs font-medium border transition-colors ${
-                          isSelected
-                            ? "bg-primary/15 border-primary/40 text-primary"
-                            : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
-                        }`}
+                        type="button"
+                        onClick={() => cycleDayMode(value)}
+                        className={`flex flex-col items-center justify-center py-2 gap-0.5 rounded-md text-[10px] font-medium border transition-colors hover:opacity-80 ${styles}`}
+                        title={`${label}: ${mode === "workout" ? "Antrenman" : mode === "swimming" ? "Yüzme" : "Dinlenme"}`}
                       >
-                        {label}
+                        <span>{label}</span>
+                        <Icon className="h-3 w-3" />
                       </button>
                     );
                   })}
                 </div>
+                <p className="text-[10px] text-muted-foreground/70 mt-1.5">
+                  Antrenman → Yüzme → Dinlenme sırasıyla döner. Beslenme programı her güne yazılır.
+                </p>
               </div>
 
               {/* Location selection */}
