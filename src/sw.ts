@@ -1,6 +1,6 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { Serwist } from "serwist";
+import { NetworkOnly, Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -10,10 +10,14 @@ declare global {
 
 declare const self: WorkerGlobalScope & typeof globalThis;
 
-// Filter out auth-related paths from runtime caching
-const filteredCache = defaultCache.filter(
-  (entry) => !("urlPattern" in entry && entry.urlPattern?.toString().includes("/api/auth"))
-);
+// Filter out auth-related paths from runtime caching.
+// `defaultCache` entries use `matcher` (Serwist 9), not the legacy `urlPattern`.
+const filteredCache = defaultCache.filter((entry) => {
+  const m = entry.matcher;
+  if (m instanceof RegExp) return !m.toString().includes("/api/auth");
+  if (typeof m === "string") return !m.includes("/api/auth");
+  return true;
+});
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -21,14 +25,15 @@ const serwist = new Serwist({
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
-    // Exclude auth API and login page from cache
+    // Exclude auth API and login page from cache.
+    // Serwist 9 expects a Strategy instance for `handler`, not a string literal.
     {
-      urlPattern: /\/api\/auth\/.*/,
-      handler: "NetworkOnly" as const,
+      matcher: /\/api\/auth\/.*/,
+      handler: new NetworkOnly(),
     },
     {
-      urlPattern: /\/giris/,
-      handler: "NetworkOnly" as const,
+      matcher: /\/giris/,
+      handler: new NetworkOnly(),
     },
     ...filteredCache,
   ],

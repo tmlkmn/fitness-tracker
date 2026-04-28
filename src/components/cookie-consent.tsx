@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Cookie, Settings2 } from "lucide-react";
 import { saveCookieConsent } from "@/actions/cookie-consent";
@@ -48,7 +49,7 @@ export function CookieConsent() {
       timestamp: Date.now(),
     };
     storeConsent(consent);
-    setVisible(false);
+    flushSync(() => setVisible(false));
     void saveCookieConsent({ necessary: true, analytics: analyticsValue }).catch(
       () => {
         // Server-side persistence is best-effort; local consent already stored.
@@ -56,9 +57,21 @@ export function CookieConsent() {
     );
   };
 
-  const handleAcceptAll = () => dismissWith(true);
-  const handleAcceptSelected = () => dismissWith(analytics);
-  const handleRejectOptional = () => dismissWith(false);
+  const handleAcceptAll = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dismissWith(true);
+  };
+  const handleAcceptSelected = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dismissWith(analytics);
+  };
+  const handleRejectOptional = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dismissWith(false);
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
@@ -109,6 +122,7 @@ export function CookieConsent() {
           {!showDetails ? (
             <>
               <Button
+                type="button"
                 size="sm"
                 onClick={handleAcceptAll}
                 className="flex-1"
@@ -116,6 +130,7 @@ export function CookieConsent() {
                 Tümünü Kabul Et
               </Button>
               <Button
+                type="button"
                 size="sm"
                 variant="outline"
                 onClick={handleRejectOptional}
@@ -124,6 +139,7 @@ export function CookieConsent() {
                 Sadece Zorunlu
               </Button>
               <Button
+                type="button"
                 size="sm"
                 variant="ghost"
                 onClick={() => setShowDetails(true)}
@@ -135,6 +151,7 @@ export function CookieConsent() {
           ) : (
             <>
               <Button
+                type="button"
                 size="sm"
                 onClick={handleAcceptSelected}
                 className="flex-1"
@@ -142,6 +159,7 @@ export function CookieConsent() {
                 Seçimi Kaydet
               </Button>
               <Button
+                type="button"
                 size="sm"
                 variant="outline"
                 onClick={handleAcceptAll}
