@@ -58,6 +58,7 @@ export function SleepFormDialog({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBedtime(initial?.bedtime ?? "23:00");
       setWakeTime(initial?.wakeTime ?? "07:00");
       setQuality(initial?.quality ?? 3);

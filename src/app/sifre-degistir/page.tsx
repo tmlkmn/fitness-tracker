@@ -6,7 +6,7 @@ import { useSession } from "@/lib/auth-client";
 import { forceChangePassword } from "@/actions/password";
 import { Card, CardContent } from "@/components/ui/card";
 import { KeyRound, Loader2, Eye, EyeOff, Check, X } from "lucide-react";
-import { validatePasswordStrength, PASSWORD_REQUIREMENTS } from "@/lib/password-validation";
+import { validatePasswordStrength } from "@/lib/password-validation";
 
 export default function SifreDegistirPage() {
   const router = useRouter();

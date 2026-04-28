@@ -41,6 +41,7 @@ export function ProfileSummaryCard() {
   }>({ expired: false, remaining: null });
   useEffect(() => {
     if (membershipEndTs == null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMembershipSnapshot({ expired: false, remaining: null });
       return;
     }

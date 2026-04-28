@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { chatMessages } from "@/db/schema";
-import { eq, desc, asc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 
 export async function getChatHistory(limit = 50) {

@@ -16,7 +16,6 @@ import {
 } from "@/lib/meal-timing";
 import {
   type AIWeeklyPlan,
-  type AIWeeklyDay,
 } from "@/lib/ai-weekly-types";
 import { coerceMealLabel } from "@/lib/meal-labels";
 

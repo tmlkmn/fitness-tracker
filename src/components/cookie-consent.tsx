@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Cookie, Settings2 } from "lucide-react";
 import { saveCookieConsent } from "@/actions/cookie-consent";
@@ -30,17 +30,10 @@ function storeConsent(consent: ConsentState) {
 }
 
 export function CookieConsent() {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(() => !getStoredConsent());
   const [showDetails, setShowDetails] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const stored = getStoredConsent();
-    if (!stored) {
-      setVisible(true);
-    }
-  }, []);
 
   if (!visible) return null;
 

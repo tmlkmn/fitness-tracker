@@ -137,6 +137,7 @@ function SteppedProgress({ loading }: { loading: boolean }) {
 
   useEffect(() => {
     if (!loading) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveStep(0);
       setElapsed(0);
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -511,6 +512,7 @@ export function AiWeeklyPlanModal({
   // When saved detail loads, show preview
   useEffect(() => {
     if (savedDetail?.plan) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSavedPlanToPreview(savedDetail.plan);
     }
   }, [savedDetail]);

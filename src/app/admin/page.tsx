@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   CalendarClock,
   X,
-  Sparkles,
   BarChart3,
   Bot,
   MessageSquare,

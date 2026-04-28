@@ -87,8 +87,8 @@ export default function HomePage() {
   const { isVisible } = useDashboardPrefs();
 
   // Onboarding carousel — auto-open on first login
-  const [onboardingOpen, setOnboardingOpen] = useState(false);
-  const [onboardingTriggered, setOnboardingTriggered] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const onboardingOpen = profile?.hasSeenOnboarding === false && !onboardingDismissed;
 
   // Health profile wizard — one-time mandatory setup. Triggered when gender
   // is null (the column was added in migration 0029, so any user without it
@@ -100,14 +100,6 @@ export default function HomePage() {
   const healthWizardOpen =
     needsHealthProfile && !onboardingOpen && !healthWizardDismissed;
 
-  useEffect(() => {
-    if (profile && profile.hasSeenOnboarding === false && !onboardingTriggered) {
-      setOnboardingOpen(true);
-      setOnboardingTriggered(true);
-    }
-  }, [profile, onboardingTriggered]);
-
-  // Current day in Turkish
   const [currentDay] = useState(() =>
     new Date().toLocaleDateString("tr-TR", {
       weekday: "long",
@@ -175,7 +167,7 @@ export default function HomePage() {
       {/* Onboarding carousel — auto on first login, re-openable via trigger */}
       <OnboardingCarousel
         open={onboardingOpen}
-        onOpenChange={setOnboardingOpen}
+        onOpenChange={(open) => { if (!open) setOnboardingDismissed(true); }}
         isFirstTime={profile?.hasSeenOnboarding === false}
       />
 

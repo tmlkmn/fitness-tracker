@@ -14,7 +14,6 @@ import { ExerciseFormDialog } from "./exercise-form-dialog";
 import { ExerciseDeleteDialog } from "./exercise-delete-dialog";
 import { InlineEditBadge } from "@/components/ui/inline-edit-badge";
 import { SwipeableCard } from "@/components/ui/swipeable-card";
-import { useDeleteExercise } from "@/hooks/use-exercise-crud";
 import {
   useGenerateExerciseVariation,
   useApplyExerciseVariation,
@@ -62,7 +61,6 @@ export function ExerciseCard({
   const generate = useGenerateExerciseVariation();
   const apply = useApplyExerciseVariation();
   const updateExercise = useUpdateExercise();
-  const deleteExercise = useDeleteExercise();
 
   const handleGenerate = (userNote?: string, forceRefresh?: boolean) => {
     if (!dailyPlanId) return;

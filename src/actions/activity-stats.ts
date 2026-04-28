@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { weeklyPlans, dailyPlans, meals, exercises } from "@/db/schema";
+import { weeklyPlans, dailyPlans } from "@/db/schema";
 import { eq, and, sql, asc, isNotNull } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 

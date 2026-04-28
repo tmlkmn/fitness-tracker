@@ -37,15 +37,16 @@ function AyarlarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loggingOut, setLoggingOut] = useState(false);
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+  const [showOnboardingBanner] = useState(
+    () => searchParams.get("onboarding") === "true",
+  );
   const user = session?.user;
 
   useEffect(() => {
-    if (searchParams.get("onboarding") === "true") {
-      setShowOnboardingBanner(true);
+    if (showOnboardingBanner) {
       window.history.replaceState(null, "", "/ayarlar");
     }
-  }, [searchParams]);
+  }, [showOnboardingBanner]);
 
   const handleSignOut = async () => {
     setLoggingOut(true);

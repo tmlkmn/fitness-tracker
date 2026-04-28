@@ -63,6 +63,7 @@ export function EditReminderDialog({ open, onOpenChange, reminder }: EditReminde
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTitle(reminder.title);
       setBody(reminder.body ?? "");
       setTime(reminder.time ?? "09:00");

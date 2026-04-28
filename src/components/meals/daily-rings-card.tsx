@@ -13,13 +13,11 @@ export function DailyRingsCard() {
   const { data: today } = useTodayDashboard();
   const { data: targets } = useResolvedMacroTargets();
 
-  const meals = today?.meals ?? [];
-  const exercises = today?.exercises ?? [];
-
-  const macros = useMemo(() => computeMealMacros(meals), [meals]);
+  const macros = useMemo(() => computeMealMacros(today?.meals ?? []), [today?.meals]);
 
   const mealsCompleted = macros.completedCount;
   const mealsTotal = macros.total;
+  const exercises = today?.exercises ?? [];
   const exercisesCompleted = exercises.filter((e) => e.isCompleted).length;
   const exercisesTotal = exercises.length;
 

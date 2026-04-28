@@ -32,7 +32,6 @@ import {
   Trash2,
   ChevronDown,
   Scale,
-  Droplets,
   Activity,
   Ruler,
   Dumbbell,

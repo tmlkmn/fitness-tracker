@@ -5,7 +5,9 @@ import { WifiOff, Wifi, RefreshCw } from "lucide-react";
 import { useIsFetching, useIsMutating, useQueryClient } from "@tanstack/react-query";
 
 export function NetworkStatus() {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  );
   const [showReconnected, setShowReconnected] = useState(false);
   const wasOfflineRef = useRef(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -14,8 +16,6 @@ export function NetworkStatus() {
   const mutating = useIsMutating();
 
   useEffect(() => {
-    setIsOnline(navigator.onLine);
-
     const handleOnline = () => {
       setIsOnline(true);
       if (wasOfflineRef.current) {

@@ -34,6 +34,7 @@ export function SleepEntry({ date, readOnly, autoOpen }: SleepEntryProps) {
     autoOpenHandledRef.current = true;
     cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     if (!log) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDialogOpen(true);
     }
   }, [autoOpen, log, readOnly]);

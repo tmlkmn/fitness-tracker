@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { meals, shoppingLists } from "@/db/schema";
+import { meals } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";

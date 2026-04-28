@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ function PushStatus() {
 
   useEffect(() => {
     if (typeof Notification === "undefined") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus("unsupported");
       return;
     }

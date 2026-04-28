@@ -95,6 +95,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
       for (const [key, value] of Object.entries(initialData)) {
         if (key === "id" || key === "userId" || key === "createdAt") continue;
         if (key === "logDate") {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setLogDate(String(value));
           continue;
         }
@@ -121,6 +122,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
     const height = profile?.height ? parseFloat(String(profile.height)) : null;
     if (!weight || !height || height <= 0) return;
     const bmi = weight / ((height / 100) ** 2);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFields((prev) => ({ ...prev, bmi: bmi.toFixed(1) }));
   }, [fields.weight, profile?.height, manualBmi]);
 
