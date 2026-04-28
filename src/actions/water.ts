@@ -3,7 +3,6 @@
 import { db } from "@/db";
 import { waterLogs } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { computeWaterTarget } from "@/lib/water-target";
 
@@ -49,9 +48,6 @@ export async function upsertWaterLog(
         ...(targetGlasses != null ? { targetGlasses } : {}),
       },
     });
-
-  revalidatePath("/");
-  revalidatePath("/gun", "layout");
 }
 
 export async function incrementWater(dateStr: string, delta: number) {
@@ -83,9 +79,6 @@ export async function incrementWater(dateStr: string, delta: number) {
       target: [waterLogs.userId, waterLogs.logDate],
       set: { glasses: next },
     });
-
-  revalidatePath("/");
-  revalidatePath("/gun", "layout");
 }
 
 export async function getWaterLogs(limit = 30) {

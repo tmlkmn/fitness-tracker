@@ -196,11 +196,10 @@ export async function moveDayContents(
     }
   }
 
-  revalidatePath("/");
-  revalidatePath("/takvim");
+  // Only revalidate server-component routes; client routes (/,/takvim,/ogunlerim) are
+  // handled by React Query invalidation in useMoveDayContents onSettled.
   revalidatePath(`/gun/${sourceDailyPlanId}`);
   revalidatePath(`/gun/${targetDailyPlanId}`);
-  revalidatePath("/ogunlerim");
 
   return {
     movedExerciseCount,
