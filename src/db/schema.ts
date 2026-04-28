@@ -228,6 +228,14 @@ export const exercises = pgTable(
       "exercises_section_check",
       sql`${t.section} IN ('warmup', 'main', 'cooldown', 'sauna', 'swimming')`,
     ),
+    check(
+      "exercises_rest_seconds_check",
+      sql`${t.restSeconds} IS NULL OR (${t.restSeconds} >= 30 AND ${t.restSeconds} <= 300)`,
+    ),
+    check(
+      "exercises_duration_minutes_check",
+      sql`${t.durationMinutes} IS NULL OR (${t.durationMinutes} >= 1 AND ${t.durationMinutes} <= 90)`,
+    ),
   ],
 );
 

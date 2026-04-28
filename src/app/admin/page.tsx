@@ -311,13 +311,22 @@ export default function AdminPage() {
           </Link>
         </div>
 
-        <Link
-          href="/admin/geri-bildirim"
-          className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md border border-primary/50 text-primary text-sm font-medium hover:bg-primary/10 transition-colors"
-        >
-          <MessageSquare className="h-4 w-4" />
-          Geri Bildirimler
-        </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <Link
+            href="/admin/geri-bildirim"
+            className="inline-flex items-center justify-center gap-2 h-10 rounded-md border border-primary/50 text-primary text-sm font-medium hover:bg-primary/10 transition-colors"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Geri Bildirimler
+          </Link>
+          <Link
+            href="/admin/ai-warnings"
+            className="inline-flex items-center justify-center gap-2 h-10 rounded-md border border-amber-500/40 text-amber-500 text-sm font-medium hover:bg-amber-500/10 transition-colors"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            AI Uyarıları
+          </Link>
+        </div>
 
         {error && (
           <p className="text-sm text-destructive text-center">{error}</p>

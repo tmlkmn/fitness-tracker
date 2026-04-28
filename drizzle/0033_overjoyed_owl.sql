@@ -1,0 +1,2 @@
+ALTER TABLE "exercises" ADD CONSTRAINT "exercises_rest_seconds_check" CHECK ("exercises"."rest_seconds" IS NULL OR ("exercises"."rest_seconds" >= 30 AND "exercises"."rest_seconds" <= 300));--> statement-breakpoint
+ALTER TABLE "exercises" ADD CONSTRAINT "exercises_duration_minutes_check" CHECK ("exercises"."duration_minutes" IS NULL OR ("exercises"."duration_minutes" >= 1 AND "exercises"."duration_minutes" <= 90));

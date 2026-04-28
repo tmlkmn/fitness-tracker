@@ -225,6 +225,20 @@
       "when": 1777322250549,
       "tag": "0031_flashy_vertigo",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1777322500000,
+      "tag": "0032_exercises_clamp_rest_seconds",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1777373445895,
+      "tag": "0033_overjoyed_owl",
+      "breakpoints": true
     }
   ]
 }

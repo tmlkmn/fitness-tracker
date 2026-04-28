@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { users, aiUsageLogs } from "@/db/schema";
-import { eq, sql, gte } from "drizzle-orm";
+import { eq, sql, gte, and, inArray, isNotNull, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { sendInviteEmail } from "@/lib/email";
 import { getAuthAdmin } from "@/lib/auth-utils";
@@ -384,4 +384,209 @@ export async function getAiUsageByUser(): Promise<UserAiUsage[]> {
   }
 
   return Array.from(userMap.values()).sort((a, b) => b.total - a.total);
+}
+
+// ─── AI warnings analytics (success_with_warnings deep-dive) ──────────────
+
+export interface AiWarningsAnalytics {
+  /** Total non-error AI runs in the window (success + success_with_warnings). */
+  totalRuns: number;
+  /** Number of runs that produced at least one warning. */
+  runsWithWarnings: number;
+  /** runsWithWarnings / totalRuns * 100, rounded. */
+  warningRatePct: number;
+  /** Per-feature breakdown of warning frequency. */
+  perFeature: {
+    feature: string;
+    successCount: number;
+    warningCount: number;
+    warningRatePct: number;
+  }[];
+  /** Top warning text patterns aggregated across all features. */
+  topPatterns: {
+    pattern: string;
+    count: number;
+    samples: { feature: string; createdAt: Date }[];
+  }[];
+  /** 14-day daily timeline of success vs success_with_warnings counts. */
+  daily: {
+    date: string;
+    success: number;
+    warnings: number;
+  }[];
+}
+
+/**
+ * Group a warning string into a stable category. Strips per-row context
+ * like `day[3] (Cuma)` and numeric values so similar warnings collapse.
+ */
+function classifyWarning(raw: string): string {
+  let normalized = raw
+    // strip "day[N] (DayName)" prefixes
+    .replace(/^day\[\d+\]\s*\([^)]*\)\.?/, "day(*)")
+    .replace(/^day\s*\d+\s*\([^)]*\)/, "day(*)")
+    // strip "meal[N]" / "exercise[N]" indices
+    .replace(/\.(meal|exercise)\[\d+\]/g, ".$1[*]")
+    .replace(/^(meal|exercise)\[\d+\]/g, "$1[*]")
+    .replace(/^alternatives\[\d+\]/g, "alternatives[*]")
+    // strip numeric values inside quotes / brackets
+    .replace(/"\d+(\.\d+)?"/g, '"*"')
+    .replace(/\d+(\.\d+)?\s*kcal/g, "* kcal")
+    .replace(/\(drift \d+%\)/g, "(drift *%)")
+    .replace(/drifts \d+%/g, "drifts *%")
+    .trim();
+  // Collapse whitespace
+  normalized = normalized.replace(/\s+/g, " ");
+  // Keep first 80 chars for readability
+  if (normalized.length > 80) normalized = normalized.slice(0, 77) + "...";
+  return normalized;
+}
+
+interface WarningEnvelope {
+  warnings?: unknown;
+}
+
+const WARNING_LOOKBACK_DAYS = 14;
+const TOP_PATTERNS_LIMIT = 12;
+const PATTERN_SAMPLE_LIMIT = 3;
+
+export async function getAiWarningsAnalytics(): Promise<AiWarningsAnalytics> {
+  await getAuthAdmin();
+
+  const since = new Date();
+  since.setDate(since.getDate() - WARNING_LOOKBACK_DAYS);
+
+  // Per-feature success vs warning split (only success-like statuses count).
+  const featureRows = await db
+    .select({
+      feature: aiUsageLogs.feature,
+      status: aiUsageLogs.status,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(aiUsageLogs)
+    .where(
+      and(
+        gte(aiUsageLogs.createdAt, since),
+        inArray(aiUsageLogs.status, ["success", "success_with_warnings"]),
+      ),
+    )
+    .groupBy(aiUsageLogs.feature, aiUsageLogs.status);
+
+  const perFeatureMap = new Map<string, { success: number; warnings: number }>();
+  for (const r of featureRows) {
+    const e = perFeatureMap.get(r.feature) ?? { success: 0, warnings: 0 };
+    if (r.status === "success_with_warnings") e.warnings += r.count;
+    else e.success += r.count;
+    perFeatureMap.set(r.feature, e);
+  }
+  const perFeature = Array.from(perFeatureMap.entries())
+    .map(([feature, { success, warnings }]) => {
+      const total = success + warnings;
+      return {
+        feature,
+        successCount: success,
+        warningCount: warnings,
+        warningRatePct: total > 0 ? Math.round((warnings / total) * 100) : 0,
+      };
+    })
+    .sort((a, b) => b.warningCount - a.warningCount);
+
+  const totalRuns = perFeature.reduce(
+    (s, f) => s + f.successCount + f.warningCount,
+    0,
+  );
+  const runsWithWarnings = perFeature.reduce((s, f) => s + f.warningCount, 0);
+  const warningRatePct = totalRuns > 0 ? Math.round((runsWithWarnings / totalRuns) * 100) : 0;
+
+  // Pull all warning rows (errorMessage stores JSON.stringify({warnings})).
+  const warningRows = await db
+    .select({
+      feature: aiUsageLogs.feature,
+      createdAt: aiUsageLogs.createdAt,
+      errorMessage: aiUsageLogs.errorMessage,
+    })
+    .from(aiUsageLogs)
+    .where(
+      and(
+        gte(aiUsageLogs.createdAt, since),
+        eq(aiUsageLogs.status, "success_with_warnings"),
+        isNotNull(aiUsageLogs.errorMessage),
+      ),
+    )
+    .orderBy(desc(aiUsageLogs.createdAt))
+    .limit(2000); // 14 days × max throughput cap
+
+  const patternMap = new Map<
+    string,
+    { count: number; samples: { feature: string; createdAt: Date }[] }
+  >();
+  for (const row of warningRows) {
+    if (!row.errorMessage) continue;
+    let parsed: WarningEnvelope;
+    try {
+      parsed = JSON.parse(row.errorMessage) as WarningEnvelope;
+    } catch {
+      continue; // non-JSON payloads (older rows) skipped
+    }
+    const warnings = Array.isArray(parsed.warnings) ? (parsed.warnings as unknown[]) : [];
+    for (const w of warnings) {
+      const text = String(w);
+      const pattern = classifyWarning(text);
+      const entry = patternMap.get(pattern) ?? { count: 0, samples: [] };
+      entry.count += 1;
+      if (entry.samples.length < PATTERN_SAMPLE_LIMIT) {
+        entry.samples.push({ feature: row.feature, createdAt: row.createdAt });
+      }
+      patternMap.set(pattern, entry);
+    }
+  }
+  const topPatterns = Array.from(patternMap.entries())
+    .map(([pattern, { count, samples }]) => ({ pattern, count, samples }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, TOP_PATTERNS_LIMIT);
+
+  // 14-day daily timeline (Postgres date_trunc → ISO date string).
+  const dailyRows = await db
+    .select({
+      day: sql<string>`to_char(date_trunc('day', ${aiUsageLogs.createdAt}), 'YYYY-MM-DD')`,
+      status: aiUsageLogs.status,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(aiUsageLogs)
+    .where(
+      and(
+        gte(aiUsageLogs.createdAt, since),
+        inArray(aiUsageLogs.status, ["success", "success_with_warnings"]),
+      ),
+    )
+    .groupBy(sql`date_trunc('day', ${aiUsageLogs.createdAt})`, aiUsageLogs.status);
+
+  // Build a complete 14-day series so the chart has zero gaps.
+  const dayMap = new Map<string, { success: number; warnings: number }>();
+  for (let i = WARNING_LOOKBACK_DAYS - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    dayMap.set(key, { success: 0, warnings: 0 });
+  }
+  for (const r of dailyRows) {
+    const e = dayMap.get(r.day);
+    if (!e) continue;
+    if (r.status === "success_with_warnings") e.warnings += r.count;
+    else e.success += r.count;
+  }
+  const daily = Array.from(dayMap.entries()).map(([date, v]) => ({
+    date,
+    success: v.success,
+    warnings: v.warnings,
+  }));
+
+  return {
+    totalRuns,
+    runsWithWarnings,
+    warningRatePct,
+    perFeature,
+    topPatterns,
+    daily,
+  };
 }
