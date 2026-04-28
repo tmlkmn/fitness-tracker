@@ -26,55 +26,39 @@ function getStoredConsent(): ConsentState | null {
 }
 
 function storeConsent(consent: ConsentState) {
-  localStorage.setItem(CONSENT_KEY, JSON.stringify(consent));
+  try {
+    localStorage.setItem(CONSENT_KEY, JSON.stringify(consent));
+  } catch {
+    // localStorage may be unavailable (private mode, quota, disabled cookies).
+    // Swallow — banner will be dismissed for this session via state.
+  }
 }
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(() => !getStoredConsent());
   const [showDetails, setShowDetails] = useState(false);
   const [analytics, setAnalytics] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   if (!visible) return null;
 
-  const handleAcceptAll = async () => {
-    setSaving(true);
-    const consent: ConsentState = { necessary: true, analytics: true, timestamp: Date.now() };
+  const dismissWith = (analyticsValue: boolean) => {
+    const consent: ConsentState = {
+      necessary: true,
+      analytics: analyticsValue,
+      timestamp: Date.now(),
+    };
     storeConsent(consent);
-    try {
-      await saveCookieConsent({ necessary: true, analytics: true });
-    } catch {
-      // Silent — consent stored locally
-    }
     setVisible(false);
-    setSaving(false);
+    void saveCookieConsent({ necessary: true, analytics: analyticsValue }).catch(
+      () => {
+        // Server-side persistence is best-effort; local consent already stored.
+      },
+    );
   };
 
-  const handleAcceptSelected = async () => {
-    setSaving(true);
-    const consent: ConsentState = { necessary: true, analytics, timestamp: Date.now() };
-    storeConsent(consent);
-    try {
-      await saveCookieConsent({ necessary: true, analytics });
-    } catch {
-      // Silent
-    }
-    setVisible(false);
-    setSaving(false);
-  };
-
-  const handleRejectOptional = async () => {
-    setSaving(true);
-    const consent: ConsentState = { necessary: true, analytics: false, timestamp: Date.now() };
-    storeConsent(consent);
-    try {
-      await saveCookieConsent({ necessary: true, analytics: false });
-    } catch {
-      // Silent
-    }
-    setVisible(false);
-    setSaving(false);
-  };
+  const handleAcceptAll = () => dismissWith(true);
+  const handleAcceptSelected = () => dismissWith(analytics);
+  const handleRejectOptional = () => dismissWith(false);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
@@ -127,7 +111,6 @@ export function CookieConsent() {
               <Button
                 size="sm"
                 onClick={handleAcceptAll}
-                disabled={saving}
                 className="flex-1"
               >
                 Tümünü Kabul Et
@@ -136,7 +119,6 @@ export function CookieConsent() {
                 size="sm"
                 variant="outline"
                 onClick={handleRejectOptional}
-                disabled={saving}
                 className="flex-1"
               >
                 Sadece Zorunlu
@@ -155,7 +137,6 @@ export function CookieConsent() {
               <Button
                 size="sm"
                 onClick={handleAcceptSelected}
-                disabled={saving}
                 className="flex-1"
               >
                 Seçimi Kaydet
@@ -164,7 +145,6 @@ export function CookieConsent() {
                 size="sm"
                 variant="outline"
                 onClick={handleAcceptAll}
-                disabled={saving}
                 className="flex-1"
               >
                 Tümünü Kabul Et

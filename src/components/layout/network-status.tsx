@@ -5,9 +5,7 @@ import { WifiOff, Wifi, RefreshCw } from "lucide-react";
 import { useIsFetching, useIsMutating, useQueryClient } from "@tanstack/react-query";
 
 export function NetworkStatus() {
-  const [isOnline, setIsOnline] = useState(() =>
-    typeof navigator !== "undefined" ? navigator.onLine : true,
-  );
+  const [isOnline, setIsOnline] = useState(true);
   const [showReconnected, setShowReconnected] = useState(false);
   const wasOfflineRef = useRef(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -16,7 +14,10 @@ export function NetworkStatus() {
   const mutating = useIsMutating();
 
   useEffect(() => {
-    const handleOnline = () => {
+    let cancelled = false;
+
+    const markOnline = () => {
+      if (cancelled) return;
       setIsOnline(true);
       if (wasOfflineRef.current) {
         wasOfflineRef.current = false;
@@ -29,15 +30,46 @@ export function NetworkStatus() {
       }
     };
 
-    const handleOffline = () => {
+    const markOffline = () => {
+      if (cancelled) return;
       setIsOnline(false);
       wasOfflineRef.current = true;
+    };
+
+    // navigator.onLine can falsely report offline (especially in PWAs / iOS).
+    // Verify with a real network probe before showing the offline banner.
+    const probe = async () => {
+      try {
+        const res = await fetch("/favicon.ico", {
+          method: "HEAD",
+          cache: "no-store",
+        });
+        if (res.ok || res.type === "opaque") markOnline();
+        else markOffline();
+      } catch {
+        markOffline();
+      }
+    };
+
+    const handleOnline = () => {
+      void probe();
+    };
+
+    const handleOffline = () => {
+      // Trust the offline event but still verify, since some browsers
+      // fire it spuriously when SW intercepts requests.
+      void probe();
     };
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      void probe();
+    }
+
     return () => {
+      cancelled = true;
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
