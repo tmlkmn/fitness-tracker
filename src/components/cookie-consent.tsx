@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { flushSync } from "react-dom";
+import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Cookie, Settings2 } from "lucide-react";
 import { saveCookieConsent } from "@/actions/cookie-consent";
 import Link from "next/link";
 
 const CONSENT_KEY = "fitmusc_cookie_consent";
+const DISMISS_EVENT = "fitmusc:cookie-consent-dismissed";
 
 interface ConsentState {
   necessary: boolean;
@@ -15,15 +15,21 @@ interface ConsentState {
   timestamp: number;
 }
 
-function getStoredConsent(): ConsentState | null {
-  if (typeof window === "undefined") return null;
+function readHasConsent(): boolean {
   try {
-    const raw = localStorage.getItem(CONSENT_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    return localStorage.getItem(CONSENT_KEY) !== null;
   } catch {
-    return null;
+    return false;
   }
+}
+
+function subscribeConsent(onChange: () => void): () => void {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(DISMISS_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(DISMISS_EVENT, onChange);
+  };
 }
 
 function storeConsent(consent: ConsentState) {
@@ -33,14 +39,23 @@ function storeConsent(consent: ConsentState) {
     // localStorage may be unavailable (private mode, quota, disabled cookies).
     // Swallow — banner will be dismissed for this session via state.
   }
+  // Notify same-tab listeners (the `storage` event only fires cross-tab).
+  window.dispatchEvent(new Event(DISMISS_EVENT));
 }
 
 export function CookieConsent() {
-  const [visible, setVisible] = useState(() => !getStoredConsent());
+  // useSyncExternalStore handles SSR safely (server snapshot = `true` —
+  // hasConsent treated as already given, so banner doesn't render on the
+  // server) and re-renders the moment localStorage changes.
+  const hasConsent = useSyncExternalStore(
+    subscribeConsent,
+    readHasConsent,
+    () => true,
+  );
   const [showDetails, setShowDetails] = useState(false);
   const [analytics, setAnalytics] = useState(false);
 
-  if (!visible) return null;
+  if (hasConsent) return null;
 
   const dismissWith = (analyticsValue: boolean) => {
     const consent: ConsentState = {
@@ -49,7 +64,6 @@ export function CookieConsent() {
       timestamp: Date.now(),
     };
     storeConsent(consent);
-    flushSync(() => setVisible(false));
     void saveCookieConsent({ necessary: true, analytics: analyticsValue }).catch(
       () => {
         // Server-side persistence is best-effort; local consent already stored.
@@ -57,21 +71,9 @@ export function CookieConsent() {
     );
   };
 
-  const handleAcceptAll = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dismissWith(true);
-  };
-  const handleAcceptSelected = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dismissWith(analytics);
-  };
-  const handleRejectOptional = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dismissWith(false);
-  };
+  const handleAcceptAll = () => dismissWith(true);
+  const handleAcceptSelected = () => dismissWith(analytics);
+  const handleRejectOptional = () => dismissWith(false);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
