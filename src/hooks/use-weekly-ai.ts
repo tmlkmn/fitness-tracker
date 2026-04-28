@@ -18,11 +18,13 @@ export function useGenerateWeeklyPlan() {
       userNote,
       generateMode,
       dayModes,
+      pastDows,
     }: {
       dateStr: string;
       userNote?: string;
       generateMode?: "both" | "nutrition" | "workout";
       dayModes?: Partial<Record<number, DayModeChoice>>;
+      pastDows?: number[];
     }) => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 180_000);
@@ -31,7 +33,7 @@ export function useGenerateWeeklyPlan() {
         const res = await fetch("/api/ai/weekly", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dateStr, userNote, generateMode, dayModes }),
+          body: JSON.stringify({ dateStr, userNote, generateMode, dayModes, pastDows }),
           signal: controller.signal,
         });
 

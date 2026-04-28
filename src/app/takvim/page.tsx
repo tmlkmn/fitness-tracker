@@ -151,8 +151,10 @@ export default function TakvimPage() {
   const isPastWeek = weekEndStr < todayStr;
   const isFutureWeek = weekStartStr > todayStr;
 
-  const todayDow = today.getDay(); // 0=Sunday
-  const isMonday = todayDow === 1;
+  const todayDow = today.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+  // Weekday gate: Mon-Fri eligible to (re)generate the current week. Weekend
+  // (Sat/Sun) is too late to plan THIS week, so the button is hidden.
+  const isWeekday = todayDow >= 1 && todayDow <= 5;
 
   // Empty week gap detection for future weeks
   const { data: emptyWeeks } = useEmptyWeeksBetween(todayStr, weekStartStr, isFutureWeek);
@@ -173,10 +175,11 @@ export default function TakvimPage() {
     userNote?: string,
     mode?: "both" | "nutrition" | "workout",
     dayModes?: Record<number, "workout" | "swimming" | "rest">,
+    pastDows?: number[],
   ) => {
     const m = mode ?? generateMode;
     setGenerateMode(m);
-    generateWeekly.mutate({ dateStr: selectedDate, userNote, generateMode: m, dayModes });
+    generateWeekly.mutate({ dateStr: selectedDate, userNote, generateMode: m, dayModes, pastDows });
   };
 
   const handleApplyWeekly = () => {
@@ -331,9 +334,11 @@ export default function TakvimPage() {
         {/* AI Weekly Plan Button + Delete */}
         {!isPastWeek && !isLoading && (
           <div className="flex gap-2">
-            {/* AI button: hide for past week; current week: show only if no plan or Monday; future week: always show.
-                Also hidden entirely when month gate blocks this future month. */}
-            {!isMonthBlocked && (isFutureWeek || !data?.weeklyPlan || isMonday) && (
+            {/* AI button: hide for past week; current week: show only on
+                weekdays (Mon-Fri) when a plan exists OR whenever no plan
+                exists; future week: always show. Hidden entirely when month
+                gate blocks this future month. */}
+            {!isMonthBlocked && (isFutureWeek || !data?.weeklyPlan || isWeekday) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -345,8 +350,8 @@ export default function TakvimPage() {
                 AI ile Haftalık Plan {data?.weeklyPlan ? "Değiştir" : "Oluştur"}
               </Button>
             )}
-            {/* Delete button: hide for past week; current week: only Monday */}
-            {data?.weeklyPlan && (isFutureWeek || (isCurrentWeek && isMonday)) && (
+            {/* Delete button: hide for past week; current week: only weekdays */}
+            {data?.weeklyPlan && (isFutureWeek || (isCurrentWeek && isWeekday)) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -492,6 +497,8 @@ export default function TakvimPage() {
           onReset={() => generateWeekly.reset()}
           hasExistingPlan={!!data?.weeklyPlan}
           serviceType={userProfile?.serviceType ?? undefined}
+          weekStartStr={weekStartStr}
+          todayStr={todayStr}
         />
       )}
 

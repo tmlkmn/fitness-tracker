@@ -103,46 +103,61 @@ const TURKISH_DAY_NAMES = [
 
 /**
  * Build the GÜNLÜK PLAN TİPLERİ block injected into user message so the AI
- * has a concrete per-day contract to honor.
+ * has a concrete per-day contract to honor. Past days (already-elapsed
+ * days when generating mid-week) are explicitly marked so the AI doesn't
+ * waste tokens producing content the user can't act on.
  */
 function buildDayModesBlock(
   dayModes: Partial<Record<number, DayModeChoice>>,
+  pastDows: Set<number>,
 ): string {
   const lines = TURKISH_DAY_NAMES.map((name, dow) => {
+    if (pastDows.has(dow)) {
+      return `  ${name}: GEÇMİŞ — bu gün için meals:[] ve exercises:[] döndür, içerik üretme`;
+    }
     const mode = dayModes[dow] ?? "rest";
     return `  ${name}: ${mode}`;
   });
   return `\n\n═══ GÜNLÜK PLAN TİPLERİ (KRİTİK — birebir uygula) ═══
 ${lines.join("\n")}
-HER GÜN için planType yukarıdaki listeyle BİREBİR aynı olmalı. workout/swimming için exercises dolu, rest için exercises boş array. Beslenme programı (meals) HER GÜN için DOLU olmalı — rest günleri DAHİL.`;
+GEÇMİŞ günleri planType "rest" olarak yaz, exercises ve meals boş array — kullanıcı bu günleri yaşadı, içerik gerekli değil.
+Diğer günlerde planType yukarıdaki listeyle BİREBİR aynı olmalı. workout/swimming için exercises dolu, rest için exercises boş array. Beslenme programı (meals) HER GÜN için DOLU olmalı — rest günleri DAHİL (GEÇMİŞ günler hariç).`;
 }
 
 /**
  * Detect whether validator results need a content-quality retry. Triggers:
  * - missing days (AI returned <7 → validator filled with empty rest)
  * - planType mismatches (AI ignored user's day mode selection)
- * - empty meal days (any day with meals.length === 0)
+ * - empty meal days (any day with meals.length === 0) — except past days
  */
-function needsContentRetry(result: ValidateWeeklyPlanResult): boolean {
-  return (
-    result.missingDays.length > 0 ||
-    result.planTypeMismatches.length > 0 ||
-    result.emptyMealDays.length > 0
-  );
+function needsContentRetry(
+  result: ValidateWeeklyPlanResult,
+  pastDows: Set<number>,
+): boolean {
+  const missing = result.missingDays.filter((d) => !pastDows.has(d));
+  const mismatches = result.planTypeMismatches.filter((d) => !pastDows.has(d));
+  const emptyMeals = result.emptyMealDays.filter((d) => !pastDows.has(d));
+  return missing.length > 0 || mismatches.length > 0 || emptyMeals.length > 0;
 }
 
-function buildRetryNudge(result: ValidateWeeklyPlanResult): string {
+function buildRetryNudge(
+  result: ValidateWeeklyPlanResult,
+  pastDows: Set<number>,
+): string {
+  const missing = result.missingDays.filter((d) => !pastDows.has(d));
+  const mismatches = result.planTypeMismatches.filter((d) => !pastDows.has(d));
+  const emptyMeals = result.emptyMealDays.filter((d) => !pastDows.has(d));
   const issues: string[] = [];
-  if (result.missingDays.length > 0) {
-    const names = result.missingDays.map((d) => TURKISH_DAY_NAMES[d]).join(", ");
+  if (missing.length > 0) {
+    const names = missing.map((d) => TURKISH_DAY_NAMES[d]).join(", ");
     issues.push(`EKSİK GÜNLER: ${names}. Bu günler için TAM içerik üret (planType + meals + exercises).`);
   }
-  if (result.planTypeMismatches.length > 0) {
-    const names = result.planTypeMismatches.map((d) => TURKISH_DAY_NAMES[d]).join(", ");
+  if (mismatches.length > 0) {
+    const names = mismatches.map((d) => TURKISH_DAY_NAMES[d]).join(", ");
     issues.push(`YANLIŞ planType GÜNLERİ: ${names}. Bu günlerde GÜNLÜK PLAN TİPLERİ bloğundaki tipi BİREBİR uygula.`);
   }
-  if (result.emptyMealDays.length > 0) {
-    const names = result.emptyMealDays.map((d) => TURKISH_DAY_NAMES[d]).join(", ");
+  if (emptyMeals.length > 0) {
+    const names = emptyMeals.map((d) => TURKISH_DAY_NAMES[d]).join(", ");
     issues.push(`MEAL'i BOŞ GÜNLER: ${names}. Bu günlere MUTLAKA 3-5 öğün ekle (rest günleri dahil).`);
   }
   return `\n\nÖNCEKİ YANITINDA ŞU SORUNLAR VAR — DÜZELT:\n${issues.join("\n")}\nTüm 7 günü içeren EKSİKSİZ ve TUTARLI bir JSON döndür.`;
@@ -163,6 +178,7 @@ export async function POST(request: Request) {
   let userNote: string | undefined;
   let generateMode: "both" | "nutrition" | "workout" | undefined;
   let dayModesInput: Partial<Record<number, DayModeChoice>> | undefined;
+  let pastDowsInput: number[] = [];
   try {
     const body = await request.json();
     dateStr = String(body.dateStr ?? "");
@@ -179,9 +195,15 @@ export async function POST(request: Request) {
       }
       if (Object.keys(parsed).length > 0) dayModesInput = parsed;
     }
+    if (Array.isArray(body.pastDows)) {
+      pastDowsInput = (body.pastDows as unknown[])
+        .map((x) => Number(x))
+        .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
+    }
   } catch {
     return Response.json({ error: "Geçersiz istek." }, { status: 400 });
   }
+  const pastDowsSet = new Set(pastDowsInput);
 
   if (!dateStr) {
     return Response.json({ error: "Tarih gerekli." }, { status: 400 });
@@ -290,7 +312,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
   if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
     for (let i = 0; i < 7; i++) expectedDayModes[i] = "nutrition";
   }
-  const dayModesBlock = buildDayModesBlock(expectedDayModes);
+  const dayModesBlock = buildDayModesBlock(expectedDayModes, pastDowsSet);
 
   // Build user message
   let userMessage: string;
@@ -424,7 +446,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     // The first response parsed but the validator detected gaps that would
     // present user-visible "boş gün" / wrong planType bugs. One retry with
     // explicit instructions to fix the specific gaps.
-    if (needsContentRetry(validationResult)) {
+    if (needsContentRetry(validationResult, pastDowsSet)) {
       const retryController = new AbortController();
       const retryTimeout = setTimeout(() => retryController.abort(), 120_000);
       try {
@@ -440,7 +462,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
           ],
           messages: [{
             role: "user",
-            content: `${userMessage}${buildRetryNudge(validationResult)}`,
+            content: `${userMessage}${buildRetryNudge(validationResult, pastDowsSet)}`,
           }],
         }, { signal: retryController.signal });
 
@@ -452,8 +474,14 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
           const fixupResult = validate(parseJSON(fixupText));
           // Only swap to the retry result if it has FEWER gaps than the first.
           // Otherwise keep the original — the retry made things worse.
-          const originalGaps = validationResult.missingDays.length + validationResult.planTypeMismatches.length + validationResult.emptyMealDays.length;
-          const retryGaps = fixupResult.missingDays.length + fixupResult.planTypeMismatches.length + fixupResult.emptyMealDays.length;
+          // Count gaps EXCLUDING past days — past days legitimately have
+          // empty meals/exercises, so they shouldn't inflate the gap score.
+          const countGaps = (r: ValidateWeeklyPlanResult) =>
+            r.missingDays.filter((d) => !pastDowsSet.has(d)).length +
+            r.planTypeMismatches.filter((d) => !pastDowsSet.has(d)).length +
+            r.emptyMealDays.filter((d) => !pastDowsSet.has(d)).length;
+          const originalGaps = countGaps(validationResult);
+          const retryGaps = countGaps(fixupResult);
           if (retryGaps < originalGaps) {
             validationResult = fixupResult;
           } else {

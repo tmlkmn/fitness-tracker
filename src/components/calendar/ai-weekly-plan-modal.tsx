@@ -240,12 +240,17 @@ interface AiWeeklyPlanModalProps {
     userNote?: string,
     generateMode?: "both" | "nutrition" | "workout",
     dayModes?: Record<number, "workout" | "swimming" | "rest">,
+    pastDows?: number[],
   ) => void;
   onApply: () => void;
   onApplySaved: (plan: AIWeeklyPlan) => void;
   onReset: () => void;
   hasExistingPlan: boolean;
   serviceType?: string;
+  /** Monday of the week being generated (YYYY-MM-DD). */
+  weekStartStr?: string;
+  /** Today's date (YYYY-MM-DD). */
+  todayStr?: string;
 }
 
 const planTypeIcons = {
@@ -442,6 +447,8 @@ export function AiWeeklyPlanModal({
   onReset,
   hasExistingPlan,
   serviceType,
+  weekStartStr,
+  todayStr,
 }: AiWeeklyPlanModalProps) {
   const [userNote, setUserNote] = useState("");
   // Per-day plan type: workout / swimming / rest. Default Pzt-Cum workout,
@@ -450,6 +457,22 @@ export function AiWeeklyPlanModal({
     0: "workout", 1: "workout", 2: "workout", 3: "workout", 4: "workout",
     5: "rest", 6: "rest",
   });
+
+  // Past-day detection: when generating for the CURRENT week, days before
+  // today are already gone — disable them in the picker so the user can't
+  // request content the AI would waste tokens on. For future weeks, no day
+  // is past.
+  const pastDows = useMemo(() => {
+    if (!weekStartStr || !todayStr) return new Set<number>();
+    if (todayStr < weekStartStr) return new Set<number>();  // future week
+    const start = new Date(weekStartStr + "T00:00:00");
+    const today = new Date(todayStr + "T00:00:00");
+    const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays >= 7) return new Set<number>();  // past week (button is hidden, but defensive)
+    const past = new Set<number>();
+    for (let i = 0; i < diffDays; i++) past.add(i);  // dows strictly before today
+    return past;
+  }, [weekStartStr, todayStr]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>(() => loadWorkoutPrefs().equipment);
@@ -527,7 +550,9 @@ export function AiWeeklyPlanModal({
 
   // Cycle a day through workout → swimming → rest → workout. For users on
   // nutrition-only plans, swimming is skipped (cycle is workout ↔ rest only).
+  // Past days are not changeable — they're locked to "rest" by the UI.
   const cycleDayMode = (dow: number) => {
+    if (pastDows.has(dow)) return;
     setDayModes((prev) => {
       const current = prev[dow];
       const allowSwimming = serviceType !== "nutrition";
@@ -572,10 +597,17 @@ export function AiWeeklyPlanModal({
     // Free text
     const note = userNote.trim();
     if (note) parts.push(note);
+    // Force past days to "rest" so the backend never receives a workout/
+    // swimming intent for a day that's already gone.
+    const effectiveDayModes = { ...dayModes };
+    for (const dow of pastDows) {
+      effectiveDayModes[dow] = "rest";
+    }
     onGenerate(
       parts.length > 0 ? parts.join(". ") : undefined,
       generateMode,
-      dayModes,
+      effectiveDayModes,
+      Array.from(pastDows),
     );
     invalidateQuota();
   };
@@ -658,8 +690,10 @@ export function AiWeeklyPlanModal({
                 <div className="grid grid-cols-7 gap-1.5">
                   {WORKOUT_DAYS.map(({ value, label }) => {
                     const mode = dayModes[value] ?? "rest";
-                    const styles =
-                      mode === "workout"
+                    const isPast = pastDows.has(value);
+                    const styles = isPast
+                      ? "bg-muted/30 border-transparent text-muted-foreground/40 line-through cursor-not-allowed"
+                      : mode === "workout"
                         ? "bg-primary/15 border-primary/40 text-primary"
                         : mode === "swimming"
                           ? "bg-blue-500/15 border-blue-500/40 text-blue-500"
@@ -671,8 +705,14 @@ export function AiWeeklyPlanModal({
                         key={value}
                         type="button"
                         onClick={() => cycleDayMode(value)}
-                        className={`flex flex-col items-center justify-center py-2 gap-0.5 rounded-md text-[10px] font-medium border transition-colors hover:opacity-80 ${styles}`}
-                        title={`${label}: ${mode === "workout" ? "Antrenman" : mode === "swimming" ? "Yüzme" : "Dinlenme"}`}
+                        disabled={isPast}
+                        aria-disabled={isPast}
+                        className={`flex flex-col items-center justify-center py-2 gap-0.5 rounded-md text-[10px] font-medium border transition-colors ${isPast ? "" : "hover:opacity-80"} ${styles}`}
+                        title={
+                          isPast
+                            ? `${label}: bu gün geçti — AI öneri sunmayacak`
+                            : `${label}: ${mode === "workout" ? "Antrenman" : mode === "swimming" ? "Yüzme" : "Dinlenme"}`
+                        }
                       >
                         <span>{label}</span>
                         <Icon className="h-3 w-3" />
@@ -682,6 +722,11 @@ export function AiWeeklyPlanModal({
                 </div>
                 <p className="text-[10px] text-muted-foreground/70 mt-1.5">
                   Antrenman → Yüzme → Dinlenme sırasıyla döner. Beslenme programı her güne yazılır.
+                  {pastDows.size > 0 && (
+                    <span className="block mt-0.5">
+                      Üstü çizili günler geçti — AI bu günler için içerik üretmeyecek.
+                    </span>
+                  )}
                 </p>
               </div>
 
