@@ -119,16 +119,45 @@ export function validateWeeklyPlan(
   expectedTargets?: ExpectedTargets,
   options?: ValidateWeeklyPlanOptions,
 ): ValidateWeeklyPlanResult {
-  const obj = data as Record<string, unknown>;
-  if (!obj || typeof obj !== "object" || !Array.isArray(obj.days)) {
-    throw new Error("Invalid response format: expected { weekTitle, days: [...] }");
-  }
+  const obj = (data && typeof data === "object" ? data : {}) as Record<string, unknown>;
 
   const warnings: string[] = [];
   const planTypeMismatches: number[] = [];
   const emptyMealDays: number[] = [];
   const strict = isStrictMacroValidationEnabled(options);
   const expectedDayModes = options?.expectedDayModes;
+
+  // If the AI omitted `days` entirely (or returned non-array), don't throw —
+  // produce a result with missingDays=[0..6] so the route's content-quality
+  // retry path is triggered instead of a hard 500.
+  if (!Array.isArray(obj.days)) {
+    warnings.push(
+      `response missing "days" array (got ${typeof obj.days}) — treating all 7 days as missing for retry`,
+    );
+    const filledDays: AIWeeklyDay[] = [];
+    for (let i = 0; i < 7; i++) {
+      filledDays.push({
+        dayOfWeek: i,
+        dayName: TURKISH_DAY_NAMES_ORDERED[i],
+        planType: expectedDayModes?.[i] ?? "rest",
+        workoutTitle: null,
+        meals: [],
+        exercises: [],
+      });
+    }
+    return {
+      plan: {
+        weekTitle: String(obj.weekTitle ?? "Haftalık Plan"),
+        phase: String(obj.phase ?? "custom"),
+        notes: obj.notes != null ? String(obj.notes) : null,
+        days: filledDays,
+      },
+      warnings,
+      missingDays: [0, 1, 2, 3, 4, 5, 6],
+      planTypeMismatches: [],
+      emptyMealDays: [0, 1, 2, 3, 4, 5, 6],
+    };
+  }
 
   const rawDays: AIWeeklyDay[] = (obj.days as Record<string, unknown>[]).map((day, index) => {
     const dayName = String(day.dayName ?? "");

@@ -515,6 +515,9 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     // ─── Mutlu yol: Tool Use ─────────────────────────────────────────────
     // tool_choice: { type: "tool" } ile model MUTLAKA tool_use bloğu döndürür.
     // toolUse.input doğrudan JSON objesi — parse/repair zinciri gereksiz.
+    // Gerçi nadiren AI tool'u çağırsa bile şema dışı (örn. days eksik) input
+    // gönderebiliyor; o durumda validator throw yerine missingDays=[0..6]
+    // döndürür ve aşağıdaki content-quality retry devreye girer.
     const toolUseBlock = message.content.find((b) => b.type === "tool_use");
 
     if (toolUseBlock?.type === "tool_use") {
@@ -665,6 +668,33 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       } finally {
         clearTimeout(retryTimeout);
       }
+    }
+
+    // Eğer hem ilk yanıt hem retry tamamen boş döndüyse (7/7 gün eksik veya
+    // tüm günler boş öğün) — kullanıcıya boş plan göstermek yerine açık hata
+    // ver. Quota tüketmedi sayılır (logAiUsage status="error" alır).
+    const finalGaps =
+      validationResult.missingDays.filter((d) => !pastDowsSet.has(d)).length +
+      validationResult.emptyMealDays.filter((d) => !pastDowsSet.has(d)).length;
+    const expectedNonPastDays = 7 - pastDowsSet.size;
+    if (expectedNonPastDays > 0 && finalGaps >= expectedNonPastDays * 2) {
+      // Both missing AND empty for every non-past day → AI wholly failed.
+      await logAiUsage(userId, "weekly", {
+        status: "validation_error",
+        errorMessage: "AI returned empty/invalid plan after retry",
+        inputTokens,
+        outputTokens,
+        durationMs: Date.now() - startTime,
+        model: AI_MODELS.smart,
+        promptVersion: PROMPT_VERSION,
+      });
+      return Response.json(
+        {
+          error:
+            "AI bu hafta için anlamlı bir plan üretemedi. Lütfen birkaç dakika sonra tekrar deneyin.",
+        },
+        { status: 502 },
+      );
     }
 
     const suggestedPlan = validationResult.plan; // AI'nın yanıtından doğrulama sürecinden geçen haftalık planı çıkarır. Bu plan, AI'nın yanıtının beklenen formatta olduğunu ve gerekli bilgileri içerdiğini gösterir. Bu önerilen plan, kullanıcıya sunulacak olan haftalık plan olarak kullanılır. Doğrulama süreci sırasında herhangi bir sorun tespit edilirse, bu durum AI'nın yanıtının kullanıcıya uygun bir plan önermeyeceğini gösterebilir ve onarma veya yeniden deneme mekanizmalarını tetikleyebilir.
