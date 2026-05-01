@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, Check, AlertCircle, Timer, MessageSquare, Home, Building2 } from "lucide-react";
 import type { AIExercise } from "@/actions/ai-workout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
+import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -134,6 +135,18 @@ export function AiWorkoutModal({
   const [userNote, setUserNote] = useState("");
   const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>(() => loadWorkoutPrefs().equipment);
+  const [profileDone, setProfileDone] = useState(false);
+
+  useEffect(() => {
+    if (!loading) { setProfileDone(false); return; }
+    const t = setTimeout(() => setProfileDone(true), 1200);
+    return () => clearTimeout(t);
+  }, [loading]);
+
+  const workoutOverlaySteps: GeneratingStep[] = [
+    { label: "Profil analizi", status: profileDone ? "completed" : loading ? "active" : "pending" },
+    { label: "Antrenman planı oluşturuluyor", status: loading && profileDone ? "active" : "pending" },
+  ];
 
   const toggleEquipment = (eq: string) => {
     setSelectedEquipment((prev) =>
@@ -159,8 +172,14 @@ export function AiWorkoutModal({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto overflow-x-hidden">
+    <>
+      <AiGeneratingOverlay
+        open={loading}
+        title="AI Antrenman Planını Hazırlıyor"
+        steps={workoutOverlaySteps}
+      />
+      <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="max-h-[95svh] h-[95svh] overflow-y-auto overflow-x-hidden">
         <SheetHeader sticky>
           <SheetTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -333,5 +352,6 @@ export function AiWorkoutModal({
         </div>
       </SheetContent>
     </Sheet>
+    </>
   );
 }

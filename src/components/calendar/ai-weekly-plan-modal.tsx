@@ -50,6 +50,7 @@ import {
   type GenerationStep,
 } from "@/hooks/use-weekly-ai";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
+import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 
 // ─── Template tags for quick suggestions ────────────────────────────────────
 
@@ -634,14 +635,67 @@ export function AiWeeklyPlanModal({
     onOpenChange(open);
   };
 
+  const overlayTitle =
+    generateMode === "nutrition"
+      ? "AI Beslenme Planını Hazırlıyor"
+      : generateMode === "workout"
+        ? "AI Antrenman Planını Hazırlıyor"
+        : "AI Haftalık Planını Hazırlıyor";
+
+  const overlaySteps: GeneratingStep[] = (() => {
+    const profileStatus =
+      step === null || step === "profile" ? "active" : "completed";
+    const healthStatus =
+      step === null || step === "profile" ? "pending" : "completed";
+    const nutritionStatus =
+      step === "nutrition" || step === "workout"
+        ? "active"
+        : step === "merging"
+          ? "completed"
+          : "pending";
+    const workoutStatus =
+      step === "workout"
+        ? "active"
+        : step === "merging"
+          ? "completed"
+          : "pending";
+
+    if (generateMode === "nutrition") {
+      return [
+        { label: "Profil analizi", status: profileStatus },
+        { label: "Sağlık verileri", status: healthStatus },
+        { label: "Beslenme planı oluşturuluyor", status: nutritionStatus },
+      ];
+    }
+    if (generateMode === "workout") {
+      return [
+        { label: "Profil analizi", status: profileStatus },
+        { label: "Sağlık verileri", status: healthStatus },
+        { label: "Antrenman planı oluşturuluyor", status: workoutStatus },
+      ];
+    }
+    return [
+      { label: "Profil analizi", status: profileStatus },
+      { label: "Sağlık verileri", status: healthStatus },
+      { label: "Beslenme planı", status: nutritionStatus },
+      { label: "Antrenman planı", status: workoutStatus },
+    ];
+  })();
+
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="max-h-[90vh] overflow-y-auto overflow-x-hidden"
-        onInteractOutside={(e) => { if (loading || applying) e.preventDefault(); }}
-        onEscapeKeyDown={(e) => { if (loading || applying) e.preventDefault(); }}
-      >
+    <>
+      <AiGeneratingOverlay
+        open={loading}
+        title={overlayTitle}
+        steps={overlaySteps}
+      />
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[95svh] h-[95svh] overflow-y-auto overflow-x-hidden"
+          onInteractOutside={(e) => { if (loading || applying) e.preventDefault(); }}
+          onEscapeKeyDown={(e) => { if (loading || applying) e.preventDefault(); }}
+        >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -1128,5 +1182,6 @@ export function AiWeeklyPlanModal({
         </DialogContent>
       </Dialog>
     </Sheet>
+    </>
   );
 }

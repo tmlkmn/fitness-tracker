@@ -21,7 +21,7 @@ import {
   ChevronUp,
   Clock,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { AIMeal } from "@/actions/ai-meals";
 import {
   useSavedDailyMealSuggestions,
@@ -29,6 +29,7 @@ import {
   useDeleteDailyMealSuggestion,
   useApplyDailyMeals,
 } from "@/hooks/use-meal-ai";
+import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 
 type Tab = "suggest" | "saved";
 
@@ -224,6 +225,18 @@ export function AiMealModal({
   const [tab, setTab] = useState<Tab>("suggest");
   const [ingredients, setIngredients] = useState("");
   const [userNote, setUserNote] = useState("");
+  const [profileDone, setProfileDone] = useState(false);
+
+  useEffect(() => {
+    if (!loading) { setProfileDone(false); return; }
+    const t = setTimeout(() => setProfileDone(true), 1200);
+    return () => clearTimeout(t);
+  }, [loading]);
+
+  const mealOverlaySteps: GeneratingStep[] = [
+    { label: "Profil analizi", status: profileDone ? "completed" : loading ? "active" : "pending" },
+    { label: "Beslenme planı oluşturuluyor", status: loading && profileDone ? "active" : "pending" },
+  ];
 
   const saved = useSavedDailyMealSuggestions(planType);
   const saveMutation = useSaveDailyMealSuggestion();
@@ -253,8 +266,14 @@ export function AiMealModal({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto overflow-x-hidden">
+    <>
+      <AiGeneratingOverlay
+        open={loading}
+        title="AI Beslenme Planını Hazırlıyor"
+        steps={mealOverlaySteps}
+      />
+      <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="max-h-[95svh] h-[95svh] overflow-y-auto overflow-x-hidden">
         <SheetHeader sticky>
           <SheetTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -442,5 +461,6 @@ export function AiMealModal({
         )}
       </SheetContent>
     </Sheet>
+    </>
   );
 }
