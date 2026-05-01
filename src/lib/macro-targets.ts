@@ -162,7 +162,13 @@ export async function computeDefaultTargets(
   const carbsRaw = Math.round((calories - protein * 4 - fat * 9) / 4);
   const carbs = Math.max(strategy.minCarbsG[gender], carbsRaw);
 
-  return { calories, protein, carbs, fat };
+  // minCarbsG bumpu veya rounding farkları makro toplamını calorie hedefinin
+  // üzerine çıkarabilir (özellikle MIN_DAILY_CALORIES devreye girince).
+  // Dönen calories değerini gerçek makro toplamına göre güncelle.
+  const actualCalories = Math.round(protein * 4 + carbs * 4 + fat * 9);
+  const finalCalories = Math.max(calories, actualCalories);
+
+  return { calories: finalCalories, protein, carbs, fat };
 }
 
 export async function resolveTargets(
@@ -170,10 +176,10 @@ export async function resolveTargets(
   userId: string | null,
 ): Promise<MacroTargets | null> {
   const hasOverride =
-    user.targetCalories ||
-    user.targetProteinG ||
-    user.targetCarbsG ||
-    user.targetFatG;
+    user.targetCalories != null ||
+    user.targetProteinG != null ||
+    user.targetCarbsG != null ||
+    user.targetFatG != null;
 
   const defaults = await computeDefaultTargets(user, userId);
 
@@ -183,12 +189,18 @@ export async function resolveTargets(
   const overrideCarbs = safeParseFloat(user.targetCarbsG);
   const overrideFat = safeParseFloat(user.targetFatG);
 
-  return {
-    calories: user.targetCalories ?? defaults?.calories ?? 0,
-    protein: overrideProtein != null ? Math.round(overrideProtein) : defaults?.protein ?? 0,
-    carbs: overrideCarbs != null ? Math.round(overrideCarbs) : defaults?.carbs ?? 0,
-    fat: overrideFat != null ? Math.round(overrideFat) : defaults?.fat ?? 0,
-  };
+  const calories = user.targetCalories ?? defaults?.calories ?? null;
+  const protein = overrideProtein != null ? Math.round(overrideProtein) : defaults?.protein ?? null;
+  const carbs = overrideCarbs != null ? Math.round(overrideCarbs) : defaults?.carbs ?? null;
+  const fat = overrideFat != null ? Math.round(overrideFat) : defaults?.fat ?? null;
+
+  // Dört alanın tamamı belirlenemiyorsa (kısmi override + eksik profil) null dön;
+  // "0g hedef" ile "hedef bilinmiyor" ayrımını korur.
+  if (calories == null || protein == null || carbs == null || fat == null) {
+    return null;
+  }
+
+  return { calories, protein, carbs, fat };
 }
 
 export function macroProgressColor(actual: number, target: number): string {

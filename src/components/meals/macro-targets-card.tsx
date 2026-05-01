@@ -33,7 +33,14 @@ export function MacroTargetsCard() {
     try {
       const defaults = await computeDefaults.mutateAsync();
       if (!defaults) {
-        toast.error("Otomatik hesap için boy, kilo ve yaş gerekli");
+        const missing: string[] = [];
+        if (!profile?.height) missing.push("boy");
+        if (!profile?.weight || parseFloat(profile.weight) <= 0) missing.push("kilo");
+        if (!profile?.age) missing.push("yaş");
+        const missingText = missing.length
+          ? `Eksik bilgi: ${missing.join(", ")}. `
+          : "";
+        toast.error(`${missingText}Profil sayfasından bilgilerini tamamla.`);
         return;
       }
       setCalories(String(defaults.calories));
@@ -46,6 +53,11 @@ export function MacroTargetsCard() {
   };
 
   const handleSave = async () => {
+    const calorieVal = calories ? parseInt(calories) : null;
+    if (calorieVal !== null && calorieVal < 1200) {
+      toast.error("Kalori hedefi en az 1200 kcal olmalıdır");
+      return;
+    }
     setSaving(true);
     try {
       await updateMacroTargets({
