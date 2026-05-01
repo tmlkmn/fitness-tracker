@@ -63,27 +63,21 @@ export async function POST(request: Request) {
   }
 
   // Build context for first message
-  const userContext = await buildUserContext(userId);
+  const userContext = await buildUserContext(userId, { forceRefresh: true });
 
-  // Construct messages array with context — limit to last 12 messages (6 turns)
+  // Construct messages array with context — limit to last 12 messages (6 turns).
+  // Context is always injected into the LAST user message (the current question)
+  // so it's reliably present regardless of conversation length or parity.
   const messages: Anthropic.MessageParam[] = [];
-
-  if (userMessages.length === 1) {
-    messages.push({
-      role: "user",
-      content: `[Kullanıcı Bağlamı]\n${userContext}\n\n[Soru]\n${userMessages[0].content}`,
-    });
-  } else {
-    const limited = userMessages.slice(-12);
-    for (let i = 0; i < limited.length; i++) {
-      const msg = limited[i];
-      const role = msg.role === "assistant" ? "assistant" : "user";
-      const content =
-        i === 0 && role === "user"
-          ? `[Kullanıcı Bağlamı]\n${userContext}\n\n[Soru]\n${msg.content}`
-          : msg.content;
-      messages.push({ role, content });
-    }
+  const limited = userMessages.slice(-12);
+  for (let i = 0; i < limited.length; i++) {
+    const msg = limited[i];
+    const role = msg.role === "assistant" ? "assistant" : "user";
+    const isCurrentQuestion = i === limited.length - 1 && role === "user";
+    const content = isCurrentQuestion
+      ? `[Kullanıcı Bağlamı]\n${userContext}\n\n[Soru]\n${msg.content}`
+      : msg.content;
+    messages.push({ role, content });
   }
 
   const client = getAIClient();

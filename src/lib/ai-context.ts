@@ -12,9 +12,9 @@ import {
 const contextCache = new Map<string, { text: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 
-export async function buildUserContext(userId: string): Promise<string> {
+export async function buildUserContext(userId: string, options?: { forceRefresh?: boolean }): Promise<string> {
   const cached = contextCache.get(userId);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (!options?.forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.text;
   }
   const user = await loadUserProfileRow(userId);
