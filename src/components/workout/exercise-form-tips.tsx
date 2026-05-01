@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Loader2, AlertCircle } from "lucide-react";
 import { useExerciseFormTips } from "@/hooks/use-exercise-form-tips";
@@ -43,16 +43,17 @@ export function ExerciseFormTips({ name, notes, englishName }: ExerciseFormTipsP
         <HelpCircle className="h-3.5 w-3.5" />
       </Button>
       {open && (
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent
-            className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto"
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent
+            side="bottom"
+            className="max-h-[90vh] overflow-y-auto"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
-            <DialogHeader>
-              <DialogTitle className="text-sm">
+            <SheetHeader>
+              <SheetTitle className="text-sm">
                 Form İpuçları: {name}
-              </DialogTitle>
-            </DialogHeader>
+              </SheetTitle>
+            </SheetHeader>
             <div className="space-y-3">
               {isLoading && (
                 <div className="flex items-center justify-center py-6">
@@ -112,8 +113,8 @@ export function ExerciseFormTips({ name, notes, englishName }: ExerciseFormTipsP
                 </div>
               )}
             </div>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
       )}
     </>
   );

@@ -7,6 +7,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -620,18 +626,19 @@ export function AiWeeklyPlanModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto overflow-x-hidden"
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent
+        side="bottom"
+        className="max-h-[90vh] overflow-y-auto overflow-x-hidden"
         onInteractOutside={(e) => { if (loading || applying) e.preventDefault(); }}
         onEscapeKeyDown={(e) => { if (loading || applying) e.preventDefault(); }}
       >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             AI ile Haftalık Plan
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
 
         <div className="space-y-4">
           {hasExistingPlan && (
@@ -1087,7 +1094,7 @@ export function AiWeeklyPlanModal({
             </div>
           )}
         </div>
-      </DialogContent>
+      </SheetContent>
 
       {/* Delete saved suggestion confirmation */}
       <Dialog open={deleteConfirmId !== null} onOpenChange={(o) => { if (!o) setDeleteConfirmId(null); }}>
@@ -1108,6 +1115,6 @@ export function AiWeeklyPlanModal({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Dialog>
+    </Sheet>
   );
 }
