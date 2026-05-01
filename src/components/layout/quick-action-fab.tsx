@@ -115,7 +115,7 @@ function QuickActionFabInner({ pathname }: { pathname: string }) {
       className="fixed right-4 z-40 pointer-events-none"
       style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
     >
-      <div className="relative flex flex-col items-end gap-2 pointer-events-auto">
+      <div className="relative flex flex-col items-end gap-2">
         {/* Expanded actions */}
         <div
           className={`flex flex-col items-end gap-2 transition-all duration-200 ${
@@ -160,7 +160,7 @@ function QuickActionFabInner({ pathname }: { pathname: string }) {
           }}
           aria-expanded={open}
           aria-label={open ? "Hızlı eylemleri kapat" : "Hızlı eylemler"}
-          className="h-13 w-13 rounded-full bg-primary text-primary-foreground shadow-lg border border-primary/30 flex items-center justify-center transition-all active:scale-95 hover:shadow-xl"
+          className="h-13 w-13 rounded-full bg-primary text-primary-foreground shadow-lg border border-primary/30 flex items-center justify-center transition-all active:scale-95 hover:shadow-xl pointer-events-auto"
         >
           <span
             className={`transition-transform duration-200 ${
