@@ -345,6 +345,14 @@ export default function HomePage() {
                       }`}>
                         <Icon className={`h-3.5 w-3.5 ${isToday ? "text-primary" : "text-muted-foreground"}`} />
                       </div>
+                      {day.planType === "workout" && day.workoutTitle && (
+                        <span className={`text-[8px] leading-tight text-center line-clamp-2 px-0.5 max-w-full ${isToday ? "text-primary/80" : "text-muted-foreground"}`}>
+                          {(day.workoutTitle.includes("—")
+                            ? day.workoutTitle.split("—")[1]?.split("(")[0]
+                            : day.workoutTitle
+                          )?.trim()}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

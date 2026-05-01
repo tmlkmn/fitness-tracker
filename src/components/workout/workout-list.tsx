@@ -29,9 +29,10 @@ interface WorkoutListProps {
   dailyPlanId: number;
   readOnly?: boolean;
   planDate?: string;
+  workoutTitle?: string | null;
 }
 
-export function WorkoutList({ dailyPlanId, readOnly, planDate }: WorkoutListProps) {
+export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: WorkoutListProps) {
   const { data: exerciseList, isLoading } = useExercises(dailyPlanId);
   const toggleExercise = useToggleExercise();
   const [modalOpen, setModalOpen] = useState(false);
@@ -226,6 +227,17 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate }: WorkoutListProp
   return (
     <>
       <div className="space-y-6">
+        {workoutTitle && (
+          <div className="rounded-xl bg-linear-to-br from-primary/15 to-primary/5 border border-primary/20 p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+              <Dumbbell className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Bugünün Antrenmanı</p>
+              <p className="text-sm font-semibold leading-tight mt-0.5">{workoutTitle}</p>
+            </div>
+          </div>
+        )}
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground tabular-nums">
@@ -256,7 +268,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate }: WorkoutListProp
             compact
           />
         )}
-        {!readOnly && !isMonthBlocked && (
+        {false && !readOnly && !isMonthBlocked && (
           <Button
             variant="outline"
             size="sm"

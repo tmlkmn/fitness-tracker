@@ -168,7 +168,7 @@ export default function IlerlemePage() {
         </div>
 
         {/* Activity Heatmap */}
-        {activityStats && (
+        {false && activityStats && (
           <ActivityHeatmap completionMap={activityStats.completionMap} />
         )}
 
