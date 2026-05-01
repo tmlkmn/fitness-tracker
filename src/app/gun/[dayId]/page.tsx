@@ -94,7 +94,7 @@ export default async function GunPage({ params, searchParams }: PageProps) {
           </TabsList>
           <TabsContent value="meals" className="space-y-3">
             {false && dailyPlan.date && (
-              <MacroTrendSparkline endDate={dailyPlan.date} metric="calories" />
+              <MacroTrendSparkline endDate={dailyPlan.date!} metric="calories" />
             )}
             <MealList
               dailyPlanId={id}

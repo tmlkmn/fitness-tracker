@@ -169,7 +169,7 @@ export default function IlerlemePage() {
 
         {/* Activity Heatmap */}
         {false && activityStats && (
-          <ActivityHeatmap completionMap={activityStats.completionMap} />
+          <ActivityHeatmap completionMap={activityStats!.completionMap} />
         )}
 
         {/* Dynamic chart */}
