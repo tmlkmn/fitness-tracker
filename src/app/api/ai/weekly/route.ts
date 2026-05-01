@@ -23,7 +23,7 @@ import {
 } from "@/lib/ai-weekly-types";
 import { resolveTargets, type MacroTargets } from "@/lib/macro-targets";
 
-export const maxDuration = 480; // Vercel fonksiyon süresi: iç timeout'lar (primary 240s + truncationRetry 180s + contentRetry 60s) aynı anda tetiklenmez; birbirini dışlayan yollar. 360s bu senaryolara yeterli tampon sağlar.
+export const maxDuration = 480; // Vercel fonksiyon süresi: primary 240s + truncationRetry 180s + contentRetry 60s = 480s üst sınır (yollar birbirini dışlar; pratikte tek path çalışır).
 
 // Tüm AI çağrılarının AbortController timeout'ları bu sabitten okunur.
 // Hardcoded sayı yerine buradan referans alarak tutarsızlık riski ortadan kalkar.
@@ -251,24 +251,17 @@ function buildDayModesBlock(
 ): string {
   const lines = TURKISH_DAY_NAMES.map((name, dow) => {
     if (pastDows.has(dow)) {
-      return `  ${name}: GEÇMİŞ — bu gün için meals:[] ve exercises:[] döndür, içerik üretme`;
+      return `  ${name}: GEÇMİŞ — bu günü days dizisinde HİÇ DÖNDÜRME (backend boş rest olarak doldurur)`;
     }
     const mode = dayModes[dow] ?? "rest";
     return `  ${name}: ${mode}`;
   });
   return `\n\n═══ GÜNLÜK PLAN TİPLERİ (KRİTİK — birebir uygula) ═══
 ${lines.join("\n")}
-GEÇMİŞ günleri planType "rest" olarak yaz, exercises ve meals boş array — kullanıcı bu günleri yaşadı, içerik gerekli değil.
-Diğer günlerde planType yukarıdaki listeyle BİREBİR aynı olmalı. workout/swimming için exercises dolu, rest için exercises boş array. 
-GEÇMİŞ günlerde:
-- planType: "rest"
-- meals: []
-- exercises: []
-
-GELECEK günlerde:
-- meals ZORUNLU (min 3-5 öğün)
-- rest günleri dahil meals dolu olmalı`;
-} 
+GEÇMİŞ günleri days dizisinden TAMAMEN ÇIKAR — bu günler için içerik üretmek token israfı.
+Kalan günlerde planType yukarıdaki listeyle BİREBİR aynı olmalı. workout/swimming → exercises dolu, rest → exercises boş.
+GELECEK/BUGÜN günlerinde meals ZORUNLU (min 3-5 öğün; rest günleri dahil).`;
+}
 
 /**
  * Detect whether validator results need a content-quality retry. Triggers:
@@ -678,10 +671,10 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
           // Otherwise keep the original — the retry made things worse.
           // Count gaps EXCLUDING past days — past days legitimately have
           // empty meals/exercises, so they shouldn't inflate the gap score.
+          // needsContentRetry ile aynı metrik — emptyMeals retry sebebi olmadığından swap kararına da girmesin.
           const countGaps = (r: ValidateWeeklyPlanResult) =>
             r.missingDays.filter((d) => !pastDowsSet.has(d)).length +
-            r.planTypeMismatches.filter((d) => !pastDowsSet.has(d)).length +
-            r.emptyMealDays.filter((d) => !pastDowsSet.has(d)).length;
+            r.planTypeMismatches.filter((d) => !pastDowsSet.has(d)).length;
           const originalGaps = countGaps(validationResult);
           const retryGaps = countGaps(fixupResult);
           if (retryGaps < originalGaps) {
