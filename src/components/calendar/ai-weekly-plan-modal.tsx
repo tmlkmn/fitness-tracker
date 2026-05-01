@@ -47,6 +47,7 @@ import {
   useSavedSuggestions,
   useSavedSuggestionDetail,
   useDeleteSavedSuggestion,
+  type GenerationStep,
 } from "@/hooks/use-weekly-ai";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 
@@ -97,19 +98,38 @@ const INGREDIENT_TAGS = [
 
 // ─── Stepped loading progress ───────────────────────────────────────────────
 
-const LOADING_STEPS = [
-  { label: "Profil ve geçmiş veriler analiz ediliyor", delay: 0 },
-  { label: "Program oluşturuluyor", delay: 8000 },
-  { label: "Program optimize ediliyor", delay: 40000 },
+const ALL_STEPS: { label: string; step: GenerationStep }[] = [
+  { label: "Profil bilgileri okunuyor",        step: "profile"   },
+  { label: "Beslenme programı oluşturuluyor",  step: "nutrition" },
+  { label: "Antrenman programı oluşturuluyor", step: "workout"   },
+  { label: "Program optimize ediliyor",        step: "merging"   },
 ];
 
-function SteppedProgress({ loading }: { loading: boolean }) {
-  const [activeStep, setActiveStep] = useState(0);
+function SteppedProgress({
+  loading,
+  step,
+  generateMode,
+}: {
+  loading: boolean;
+  step: GenerationStep | null;
+  generateMode?: "both" | "nutrition" | "workout";
+}) {
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
-  // Keep screen awake during generation (re-acquire on iOS visibility change)
+  const visibleSteps = ALL_STEPS.filter((s) => {
+    if (s.step === "nutrition" && generateMode === "workout") return false;
+    if (s.step === "workout" && generateMode === "nutrition") return false;
+    return true;
+  });
+
+  const currentIndex = step ? visibleSteps.findIndex((s) => s.step === step) : 0;
+  const progressPct = visibleSteps.length > 1
+    ? Math.min(95, (currentIndex / (visibleSteps.length - 1)) * 100)
+    : currentIndex >= 0 ? 50 : 0;
+
+  // Screen wake lock
   useEffect(() => {
     if (!loading) {
       wakeLockRef.current?.release().catch(() => {});
@@ -128,9 +148,7 @@ function SteppedProgress({ loading }: { loading: boolean }) {
     acquireLock();
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible" && loading) {
-        acquireLock();
-      }
+      if (document.visibilityState === "visible" && loading) acquireLock();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -141,10 +159,9 @@ function SteppedProgress({ loading }: { loading: boolean }) {
     };
   }, [loading]);
 
+  // Elapsed timer
   useEffect(() => {
     if (!loading) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveStep(0);
       setElapsed(0);
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
@@ -152,15 +169,7 @@ function SteppedProgress({ loading }: { loading: boolean }) {
 
     const start = Date.now();
     intervalRef.current = setInterval(() => {
-      const ms = Date.now() - start;
-      setElapsed(ms);
-      // Advance step based on elapsed time
-      for (let i = LOADING_STEPS.length - 1; i >= 0; i--) {
-        if (ms >= LOADING_STEPS[i].delay) {
-          setActiveStep(i);
-          break;
-        }
-      }
+      setElapsed(Date.now() - start);
     }, 1000);
 
     return () => {
@@ -178,13 +187,13 @@ function SteppedProgress({ loading }: { loading: boolean }) {
   return (
     <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
       <div className="space-y-2.5">
-        {LOADING_STEPS.map((step, i) => {
-          const isDone = i < activeStep;
-          const isActive = i === activeStep;
-          const isPending = i > activeStep;
+        {visibleSteps.map((s, i) => {
+          const isDone = i < currentIndex;
+          const isActive = i === currentIndex;
+          const isPending = i > currentIndex;
 
           return (
-            <div key={i} className="flex items-center gap-2.5">
+            <div key={s.step} className="flex items-center gap-2.5">
               {isDone ? (
                 <Check className="h-4 w-4 text-primary shrink-0" />
               ) : isActive ? (
@@ -203,7 +212,7 @@ function SteppedProgress({ loading }: { loading: boolean }) {
                         : ""
                 }`}
               >
-                {step.label}
+                {s.label}
                 {isActive && "..."}
               </span>
             </div>
@@ -211,13 +220,11 @@ function SteppedProgress({ loading }: { loading: boolean }) {
         })}
       </div>
 
-      {/* Progress bar */}
+      {/* Progress bar based on real step */}
       <div className="h-1.5 bg-muted rounded-full overflow-hidden">
         <div
-          className="h-full bg-primary rounded-full transition-all duration-1000 ease-linear"
-          style={{
-            width: `${Math.min(95, (elapsed / 90000) * 100)}%`,
-          }}
+          className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${progressPct}%` }}
         />
       </div>
 
@@ -243,6 +250,7 @@ interface AiWeeklyPlanModalProps {
   loading: boolean;
   applying: boolean;
   error: string | null;
+  step: GenerationStep | null;
   onGenerate: (
     userNote?: string,
     generateMode?: "both" | "nutrition" | "workout",
@@ -448,6 +456,7 @@ export function AiWeeklyPlanModal({
   loading,
   applying,
   error,
+  step,
   onGenerate,
   onApply,
   onApplySaved,
@@ -944,10 +953,13 @@ export function AiWeeklyPlanModal({
                       </p>
                       <div className="space-y-1.5">
                         {items.map((item, idx) => (
-                          <button
+                          <div
                             key={item.id}
+                            role="button"
+                            tabIndex={0}
                             onClick={() => handleSelectSaved(item.id)}
-                            className="w-full flex items-start gap-2 p-2.5 rounded-lg bg-muted/50 text-left hover:bg-muted transition-colors"
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSelectSaved(item.id); }}
+                            className="w-full flex items-start gap-2 p-2.5 rounded-lg bg-muted/50 text-left hover:bg-muted transition-colors cursor-pointer"
                           >
                             <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
                             <div className="flex-1 min-w-0">
@@ -977,7 +989,7 @@ export function AiWeeklyPlanModal({
                             >
                               <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                             </button>
-                          </button>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -1041,7 +1053,7 @@ export function AiWeeklyPlanModal({
           )}
 
           {/* Loading state — stepped progress */}
-          {loading && <SteppedProgress loading={loading} />}
+          {loading && <SteppedProgress loading={loading} step={step} generateMode={generateMode} />}
 
           {/* Phase 2: Plan result */}
           {!loading && suggestedPlan && (
