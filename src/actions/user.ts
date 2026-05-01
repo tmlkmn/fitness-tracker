@@ -200,6 +200,12 @@ export async function updateUserOnboarding(data: {
   sportHistory?: string;
   currentMedications?: string;
   serviceType?: string;
+  gender?: "male" | "female" | "prefer_not_to_say";
+  dailyActivityLevel?: "sedentary" | "light" | "moderate" | "very_active";
+  hasEatingDisorderHistory?: boolean;
+  isPregnantOrBreastfeeding?: boolean;
+  hasDiabetes?: boolean;
+  hasThyroidCondition?: boolean;
 }) {
   const user = await getAuthUser();
   await db
@@ -218,6 +224,13 @@ export async function updateUserOnboarding(data: {
       sportHistory: data.sportHistory ?? undefined,
       currentMedications: data.currentMedications ?? undefined,
       serviceType: data.serviceType ?? undefined,
+      gender: data.gender ?? undefined,
+      dailyActivityLevel: data.dailyActivityLevel ?? undefined,
+      hasEatingDisorderHistory: data.hasEatingDisorderHistory ?? undefined,
+      isPregnantOrBreastfeeding: data.isPregnantOrBreastfeeding ?? undefined,
+      hasDiabetes: data.hasDiabetes ?? undefined,
+      hasThyroidCondition: data.hasThyroidCondition ?? undefined,
+      hasSeenOnboarding: true,
     })
     .where(eq(users.id, user.id));
   revalidatePath("/");
