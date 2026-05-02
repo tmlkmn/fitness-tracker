@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
 import { MacroTargetsCard } from "@/components/meals/macro-targets-card";
+import { AIMacroCalculator } from "@/components/meals/ai-macro-calculator";
 import { Target } from "lucide-react";
 
 export default function MakroPage() {
@@ -22,7 +23,8 @@ export default function MakroPage() {
           </div>
         }
       />
-      <div className="p-4">
+      <div className="p-4 space-y-4">
+        <AIMacroCalculator />
         <MacroTargetsCard />
       </div>
     </div>
