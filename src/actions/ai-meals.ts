@@ -117,8 +117,8 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
   }
 
   let userMessage = isNutritionOnly
-    ? `${mealContext}${targetsBlock}\n\nBu gün için beslenme programı oluştur. Vücut kompozisyonunu, kilo trendini, yaşam tarzını ve önceki günlerin öğün düzenini dikkate al.`
-    : `${mealContext}${targetsBlock}\n\nBu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.`;
+    ? `${targetsBlock}\n\n${mealContext}\n\nBu gün için beslenme programı oluştur. Vücut kompozisyonunu, kilo trendini, yaşam tarzını ve önceki günlerin öğün düzenini dikkate al.`
+    : `${targetsBlock}\n\n${mealContext}\n\nBu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.`;
 
   if (userNote?.trim()) {
     userMessage += buildUserNotePriorityBlock(userNote);

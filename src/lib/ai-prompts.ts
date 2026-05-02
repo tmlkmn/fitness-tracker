@@ -372,6 +372,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK}
 - Bu trend verisi varsa, makro ve kalori hesaplamasında mutlaka dikkate al
 
 ## Antrenman Günü Beslenme Stratejisi
+- Bu güne ait tip için bağlamdaki "═══ BUGÜNÜN GÜN TİPİ ═══" bloğunu referans al.
 - Günlük protein hedefi HEDEF-ODAKLI STRATEJİ bloğundan gelir; aşağıdaki dağılım sadece günler arası KAYDIRMA içindir, toplamı değiştirmez
 - ANTRENMAN GÜNÜ: Karbonhidrat ağırlıklı, pre-workout (1-2 saat önce) kompleks karb + orta protein, post-workout (30dk-1 saat) hızlı karb + yüksek protein
 - DİNLENME GÜNÜ: Karbonhidrat ~%20 düşürülür, kalan kalori sağlıklı yağlardan tamamlanır; protein sabit
@@ -546,8 +547,8 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK}
 
 ## Kalori ve Makro Hesaplama
 - Kullanıcının vücut kompozisyonu verilerini (kilo, boy, yağ oranı) analiz et
-- Kalori deltası, protein/yağ payı ve karbonhidrat tabanı için HEDEF-ODAKLI STRATEJİ bloğunu BİREBİR uygula — kendi tahminin değil, blok geçerli
-- Aktivite seviyesi düşük (sedanter/ofis) varsay (antrenman yapmıyor)
+- Kalori deltası, protein/yağ payı ve karbonhidrat tabanı için HEDEF-ODAKLI STRATEJİ bloğunu BİREBİR uygula — kendi tahminin değil, blok geçerli. Günlük kaloriyi sabitleme — ANTRENMAN günlerinde +%10–15, DİNLENME günlerinde −%10–15 ayarla; haftalık ORTALAMA, "HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ" ile ±%5 içinde olmalı. Protein hedefi her gün ±%10 içinde sabit kalmalı (kas korumak için).
+- Aktivite seviyesi: kullanıcı profilindeki bilgilere ve "ANTRENMAN GÜN BAĞLAMI" bloğundaki gün tiplerine göre belirle. Bağlam bloğu yoksa hafif aktif (TEE = BMR × 1.3) varsay.
 
 ${GOAL_STRATEGY_REF_BLOCK}
 
@@ -581,6 +582,10 @@ ${JSON_FIELD_RULES}
 - 7 gün beslenme planı oluştur, exercises her zaman boş array olacak
 - planType her gün için "nutrition" olacak
 - workoutTitle her gün null olacak
+- "ANTRENMAN GÜN BAĞLAMI" bloğu mevcutsa:
+  • ANTRENMAN günlerinde: 30–60 dk önce karb-ağırlıklı küçük öğün/atıştırmalık (+ az protein), antrenmandan 30–60 dk sonra protein+karb toparlanma öğünü EKLE. Karbonhidratı bu güne yığ.
+  • YÜZME günlerinde: benzer ama daha hafif (yüzme süresi/yoğunluğu kısa varsay).
+  • DİNLENME günlerinde: pre/post-workout öğünü EKLEME. Karbı hafif düşür, protein sabit kalsın, lif/sebze artır.
 - Hafta Pazartesi'den başlar. dayOfWeek: 0=Pazartesi, 1=Salı, 2=Çarşamba, 3=Perşembe, 4=Cuma, 5=Cumartesi, 6=Pazar (Türkiye standardı)
 - days dizisini Pazartesi'den (0) Pazar'a (6) sıralı ver
 - JSON formatı:

@@ -187,6 +187,29 @@ Listede olmayan günler için days dizisinde HİÇBİR ŞEY DÖNDÜRME. Sadece b
 Her listeli günde exercises DOLU olmalı. meals BOŞ bırak ([] döndür).`;
 }
 
+function buildTrainingDayContextBlock(
+  realDayModes: Partial<Record<number, DayModeChoice>>,
+  pastDows: Set<number>,
+): string {
+  const lines: string[] = [];
+  let hasAnyTraining = false;
+  TURKISH_DAY_NAMES.forEach((name, dow) => {
+    if (pastDows.has(dow)) return;
+    const mode = realDayModes[dow] ?? "rest";
+    let label: string;
+    if (mode === "workout") { label = "ANTRENMAN (ağırlık/direnç)"; hasAnyTraining = true; }
+    else if (mode === "swimming") { label = "YÜZME (kardiyo)"; hasAnyTraining = true; }
+    else label = "DİNLENME";
+    lines.push(`  ${name} (dayOfWeek=${dow}): ${label}`);
+  });
+  if (!hasAnyTraining) return "";
+  return `\n\n═══ ANTRENMAN GÜN BAĞLAMI (BESLENMEYİ BUNA GÖRE PLANLA) ═══
+${lines.join("\n")}
+
+KULLANIM: Yukarıdaki gün tiplerine göre öğün zamanlama ve makro dağıtımını ayarla. planType alanı yine her gün "nutrition" olarak kalacak — gün tipini SADECE öğün içeriği/zamanlama/karb cycling için kullan.
+═══════════════════════════════════════════════════════════════`;
+}
+
 // ─── AI call helper ──────────────────────────────────────────────────────────
 
 interface AiCallResult {
@@ -487,8 +510,12 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
           const nutritionDayModes: Partial<Record<number, DayModeChoice>> = {};
           for (let i = 0; i < 7; i++) nutritionDayModes[i] = "nutrition";
 
+          const trainingContextBlock = (doNutrition && !isNutritionOnly && doWorkout)
+            ? buildTrainingDayContextBlock(expectedDayModes, pastDowsSet)
+            : "";
+
           const nutritionDayModesBlock = buildDayModesBlock(nutritionDayModes, pastDowsSet);
-          const nutritionUserMsg = `${weeklyContext}${targetsBlock}${nutritionDayModesBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.\n\n⚡ KISALTMA KURALI: content alanı MAX 15 kelime. Notlar 1 cümle.${noteBlock}`;
+          const nutritionUserMsg = `${targetsBlock}\n\n${weeklyContext}${trainingContextBlock}${nutritionDayModesBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.\n\n⚡ KISALTMA KURALI: content alanı MAX 15 kelime. Notlar 1 cümle.${noteBlock}`;
 
           nutritionCallPromise = runAiCall(client, {
             systemPrompt: NUTRITION_ONLY_WEEKLY_PROMPT,

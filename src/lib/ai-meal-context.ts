@@ -119,6 +119,21 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
     );
     lines.push("Not: Bu kullanıcı sadece beslenme hizmeti alıyor, antrenman programı yok.");
   } else {
+    const dayTypeLabel =
+      currentDay.planType === "rest"
+        ? "DİNLENME"
+        : currentDay.planType === "swimming"
+          ? "YÜZME (kardiyo)"
+          : currentDay.planType === "workout"
+            ? "ANTRENMAN (ağırlık/direnç)"
+            : currentDay.planType.toUpperCase();
+    lines.push("");
+    lines.push("═══ BUGÜNÜN GÜN TİPİ (BESLENMEYİ BUNA GÖRE PLANLA) ═══");
+    lines.push(`${currentDay.dayName} (${currentDay.date ?? ""}): ${dayTypeLabel}`);
+    lines.push(
+      'KULLANIM: Aşağıdaki "Antrenman Günü Beslenme Stratejisi" kuralını bu gün tipine göre uygula. ANTRENMAN/YÜZME günlerinde pre-workout + post-workout öğünleri (öğün zamanlama politikasında ilgili slot varsa); DİNLENME günlerinde pre/post-workout öğünü EKLEME, karbı ~%20 düşür, protein sabit kalsın.',
+    );
+
     lines.push("");
     lines.push("═══ BUGÜNÜN ANTRENMAN PROGRAMI ═══");
     lines.push(
