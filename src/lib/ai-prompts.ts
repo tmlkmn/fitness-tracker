@@ -289,8 +289,12 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK}
   • sauna (opsiyonel, cooldown sonrası; sets=null, reps=null, durationMinutes=10-15)
 
 ## Progresif Yüklenme Kuralları
+- HEDEF-ODAKLI STRATEJİ bloğundaki "Antrenman odağı" kararı kontrol eder:
+  • preserve (loss / recomp): Mevcut set/rep/yük PARAMETRELERİNİ KORU. Progresyon "yeni varyasyon" veya "tempo değişikliği" ile gelsin — set/rep ARTIRMA.
+  • progress (muscle_gain): Set veya rep'i 1 birim artır VEYA hafif yük artışı not et. Yeni hareket sadece STALE listesindeyse.
+  • aggressive (weight_gain): Compound hareketlerde set sayısını veya rep aralığını mutlaka artır; hacmi belirgin yukarı taşı.
 - Önceki haftaların programlarını detaylıca analiz et
-- Her hafta aşağıdaki yöntemlerden EN AZ birini uygula:
+- Her hafta aşağıdaki yöntemlerden EN AZ birini uygula (yukarıdaki odak kararına uygun şekilde):
   • Set sayısını artır (örn: 3x10 → 4x10)
   • Tekrar sayısını artır (örn: 3x8 → 3x10)
   • Yeni ve daha zorlu hareketler ekle (örn: dumbbell press → barbell press)
@@ -340,11 +344,14 @@ ${EXERCISE_NAMING_RULES}
 
 export const SECTION_REPLACE_PROMPT = `Sen 10+ yıl deneyimli, Türkçe konuşan sertifikalı bir kişisel antrenör ve hipertrofi uzmanısın. Görevin, belirtilen bölüm (section) için progresif ve etkili egzersizler önermek.
 
+${GOAL_DRIVEN_STRATEGY_BLOCK}
+
 ${EXERCISE_NAMING_RULES}
 
 Kurallar:
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Önceki haftaların programını analiz et ve progresif yüklenme uygula
+- Set/rep/dinlenme parametrelerini HEDEF-ODAKLI STRATEJİ bloğundaki "Antrenman odağı"na göre seç (preserve = mevcut yükü/hacmi koru, varyasyonla canlı tut; progress = küçük artış; aggressive = belirgin artış)
 - Günün diğer bölümlerini ve haftalık programı dikkate al
 - Kullanıcının sağlık kısıtlarını ve sakatlıklarını kesinlikle dikkate al
 - Kullanıcı özel bir istek belirtmişse (KULLANICI İSTEĞİ bölümü), bu isteği mutlaka dikkate al
@@ -654,6 +661,10 @@ ${WORKOUT_PROGRESSION_BLOCK}
 - Her gün için planType "workout", "swimming" veya "rest" — başkası KABUL EDİLMEZ.
 
 ## Antrenman Kuralları
+- HEDEF-ODAKLI STRATEJİ "Antrenman odağı" değerini birebir uygula:
+  • preserve (loss / recomp): Önceki haftaya göre yük/hacim KORU; varyasyonla canlı tut, set/rep ARTIRMA.
+  • progress (muscle_gain): 1 set veya 1-2 rep artış; yeni compound varyasyonu sadece stale list'te varsa ekle.
+  • aggressive (weight_gain): Hacim belirgin artar; compound set sayısı yukarı, accessory hareket eklenir.
 - Antrenman günü sayısına göre split'i ayarla:
   • 2-3 gün: Full Body veya Push/Pull/Legs
   • 4 gün: Upper/Lower veya Push/Pull split
