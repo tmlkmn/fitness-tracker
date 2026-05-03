@@ -30,6 +30,7 @@ import {
   useApplyDailyMeals,
 } from "@/hooks/use-meal-ai";
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
+import { MeasurementNudge } from "@/components/ai/measurement-nudge";
 
 type Tab = "suggest" | "saved";
 
@@ -333,6 +334,7 @@ export function AiMealModal({
             {/* Input phase */}
             {!loading && !suggestedMeals && (
               <div className="space-y-3">
+                <MeasurementNudge />
                 <div>
                   <p className="text-xs text-muted-foreground mb-1.5">
                     Evdeki malzemeler (opsiyonel):

@@ -5,6 +5,7 @@ import {
   updateProgressLog,
   deleteProgressLog,
   getLatestProgressLog,
+  getProgressLogCount,
 } from "@/actions/progress";
 
 export function useProgressLogs() {
@@ -20,6 +21,8 @@ export function useAddProgress() {
     mutationFn: addProgressLog,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["progress"] });
+      queryClient.invalidateQueries({ queryKey: ["progress.count"] });
+      queryClient.invalidateQueries({ queryKey: ["progress-latest"] });
     },
   });
 }
@@ -31,6 +34,7 @@ export function useUpdateProgress() {
       updateProgressLog(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["progress"] });
+      queryClient.invalidateQueries({ queryKey: ["progress-latest"] });
     },
   });
 }
@@ -41,7 +45,17 @@ export function useDeleteProgress() {
     mutationFn: (id: number) => deleteProgressLog(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["progress"] });
+      queryClient.invalidateQueries({ queryKey: ["progress.count"] });
+      queryClient.invalidateQueries({ queryKey: ["progress-latest"] });
     },
+  });
+}
+
+export function useProgressLogCount() {
+  return useQuery({
+    queryKey: ["progress.count"],
+    queryFn: () => getProgressLogCount(),
+    staleTime: 60_000,
   });
 }
 

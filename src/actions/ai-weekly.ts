@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { weeklyPlans, dailyPlans, meals, exercises, supplements, shoppingLists, progressLogs, waterLogs, sleepLogs } from "@/db/schema";
+import { weeklyPlans, dailyPlans, meals, exercises, supplements, shoppingLists, waterLogs, sleepLogs } from "@/db/schema";
 import { eq, and, sql, desc, asc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
@@ -9,6 +9,7 @@ import {
   loadUserProfileRow,
   renderUserProfileLines,
 } from "@/lib/ai-user-profile-block";
+import { loadRecentProgressLines } from "@/lib/ai-progress-block";
 import {
   computeMealTimingPolicy,
   isFitnessGoal,
@@ -103,52 +104,10 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
   }
 
   // ─── 2. Body composition trend ────────────────────────────────────────
-  const recentLogs = await db
-    .select({
-      logDate: progressLogs.logDate,
-      weight: progressLogs.weight,
-      fatPercent: progressLogs.fatPercent,
-      fatKg: progressLogs.fatKg,
-      bmi: progressLogs.bmi,
-      waistCm: progressLogs.waistCm,
-      torsoMuscleKg: progressLogs.torsoMuscleKg,
-      leftArmMuscleKg: progressLogs.leftArmMuscleKg,
-      rightArmMuscleKg: progressLogs.rightArmMuscleKg,
-      leftLegMuscleKg: progressLogs.leftLegMuscleKg,
-      rightLegMuscleKg: progressLogs.rightLegMuscleKg,
-    })
-    .from(progressLogs)
-    .where(eq(progressLogs.userId, userId))
-    .orderBy(desc(progressLogs.logDate))
-    .limit(5);
-
-  if (recentLogs.length > 0) {
+  const progressLines = await loadRecentProgressLines(userId, { emptyState: true });
+  if (progressLines.length > 0) {
     lines.push("");
-    lines.push("═══ VÜCUT KOMPOZİSYONU İLERLEME ═══");
-    for (const log of recentLogs.reverse()) {
-      const p: string[] = [`${log.logDate}:`];
-      if (log.weight) p.push(`${log.weight}kg`);
-      if (log.fatPercent) p.push(`%${log.fatPercent} yağ`);
-      if (log.bmi) p.push(`BMI ${log.bmi}`);
-      if (log.waistCm) p.push(`bel: ${log.waistCm}cm`);
-      lines.push(p.join(" | "));
-    }
-    const latest = recentLogs[0];
-    const muscleParts: string[] = [];
-    if (latest.torsoMuscleKg) muscleParts.push(`Gövde: ${latest.torsoMuscleKg}kg`);
-    if (latest.leftArmMuscleKg) muscleParts.push(`Sol kol: ${latest.leftArmMuscleKg}kg`);
-    if (latest.rightArmMuscleKg) muscleParts.push(`Sağ kol: ${latest.rightArmMuscleKg}kg`);
-    if (latest.leftLegMuscleKg) muscleParts.push(`Sol bacak: ${latest.leftLegMuscleKg}kg`);
-    if (latest.rightLegMuscleKg) muscleParts.push(`Sağ bacak: ${latest.rightLegMuscleKg}kg`);
-    if (muscleParts.length > 0) lines.push(`Kas dağılımı: ${muscleParts.join(" | ")}`);
-
-    if (recentLogs.length >= 2) {
-      const oldest = recentLogs[recentLogs.length - 1];
-      if (oldest.weight && latest.weight) {
-        const diff = parseFloat(String(latest.weight)) - parseFloat(String(oldest.weight));
-        lines.push(`Kilo trendi: ${Math.abs(diff).toFixed(1)}kg ${diff > 0 ? "artış" : diff < 0 ? "düşüş" : "sabit"} (${oldest.logDate} → ${latest.logDate})`);
-      }
-    }
+    lines.push(...progressLines);
   }
 
   // ─── 2b. Water & Sleep (last 7 days) ─────────────────────────────────

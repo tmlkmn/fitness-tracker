@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import type { AIWeeklyPlan, AIWeeklyDay } from "@/actions/ai-weekly";
+import { MeasurementNudge } from "@/components/ai/measurement-nudge";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import {
@@ -724,6 +725,7 @@ export function AiWeeklyPlanModal({
           {/* Phase 1: User input */}
           {!loading && !suggestedPlan && !showSaved && !savedPlanToPreview && (
             <div className="space-y-3">
+              <MeasurementNudge />
               {/* Generate mode selection (full program only) */}
               {serviceType === "full" && (
                 <div>

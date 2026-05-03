@@ -12,50 +12,44 @@ import {
   buildExerciseNameList,
   type ExerciseDBEntry,
 } from "@/lib/exercise-db";
-import { searchExerciseDB } from "@/lib/exercisedb-api";
 
 export interface ExerciseDemoResult {
   found: boolean;
   gifUrl: string | null;
+  videoUrl: string | null;
   images: string[];
   primaryMuscles: string[];
   secondaryMuscles: string[];
   equipment: string | null;
   instructions: string[];
+  overview: string | null;
+  tips: string[];
 }
 
 const NOT_FOUND_RESULT: ExerciseDemoResult = {
   found: false,
   gifUrl: null,
+  videoUrl: null,
   images: [],
   primaryMuscles: [],
   secondaryMuscles: [],
   equipment: null,
   instructions: [],
-};
-
-// Map ExerciseDB bodyPart/target to muscle group names used by free-exercise-db
-const bodyPartToMuscle: Record<string, string> = {
-  chest: "chest",
-  back: "lats",
-  "upper arms": "biceps",
-  "lower arms": "forearms",
-  "upper legs": "quadriceps",
-  "lower legs": "calves",
-  shoulders: "shoulders",
-  waist: "abdominals",
-  cardio: "abdominals",
-  neck: "neck",
+  overview: null,
+  tips: [],
 };
 
 function toResult(
   row: {
     gifUrl: string | null;
+    videoUrl: string | null;
     images: unknown;
     primaryMuscles: unknown;
     secondaryMuscles: unknown;
     equipment: string | null;
     instructions: unknown;
+    overview: string | null;
+    tips: unknown;
     notFound: boolean | null;
   },
 ): ExerciseDemoResult {
@@ -65,80 +59,43 @@ function toResult(
   return {
     found: true,
     gifUrl: row.gifUrl ?? null,
+    videoUrl: row.videoUrl ?? null,
     images: images.map(getImageUrl),
     primaryMuscles: (row.primaryMuscles as string[] | null) ?? [],
     secondaryMuscles: (row.secondaryMuscles as string[] | null) ?? [],
     equipment: row.equipment,
     instructions: (row.instructions as string[] | null) ?? [],
+    overview: row.overview ?? null,
+    tips: (row.tips as string[] | null) ?? [],
   };
 }
 
 export async function getExerciseDemo(
   exerciseName: string,
-  englishName?: string,
 ): Promise<ExerciseDemoResult> {
   const user = await getAuthUser();
   const nameNorm = exerciseName.toLowerCase().trim();
-  // ExerciseDB araması için: önce İngilizce ad, yoksa Türkçe ad fallback
-  const searchName = (englishName?.trim() || exerciseName).trim();
 
-  // 1. Check DB cache — notFound + englishName mevcutsa cache'i bypass et (yeni İngilizce ad ile yeniden dene)
+  // 1. Check DB cache
   const [existing] = await db
     .select({
       gifUrl: exerciseDemos.gifUrl,
+      videoUrl: exerciseDemos.videoUrl,
       images: exerciseDemos.images,
       primaryMuscles: exerciseDemos.primaryMuscles,
       secondaryMuscles: exerciseDemos.secondaryMuscles,
       equipment: exerciseDemos.equipment,
       instructions: exerciseDemos.instructions,
+      overview: exerciseDemos.overview,
+      tips: exerciseDemos.tips,
       notFound: exerciseDemos.notFound,
     })
     .from(exerciseDemos)
     .where(eq(exerciseDemos.exerciseNameNorm, nameNorm));
 
-  const shouldBypassCache = existing?.notFound && !!englishName?.trim();
-  if (existing && !shouldBypassCache) return toResult(existing);
-
-  // 2. Try ExerciseDB API first (no AI tokens needed)
-  const exerciseDBResult = await searchExerciseDB(searchName);
-
-  if (exerciseDBResult) {
-    const primaryMuscle = bodyPartToMuscle[exerciseDBResult.bodyPart] ?? exerciseDBResult.target;
-    const primaryMuscles = [primaryMuscle];
-    const secondaryMuscles = exerciseDBResult.secondaryMuscles ?? [];
-
-    if (shouldBypassCache) {
-      // notFound kaydını sil, taze veriyi insert et
-      await db.delete(exerciseDemos).where(eq(exerciseDemos.exerciseNameNorm, nameNorm));
-    }
-    await db.insert(exerciseDemos).values({
-      exerciseNameNorm: nameNorm,
-      externalId: exerciseDBResult.id,
-      gifUrl: exerciseDBResult.gifUrl,
-      source: "exercisedb",
-      images: [],
-      primaryMuscles,
-      secondaryMuscles,
-      equipment: exerciseDBResult.equipment ?? null,
-      instructions: exerciseDBResult.instructions ?? [],
-      notFound: false,
-    });
-
-    return {
-      found: true,
-      gifUrl: exerciseDBResult.gifUrl,
-      images: [],
-      primaryMuscles,
-      secondaryMuscles,
-      equipment: exerciseDBResult.equipment ?? null,
-      instructions: exerciseDBResult.instructions ?? [],
-    };
-  }
-
-  // ExerciseDB de İngilizce ad ile bulamadıysa — cache'lenmiş notFound varsa onu döndür (AI fallback'i tekrar harcama)
   if (existing) return toResult(existing);
 
-  // 3. Fallback: AI matching with free-exercise-db (static images)
+  // 2. AI matching with free-exercise-db
   await checkRateLimit(user.id, "exercise-demo");
   await logAiUsage(user.id, "exercise-demo");
 
@@ -168,7 +125,6 @@ export async function getExerciseDemo(
     (message.content[0].type === "text" ? message.content[0].text : "")
       .trim();
 
-  // 4. Find the matched exercise
   if (aiResponse === "NOT_FOUND" || !aiResponse) {
     await db.insert(exerciseDemos).values({
       exerciseNameNorm: nameNorm,
@@ -192,7 +148,6 @@ export async function getExerciseDemo(
     return NOT_FOUND_RESULT;
   }
 
-  // 5. Save to DB
   await db.insert(exerciseDemos).values({
     exerciseNameNorm: nameNorm,
     externalId: matched.id,
@@ -208,10 +163,13 @@ export async function getExerciseDemo(
   return {
     found: true,
     gifUrl: null,
+    videoUrl: null,
     images: matched.images.map(getImageUrl),
     primaryMuscles: matched.primaryMuscles,
     secondaryMuscles: matched.secondaryMuscles,
     equipment: matched.equipment ?? null,
     instructions: matched.instructions,
+    overview: null,
+    tips: [],
   };
 }

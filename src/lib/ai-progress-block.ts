@@ -11,9 +11,9 @@ import { eq, desc } from "drizzle-orm";
  */
 export async function loadRecentProgressLines(
   userId: string,
-  options: { limit?: number; includeMuscleDistribution?: boolean } = {},
+  options: { limit?: number; includeMuscleDistribution?: boolean; emptyState?: boolean } = {},
 ): Promise<string[]> {
-  const { limit = 5, includeMuscleDistribution = true } = options;
+  const { limit = 5, includeMuscleDistribution = true, emptyState = false } = options;
 
   const recentLogs = await db
     .select({
@@ -36,7 +36,14 @@ export async function loadRecentProgressLines(
     .orderBy(desc(progressLogs.logDate))
     .limit(limit);
 
-  if (recentLogs.length === 0) return [];
+  if (recentLogs.length === 0) {
+    if (!emptyState) return [];
+    return [
+      "═══ VÜCUT KOMPOZİSYONU ÖLÇÜMÜ ═══",
+      "⚠️ Kullanıcı henüz ölçüm girmemiş — programı SADECE hedef + profil verilerine göre kur.",
+      "Belirsiz alanlarda muhafazakar varsayım yap; agresif kalori deltası veya yüksek hacim uygulama.",
+    ];
+  }
 
   const lines: string[] = [];
   lines.push("═══ VÜCUT KOMPOZİSYONU İLERLEME (Son Ölçümler) ═══");

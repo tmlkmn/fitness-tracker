@@ -14,6 +14,7 @@ import type { AIExercise } from "@/actions/ai-workout";
 import { useState, useEffect } from "react";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
+import { MeasurementNudge } from "@/components/ai/measurement-nudge";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -216,6 +217,7 @@ export function AiWorkoutModal({
           {/* Phase 1: User input */}
           {!loading && !suggestedExercises && (
             <div className="space-y-3">
+              <MeasurementNudge />
               {/* Location selection */}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">

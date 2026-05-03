@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { progressLogs } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 
@@ -87,6 +87,15 @@ export async function getProgressLogs() {
     .from(progressLogs)
     .where(eq(progressLogs.userId, user.id))
     .orderBy(desc(progressLogs.logDate));
+}
+
+export async function getProgressLogCount(): Promise<number> {
+  const user = await getAuthUser();
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(progressLogs)
+    .where(eq(progressLogs.userId, user.id));
+  return row?.count ?? 0;
 }
 
 export async function getLatestProgressLog() {

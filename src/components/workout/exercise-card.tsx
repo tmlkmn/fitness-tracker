@@ -102,7 +102,7 @@ export function ExerciseCard({
                 <p className={cn("font-medium text-sm", isCompleted && "line-through", readOnly && isCompleted && "opacity-60")}>
                   {name}
                 </p>
-                <ExerciseDemoModal name={name} englishName={englishName} />
+                <ExerciseDemoModal name={name} />
                 {!readOnly && <ExerciseFormTips name={name} notes={notes} englishName={englishName} />}
               </div>
               <div className={cn("flex flex-wrap gap-1.5 mt-1", readOnly && isCompleted && "opacity-60")}>

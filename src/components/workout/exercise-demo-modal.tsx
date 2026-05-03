@@ -18,7 +18,6 @@ import { formatAiError } from "@/lib/ai-errors";
 
 interface ExerciseDemoModalProps {
   name: string;
-  englishName?: string | null;
 }
 
 const muscleLabels: Record<string, string> = {
@@ -53,12 +52,13 @@ function getMuscleLabel(muscle: string): string {
   return muscleLabels[key] ?? muscleLabels[muscle] ?? muscle;
 }
 
-export function ExerciseDemoModal({ name, englishName }: ExerciseDemoModalProps) {
+export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
   const [open, setOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [showTips, setShowTips] = useState(false);
   const [fullscreenSrc, setFullscreenSrc] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useExerciseDemo(name, open, englishName);
+  const { data, isLoading, error } = useExerciseDemo(name, open);
 
   const errorMessage = error ? formatAiError(error) : null;
 
@@ -82,7 +82,7 @@ export function ExerciseDemoModal({ name, englishName }: ExerciseDemoModalProps)
         <Eye className="h-3.5 w-3.5" />
       </Button>
 
-      {/* Fullscreen overlay — portal'a render edilerek stacking context'ten çıkar */}
+      {/* Fullscreen overlay */}
       {fullscreenSrc && typeof document !== "undefined" &&
         createPortal(
           <div
@@ -136,44 +136,39 @@ export function ExerciseDemoModal({ name, englishName }: ExerciseDemoModalProps)
 
             {data?.found && (
               <div className="space-y-4">
-                {/* GIF (ExerciseDB) or static images (fallback) */}
-                {data.gifUrl ? (
-                  <div
-                    className="relative w-full cursor-pointer"
-                    onClick={() => setFullscreenSrc(data.gifUrl!)}
-                    title="Tam ekran için tıkla"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={data.gifUrl}
-                      alt={`${name} — egzersiz animasyonu`}
-                      className="w-full rounded-lg bg-muted"
-                      loading="lazy"
-                    />
-                  </div>
-                ) : data.images.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {data.images.slice(0, 2).map((url, i) => (
-                      <div
-                        key={i}
-                        className="relative aspect-[3/4] cursor-pointer"
-                        onClick={() => setFullscreenSrc(url)}
-                        title="Tam ekran için tıkla"
-                      >
-                        <Image
-                          src={url}
-                          alt={`${name} - ${i === 0 ? "başlangıç" : "bitiş"} pozisyonu`}
-                          fill
-                          className="rounded-lg bg-muted object-cover"
-                          sizes="(max-width: 384px) 45vw, 170px"
-                        />
-                        <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
-                          {i === 0 ? "Başlangıç" : "Bitiş"}
-                        </span>
-                      </div>
-                    ))}
+                {/* Media: images */}
+                {data.images.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {data.images.slice(0, 2).map((url, i) => (
+                        <div
+                          key={i}
+                          className="relative aspect-[3/4] cursor-pointer"
+                          onClick={() => setFullscreenSrc(url)}
+                          title="Tam ekran için tıkla"
+                        >
+                          <Image
+                            src={url}
+                            alt={`${name} - ${i === 0 ? "başlangıç" : "bitiş"} pozisyonu`}
+                            fill
+                            className="rounded-lg bg-muted object-cover"
+                            sizes="(max-width: 384px) 45vw, 170px"
+                          />
+                          <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
+                            {i === 0 ? "Başlangıç" : "Bitiş"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
+
+                {/* Overview */}
+                {data.overview && (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {data.overview}
+                  </p>
+                )}
 
                 {/* Muscle groups */}
                 {(data.primaryMuscles.length > 0 || data.secondaryMuscles.length > 0) && (
@@ -234,6 +229,33 @@ export function ExerciseDemoModal({ name, englishName }: ExerciseDemoModalProps)
                           </li>
                         ))}
                       </ol>
+                    )}
+                  </div>
+                )}
+
+                {/* Tips (collapsible) */}
+                {data.tips.length > 0 && (
+                  <div>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setShowTips(!showTips)}
+                    >
+                      {showTips ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
+                      )}
+                      İpuçları ({data.tips.length})
+                    </button>
+                    {showTips && (
+                      <ul className="mt-2 space-y-1.5 pl-4 list-disc">
+                        {data.tips.map((tip, i) => (
+                          <li key={i} className="text-xs text-muted-foreground leading-relaxed">
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
                     )}
                   </div>
                 )}

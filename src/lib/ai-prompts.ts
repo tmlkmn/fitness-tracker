@@ -352,6 +352,7 @@ Kurallar:
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Önceki haftaların programını analiz et ve progresif yüklenme uygula
 - Set/rep/dinlenme parametrelerini HEDEF-ODAKLI STRATEJİ bloğundaki "Antrenman odağı"na göre seç (preserve = mevcut yükü/hacmi koru, varyasyonla canlı tut; progress = küçük artış; aggressive = belirgin artış)
+- Bağlamda "VÜCUT KOMPOZİSYONU İLERLEME" bloğu varsa trende göre yoğunluk seç: bel sabit/artıyor → daha hacimli + metabolik (süperset), kas durağan → set sayısı artır, asimetri → tek taraflı hareket. "VÜCUT KOMPOZİSYONU ÖLÇÜMÜ" boş uyarısı varsa muhafazakar parametreler kullan.
 - Günün diğer bölümlerini ve haftalık programı dikkate al
 - Kullanıcının sağlık kısıtlarını ve sakatlıklarını kesinlikle dikkate al
 - Kullanıcı özel bir istek belirtmişse (KULLANICI İSTEĞİ bölümü), bu isteği mutlaka dikkate al
@@ -659,6 +660,14 @@ ${WORKOUT_PROGRESSION_BLOCK}
 - Bağlamda "═══ GÜNLÜK PLAN TİPLERİ ═══" bloğu varsa: HER GÜN için listede yazan planType'ı BİREBİR uygula.
 - workout: warmup+main+cooldown; swimming: warmup+swimming+cooldown; rest: exercises BOŞ array.
 - Her gün için planType "workout", "swimming" veya "rest" — başkası KABUL EDİLMEZ.
+
+## Son Ölçüm Trend Analizi
+- Bağlamda "VÜCUT KOMPOZİSYONU İLERLEME" bloğu varsa trende göre hacim/yoğunluk ayarla:
+  • Bel ölçüsü azalmıyorsa veya artıyorsa: Compound + HIIT hacmi artır, devre antrenmanları ekle
+  • Kas kütlesi durağansa: Compound set sayısını artır, hipertrofi rep aralığını koru (8-12)
+  • Yağ oranı düşmüyorsa: Süperset / drop set ile metabolik yoğunluğu yukarı çek
+  • Kol/bacak kas asimetrisi varsa: Tek taraflı (unilateral) hareketler ekle
+- "VÜCUT KOMPOZİSYONU ÖLÇÜMÜ" boş uyarısı görünüyorsa: muhafazakar başla, agresif hacim atma — kullanıcının gerçek toparlanma kapasitesi bilinmiyor
 
 ## Antrenman Kuralları
 - HEDEF-ODAKLI STRATEJİ "Antrenman odağı" değerini birebir uygula:
