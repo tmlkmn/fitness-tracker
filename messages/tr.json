@@ -1,0 +1,1374 @@
+{
+  "layout": {
+    "networkStatus": {
+      "reconnected": "Bağlantı yeniden sağlandı",
+      "offline": "Çevrimdışısın",
+      "queued": "{count} bekliyor",
+      "retry": "Tekrar Dene"
+    },
+    "pwa": {
+      "installLabel": "Uygulamayı İndir",
+      "installTitle": "Uygulamayı Yükle",
+      "installDescription": "Uygulamayı ana ekranınıza eklemek için aşağıdaki adımları izleyin.",
+      "ios1Prefix": "Safari'nin alt menüsündeki",
+      "iosShareBold": "Paylaş",
+      "ios1Suffix": "simgesine dokunun",
+      "ios2Prefix": "Aşağı kaydırın ve",
+      "iosAddToHome": "Ana Ekrana Ekle",
+      "ios2Suffix": "seçeneğine dokunun",
+      "ios3Prefix": "Sağ üstteki",
+      "iosAddBold": "Ekle",
+      "ios3Suffix": "butonuna dokunun",
+      "android1Prefix": "Tarayıcının sağ üst köşesindeki",
+      "androidMenuBold": "menü",
+      "android1Suffix": "simgesine dokunun",
+      "android2Prefix": "",
+      "androidAddToHome": "Ana ekrana ekle",
+      "androidOr": "veya",
+      "androidInstallApp": "Uygulamayı yükle",
+      "android2Suffix": "seçeneğine dokunun",
+      "android3Prefix": "",
+      "androidInstallBold": "Yükle",
+      "android3Suffix": "butonuna dokunun",
+      "desktop1Prefix": "Adres çubuğundaki",
+      "desktopInstallBold": "yükle",
+      "desktop1Suffix": "simgesine tıklayın",
+      "desktop2Prefix": "Veya tarayıcı menüsünden",
+      "desktopInstallAppBold": "Uygulamayı yükle",
+      "desktop2Suffix": "seçeneğini kullanın",
+      "cardInstalledTitle": "Uygulama Yüklü",
+      "cardInstalledSubtitle": "FitMusc cihazınıza yüklenmiş durumda",
+      "cardTitle": "Uygulamayı Cihazına İndir",
+      "cardSubtitle": "Ana ekranına ekle, bildirimler otomatik açılsın",
+      "cardButton": "Cihaza İndir",
+      "fallbackAlert": "Tarayıcınızın menüsünden \"Ana Ekrana Ekle\" seçeneğini kullanın."
+    },
+    "search": {
+      "title": "Arama",
+      "placeholder": "Sayfa, öğün, egzersiz, gün ara…",
+      "sectionPages": "Sayfalar",
+      "sectionDays": "Günler",
+      "sectionMeals": "Öğünler",
+      "sectionExercises": "Egzersizler",
+      "sectionFoods": "Besinlerim",
+      "noResults": "Sonuç bulunamadı",
+      "shortcutPrefix": "Aç/kapat:",
+      "escClose": "Esc ile kapat",
+      "navHome": "Bugün",
+      "navCalendar": "Takvim",
+      "navProgress": "İlerleme",
+      "navShopping": "Alışveriş",
+      "navMealLibrary": "Öğün Kütüphanem",
+      "navAssistant": "AI Asistan",
+      "navSettings": "Ayarlar"
+    }
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "close": "Kapat",
+    "back": "Geri",
+    "next": "İleri",
+    "confirm": "Onayla",
+    "yes": "Evet",
+    "no": "Hayır",
+    "search": "Ara",
+    "menu": "Menü"
+  },
+  "nav": {
+    "primaryNavigation": "Ana navigasyon",
+    "home": "Ana",
+    "calendar": "Takvim",
+    "assistant": "Asistan",
+    "progress": "İlerleme",
+    "settings": "Ayarlar",
+    "search": "Ara",
+    "menu": "Menü",
+    "feedback": "Geri Bildirim",
+    "appGuide": "Uygulama Rehberi",
+    "adminPanel": "Admin Paneli",
+    "lightTheme": "Açık Tema",
+    "darkTheme": "Koyu Tema",
+    "signOut": "Çıkış Yap",
+    "workout": "Antrenman"
+  },
+  "fab": {
+    "aiAssistant": "AI Asistan",
+    "addMeal": "Öğün Ekle",
+    "quickActions": "Hızlı eylemler",
+    "closeQuickActions": "Hızlı eylemleri kapat"
+  },
+  "auth": {
+    "login": {
+      "subtitle": "Hesabınıza giriş yapın",
+      "email": "E-posta",
+      "password": "Şifre",
+      "signIn": "Giriş Yap",
+      "forgotPassword": "Şifremi Unuttum",
+      "errors": {
+        "emailRequired": "E-posta adresi gereklidir.",
+        "invalidEmail": "Geçerli bir e-posta adresi girin.",
+        "passwordRequired": "Şifre gereklidir.",
+        "invalidCredentials": "E-posta veya şifre hatalı.",
+        "inviteExpired": "Davet süreniz dolmuş. Yöneticinizle iletişime geçin.",
+        "generic": "Bir hata oluştu. Tekrar deneyin."
+      }
+    },
+    "pending": {
+      "title": "Onay Bekleniyor",
+      "description": "Hesabınız henüz onaylanmadı. Yönetici onayı bekleyin."
+    },
+    "membershipExpired": {
+      "title": "Üyelik Süreniz Doldu",
+      "description": "Üyelik süreniz dolmuş. Yenilemek için yöneticinizle iletişime geçin."
+    },
+    "forgotPassword": {
+      "title": "Şifremi Unuttum",
+      "description": "E-posta adresinizi girin, şifre sıfırlama bağlantısı göndereceğiz.",
+      "submitButton": "Sıfırlama Bağlantısı Gönder",
+      "sentTitle": "E-posta Gönderildi",
+      "sentDescription": "Şifre sıfırlama bağlantısı e-postanıza gönderildi. Lütfen gelen kutunuzu kontrol edin.",
+      "backToLogin": "Giriş Sayfasına Dön",
+      "backToLoginLink": "Giriş sayfasına dön",
+      "errors": {
+        "userNotFound": "Bu e-posta adresi sistemde kayıtlı değil."
+      }
+    },
+    "changePassword": {
+      "title": "Şifre Değiştir",
+      "description": "Devam etmek için yeni bir şifre belirleyin",
+      "newPassword": "Yeni Şifre",
+      "confirmPassword": "Şifre Tekrar",
+      "minTenCharsPlaceholder": "En az 10 karakter",
+      "submitButton": "Şifreyi Değiştir",
+      "rules": {
+        "minLength": "En az 10 karakter",
+        "uppercase": "Büyük harf (A-Z)",
+        "digit": "Rakam (0-9)",
+        "special": "Özel karakter"
+      },
+      "errors": {
+        "passwordMismatch": "Şifreler eşleşmiyor."
+      }
+    },
+    "resetPassword": {
+      "title": "Yeni Şifre Belirle",
+      "description": "Yeni şifrenizi girin",
+      "saveButton": "Şifreyi Kaydet",
+      "successTitle": "Şifre Değiştirildi",
+      "successDescription": "Yeni şifrenizle giriş yapabilirsiniz.",
+      "invalidLinkTitle": "Geçersiz Bağlantı",
+      "invalidLinkDescription": "Bu şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.",
+      "backToLogin": "Giriş Sayfasına Dön",
+      "errors": {
+        "linkExpired": "Bağlantının süresi dolmuş. Tekrar deneyin."
+      }
+    }
+  },
+  "dashboard": {
+    "quickAccess": {
+      "calendar": "Takvim",
+      "calendarDesc": "Haftalık program",
+      "progress": "İlerleme",
+      "progressDesc": "Kilo & ölçümler",
+      "assistant": "AI Asistan",
+      "assistantDesc": "Fitness koçu",
+      "shopping": "Alışveriş",
+      "shoppingDesc": "Haftalık liste",
+      "shared": "Paylaşılan",
+      "sharedDesc": "Benimle paylaşılan"
+    },
+    "welcome": "Hoş geldin, {name}!",
+    "targetWeight": "Hedef: {weight} kg",
+    "membershipUnlimited": "Sınırsız",
+    "membershipExpired": "Süresi Doldu",
+    "membershipDays": "{days} gün",
+    "completeProfile": "Profilini tamamla",
+    "completeProfileDesc": "AI kişiselleştirme için bilgilerine ihtiyaç var",
+    "todayPlan": "Bugünün Planı",
+    "meals": "Öğünler",
+    "exercises": "Egzersizler",
+    "goToTodayPlan": "Bugünün Planına Git",
+    "noPlanToday": "Bugün için plan bulunmuyor",
+    "goToCalendar": "Takvime Git",
+    "thisWeek": "Bu Hafta",
+    "currentWeight": "Mevcut",
+    "target": "Hedef",
+    "program": "Program",
+    "weeks": "hafta",
+    "today": "Bugün"
+  },
+  "calendar": {
+    "title": "Takvim",
+    "subtitle": "Antrenman & Beslenme Programı",
+    "weeklyView": "Haftalık Görünüm",
+    "today": "Bugün",
+    "fullCalendar": "Tüm Takvim",
+    "aiWeeklyPlan": "AI ile Haftalık Plan {action}",
+    "aiWeeklyPlanShort": "AI ile Haftalık Plan",
+    "actionCreate": "Oluştur",
+    "actionChange": "Değiştir",
+    "shoppingList": "Alışveriş Listesi",
+    "emptyWeekGapTitle": "Önceki haftalarda plansız hafta bulunmaktadır",
+    "emptyWeekGapDescription": "Önce aşağıdaki haftaların planlarını oluşturun:",
+    "weekSuffix": "haftası",
+    "noPlanForDate": "Bu tarih için plan bulunamadı.",
+    "manualAdd": "Manuel Ekle",
+    "creating": "Oluşturuluyor...",
+    "aiUnavailable": "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin.",
+    "deleteWeeklyTitle": "Haftalık Planı Sil",
+    "deleteWeeklyConfirm": "Bu haftanın planını silmek istediğinizden emin misiniz? Tüm günlük planlar, öğünler ve egzersizler silinecek. Bu işlem geri alınamaz.",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "deleting": "Siliniyor..."
+  },
+  "progress": {
+    "title": "İlerleme",
+    "subtitle": "Kilo ve ölçüm takibi",
+    "pastRecords": "Geçmiş Kayıtlar",
+    "deleteTitle": "Ölçümü Sil",
+    "deleting": "Siliniyor...",
+    "delete": "Sil",
+    "logDeleted": "Ölçüm silindi",
+    "summary": {
+      "now": "kg (şimdi)",
+      "diff": "kg fark",
+      "target": "kg hedef"
+    },
+    "addMeasurement": "Yeni Ölçüm Ekle",
+    "deleteConfirm": "Bu ölçüm kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+    "cancel": "İptal",
+    "badges": {
+      "fat": "yağ",
+      "waist": "bel"
+    },
+    "sections": {
+      "main": "Ana Bilgiler",
+      "bodyFatMuscle": "Vücut Yağ & Kas",
+      "measurements": "Ölçüler",
+      "note": "Not"
+    },
+    "labels": {
+      "weight": "Kilo",
+      "fluid": "Sıvı",
+      "fat": "Yağ",
+      "bmi": "BMI",
+      "leftArmFat": "Sol Kol Yağ",
+      "leftArmMuscle": "Sol Kol Kas",
+      "rightArmFat": "Sağ Kol Yağ",
+      "rightArmMuscle": "Sağ Kol Kas",
+      "torsoFat": "Gövde Yağ",
+      "torsoMuscle": "Gövde Kas",
+      "leftLegFat": "Sol Bacak Yağ",
+      "leftLegMuscle": "Sol Bacak Kas",
+      "rightLegFat": "Sağ Bacak Yağ",
+      "rightLegMuscle": "Sağ Bacak Kas",
+      "waist": "Bel",
+      "rightArm": "Sağ Kol",
+      "leftArm": "Sol Kol",
+      "rightLeg": "Sağ Bacak",
+      "leftLeg": "Sol Bacak"
+    },
+    "chart": {
+      "title": "Grafik",
+      "metrics": {
+        "weight": "Kilo",
+        "fatPercent": "Yağ Oranı",
+        "fatKg": "Yağ (kg)",
+        "fluidPercent": "Sıvı Oranı",
+        "fluidKg": "Sıvı (kg)",
+        "bmi": "BMI",
+        "waistCm": "Bel",
+        "rightArmCm": "Sağ Kol",
+        "leftArmCm": "Sol Kol",
+        "rightLegCm": "Sağ Bacak",
+        "leftLegCm": "Sol Bacak"
+      },
+      "empty": "Henüz veri yok. İlk ölçümünüzü ekleyin!",
+      "noMetric": "Henüz {label} verisi yok.",
+      "lastMeasurement": "Son ölçüm: {value} {unit} — Grafik için en az 2 kayıt gerekli"
+    },
+    "range": {
+      "fluidLabel": "Sıvı Oranı",
+      "fatLabel": "Yağ Oranı",
+      "bmiLabel": "BMI",
+      "normal": "Normal",
+      "borderline": "Sınırda",
+      "alert": "Dikkat"
+    },
+    "modal": {
+      "editTitle": "Ölçümü Düzenle",
+      "newTitle": "Yeni Ölçüm Ekle",
+      "quickMode": "Hızlı Giriş",
+      "copyPrevious": "Önceki Ölçümü Baz Al",
+      "previousCopied": "Önceki ölçüm değerleri kopyalandı",
+      "logUpdated": "Ölçüm güncellendi",
+      "logSaved": "Ölçüm kaydedildi",
+      "date": "Tarih",
+      "mainInfo": "Ana Bilgiler",
+      "bodyParts": "Vücut Bölgeleri",
+      "measurements": "Ölçüler",
+      "weight": "Kilo",
+      "bmi": "BMI",
+      "auto": "(otomatik)",
+      "fatPercent": "Yağ Oranı",
+      "fat": "Yağ",
+      "fluidPercent": "Sıvı Oranı",
+      "fluid": "Sıvı",
+      "waist": "Bel",
+      "rightArm": "Sağ Kol",
+      "leftArm": "Sol Kol",
+      "rightLeg": "Sağ Bacak",
+      "leftLeg": "Sol Bacak",
+      "torso": "Gövde",
+      "fatField": "Yağ",
+      "muscleField": "Kas",
+      "notes": "Notlar",
+      "notesPlaceholder": "Bugün nasıl hissettim...",
+      "saving": "Kaydediliyor...",
+      "save": "Kaydet",
+      "update": "Güncelle"
+    },
+    "form": {
+      "title": "Yeni Ölçüm Ekle",
+      "tabMain": "Ana Bilgiler",
+      "tabBody": "Vücut",
+      "tabMeasurements": "Ölçüler",
+      "weight": "Kilo",
+      "fluidPercent": "Sıvı Oranı",
+      "fluid": "Sıvı",
+      "fatPercent": "Yağ Oranı",
+      "fat": "Yağ",
+      "bmi": "BMI",
+      "muscle": "Kas",
+      "notes": "Notlar",
+      "notesPlaceholder": "Bugün nasıl hissettim...",
+      "waist": "Bel",
+      "rightArm": "Sağ Kol",
+      "leftArm": "Sol Kol",
+      "rightLeg": "Sağ Bacak",
+      "leftLeg": "Sol Bacak",
+      "torso": "Gövde",
+      "saving": "Kaydediliyor...",
+      "save": "Kaydet",
+      "saved": "İlerleme kaydedildi"
+    },
+    "aiAnalysis": {
+      "title": "AI Analiz",
+      "analyze": "Analiz Et",
+      "analyzing": "Analiz ediliyor...",
+      "limitReached": "Limit doldu",
+      "refresh": "Yenile",
+      "dailyLimit": "Günlük analiz limitine ulaştınız (max 3/gün).",
+      "unavailable": "AI analizi şu anda kullanılamıyor.",
+      "connectionError": "Bağlantı hatası.",
+      "genericError": "Bir hata oluştu. Daha sonra tekrar deneyin.",
+      "justNow": "az önce",
+      "minutesAgo": "{m} dk önce",
+      "hoursAgo": "{h} saat önce",
+      "daysAgo": "{d} gün önce"
+    },
+    "weightTarget": {
+      "title": "Kilo Hedefleri",
+      "startWeight": "Başlangıç Kilo (kg)",
+      "targetWeight": "Hedef Kilo (kg)",
+      "aiSuggest": "AI Hedef Önerisi",
+      "calculating": "Hesaplanıyor...",
+      "aiSuggestion": "AI Önerisi",
+      "weeks": "~{n} hafta",
+      "accept": "Kabul Et",
+      "saved": "Hedefler güncellendi",
+      "error": "Bir hata oluştu.",
+      "unavailable": "AI servisi şu anda kullanılamıyor.",
+      "saving": "Kaydediliyor...",
+      "save": "Kaydet"
+    }
+  },
+  "workout": {
+    "list": {
+      "emptyTitle": "Bu gün için antrenman programı yok",
+      "emptyReadOnly": "Geçmiş bir gün görüntülüyorsun.",
+      "emptyDescription": "AI ile saniyeler içinde oluştur veya geçen haftadan kopyala.",
+      "generateWithAI": "AI ile Oluştur",
+      "fromLastWeek": "Geçen Haftadan",
+      "addManual": "Manuel Ekle",
+      "todaysWorkout": "Bugünün Antrenmanı",
+      "completedCount": "{completed}/{total} tamamlandı",
+      "completeAll": "Tümünü Tamamla",
+      "changeWithAI": "AI ile Programı Değiştir",
+      "addExercise": "Egzersiz Ekle",
+      "copyFromLastWeek": "Geçen haftadan kopyala",
+      "moveToAnotherDay": "Başka güne taşı",
+      "deleteAll": "Tümünü sil",
+      "moveToTodayOrFuture": "Bugüne veya İleri Güne Taşı",
+      "itemLabel": "egzersiz",
+      "aiCreateTitle": "AI ile Antrenman Oluştur",
+      "aiChangeTitle": "AI ile Programı Değiştir"
+    },
+    "aiModal": {
+      "overlayTitle": "AI Antrenman Planını Hazırlıyor",
+      "stepProfile": "Profil analizi",
+      "stepPlan": "Antrenman planı oluşturuluyor",
+      "currentProgram": "Mevcut Program",
+      "noExercises": "Egzersiz yok",
+      "suggestedProgram": "Önerilen Program",
+      "exercisesSection": "Egzersizler",
+      "trainingLocation": "Antrenman yeri:",
+      "gym": "Salon",
+      "home": "Ev",
+      "availableEquipment": "Mevcut ekipman:",
+      "specialRequest": "Bu antrenman için özel bir isteğin var mı?",
+      "specialRequestPlaceholder": "Örn: Ağırlıkları artır, daha fazla süperset ekle, omuz hareketlerini değiştir...",
+      "getSuggestion": "Öneri Al",
+      "newSuggestion": "Yeni Öneri",
+      "approve": "Onayla",
+      "generating": "AI öneri oluşturuyor...",
+      "minutesShort": "dk",
+      "secondsShort": "sn",
+      "locationGymPrompt": "Antrenman yeri: Salon (tüm ekipman mevcut)",
+      "locationHomePromptPrefix": "Antrenman yeri: Ev. Mevcut ekipman:",
+      "bodyweight": "Vücut ağırlığı",
+      "equipment": {
+        "Dumbbell": "Dambıl",
+        "Barbell": "Halter",
+        "Direnç bandı": "Direnç bandı",
+        "Pull-up bar": "Barfiks barı",
+        "Kettlebell": "Kettlebell",
+        "TRX": "TRX",
+        "Yoga matı": "Yoga matı",
+        "Bench": "Sehpa",
+        "Hiçbiri (vücut ağırlığı)": "Hiçbiri (vücut ağırlığı)"
+      }
+    },
+    "formTips": {
+      "title": "Form İpuçları: {name}"
+    }
+  },
+  "day": {
+    "tabs": {
+      "nutrition": "Beslenme",
+      "workout": "Antrenman",
+      "supplements": "Takviye"
+    },
+    "planType": {
+      "workout": "Antrenman Günü",
+      "swimming": "Yüzme Günü",
+      "rest": "Dinlenme Günü"
+    }
+  },
+  "meals": {
+    "form": {
+      "titleNew": "Yeni Öğün Ekle",
+      "titleEdit": "Öğünü Düzenle",
+      "pick": "Seç",
+      "pickMeal": "Öğün seç",
+      "pickFromLibrary": "Öğünlerimden Ekle",
+      "time": "Saat",
+      "mealName": "Öğün Adı",
+      "selectPlaceholder": "Seç...",
+      "content": "İçerik",
+      "contentPlaceholder": "2 yumurta, 1 dilim tam buğday ekmeği...",
+      "nutritionFacts": "Besin Değerleri",
+      "calories": "Kalori",
+      "protein": "Protein",
+      "carbs": "Karb",
+      "fat": "Yağ",
+      "remove": "Kaldır",
+      "saveAsFavorite": "Favorilere kaydet",
+      "cancel": "İptal",
+      "saving": "Kaydediliyor...",
+      "update": "Güncelle",
+      "add": "Ekle"
+    },
+    "delete": {
+      "title": "Öğünü Sil",
+      "confirmation": "<label></label> öğününü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+      "cancel": "İptal",
+      "delete": "Sil",
+      "deleting": "Siliniyor..."
+    },
+    "list": {
+      "emptyTitle": "Bu güne ait öğün yok",
+      "emptyReadOnly": "Geçmiş bir gün görüntülüyorsun.",
+      "emptyDescription": "AI ile saniyeler içinde günlük plan oluştur veya manuel ekle.",
+      "generateWithAI": "AI ile Oluştur",
+      "addManual": "Manuel Ekle",
+      "completedCount": "{completed}/{total} tamamlandı",
+      "completeAll": "Tümünü Tamamla",
+      "changeWithAI": "AI ile Programı Değiştir",
+      "addMeal": "Öğün Ekle",
+      "moveToAnotherDay": "Başka güne taşı",
+      "moveToTodayOrFuture": "Bugüne veya İleri Güne Taşı",
+      "itemLabel": "öğün"
+    },
+    "library": {
+      "title": "Öğün Kütüphanem",
+      "subtitle": "Kayıtlı öğünler ve günlük planlar",
+      "tabMeals": "Öğünler",
+      "tabPlans": "Günlük Planlar",
+      "loading": "Yükleniyor…",
+      "noSavedMealsTitle": "Henüz kayıtlı öğün yok",
+      "noSavedMealsHint": "Yeni öğün eklerken \"Favorilere kaydet\"i işaretle",
+      "search": "Ara...",
+      "all": "Tümü",
+      "noMatchingMeals": "Eşleşen öğün yok",
+      "mealDeleted": "Öğün silindi",
+      "noSavedPlansTitle": "Kayıtlı günlük plan yok",
+      "noSavedPlansHint": "Öğün listesinde \"AI ile Programı Değiştir\"den oluşturup kaydet",
+      "noMatchingPlans": "Eşleşen plan yok",
+      "planDeleted": "Plan silindi",
+      "mealCount": "{count} öğün",
+      "moreMeals": "+{count} öğün daha…",
+      "addToPlan": "Günün planına ekle",
+      "planSuffix": "{type} planı",
+      "today": "Bugün",
+      "yesterday": "Dün",
+      "daysAgo": "{n} gün önce",
+      "applyDialog": {
+        "title": "\"{label}\" Planını Uygula",
+        "description": "Plan {count} öğün içeriyor. Uygulanacak gün mevcut öğünlerin üzerine yazılır.",
+        "noEligibleDay": "Uygun gün bulunamadı",
+        "selectDay": "Bir gün seç",
+        "mealsAdded": "Öğünler eklendi",
+        "addFailed": "Eklenemedi",
+        "cancel": "İptal",
+        "applying": "Uygulanıyor…",
+        "apply": "Uygula"
+      },
+      "planTypes": {
+        "workout": "Antrenman",
+        "rest": "Dinlenme",
+        "swimming": "Yüzme",
+        "nutrition": "Beslenme"
+      }
+    },
+    "aiModal": {
+      "title": "AI ile Beslenme Programı",
+      "overlayTitle": "AI Beslenme Planını Hazırlıyor",
+      "stepProfile": "Profil analizi",
+      "stepPlan": "Beslenme planı oluşturuluyor",
+      "tabSuggest": "Öneri Al",
+      "tabSaved": "Kayıtlı",
+      "currentMeals": "Mevcut Öğünler",
+      "suggestedMeals": "Önerilen Öğünler",
+      "noMeals": "Öğün yok",
+      "ingredientsLabel": "Evdeki malzemeler (opsiyonel):",
+      "ingredientsPlaceholder": "Örn: yumurta, yulaf, tavuk, brokoli, makarna...",
+      "specialRequestLabel": "Özel istek (opsiyonel):",
+      "specialRequestPlaceholder": "Örn: Daha az karbonhidrat, öğle öğününü atla...",
+      "getSuggestion": "Öneri Al",
+      "newSuggestion": "Yeni Öneri",
+      "approve": "Onayla",
+      "saveToFavorites": "Kayıtlara Ekle",
+      "generating": "AI öneri oluşturuyor...",
+      "noSaved": "Kayıtlı öneri bulunamadı",
+      "mealCount": "{count} öğün",
+      "apply": "Uygula",
+      "ingredientsPrefix": "Evde bulunan malzemeler",
+      "ingredientsNote": "Malzemeler"
+    },
+    "agenda": {
+      "empty": "Öğün bulunamadı"
+    },
+    "bulkDelete": {
+      "title": "Tüm Öğünleri Sil",
+      "warning": "Bu güne ait <strong>{count} öğünün tamamı</strong> silinecektir. Bu işlem geri alınamaz.",
+      "warningDanger": "Tüm öğün verileri, kalori ve makro bilgileri kalıcı olarak silinecektir.",
+      "cancel": "Vazgeç",
+      "deleting": "Siliniyor...",
+      "deleteAll": "Tümünü Sil"
+    },
+    "picker": {
+      "title": "Öğün Seç",
+      "searchPlaceholder": "Ara (içerik, isim)...",
+      "tabFrequent": "Sık",
+      "tabHistory": "Geçmiş",
+      "tabSaved": "Kayıtlı",
+      "tabDaily": "Günlük",
+      "loading": "Yükleniyor…",
+      "emptyFrequent": "Henüz sık kullandığın öğün yok",
+      "emptyHistory": "Önceki günlerden öğün bulunamadı",
+      "emptySaved": "Henüz favori öğün kaydetmedin",
+      "emptyDaily": "Kayıtlı günlük plan yok",
+      "close": "Kapat",
+      "moreCount": "+{count} daha…",
+      "mealCountKcalDate": "{count} öğün · {kcal} kcal · {date}",
+      "planTypes": {
+        "workout": "Antrenman",
+        "rest": "Dinlenme",
+        "swimming": "Yüzme",
+        "nutrition": "Beslenme"
+      }
+    },
+    "foodReference": {
+      "title": "Besin Değerleri",
+      "tabPreset": "Hazır Besinler",
+      "tabUser": "Benim ({count})",
+      "searchPlaceholder": "Ara...",
+      "all": "Tümü",
+      "addNew": "Yeni besin ekle",
+      "empty": "Henüz kayıtlı besin yok",
+      "namePlaceholder": "Besin adı",
+      "portionPlaceholder": "Porsiyon (örn: 100g)",
+      "caloriesPlaceholder": "Kalori",
+      "proteinPlaceholder": "P (g)",
+      "carbsPlaceholder": "K (g)",
+      "fatPlaceholder": "Y (g)",
+      "cancel": "İptal",
+      "save": "Kaydet"
+    },
+    "macroSummary": {
+      "protein": "Protein",
+      "carbs": "Karb",
+      "fat": "Yağ"
+    },
+    "macroTargets": {
+      "title": "Makro Hedefleri",
+      "description": "Günlük öğün özetinde ilerleme barı için hedefleri belirle.",
+      "calories": "Kalori",
+      "proteinLabel": "Protein (g)",
+      "carbsLabel": "Karb (g)",
+      "fatLabel": "Yağ (g)",
+      "autoCalculate": "Otomatik Hesapla",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor",
+      "missingPrefix": "Eksik bilgi: {fields}.",
+      "missingHeight": "boy",
+      "missingWeight": "kilo",
+      "missingAge": "yaş",
+      "missingSuffix": "Profil sayfasından bilgilerini tamamla.",
+      "calculateFailed": "Hesaplanamadı",
+      "minCaloriesError": "Kalori hedefi en az 1200 kcal olmalıdır",
+      "saved": "Makro hedefleri güncellendi",
+      "saveFailed": "Kaydedilemedi"
+    },
+    "dailyRings": {
+      "calorieLabel": "Kalori: {value} / {target} kcal",
+      "proteinLabel": "Protein: {value} / {target} g",
+      "completedLabel": "Tamamlanan: {done} / {total}",
+      "completedCenter": "Tamamlandı",
+      "calories": "Kalori",
+      "protein": "Protein",
+      "tasks": "Görevler"
+    },
+    "aiMacro": {
+      "title": "AI ile Makro Hesapla",
+      "description": "Vücudun hakkında bölge bölge bilgi ver — karın, kol, bacak nasıl? AI profilini ve son ölçümünü de baz alarak makrolarını hesaplar.",
+      "placeholder": "Örn: Karın bölgem dolgun ve sarkık, bacaklarım ince, kollarım da zayıf. Özellikle bel çevresini inceltmek istiyorum.",
+      "charLimit": "{count}/600",
+      "minChars": "En az 20 karakter gerekli",
+      "calculating": "Hesaplanıyor...",
+      "calculate": "AI ile Hesapla",
+      "calories": "Kalori",
+      "protein": "Protein",
+      "carbs": "Karb",
+      "fat": "Yağ",
+      "approve": "Onayla ve Kaydet",
+      "saving": "Kaydediliyor...",
+      "cancel": "İptal",
+      "calcFailed": "Hesaplanamadı",
+      "cooldown": "Lütfen {seconds} saniye bekle.",
+      "rateLimited": "Günlük AI limitine ulaştın. Yarın tekrar dene.",
+      "unavailable": "AI şu an kullanılamıyor. Daha sonra tekrar dene.",
+      "saved": "Makro hedefleri kaydedildi",
+      "saveFailed": "Kaydedilemedi"
+    },
+    "macroTrend": {
+      "titleDefault": "7 Günlük {label}",
+      "average": "Ort. {value}{unit}",
+      "averageWithTarget": "Ort. {value}{unit} / {target}{unit}",
+      "today": "Bugün",
+      "calories": "Kalori",
+      "carbs": "Karb",
+      "fat": "Yağ",
+      "protein": "Protein",
+      "kcal": "kcal",
+      "g": "g"
+    }
+  },
+  "toast": {
+    "meals": {
+      "deleted": "Öğün silindi",
+      "deletedNamed": "\"{name}\" silindi",
+      "deleteFailed": "Öğün silinemedi",
+      "deletedAll": "Öğünler silindi",
+      "deletedCount": "{count} öğün silindi",
+      "deleteAllFailed": "Öğünler silinemedi",
+      "restoredCount": "{count} öğün geri yüklendi",
+      "undo": "Geri Al",
+      "undone": "Geri alındı",
+      "undoFailed": "Geri alma başarısız"
+    },
+    "exercises": {
+      "deleted": "Egzersiz silindi",
+      "deletedNamed": "\"{name}\" silindi",
+      "deleteFailed": "Egzersiz silinemedi",
+      "deletedAll": "Egzersizler silindi",
+      "deletedCount": "{count} egzersiz silindi",
+      "deleteAllFailed": "Egzersizler silinemedi",
+      "restoredCount": "{count} egzersiz geri yüklendi",
+      "undo": "Geri Al",
+      "undoFailed": "Geri alma başarısız"
+    }
+  },
+  "exercises": {
+    "addOneSet": "+1 Set",
+    "minutesShort": "dk",
+    "secondsShort": "sn",
+    "form": {
+      "titleEdit": "Egzersizi Düzenle",
+      "titleNew": "Yeni Egzersiz Ekle",
+      "section": "Bölüm",
+      "sectionLabels": {
+        "warmup": "Isınma",
+        "main": "Ana Antrenman",
+        "cooldown": "Soğuma",
+        "sauna": "Sauna",
+        "swimming": "Yüzme"
+      },
+      "name": "Egzersiz Adı *",
+      "namePlaceholder": "Bench Press",
+      "pickFromLibrary": "Kütüphaneden seç",
+      "sets": "Set",
+      "reps": "Tekrar",
+      "rest": "Dinlenme (sn)",
+      "duration": "Süre (dk)",
+      "notes": "Notlar",
+      "notesPlaceholder": "Opsiyonel notlar...",
+      "cancel": "İptal",
+      "saving": "Kaydediliyor...",
+      "update": "Güncelle",
+      "add": "Ekle"
+    },
+    "delete": {
+      "title": "Egzersizi Sil",
+      "confirmation": "<label></label> egzersizini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+      "cancel": "İptal",
+      "delete": "Sil",
+      "deleting": "Siliniyor..."
+    }
+  },
+  "admin": {
+    "title": "Kullanıcı Yönetimi",
+    "inviteButton": "Davet Et",
+    "feedback": "Geri Bildirimler",
+    "aiWarnings": "AI Uyarıları",
+    "aiWarningsPage": {
+      "subtitle": "Son 14 günün success_with_warnings dağılımı",
+      "loadFailed": "Veriler yüklenemedi.",
+      "noData": "Veri yok.",
+      "backToAdmin": "Admin paneline dön",
+      "totalRuns": "Toplam Run",
+      "warningRuns": "Uyarılı Run",
+      "warningRate": "Uyarı Oranı",
+      "trend14d": "14 Günlük Trend",
+      "noCallsInWindow": "Bu pencerede AI çağrısı yok.",
+      "byFeature": "Feature Bazında",
+      "feature": "Feature",
+      "success": "Başarılı",
+      "warnings": "Uyarılı",
+      "ratio": "Oran",
+      "topPatterns": "En Sık Uyarı Tipleri",
+      "topPatternsHint": "Numerik değerler ve gün indeksleri normalize edildi. Aynı kalıbın varyasyonları gruplanır.",
+      "cleanPipeline": "Bu pencerede uyarı kaydedilmemiş. Pipeline temiz.",
+      "featureLabels": {
+        "meal": "Öğün Önerisi",
+        "exercise": "Egzersiz İpucu",
+        "analyze": "İlerleme Analizi",
+        "chat": "AI Asistan",
+        "workout": "Antrenman Önerisi",
+        "daily-meal": "Günlük Öğün",
+        "weekly": "Haftalık Plan",
+        "exercise-demo": "Egzersiz Demo",
+        "shopping": "Alışveriş Listesi",
+        "target-weight": "Hedef Kilo"
+      }
+    },
+    "errors": {
+      "loadFailed": "Kullanıcılar yüklenemedi.",
+      "inviteFailed": "Davet gönderilemedi.",
+      "removeFailed": "Kullanıcı silinemedi.",
+      "membershipUpdateFailed": "Üyelik güncellenemedi.",
+      "endDateRequired": "Bitiş tarihi seçin.",
+      "endDateAfterToday": "Bitiş tarihi bugünden sonra olmalı."
+    },
+    "stats": {
+      "totalUsers": "Toplam Kullanıcı",
+      "totalUsersSub": "{active} aktif · {pending} bekleyen · {admin} admin",
+      "aiUsageToday": "Bugün AI Kullanım",
+      "aiUsageWeek": "Bu Hafta AI",
+      "aiUsageTotal": "Toplam AI"
+    },
+    "featureUsage": "AI Feature Kullanımı",
+    "userUsage": "Kullanıcı AI Kullanımı",
+    "tableHead": {
+      "feature": "Feature",
+      "today": "Bugün",
+      "week": "Hafta",
+      "total": "Toplam"
+    },
+    "users": "Kullanıcılar",
+    "emptyUsers": "Henüz kullanıcı yok.",
+    "backToSettings": "Ayarlara Dön",
+    "actions": {
+      "updateMembership": "Üyelik Güncelle",
+      "resendInvite": "Tekrar Davet",
+      "delete": "Sil",
+      "confirmDelete": "\"{name}\" kullanıcısını silmek istediğinize emin misiniz?"
+    },
+    "extendDialog": {
+      "title": "Üyelik Güncelle",
+      "submit": "Güncelle"
+    },
+    "invite": {
+      "title": "Kullanıcı Davet Et",
+      "description": "Yeni kullanıcıya geçici şifre ile davet gönderilecek",
+      "name": "İsim",
+      "namePlaceholder": "Ad Soyad",
+      "email": "E-posta",
+      "emailPlaceholder": "ornek@mail.com",
+      "membershipDuration": "Üyelik Süresi",
+      "endDate": "Bitiş Tarihi",
+      "userLanguageLabel": "Kullanıcı Dili / User Language",
+      "userLanguageHint": "Davet e-postası ve uygulama arayüzü bu dilde olacak.",
+      "submit": "Davet Gönder",
+      "errors": {
+        "endDateRequired": "Özel tarih için bitiş tarihi seçin.",
+        "endDateAfterToday": "Bitiş tarihi bugünden sonra olmalı.",
+        "alreadyExists": "Bu e-posta adresi zaten kayıtlı.",
+        "generic": "Davet gönderilemedi. Tekrar deneyin."
+      },
+      "success": {
+        "title": "Davet Gönderildi",
+        "description": "Geçici şifre ile davet e-postası gönderildi.",
+        "emailLabel": "E-posta",
+        "tempPasswordLabel": "Geçici Şifre",
+        "newInvite": "Yeni Davet",
+        "userList": "Kullanıcı Listesi",
+        "copy": "Kopyala"
+      },
+      "backToUsers": "Kullanıcı Listesine Dön"
+    },
+    "membership": {
+      "unlimited": "Sınırsız",
+      "1-month": "1 Ay",
+      "3-month": "3 Ay",
+      "6-month": "6 Ay",
+      "1-year": "1 Yıl",
+      "custom": "Özel",
+      "customDate": "Özel Tarih"
+    },
+    "status": {
+      "Admin": "Admin",
+      "Aktif": "Aktif",
+      "Bekliyor": "Bekliyor",
+      "Süresi Dolmuş": "Süresi Dolmuş",
+      "Üyelik Dolmuş": "Üyelik Dolmuş"
+    },
+    "features": {
+      "meal": "Öğün Önerisi",
+      "exercise": "Egzersiz İpucu",
+      "analyze": "İlerleme Analizi",
+      "chat": "AI Asistan",
+      "workout": "Antrenman Önerisi",
+      "daily-meal": "Günlük Öğün",
+      "weekly": "Haftalık Plan",
+      "exercise-demo": "Egzersiz Demo"
+    },
+    "timeAgo": {
+      "justNow": "Az önce",
+      "minutes": "{n}dk önce",
+      "hours": "{n}sa önce",
+      "days": "{n}g önce",
+      "none": "-"
+    },
+    "feedbackPage": {
+      "title": "Geri Bildirimler",
+      "backLabel": "Geri",
+      "backToAdmin": "Admin Paneline Dön",
+      "adminResponseLabel": "Admin Yanıtı:",
+      "emptyAll": "Henüz geri bildirim yok.",
+      "emptyFiltered": "Bu filtrede geri bildirim yok.",
+      "categories": {
+        "suggestion": "Öneri",
+        "complaint": "Şikayet",
+        "bug": "Hata",
+        "general": "Diğer"
+      },
+      "statuses": {
+        "open": "Açık",
+        "responded": "Yanıtlandı",
+        "closed": "Kapalı"
+      },
+      "filters": {
+        "all": "Tümü",
+        "open": "Açık",
+        "responded": "Yanıtlanan",
+        "closed": "Kapalı"
+      },
+      "filterWithCount": "{label} ({count})",
+      "timeAgo": {
+        "justNow": "Az önce",
+        "minutes": "{n}dk önce",
+        "hours": "{n}sa önce",
+        "days": "{n}g önce",
+        "none": "-"
+      },
+      "actions": {
+        "respond": "Yanıtla",
+        "close": "Kapat"
+      },
+      "respondDialog": {
+        "title": "Yanıtla",
+        "placeholder": "Yanıtınızı yazın...",
+        "send": "Yanıt Gönder",
+        "errorEmpty": "Yanıt boş olamaz.",
+        "errorSubmit": "Yanıt gönderilemedi."
+      }
+    }
+  },
+  "assistant": {
+    "title": "AI Asistan",
+    "subtitleDefault": "Kişisel fitness koçunuz",
+    "remaining": "Kalan: {remaining}/{limit}",
+    "clearChat": "Sohbeti Temizle",
+    "appName": "FitMusc Asistan",
+    "intro": "Beslenme, antrenman ve sağlık hakkında sorular sorabilirsiniz.",
+    "suggestions": {
+      "todayMeal": "Bugün ne yemeliyim?",
+      "kneeSquat": "Menisküs ile squat yapabilir miyim?",
+      "weightLossSpeed": "Kilo verme hızım nasıl?",
+      "waterIntake": "Su tüketimi ne kadar olmalı?"
+    },
+    "input": {
+      "placeholder": "Bir soru sorun...",
+      "limitReached": "Günlük mesaj limitine ulaştınız"
+    }
+  },
+  "shopping": {
+    "title": "Alışveriş Listesi",
+    "subtitle": "Haftalık market listesi",
+    "weekShort": "Hf {week}",
+    "itemsCount": "{purchased}/{total} ürün",
+    "refresh": "Yenile",
+    "completed": "Tamamlandı",
+    "noMealsError": "Bu haftada öğün bulunamadı. Önce beslenme programı oluşturun.",
+    "generating": "Alışveriş listesi oluşturuluyor...",
+    "emptyDescription": "Bu hafta için alışveriş listesi henüz hazır değil.",
+    "generateButton": "AI ile Alışveriş Listesi Oluştur",
+    "refreshTitle": "Alışveriş Listesini Yenile",
+    "refreshConfirm": "Mevcut alışveriş listesi silinip beslenme programına göre yeniden oluşturulacak. Devam etmek istiyor musunuz?",
+    "cancel": "İptal",
+    "usedInMealsLabel": "{count} öğünde kullanılıyor",
+    "linkedMealsTitle": "Bu malzeme şu öğünlerde:",
+    "loadingLinkedMeals": "Yükleniyor...",
+    "noLinkedMeals": "Referans verilen öğünler bulunamadı."
+  },
+  "settings": {
+    "menuItem": {
+      "missingInfoLabel": "Eksik bilgi"
+    },
+    "membershipTypes": {
+      "unlimited": "Sınırsız",
+      "1-month": "1 Ay",
+      "3-month": "3 Ay",
+      "6-month": "6 Ay",
+      "1-year": "1 Yıl",
+      "custom": "Özel"
+    },
+    "profileSummary": {
+      "fallbackName": "Profilim",
+      "completion": "Profil tamamlanması",
+      "age": "Yaş",
+      "height": "Boy",
+      "weight": "Kilo",
+      "target": "Hedef",
+      "edit": "Profili Düzenle",
+      "remainingDaysSuffix": "g"
+    },
+    "profileEditorDialog": {
+      "title": "Profili Düzenle"
+    },
+    "profileEditor": {
+      "email": "E-posta",
+      "age": "Yaş",
+      "agePlaceholder": "28",
+      "height": "Boy (cm)",
+      "heightPlaceholder": "175",
+      "startWeight": "Başlangıç kilosu (kg)",
+      "startWeightPlaceholder": "80",
+      "targetWeight": "Hedef kilo (kg)",
+      "targetWeightPlaceholder": "75",
+      "serviceType": "Hizmet Tipi",
+      "serviceFull": "Tam Program",
+      "serviceNutrition": "Sadece Beslenme",
+      "fitnessLevel": "Fitness Seviyesi",
+      "select": "Seçiniz",
+      "goal": "Hedef",
+      "sportHistory": "Spor Geçmişi",
+      "sportHistoryPlaceholder": "Daha önce yaptığınız sporlar...",
+      "medications": "İlaçlar / Supplementler",
+      "medicationsPlaceholder": "Kullandığınız ilaçlar veya takviyeler...",
+      "healthNotes": "Sağlık Notları",
+      "healthNotesPlaceholder": "Yaralanmalar, alerjiler, diyet kısıtlamaları...",
+      "allergens": "Gıda Alerjileri",
+      "noAllergens": "Alerjim yok",
+      "hasAllergens": "Var, belirtmek istiyorum",
+      "otherAllergensPlaceholder": "Diğer alerjiler (virgülle ayırın)...",
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "fitnessLevels": {
+        "beginner": "Yeni başlayan",
+        "returning": "Ara vermiş, tekrar başlayan",
+        "intermediate": "Orta düzey",
+        "advanced": "İleri düzey"
+      },
+      "fitnessGoals": {
+        "loss": { "label": "Kilo Verme", "description": "Yağ yakma + kalori açığı" },
+        "recomp": { "label": "Yağ Yakma + Kas Koruma", "description": "Vücut rekompozisyonu, idame kalori" },
+        "maintain": { "label": "Form Koruma", "description": "Mevcut formu koruma" },
+        "muscle_gain": { "label": "Kas Kazanımı", "description": "Hipertrofi, hafif kalori fazlası" },
+        "weight_gain": { "label": "Kilo Alma", "description": "Genel kilo artışı, hızlı surplus" }
+      },
+      "allergenTags": {
+        "dairy": "Süt ürünleri",
+        "egg": "Yumurta",
+        "peanut": "Fıstık",
+        "groundnut": "Yer fıstığı",
+        "fish": "Balık",
+        "shellfish": "Kabuklu deniz ürünü",
+        "wheat": "Buğday (Gluten)",
+        "soy": "Soya",
+        "sesame": "Susam",
+        "celery": "Kereviz",
+        "mustard": "Hardal",
+        "honey": "Bal"
+      }
+    },
+    "membershipInfo": {
+      "title": "Üyelik",
+      "start": "Başlangıç",
+      "end": "Bitiş",
+      "remaining": "Kalan Süre",
+      "daysSuffix": "gün"
+    },
+    "unitPreferences": {
+      "title": "Birim Tercihleri",
+      "weight": "Ağırlık",
+      "energy": "Enerji",
+      "kg": "Kilogram (kg)",
+      "lb": "Pound (lb)",
+      "kcal": "Kalori (kcal)",
+      "kj": "Kilojoule (kJ)",
+      "save": "Kaydet",
+      "saved": "Birim tercihleri kaydedildi",
+      "saveError": "Kaydedilemedi"
+    },
+    "dashboardPrefs": {
+      "title": "Dashboard Kartları",
+      "description": "Ana sayfada görmek istediğin kartları seç. Tercihler bu cihazda saklanır.",
+      "cards": {
+        "rings": { "label": "Günlük Halkalar", "description": "Kalori, protein ve görev tamamlama halkaları" },
+        "water_sleep": { "label": "Su ve Uyku", "description": "Günlük su ve uyku widget'ları" },
+        "macro_trend": { "label": "Makro Trendi", "description": "Son 7 gün makro sparkline" },
+        "stats": { "label": "Günlük Özet", "description": "Antrenman ve beslenme ilerleme kartları" },
+        "quick_access": { "label": "Hızlı Erişim", "description": "Takvim, ilerleme, alışveriş kartları" },
+        "streak": { "label": "Seri ve Rozetler", "description": "Günlük seri ve rozet kartları" },
+        "friends": { "label": "Arkadaş Serileri", "description": "Arkadaş liderlik tablosu" }
+      }
+    },
+    "healthProfile": {
+      "title": "Yeni profil bilgileri",
+      "intro": "Kalori hesaplamaları ve aralıklı açlık güvenliği için kullanılır. Sağlık verileri KVKK kapsamında özel kategori olarak korunur.",
+      "genderTitle": "Biyolojik cinsiyet",
+      "activityTitle": "Günlük aktivite (antrenman dışı)",
+      "flagsTitle": "Sağlık durumları",
+      "save": "Kaydet",
+      "saved": "Sağlık profili güncellendi",
+      "saveError": "Kaydedilemedi",
+      "genders": {
+        "female": "Kadın",
+        "male": "Erkek",
+        "prefer_not_to_say": "Belirtmek istemiyorum"
+      },
+      "activities": {
+        "sedentary": { "label": "Çoğunlukla otururum", "hint": "Masa başı, az hareket" },
+        "light": { "label": "Hafif aktif", "hint": "Ofis + günlük yürüyüş, hafif ev işleri" },
+        "moderate": { "label": "Ayakta çalışırım", "hint": "Öğretmen, garson, perakende" },
+        "very_active": { "label": "Çok aktif", "hint": "İnşaat, kurye, fiziksel iş" }
+      },
+      "flags": {
+        "hasEatingDisorderHistory": "Yeme bozukluğu öyküm var",
+        "isPregnantOrBreastfeeding": "Hamileyim veya emziriyorum",
+        "hasDiabetes": "Diyabetim var (Tip 1 veya insülin kullanılan Tip 2)",
+        "hasThyroidCondition": "Tedavi altında olmayan tiroid problemim var"
+      }
+    },
+    "dailyRoutine": {
+      "weekday": "Hafta İçi",
+      "weekend": "Hafta Sonu",
+      "empty": "Henüz günlük akış eklenmemiş.",
+      "weekendMissing": "Hafta sonu programı eklenmemiş",
+      "edit": "Düzenle",
+      "add": "Ekle",
+      "addRow": "Satır Ekle",
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "selectEvent": "Etkinlik seç"
+    },
+    "supplementSchedule": {
+      "empty": "Henüz supplement takvimi eklenmemiş.",
+      "edit": "Düzenle",
+      "add": "Ekle",
+      "addRow": "Satır Ekle",
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "selectTime": "Zaman seçin",
+      "supplementsPlaceholder": "ör. Omega-3, Kreatin",
+      "periods": {
+        "Sabah": "Sabah (uyanınca)",
+        "Kahvaltı ile": "Kahvaltı ile",
+        "Öğle": "Öğle",
+        "Antrenman öncesi": "Antrenman öncesi",
+        "Antrenman sonrası": "Antrenman sonrası",
+        "Akşam yemeği ile": "Akşam yemeği ile",
+        "Yatmadan önce": "Yatmadan önce"
+      }
+    },
+    "title": "Ayarlar",
+    "subtitle": "Profil ve tercihler",
+    "onboardingBannerTitle": "Profilinizi Tamamlayın",
+    "onboardingBannerDesc": "Günlük akış, sağlık notları, fitness seviyesi ve supplement bilgileriniz AI değerlendirmelerinde kullanılır. Ne kadar detaylı doldurursanız, size özel program o kadar isabetli olur.",
+    "groups": {
+      "profileHealth": "Profil & Sağlık",
+      "goals": "Hedefler",
+      "app": "Uygulama",
+      "sharingData": "Paylaşım ve Veri"
+    },
+    "items": {
+      "healthTitle": "Yeni profil bilgileri",
+      "healthSubtitle": "Cinsiyet, günlük aktivite, sağlık durumları",
+      "routineTitle": "Günlük Akış",
+      "routineSubtitle": "Hafta içi ve hafta sonu rutinin",
+      "supplementsTitle": "Takviye Takvimi",
+      "supplementsSubtitle": "Supplement ve ilaç zamanlaması",
+      "macroTitle": "Makro Hedefleri",
+      "macroSubtitle": "Kalori, protein, karbonhidrat, yağ",
+      "preferencesTitle": "Birim ve Panel Tercihleri",
+      "preferencesSubtitle": "Kg / lbs · kcal / kJ · dashboard kartları",
+      "notificationsTitle": "Bildirim ve Hatırlatıcılar",
+      "notificationsSubtitle": "Push, e-posta, hatırlatıcı zamanları",
+      "mealLibraryTitle": "Öğün Kütüphanem",
+      "mealLibrarySubtitle": "Kayıtlı öğünler ve günlük planlar",
+      "sharingTitle": "Plan Paylaşımı",
+      "sharingSubtitle": "Programını başka kullanıcılarla paylaş"
+    },
+    "adminPanel": "Admin Paneli",
+    "signOut": "Çıkış Yap",
+    "locale": {
+      "label": "Dil / Language",
+      "description": "Uygulama arayüzünün gösterileceği dili seçin."
+    },
+    "subpages": {
+      "preferencesTitle": "Tercihler",
+      "preferencesSubtitle": "Birim ve panel ayarları",
+      "supplementsTitle": "Takviye Takvimi",
+      "supplementsSubtitle": "Supplement ve ilaç zamanlaması",
+      "healthTitle": "Sağlık Profili",
+      "healthSubtitle": "Cinsiyet, aktivite, sağlık durumları",
+      "sharingTitle": "Plan Paylaşımı",
+      "sharingSubtitle": "Programını başka kullanıcılarla paylaş",
+      "routineTitle": "Günlük Akış",
+      "routineSubtitle": "Hafta içi ve hafta sonu rutinin",
+      "notificationsTitle": "Bildirim ve Hatırlatıcılar",
+      "notificationsSubtitle": "Push, e-posta ve zamanlı hatırlatmalar",
+      "macroTitle": "Makro Hedefleri",
+      "macroSubtitle": "Kalori ve makro dağılımı"
+    },
+    "macros": {
+      "infoTitle": "Makro Besinler Nedir?",
+      "infoSubtitle": "Kalori, protein, karb ve yağın rolü",
+      "intro": "Makro besinler (makrolar), vücudun enerji ve yapı taşı olarak kullandığı üç temel besin grubudur. Doğru makro dengesini bulmak; hedefine ulaşmanın, enerjini korumanın ve kas–yağ oranını optimize etmenin temelidir.",
+      "perGramTitle": "Kalori başına gram:",
+      "calorieLabel": "Kalori",
+      "calorieDesc": "Vücudun enerji birimidir. Harcadığından fazla alırsan yağ depolar; eksik alırsan yağ yakar.",
+      "proteinLabel": "Protein",
+      "proteinDesc": "Kas dokusu başta olmak üzere her hücrenin yapı taşıdır. Toparlanma, doygunluk ve yağsız kütle için kritik.",
+      "carbsLabel": "Karbonhidrat",
+      "carbsLabelShort": "Karb",
+      "carbsDesc": "Beyin ve kasların birincil yakıtıdır. Antrenman performansı ve glikojen depoları için gereklidir.",
+      "fatLabel": "Yağ",
+      "fatDesc": "Hormon üretimi, yağda çözünen vitaminler (A, D, E, K) ve uzun süreli enerji için vazgeçilmezdir.",
+      "tipPrefix": "İpucu:",
+      "tipBody": "Makro hedefleri belirlerken hedefinle (yağ kaybı, kas kazanımı, idame) tutarlı olduğuna emin ol. Aşağıdaki AI hesaplayıcısı profil ve ölçüm verilerini baz alarak senin için optimize eder."
+    }
+  },
+  "sharing": {
+    "title": "Paylaşılan Planlar",
+    "subtitle": "Sizinle paylaşılan programlar",
+    "empty": "Henüz sizinle paylaşılan plan yok",
+    "weekLabel": "Hafta {week} — {phase}",
+    "weeklyTitleFallback": "Paylaşılan Plan",
+    "sharedBy": "{name} tarafından paylaşıldı",
+    "readOnlyNotice": "Salt okunur görünüm",
+    "noDays": "Günlük plan bulunamadı",
+    "planType": {
+      "workout": "Antrenman",
+      "swimming": "Yüzme",
+      "rest": "Dinlenme"
+    },
+    "planTypeDay": {
+      "workout": "Antrenman Günü",
+      "swimming": "Yüzme Günü",
+      "rest": "Dinlenme Günü"
+    },
+    "loading": "Yükleniyor...",
+    "tabMeals": "Beslenme",
+    "tabWorkout": "Antrenman",
+    "noMeals": "Öğün bulunamadı",
+    "noWorkout": "Antrenman programı yok"
+  },
+  "validation": {
+    "password": {
+      "minLength": "Şifre en az 10 karakter olmalıdır.",
+      "uppercase": "Şifre en az 1 büyük harf içermelidir.",
+      "digit": "Şifre en az 1 rakam içermelidir.",
+      "special": "Şifre en az 1 özel karakter içermelidir.",
+      "generic": "Şifre gereksinimleri karşılanmıyor."
+    }
+  },
+  "profileComplete": {
+    "headerTitle": "Profil Kurulumu",
+    "back": "Geri",
+    "next": "İleri",
+    "skip": "Atla",
+    "letsBegin": "Hadi Başlayalım!",
+    "errors": {
+      "heightRange": "Boy 100–250 cm arasında olmalıdır.",
+      "weightRange": "Kilo 30–300 kg arasında olmalıdır.",
+      "targetWeightRange": "Hedef kilo 30–300 kg arasında olmalıdır.",
+      "ageRequired": "Yaş alanı zorunludur.",
+      "goalRequired": "Lütfen bir hedef seç.",
+      "fitnessLevelRequired": "Deneyim seviyesi seçimi zorunludur.",
+      "sportHistoryRequired": "Spor geçmişi alanı zorunludur.",
+      "medicationsRequired": "İlaçlar / Supplementler alanı zorunludur. Yoksa 'Yok' yazın.",
+      "generic": "Bir hata oluştu. Tekrar deneyin."
+    },
+    "steps": {
+      "1": { "title": "Hizmet Tipi", "desc": "Sana nasıl yardımcı olalım?" },
+      "2": { "title": "Fiziksel Bilgiler", "desc": "Sağlıklı hedefler için temel ölçümlerin" },
+      "3": { "title": "Sağlık Profili", "desc": "Cinsiyet ve aktivite seviyeni belirt" },
+      "4": { "title": "Sağlık Notları", "desc": "Alerjiler, sağlık durumun ve ilaçların" },
+      "5": { "title": "Hedefler", "desc": "Programın sana göre şekillensin" },
+      "6": { "title": "Günlük Rutin", "desc": "İsteğe bağlı — öğün saatlerini ayarlayalım" },
+      "7": { "title": "Hazırsın!", "desc": "Profilini tamamlamak için son bir adım" }
+    },
+    "service": {
+      "fullTitle": "Tam Program",
+      "fullDesc": "Antrenman + Beslenme planı",
+      "nutritionTitle": "Sadece Beslenme",
+      "nutritionDesc": "Kişiye özel beslenme planı"
+    },
+    "physical": {
+      "height": "Boy (cm)",
+      "age": "Yaş",
+      "currentWeight": "Mevcut Kilo (kg)",
+      "targetWeight": "Hedef Kilo (kg)"
+    },
+    "health": {
+      "biologicalGender": "Biyolojik cinsiyet",
+      "dailyActivity": "Günlük aktivite (antrenman dışı)",
+      "healthConditions": "Sağlık durumları",
+      "flags": {
+        "eatingDisorder": "Yeme bozukluğu öyküm var",
+        "pregnant": "Hamileyim veya emziriyorum",
+        "diabetes": "Diyabetim var (Tip 1 veya insülin kullanılan Tip 2)",
+        "thyroid": "Tedavi altında olmayan tiroid problemim var"
+      }
+    },
+    "gender": {
+      "female": "Kadın",
+      "male": "Erkek",
+      "prefer_not_to_say": "Belirtmek istemiyorum",
+      "unspecified": "Belirtilmedi"
+    },
+    "activity": {
+      "sedentary": { "label": "Çoğunlukla otururum", "hint": "Masa başı, az hareket", "short": "Masa başı" },
+      "light": { "label": "Hafif aktif", "hint": "Ofis + günlük yürüyüş, hafif ev işleri", "short": "Hafif aktif" },
+      "moderate": { "label": "Ayakta çalışırım", "hint": "Öğretmen, garson, perakende", "short": "Ayakta çalışır" },
+      "very_active": { "label": "Çok aktif", "hint": "İnşaat, kurye, fiziksel iş", "short": "Çok aktif" }
+    },
+    "allergens": {
+      "label": "Gıda Alerjilerin",
+      "modeNone": "Alerjim yok",
+      "modeHas": "Var, belirtmek istiyorum",
+      "otherPlaceholder": "Diğer alerjiler (virgülle ayır)..."
+    },
+    "healthNotes": {
+      "label": "Sağlık Notları",
+      "placeholder": "Yaralanmalar, kronik hastalıklar, özel durumlar..."
+    },
+    "medications": {
+      "label": "İlaçlar / Supplementler",
+      "placeholderRequired": "Kullandığın ilaçlar veya supplementler. Yoksa 'Yok' yazın.",
+      "placeholderOptional": "Kullandığın ilaçlar veya supplementler..."
+    },
+    "goals": {
+      "yourGoal": "Hedefin",
+      "experienceLevel": "Deneyim Seviyesi",
+      "sportHistoryLabel": "Spor Geçmişi",
+      "sportHistoryPlaceholder": "Daha önce hangi sporları yaptın, ne kadar süre?",
+      "options": {
+        "loss": { "label": "Kilo Verme", "desc": "Yağ yakma + kalori açığı" },
+        "recomp": { "label": "Yağ Yakma + Kas Koruma", "desc": "Vücut rekompozisyonu, idame kalori" },
+        "maintain": { "label": "Form Koruma", "desc": "Mevcut formu koruma" },
+        "muscle_gain": { "label": "Kas Kazanımı", "desc": "Hipertrofi, hafif kalori fazlası" },
+        "weight_gain": { "label": "Kilo Alma", "desc": "Genel kilo artışı, hızlı surplus" }
+      },
+      "levels": {
+        "beginner": "Yeni Başlayan",
+        "returning": "Ara Verip Dönen",
+        "intermediate": "Orta Düzey",
+        "advanced": "İleri Düzey"
+      }
+    },
+    "routine": {
+      "intro": "Bu bilgiler AI'ın öğün saatlerini ve antrenman zamanlamasını optimize etmesine yardımcı olur. Dilersen bu adımı atlayabilirsin.",
+      "wakeTime": "Kalkış saatin",
+      "breakfastTime": "Kahvaltı saatin",
+      "workStartTime": "İşe gidiş",
+      "lunchTime": "Öğle yemeği",
+      "workEndTime": "İşten çıkış",
+      "dinnerTime": "Akşam yemeği",
+      "workoutTime": "Antrenman saatin",
+      "sleepTime": "Uyku saatin",
+      "weekendToggleAdded": "Hafta sonu programı eklendi ✓",
+      "weekendToggleAdd": "Hafta sonu farklı mı? Ekle →",
+      "weekendHeader": "Hafta Sonu",
+      "we": {
+        "wake": "Kalkış",
+        "breakfast": "Kahvaltı",
+        "lunch": "Öğle yemeği",
+        "dinner": "Akşam yemeği",
+        "workout": "Antrenman",
+        "sleep": "Uyku"
+      }
+    },
+    "summary": {
+      "title": "Profil Özeti",
+      "service": "Hizmet",
+      "serviceFull": "Tam Program (Antrenman + Beslenme)",
+      "serviceNutrition": "Sadece Beslenme",
+      "heightWeight": "Boy / Kilo",
+      "targetWeight": "Hedef Kilo",
+      "age": "Yaş",
+      "goal": "Hedef",
+      "gender": "Cinsiyet",
+      "activity": "Aktivite",
+      "footer": "Profilini kaydettikten sonra takvim sayfasından haftalık programını oluşturabilirsin. Tüm bilgiler daha sonra Ayarlar'dan değiştirilebilir."
+    }
+  }
+}

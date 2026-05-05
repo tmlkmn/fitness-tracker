@@ -1,0 +1,1374 @@
+{
+  "layout": {
+    "networkStatus": {
+      "reconnected": "Connection restored",
+      "offline": "You're offline",
+      "queued": "{count} pending",
+      "retry": "Retry"
+    },
+    "pwa": {
+      "installLabel": "Install App",
+      "installTitle": "Install App",
+      "installDescription": "Follow the steps below to add the app to your home screen.",
+      "ios1Prefix": "In Safari's bottom menu, tap the",
+      "iosShareBold": "Share",
+      "ios1Suffix": "icon",
+      "ios2Prefix": "Scroll down and tap",
+      "iosAddToHome": "Add to Home Screen",
+      "ios2Suffix": "",
+      "ios3Prefix": "Tap the",
+      "iosAddBold": "Add",
+      "ios3Suffix": "button in the top-right",
+      "android1Prefix": "Tap the",
+      "androidMenuBold": "menu",
+      "android1Suffix": "icon in the browser's top-right corner",
+      "android2Prefix": "Tap",
+      "androidAddToHome": "Add to home screen",
+      "androidOr": "or",
+      "androidInstallApp": "Install app",
+      "android2Suffix": "",
+      "android3Prefix": "Tap the",
+      "androidInstallBold": "Install",
+      "android3Suffix": "button",
+      "desktop1Prefix": "Click the",
+      "desktopInstallBold": "install",
+      "desktop1Suffix": "icon in the address bar",
+      "desktop2Prefix": "Or use",
+      "desktopInstallAppBold": "Install app",
+      "desktop2Suffix": "from the browser menu",
+      "cardInstalledTitle": "App Installed",
+      "cardInstalledSubtitle": "FitMusc is installed on your device",
+      "cardTitle": "Install on your device",
+      "cardSubtitle": "Add to home screen, get notifications automatically",
+      "cardButton": "Install",
+      "fallbackAlert": "Use the \"Add to Home Screen\" option in your browser's menu."
+    },
+    "search": {
+      "title": "Search",
+      "placeholder": "Search pages, meals, exercises, days…",
+      "sectionPages": "Pages",
+      "sectionDays": "Days",
+      "sectionMeals": "Meals",
+      "sectionExercises": "Exercises",
+      "sectionFoods": "My Foods",
+      "noResults": "No results found",
+      "shortcutPrefix": "Toggle:",
+      "escClose": "Esc to close",
+      "navHome": "Today",
+      "navCalendar": "Calendar",
+      "navProgress": "Progress",
+      "navShopping": "Shopping",
+      "navMealLibrary": "Meal Library",
+      "navAssistant": "AI Assistant",
+      "navSettings": "Settings"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "search": "Search",
+    "menu": "Menu"
+  },
+  "nav": {
+    "primaryNavigation": "Primary navigation",
+    "home": "Home",
+    "calendar": "Calendar",
+    "assistant": "Assistant",
+    "progress": "Progress",
+    "settings": "Settings",
+    "search": "Search",
+    "menu": "Menu",
+    "feedback": "Feedback",
+    "appGuide": "App Guide",
+    "adminPanel": "Admin Panel",
+    "lightTheme": "Light Theme",
+    "darkTheme": "Dark Theme",
+    "signOut": "Sign Out",
+    "workout": "Workout"
+  },
+  "fab": {
+    "aiAssistant": "AI Assistant",
+    "addMeal": "Add Meal",
+    "quickActions": "Quick actions",
+    "closeQuickActions": "Close quick actions"
+  },
+  "auth": {
+    "login": {
+      "subtitle": "Sign in to your account",
+      "email": "Email",
+      "password": "Password",
+      "signIn": "Sign In",
+      "forgotPassword": "Forgot Password",
+      "errors": {
+        "emailRequired": "Email address is required.",
+        "invalidEmail": "Please enter a valid email address.",
+        "passwordRequired": "Password is required.",
+        "invalidCredentials": "Invalid email or password.",
+        "inviteExpired": "Your invitation has expired. Please contact your administrator.",
+        "generic": "An error occurred. Please try again."
+      }
+    },
+    "pending": {
+      "title": "Awaiting Approval",
+      "description": "Your account has not been approved yet. Please wait for administrator approval."
+    },
+    "membershipExpired": {
+      "title": "Membership Expired",
+      "description": "Your membership has expired. Contact your administrator to renew."
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "description": "Enter your email address and we'll send you a password reset link.",
+      "submitButton": "Send Reset Link",
+      "sentTitle": "Email Sent",
+      "sentDescription": "A password reset link has been sent to your email. Please check your inbox.",
+      "backToLogin": "Back to Login",
+      "backToLoginLink": "Back to login",
+      "errors": {
+        "userNotFound": "This email address is not registered in our system."
+      }
+    },
+    "changePassword": {
+      "title": "Change Password",
+      "description": "Set a new password to continue",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password",
+      "minTenCharsPlaceholder": "At least 10 characters",
+      "submitButton": "Change Password",
+      "rules": {
+        "minLength": "At least 10 characters",
+        "uppercase": "Uppercase letter (A-Z)",
+        "digit": "Digit (0-9)",
+        "special": "Special character"
+      },
+      "errors": {
+        "passwordMismatch": "Passwords do not match."
+      }
+    },
+    "resetPassword": {
+      "title": "Set New Password",
+      "description": "Enter your new password",
+      "saveButton": "Save Password",
+      "successTitle": "Password Changed",
+      "successDescription": "You can now sign in with your new password.",
+      "invalidLinkTitle": "Invalid Link",
+      "invalidLinkDescription": "This password reset link is invalid or has expired.",
+      "backToLogin": "Back to Login",
+      "errors": {
+        "linkExpired": "Link has expired. Please try again."
+      }
+    }
+  },
+  "dashboard": {
+    "quickAccess": {
+      "calendar": "Calendar",
+      "calendarDesc": "Weekly program",
+      "progress": "Progress",
+      "progressDesc": "Weight & measurements",
+      "assistant": "AI Assistant",
+      "assistantDesc": "Fitness coach",
+      "shopping": "Shopping",
+      "shoppingDesc": "Weekly list",
+      "shared": "Shared",
+      "sharedDesc": "Shared with me"
+    },
+    "welcome": "Welcome, {name}!",
+    "targetWeight": "Target: {weight} kg",
+    "membershipUnlimited": "Unlimited",
+    "membershipExpired": "Expired",
+    "membershipDays": "{days} days",
+    "completeProfile": "Complete your profile",
+    "completeProfileDesc": "We need your info for AI personalization",
+    "todayPlan": "Today's Plan",
+    "meals": "Meals",
+    "exercises": "Exercises",
+    "goToTodayPlan": "Go to Today's Plan",
+    "noPlanToday": "No plan for today",
+    "goToCalendar": "Go to Calendar",
+    "thisWeek": "This Week",
+    "currentWeight": "Current",
+    "target": "Target",
+    "program": "Program",
+    "weeks": "weeks",
+    "today": "Today"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "subtitle": "Training & Nutrition Program",
+    "weeklyView": "Weekly View",
+    "today": "Today",
+    "fullCalendar": "Full Calendar",
+    "aiWeeklyPlan": "{action} Weekly Plan with AI",
+    "aiWeeklyPlanShort": "Weekly Plan with AI",
+    "actionCreate": "Create",
+    "actionChange": "Change",
+    "shoppingList": "Shopping List",
+    "emptyWeekGapTitle": "There are unplanned weeks in the past",
+    "emptyWeekGapDescription": "First create plans for the weeks below:",
+    "weekSuffix": "week",
+    "noPlanForDate": "No plan found for this date.",
+    "manualAdd": "Add Manually",
+    "creating": "Creating...",
+    "aiUnavailable": "AI feature is currently unavailable. Please try again later.",
+    "deleteWeeklyTitle": "Delete Weekly Plan",
+    "deleteWeeklyConfirm": "Are you sure you want to delete this week's plan? All daily plans, meals and exercises will be deleted. This action cannot be undone.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleting": "Deleting..."
+  },
+  "progress": {
+    "title": "Progress",
+    "subtitle": "Weight and measurement tracking",
+    "pastRecords": "Past Records",
+    "deleteTitle": "Delete Measurement",
+    "deleting": "Deleting...",
+    "delete": "Delete",
+    "logDeleted": "Measurement deleted",
+    "summary": {
+      "now": "kg (now)",
+      "diff": "kg diff",
+      "target": "kg target"
+    },
+    "addMeasurement": "Add New Measurement",
+    "deleteConfirm": "Are you sure you want to delete this measurement record? This action cannot be undone.",
+    "cancel": "Cancel",
+    "badges": {
+      "fat": "fat",
+      "waist": "waist"
+    },
+    "sections": {
+      "main": "Main Info",
+      "bodyFatMuscle": "Body Fat & Muscle",
+      "measurements": "Measurements",
+      "note": "Note"
+    },
+    "labels": {
+      "weight": "Weight",
+      "fluid": "Fluid",
+      "fat": "Fat",
+      "bmi": "BMI",
+      "leftArmFat": "Left Arm Fat",
+      "leftArmMuscle": "Left Arm Muscle",
+      "rightArmFat": "Right Arm Fat",
+      "rightArmMuscle": "Right Arm Muscle",
+      "torsoFat": "Torso Fat",
+      "torsoMuscle": "Torso Muscle",
+      "leftLegFat": "Left Leg Fat",
+      "leftLegMuscle": "Left Leg Muscle",
+      "rightLegFat": "Right Leg Fat",
+      "rightLegMuscle": "Right Leg Muscle",
+      "waist": "Waist",
+      "rightArm": "Right Arm",
+      "leftArm": "Left Arm",
+      "rightLeg": "Right Leg",
+      "leftLeg": "Left Leg"
+    },
+    "chart": {
+      "title": "Chart",
+      "metrics": {
+        "weight": "Weight",
+        "fatPercent": "Fat Ratio",
+        "fatKg": "Fat (kg)",
+        "fluidPercent": "Fluid Ratio",
+        "fluidKg": "Fluid (kg)",
+        "bmi": "BMI",
+        "waistCm": "Waist",
+        "rightArmCm": "Right Arm",
+        "leftArmCm": "Left Arm",
+        "rightLegCm": "Right Leg",
+        "leftLegCm": "Left Leg"
+      },
+      "empty": "No data yet. Add your first measurement!",
+      "noMetric": "No {label} data yet.",
+      "lastMeasurement": "Last measurement: {value} {unit} — At least 2 records needed for chart"
+    },
+    "range": {
+      "fluidLabel": "Fluid Ratio",
+      "fatLabel": "Fat Ratio",
+      "bmiLabel": "BMI",
+      "normal": "Normal",
+      "borderline": "Borderline",
+      "alert": "Alert"
+    },
+    "modal": {
+      "editTitle": "Edit Measurement",
+      "newTitle": "Add New Measurement",
+      "quickMode": "Quick Entry",
+      "copyPrevious": "Copy Previous Measurement",
+      "previousCopied": "Previous measurement values copied",
+      "logUpdated": "Measurement updated",
+      "logSaved": "Measurement saved",
+      "date": "Date",
+      "mainInfo": "Main Info",
+      "bodyParts": "Body Parts",
+      "measurements": "Measurements",
+      "weight": "Weight",
+      "bmi": "BMI",
+      "auto": "(auto)",
+      "fatPercent": "Fat Ratio",
+      "fat": "Fat",
+      "fluidPercent": "Fluid Ratio",
+      "fluid": "Fluid",
+      "waist": "Waist",
+      "rightArm": "Right Arm",
+      "leftArm": "Left Arm",
+      "rightLeg": "Right Leg",
+      "leftLeg": "Left Leg",
+      "torso": "Torso",
+      "fatField": "Fat",
+      "muscleField": "Muscle",
+      "notes": "Notes",
+      "notesPlaceholder": "How I felt today...",
+      "saving": "Saving...",
+      "save": "Save",
+      "update": "Update"
+    },
+    "form": {
+      "title": "Add New Measurement",
+      "tabMain": "Main Info",
+      "tabBody": "Body",
+      "tabMeasurements": "Measurements",
+      "weight": "Weight",
+      "fluidPercent": "Fluid Ratio",
+      "fluid": "Fluid",
+      "fatPercent": "Fat Ratio",
+      "fat": "Fat",
+      "bmi": "BMI",
+      "muscle": "Muscle",
+      "notes": "Notes",
+      "notesPlaceholder": "How I felt today...",
+      "waist": "Waist",
+      "rightArm": "Right Arm",
+      "leftArm": "Left Arm",
+      "rightLeg": "Right Leg",
+      "leftLeg": "Left Leg",
+      "torso": "Torso",
+      "saving": "Saving...",
+      "save": "Save",
+      "saved": "Progress saved"
+    },
+    "aiAnalysis": {
+      "title": "AI Analysis",
+      "analyze": "Analyze",
+      "analyzing": "Analyzing...",
+      "limitReached": "Limit reached",
+      "refresh": "Refresh",
+      "dailyLimit": "You've reached the daily analysis limit (max 3/day).",
+      "unavailable": "AI analysis is currently unavailable.",
+      "connectionError": "Connection error.",
+      "genericError": "An error occurred. Please try again later.",
+      "justNow": "just now",
+      "minutesAgo": "{m} min ago",
+      "hoursAgo": "{h} h ago",
+      "daysAgo": "{d} d ago"
+    },
+    "weightTarget": {
+      "title": "Weight Targets",
+      "startWeight": "Start Weight (kg)",
+      "targetWeight": "Target Weight (kg)",
+      "aiSuggest": "AI Target Suggestion",
+      "calculating": "Calculating...",
+      "aiSuggestion": "AI Suggestion",
+      "weeks": "~{n} weeks",
+      "accept": "Accept",
+      "saved": "Targets updated",
+      "error": "An error occurred.",
+      "unavailable": "AI service is currently unavailable.",
+      "saving": "Saving...",
+      "save": "Save"
+    }
+  },
+  "workout": {
+    "list": {
+      "emptyTitle": "No workout program for this day",
+      "emptyReadOnly": "You're viewing a past day.",
+      "emptyDescription": "Generate with AI in seconds, or copy from last week.",
+      "generateWithAI": "Generate with AI",
+      "fromLastWeek": "From Last Week",
+      "addManual": "Add Manually",
+      "todaysWorkout": "Today's Workout",
+      "completedCount": "{completed}/{total} completed",
+      "completeAll": "Complete All",
+      "changeWithAI": "Change with AI",
+      "addExercise": "Add Exercise",
+      "copyFromLastWeek": "Copy from last week",
+      "moveToAnotherDay": "Move to another day",
+      "deleteAll": "Delete all",
+      "moveToTodayOrFuture": "Move to Today or Future",
+      "itemLabel": "exercise",
+      "aiCreateTitle": "Generate Workout with AI",
+      "aiChangeTitle": "Change Program with AI"
+    },
+    "aiModal": {
+      "overlayTitle": "AI is Preparing Your Workout Plan",
+      "stepProfile": "Profile analysis",
+      "stepPlan": "Building workout plan",
+      "currentProgram": "Current Program",
+      "noExercises": "No exercises",
+      "suggestedProgram": "Suggested Program",
+      "exercisesSection": "Exercises",
+      "trainingLocation": "Training location:",
+      "gym": "Gym",
+      "home": "Home",
+      "availableEquipment": "Available equipment:",
+      "specialRequest": "Any special request for this workout?",
+      "specialRequestPlaceholder": "E.g. Increase weights, add more supersets, change shoulder exercises...",
+      "getSuggestion": "Get Suggestion",
+      "newSuggestion": "New Suggestion",
+      "approve": "Approve",
+      "generating": "AI is generating suggestions...",
+      "minutesShort": "min",
+      "secondsShort": "s",
+      "locationGymPrompt": "Training location: Gym (all equipment available)",
+      "locationHomePromptPrefix": "Training location: Home. Available equipment:",
+      "bodyweight": "Bodyweight",
+      "equipment": {
+        "Dumbbell": "Dumbbell",
+        "Barbell": "Barbell",
+        "Direnç bandı": "Resistance band",
+        "Pull-up bar": "Pull-up bar",
+        "Kettlebell": "Kettlebell",
+        "TRX": "TRX",
+        "Yoga matı": "Yoga mat",
+        "Bench": "Bench",
+        "Hiçbiri (vücut ağırlığı)": "None (bodyweight)"
+      }
+    },
+    "formTips": {
+      "title": "Form Tips: {name}"
+    }
+  },
+  "day": {
+    "tabs": {
+      "nutrition": "Nutrition",
+      "workout": "Workout",
+      "supplements": "Supplements"
+    },
+    "planType": {
+      "workout": "Workout Day",
+      "swimming": "Swimming Day",
+      "rest": "Rest Day"
+    }
+  },
+  "meals": {
+    "form": {
+      "titleNew": "Add New Meal",
+      "titleEdit": "Edit Meal",
+      "pick": "Pick",
+      "pickMeal": "Pick a meal",
+      "pickFromLibrary": "Add from Library",
+      "time": "Time",
+      "mealName": "Meal Name",
+      "selectPlaceholder": "Select...",
+      "content": "Content",
+      "contentPlaceholder": "2 eggs, 1 slice whole-wheat bread...",
+      "nutritionFacts": "Nutrition Facts",
+      "calories": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fat": "Fat",
+      "remove": "Remove",
+      "saveAsFavorite": "Save to favorites",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "update": "Update",
+      "add": "Add"
+    },
+    "delete": {
+      "title": "Delete Meal",
+      "confirmation": "Are you sure you want to delete the <label></label> meal? This action cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting..."
+    },
+    "list": {
+      "emptyTitle": "No meals for this day",
+      "emptyReadOnly": "You're viewing a past day.",
+      "emptyDescription": "Generate a daily plan with AI in seconds, or add manually.",
+      "generateWithAI": "Generate with AI",
+      "addManual": "Add Manually",
+      "completedCount": "{completed}/{total} completed",
+      "completeAll": "Complete All",
+      "changeWithAI": "Change with AI",
+      "addMeal": "Add Meal",
+      "moveToAnotherDay": "Move to another day",
+      "moveToTodayOrFuture": "Move to Today or Future",
+      "itemLabel": "meal"
+    },
+    "library": {
+      "title": "My Meal Library",
+      "subtitle": "Saved meals and daily plans",
+      "tabMeals": "Meals",
+      "tabPlans": "Daily Plans",
+      "loading": "Loading…",
+      "noSavedMealsTitle": "No saved meals yet",
+      "noSavedMealsHint": "Check \"Save to favorites\" when adding a new meal",
+      "search": "Search...",
+      "all": "All",
+      "noMatchingMeals": "No matching meals",
+      "mealDeleted": "Meal deleted",
+      "noSavedPlansTitle": "No saved daily plans",
+      "noSavedPlansHint": "Generate one via \"Change with AI\" in the meal list and save it",
+      "noMatchingPlans": "No matching plans",
+      "planDeleted": "Plan deleted",
+      "mealCount": "{count} meals",
+      "moreMeals": "+{count} more meals…",
+      "addToPlan": "Add to a day",
+      "planSuffix": "{type} plan",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "daysAgo": "{n} days ago",
+      "applyDialog": {
+        "title": "Apply \"{label}\" Plan",
+        "description": "Plan contains {count} meals. The selected day's existing meals will be overwritten.",
+        "noEligibleDay": "No eligible day found",
+        "selectDay": "Select a day",
+        "mealsAdded": "Meals added",
+        "addFailed": "Failed to add",
+        "cancel": "Cancel",
+        "applying": "Applying…",
+        "apply": "Apply"
+      },
+      "planTypes": {
+        "workout": "Workout",
+        "rest": "Rest",
+        "swimming": "Swimming",
+        "nutrition": "Nutrition"
+      }
+    },
+    "aiModal": {
+      "title": "AI Nutrition Plan",
+      "overlayTitle": "AI is Preparing Your Nutrition Plan",
+      "stepProfile": "Profile analysis",
+      "stepPlan": "Building nutrition plan",
+      "tabSuggest": "Get Suggestion",
+      "tabSaved": "Saved",
+      "currentMeals": "Current Meals",
+      "suggestedMeals": "Suggested Meals",
+      "noMeals": "No meals",
+      "ingredientsLabel": "Available ingredients (optional):",
+      "ingredientsPlaceholder": "E.g. eggs, oats, chicken, broccoli, pasta...",
+      "specialRequestLabel": "Special request (optional):",
+      "specialRequestPlaceholder": "E.g. Less carbs, skip lunch...",
+      "getSuggestion": "Get Suggestion",
+      "newSuggestion": "New Suggestion",
+      "approve": "Approve",
+      "saveToFavorites": "Save to Favorites",
+      "generating": "AI is generating suggestions...",
+      "noSaved": "No saved suggestions",
+      "mealCount": "{count} meals",
+      "apply": "Apply",
+      "ingredientsPrefix": "Ingredients available at home",
+      "ingredientsNote": "Ingredients"
+    },
+    "agenda": {
+      "empty": "No meals found"
+    },
+    "bulkDelete": {
+      "title": "Delete All Meals",
+      "warning": "<strong>All {count} meals for this day</strong> will be deleted. This action cannot be undone.",
+      "warningDanger": "All meal data, calories, and macro information will be permanently deleted.",
+      "cancel": "Cancel",
+      "deleting": "Deleting...",
+      "deleteAll": "Delete All"
+    },
+    "picker": {
+      "title": "Pick a Meal",
+      "searchPlaceholder": "Search (content, name)...",
+      "tabFrequent": "Frequent",
+      "tabHistory": "History",
+      "tabSaved": "Saved",
+      "tabDaily": "Daily",
+      "loading": "Loading…",
+      "emptyFrequent": "No frequently used meals yet",
+      "emptyHistory": "No meals found from previous days",
+      "emptySaved": "No favorite meals saved yet",
+      "emptyDaily": "No saved daily plans",
+      "close": "Close",
+      "moreCount": "+{count} more…",
+      "mealCountKcalDate": "{count} meals · {kcal} kcal · {date}",
+      "planTypes": {
+        "workout": "Workout",
+        "rest": "Rest",
+        "swimming": "Swimming",
+        "nutrition": "Nutrition"
+      }
+    },
+    "foodReference": {
+      "title": "Nutrition Facts",
+      "tabPreset": "Preset Foods",
+      "tabUser": "Mine ({count})",
+      "searchPlaceholder": "Search...",
+      "all": "All",
+      "addNew": "Add new food",
+      "empty": "No saved foods yet",
+      "namePlaceholder": "Food name",
+      "portionPlaceholder": "Portion (e.g. 100g)",
+      "caloriesPlaceholder": "Calories",
+      "proteinPlaceholder": "P (g)",
+      "carbsPlaceholder": "C (g)",
+      "fatPlaceholder": "F (g)",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "macroSummary": {
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fat": "Fat"
+    },
+    "macroTargets": {
+      "title": "Macro Targets",
+      "description": "Set targets for the daily summary progress bars.",
+      "calories": "Calories",
+      "proteinLabel": "Protein (g)",
+      "carbsLabel": "Carbs (g)",
+      "fatLabel": "Fat (g)",
+      "autoCalculate": "Auto Calculate",
+      "save": "Save",
+      "saving": "Saving",
+      "missingPrefix": "Missing info: {fields}.",
+      "missingHeight": "height",
+      "missingWeight": "weight",
+      "missingAge": "age",
+      "missingSuffix": "Complete your info on the profile page.",
+      "calculateFailed": "Could not calculate",
+      "minCaloriesError": "Calorie target must be at least 1200 kcal",
+      "saved": "Macro targets updated",
+      "saveFailed": "Could not save"
+    },
+    "dailyRings": {
+      "calorieLabel": "Calories: {value} / {target} kcal",
+      "proteinLabel": "Protein: {value} / {target} g",
+      "completedLabel": "Completed: {done} / {total}",
+      "completedCenter": "Completed",
+      "calories": "Calories",
+      "protein": "Protein",
+      "tasks": "Tasks"
+    },
+    "aiMacro": {
+      "title": "Calculate Macros with AI",
+      "description": "Tell us about your body region by region — how is your belly, arms, legs? AI will use your profile and latest measurement to compute your macros.",
+      "placeholder": "Ex: My belly is full and saggy, my legs are thin, my arms are weak. I especially want to slim my waist.",
+      "charLimit": "{count}/600",
+      "minChars": "At least 20 characters required",
+      "calculating": "Calculating...",
+      "calculate": "Calculate with AI",
+      "calories": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fat": "Fat",
+      "approve": "Approve & Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "calcFailed": "Could not calculate",
+      "cooldown": "Please wait {seconds} seconds.",
+      "rateLimited": "You've hit the daily AI limit. Try again tomorrow.",
+      "unavailable": "AI is unavailable right now. Try again later.",
+      "saved": "Macro targets saved",
+      "saveFailed": "Could not save"
+    },
+    "macroTrend": {
+      "titleDefault": "7-Day {label}",
+      "average": "Avg. {value}{unit}",
+      "averageWithTarget": "Avg. {value}{unit} / {target}{unit}",
+      "today": "Today",
+      "calories": "Calories",
+      "carbs": "Carbs",
+      "fat": "Fat",
+      "protein": "Protein",
+      "kcal": "kcal",
+      "g": "g"
+    }
+  },
+  "toast": {
+    "meals": {
+      "deleted": "Meal deleted",
+      "deletedNamed": "\"{name}\" deleted",
+      "deleteFailed": "Failed to delete meal",
+      "deletedAll": "Meals deleted",
+      "deletedCount": "{count} meals deleted",
+      "deleteAllFailed": "Failed to delete meals",
+      "restoredCount": "{count} meals restored",
+      "undo": "Undo",
+      "undone": "Undone",
+      "undoFailed": "Undo failed"
+    },
+    "exercises": {
+      "deleted": "Exercise deleted",
+      "deletedNamed": "\"{name}\" deleted",
+      "deleteFailed": "Failed to delete exercise",
+      "deletedAll": "Exercises deleted",
+      "deletedCount": "{count} exercises deleted",
+      "deleteAllFailed": "Failed to delete exercises",
+      "restoredCount": "{count} exercises restored",
+      "undo": "Undo",
+      "undoFailed": "Undo failed"
+    }
+  },
+  "exercises": {
+    "addOneSet": "+1 Set",
+    "minutesShort": "min",
+    "secondsShort": "s",
+    "form": {
+      "titleEdit": "Edit Exercise",
+      "titleNew": "Add New Exercise",
+      "section": "Section",
+      "sectionLabels": {
+        "warmup": "Warm-up",
+        "main": "Main Workout",
+        "cooldown": "Cool-down",
+        "sauna": "Sauna",
+        "swimming": "Swimming"
+      },
+      "name": "Exercise Name *",
+      "namePlaceholder": "Bench Press",
+      "pickFromLibrary": "Pick from library",
+      "sets": "Sets",
+      "reps": "Reps",
+      "rest": "Rest (s)",
+      "duration": "Duration (min)",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes...",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "update": "Update",
+      "add": "Add"
+    },
+    "delete": {
+      "title": "Delete Exercise",
+      "confirmation": "Are you sure you want to delete <label></label>? This action cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting..."
+    }
+  },
+  "admin": {
+    "title": "User Management",
+    "inviteButton": "Invite",
+    "feedback": "Feedback",
+    "aiWarnings": "AI Warnings",
+    "aiWarningsPage": {
+      "subtitle": "success_with_warnings distribution over the last 14 days",
+      "loadFailed": "Failed to load data.",
+      "noData": "No data.",
+      "backToAdmin": "Back to admin panel",
+      "totalRuns": "Total Runs",
+      "warningRuns": "Runs with Warnings",
+      "warningRate": "Warning Rate",
+      "trend14d": "14-Day Trend",
+      "noCallsInWindow": "No AI calls in this window.",
+      "byFeature": "By Feature",
+      "feature": "Feature",
+      "success": "Success",
+      "warnings": "Warnings",
+      "ratio": "Ratio",
+      "topPatterns": "Top Warning Patterns",
+      "topPatternsHint": "Numeric values and day indices are normalized. Variations of the same pattern are grouped.",
+      "cleanPipeline": "No warnings recorded in this window. Pipeline is clean.",
+      "featureLabels": {
+        "meal": "Meal Suggestion",
+        "exercise": "Exercise Tip",
+        "analyze": "Progress Analysis",
+        "chat": "AI Assistant",
+        "workout": "Workout Suggestion",
+        "daily-meal": "Daily Meal",
+        "weekly": "Weekly Plan",
+        "exercise-demo": "Exercise Demo",
+        "shopping": "Shopping List",
+        "target-weight": "Target Weight"
+      }
+    },
+    "errors": {
+      "loadFailed": "Could not load users.",
+      "inviteFailed": "Could not send invitation.",
+      "removeFailed": "Could not remove user.",
+      "membershipUpdateFailed": "Could not update membership.",
+      "endDateRequired": "Pick an end date.",
+      "endDateAfterToday": "End date must be after today."
+    },
+    "stats": {
+      "totalUsers": "Total Users",
+      "totalUsersSub": "{active} active · {pending} pending · {admin} admin",
+      "aiUsageToday": "AI Usage Today",
+      "aiUsageWeek": "AI This Week",
+      "aiUsageTotal": "Total AI"
+    },
+    "featureUsage": "AI Feature Usage",
+    "userUsage": "User AI Usage",
+    "tableHead": {
+      "feature": "Feature",
+      "today": "Today",
+      "week": "Week",
+      "total": "Total"
+    },
+    "users": "Users",
+    "emptyUsers": "No users yet.",
+    "backToSettings": "Back to Settings",
+    "actions": {
+      "updateMembership": "Update Membership",
+      "resendInvite": "Resend Invite",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete \"{name}\"?"
+    },
+    "extendDialog": {
+      "title": "Update Membership",
+      "submit": "Update"
+    },
+    "invite": {
+      "title": "Invite User",
+      "description": "An invitation with a temporary password will be sent.",
+      "name": "Name",
+      "namePlaceholder": "Full Name",
+      "email": "Email",
+      "emailPlaceholder": "example@mail.com",
+      "membershipDuration": "Membership Duration",
+      "endDate": "End Date",
+      "userLanguageLabel": "User Language / Kullanıcı Dili",
+      "userLanguageHint": "The invite email and app interface will use this language.",
+      "submit": "Send Invite",
+      "errors": {
+        "endDateRequired": "Pick an end date for custom duration.",
+        "endDateAfterToday": "End date must be after today.",
+        "alreadyExists": "This email address is already registered.",
+        "generic": "Could not send invitation. Try again."
+      },
+      "success": {
+        "title": "Invite Sent",
+        "description": "The invite email with the temporary password was sent.",
+        "emailLabel": "Email",
+        "tempPasswordLabel": "Temporary Password",
+        "newInvite": "New Invite",
+        "userList": "User List",
+        "copy": "Copy"
+      },
+      "backToUsers": "Back to User List"
+    },
+    "membership": {
+      "unlimited": "Unlimited",
+      "1-month": "1 Month",
+      "3-month": "3 Months",
+      "6-month": "6 Months",
+      "1-year": "1 Year",
+      "custom": "Custom",
+      "customDate": "Custom Date"
+    },
+    "status": {
+      "Admin": "Admin",
+      "Aktif": "Active",
+      "Bekliyor": "Pending",
+      "Süresi Dolmuş": "Expired",
+      "Üyelik Dolmuş": "Membership Ended"
+    },
+    "features": {
+      "meal": "Meal Suggestion",
+      "exercise": "Exercise Tip",
+      "analyze": "Progress Analysis",
+      "chat": "AI Assistant",
+      "workout": "Workout Suggestion",
+      "daily-meal": "Daily Meal",
+      "weekly": "Weekly Plan",
+      "exercise-demo": "Exercise Demo"
+    },
+    "timeAgo": {
+      "justNow": "Just now",
+      "minutes": "{n}m ago",
+      "hours": "{n}h ago",
+      "days": "{n}d ago",
+      "none": "-"
+    },
+    "feedbackPage": {
+      "title": "Feedback",
+      "backLabel": "Back",
+      "backToAdmin": "Back to Admin Panel",
+      "adminResponseLabel": "Admin Response:",
+      "emptyAll": "No feedback yet.",
+      "emptyFiltered": "No feedback in this filter.",
+      "categories": {
+        "suggestion": "Suggestion",
+        "complaint": "Complaint",
+        "bug": "Bug",
+        "general": "Other"
+      },
+      "statuses": {
+        "open": "Open",
+        "responded": "Responded",
+        "closed": "Closed"
+      },
+      "filters": {
+        "all": "All",
+        "open": "Open",
+        "responded": "Responded",
+        "closed": "Closed"
+      },
+      "filterWithCount": "{label} ({count})",
+      "timeAgo": {
+        "justNow": "Just now",
+        "minutes": "{n}m ago",
+        "hours": "{n}h ago",
+        "days": "{n}d ago",
+        "none": "-"
+      },
+      "actions": {
+        "respond": "Respond",
+        "close": "Close"
+      },
+      "respondDialog": {
+        "title": "Respond",
+        "placeholder": "Write your response...",
+        "send": "Send Response",
+        "errorEmpty": "Response cannot be empty.",
+        "errorSubmit": "Failed to send response."
+      }
+    }
+  },
+  "assistant": {
+    "title": "AI Assistant",
+    "subtitleDefault": "Your personal fitness coach",
+    "remaining": "Remaining: {remaining}/{limit}",
+    "clearChat": "Clear Chat",
+    "appName": "FitMusc Assistant",
+    "intro": "Ask questions about nutrition, workouts, and health.",
+    "suggestions": {
+      "todayMeal": "What should I eat today?",
+      "kneeSquat": "Can I squat with a meniscus issue?",
+      "weightLossSpeed": "How is my weight loss progress?",
+      "waterIntake": "How much water should I drink?"
+    },
+    "input": {
+      "placeholder": "Ask a question...",
+      "limitReached": "You've reached your daily message limit"
+    }
+  },
+  "shopping": {
+    "title": "Shopping List",
+    "subtitle": "Weekly grocery list",
+    "weekShort": "Wk {week}",
+    "itemsCount": "{purchased}/{total} items",
+    "refresh": "Refresh",
+    "completed": "Completed",
+    "noMealsError": "No meals found this week. Create a nutrition plan first.",
+    "generating": "Generating shopping list...",
+    "emptyDescription": "No shopping list ready for this week yet.",
+    "generateButton": "Generate List with AI",
+    "refreshTitle": "Refresh Shopping List",
+    "refreshConfirm": "The current list will be deleted and regenerated from your nutrition plan. Continue?",
+    "cancel": "Cancel",
+    "usedInMealsLabel": "Used in {count} meals",
+    "linkedMealsTitle": "This ingredient is used in:",
+    "loadingLinkedMeals": "Loading...",
+    "noLinkedMeals": "No referenced meals found."
+  },
+  "settings": {
+    "menuItem": {
+      "missingInfoLabel": "Missing info"
+    },
+    "membershipTypes": {
+      "unlimited": "Unlimited",
+      "1-month": "1 Month",
+      "3-month": "3 Months",
+      "6-month": "6 Months",
+      "1-year": "1 Year",
+      "custom": "Custom"
+    },
+    "profileSummary": {
+      "fallbackName": "My Profile",
+      "completion": "Profile completion",
+      "age": "Age",
+      "height": "Height",
+      "weight": "Weight",
+      "target": "Target",
+      "edit": "Edit Profile",
+      "remainingDaysSuffix": "d"
+    },
+    "profileEditorDialog": {
+      "title": "Edit Profile"
+    },
+    "profileEditor": {
+      "email": "Email",
+      "age": "Age",
+      "agePlaceholder": "28",
+      "height": "Height (cm)",
+      "heightPlaceholder": "175",
+      "startWeight": "Start weight (kg)",
+      "startWeightPlaceholder": "80",
+      "targetWeight": "Target weight (kg)",
+      "targetWeightPlaceholder": "75",
+      "serviceType": "Service Type",
+      "serviceFull": "Full Program",
+      "serviceNutrition": "Nutrition Only",
+      "fitnessLevel": "Fitness Level",
+      "select": "Select",
+      "goal": "Goal",
+      "sportHistory": "Sport History",
+      "sportHistoryPlaceholder": "Sports you've previously practiced...",
+      "medications": "Medications / Supplements",
+      "medicationsPlaceholder": "Medications or supplements you take...",
+      "healthNotes": "Health Notes",
+      "healthNotesPlaceholder": "Injuries, allergies, dietary restrictions...",
+      "allergens": "Food Allergies",
+      "noAllergens": "I have no allergies",
+      "hasAllergens": "Yes, I want to specify",
+      "otherAllergensPlaceholder": "Other allergens (comma-separated)...",
+      "save": "Save",
+      "cancel": "Cancel",
+      "fitnessLevels": {
+        "beginner": "Beginner",
+        "returning": "Returning after a break",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced"
+      },
+      "fitnessGoals": {
+        "loss": { "label": "Weight Loss", "description": "Fat loss + calorie deficit" },
+        "recomp": { "label": "Fat Loss + Muscle Retention", "description": "Body recomposition, maintenance calories" },
+        "maintain": { "label": "Maintain Form", "description": "Maintain current shape" },
+        "muscle_gain": { "label": "Muscle Gain", "description": "Hypertrophy, slight calorie surplus" },
+        "weight_gain": { "label": "Weight Gain", "description": "General weight gain, fast surplus" }
+      },
+      "allergenTags": {
+        "dairy": "Dairy",
+        "egg": "Eggs",
+        "peanut": "Peanuts",
+        "groundnut": "Groundnuts",
+        "fish": "Fish",
+        "shellfish": "Shellfish",
+        "wheat": "Wheat (Gluten)",
+        "soy": "Soy",
+        "sesame": "Sesame",
+        "celery": "Celery",
+        "mustard": "Mustard",
+        "honey": "Honey"
+      }
+    },
+    "membershipInfo": {
+      "title": "Membership",
+      "start": "Start",
+      "end": "End",
+      "remaining": "Remaining",
+      "daysSuffix": "days"
+    },
+    "unitPreferences": {
+      "title": "Unit Preferences",
+      "weight": "Weight",
+      "energy": "Energy",
+      "kg": "Kilogram (kg)",
+      "lb": "Pound (lb)",
+      "kcal": "Calorie (kcal)",
+      "kj": "Kilojoule (kJ)",
+      "save": "Save",
+      "saved": "Unit preferences saved",
+      "saveError": "Could not save"
+    },
+    "dashboardPrefs": {
+      "title": "Dashboard Cards",
+      "description": "Pick which cards you want on your home screen. Preferences are stored on this device.",
+      "cards": {
+        "rings": { "label": "Daily Rings", "description": "Calorie, protein, and task completion rings" },
+        "water_sleep": { "label": "Water & Sleep", "description": "Daily water and sleep widgets" },
+        "macro_trend": { "label": "Macro Trend", "description": "7-day macro sparkline" },
+        "stats": { "label": "Daily Summary", "description": "Workout and nutrition progress cards" },
+        "quick_access": { "label": "Quick Access", "description": "Calendar, progress, shopping cards" },
+        "streak": { "label": "Streaks & Badges", "description": "Daily streak and badge cards" },
+        "friends": { "label": "Friend Streaks", "description": "Friends leaderboard" }
+      }
+    },
+    "healthProfile": {
+      "title": "Profile information",
+      "intro": "Used for calorie calculations and intermittent-fasting safety. Health data is protected as a special category under privacy regulations.",
+      "genderTitle": "Biological sex",
+      "activityTitle": "Daily activity (excluding workouts)",
+      "flagsTitle": "Health conditions",
+      "save": "Save",
+      "saved": "Health profile updated",
+      "saveError": "Could not save",
+      "genders": {
+        "female": "Female",
+        "male": "Male",
+        "prefer_not_to_say": "Prefer not to say"
+      },
+      "activities": {
+        "sedentary": { "label": "Mostly sitting", "hint": "Desk work, little movement" },
+        "light": { "label": "Lightly active", "hint": "Office + daily walks, light housework" },
+        "moderate": { "label": "On my feet", "hint": "Teacher, server, retail" },
+        "very_active": { "label": "Very active", "hint": "Construction, courier, physical job" }
+      },
+      "flags": {
+        "hasEatingDisorderHistory": "I have a history of eating disorders",
+        "isPregnantOrBreastfeeding": "I am pregnant or breastfeeding",
+        "hasDiabetes": "I have diabetes (Type 1 or insulin-treated Type 2)",
+        "hasThyroidCondition": "I have an untreated thyroid condition"
+      }
+    },
+    "dailyRoutine": {
+      "weekday": "Weekday",
+      "weekend": "Weekend",
+      "empty": "No daily routine added yet.",
+      "weekendMissing": "Weekend schedule not added",
+      "edit": "Edit",
+      "add": "Add",
+      "addRow": "Add Row",
+      "save": "Save",
+      "cancel": "Cancel",
+      "selectEvent": "Select event"
+    },
+    "supplementSchedule": {
+      "empty": "No supplement schedule added yet.",
+      "edit": "Edit",
+      "add": "Add",
+      "addRow": "Add Row",
+      "save": "Save",
+      "cancel": "Cancel",
+      "selectTime": "Select time",
+      "supplementsPlaceholder": "e.g. Omega-3, Creatine",
+      "periods": {
+        "Sabah": "Morning (on waking)",
+        "Kahvaltı ile": "With breakfast",
+        "Öğle": "Midday",
+        "Antrenman öncesi": "Pre-workout",
+        "Antrenman sonrası": "Post-workout",
+        "Akşam yemeği ile": "With dinner",
+        "Yatmadan önce": "Before bed"
+      }
+    },
+    "title": "Settings",
+    "subtitle": "Profile and preferences",
+    "onboardingBannerTitle": "Complete Your Profile",
+    "onboardingBannerDesc": "Your daily routine, health notes, fitness level, and supplement info are used in AI evaluations. The more detail you provide, the more personalized your program.",
+    "groups": {
+      "profileHealth": "Profile & Health",
+      "goals": "Goals",
+      "app": "App",
+      "sharingData": "Sharing & Data"
+    },
+    "items": {
+      "healthTitle": "New profile info",
+      "healthSubtitle": "Gender, daily activity, health conditions",
+      "routineTitle": "Daily Routine",
+      "routineSubtitle": "Your weekday and weekend routine",
+      "supplementsTitle": "Supplement Schedule",
+      "supplementsSubtitle": "Supplement and medication timing",
+      "macroTitle": "Macro Targets",
+      "macroSubtitle": "Calories, protein, carbs, fat",
+      "preferencesTitle": "Units and Panel Preferences",
+      "preferencesSubtitle": "Kg / lbs · kcal / kJ · dashboard cards",
+      "notificationsTitle": "Notifications and Reminders",
+      "notificationsSubtitle": "Push, email, reminder times",
+      "mealLibraryTitle": "My Meal Library",
+      "mealLibrarySubtitle": "Saved meals and daily plans",
+      "sharingTitle": "Plan Sharing",
+      "sharingSubtitle": "Share your program with other users"
+    },
+    "adminPanel": "Admin Panel",
+    "signOut": "Sign Out",
+    "locale": {
+      "label": "Language / Dil",
+      "description": "Choose the language for the app interface."
+    },
+    "subpages": {
+      "preferencesTitle": "Preferences",
+      "preferencesSubtitle": "Units and dashboard settings",
+      "supplementsTitle": "Supplement Schedule",
+      "supplementsSubtitle": "Supplement and medication timing",
+      "healthTitle": "Health Profile",
+      "healthSubtitle": "Gender, activity, health conditions",
+      "sharingTitle": "Plan Sharing",
+      "sharingSubtitle": "Share your program with other users",
+      "routineTitle": "Daily Routine",
+      "routineSubtitle": "Your weekday and weekend routines",
+      "notificationsTitle": "Notifications & Reminders",
+      "notificationsSubtitle": "Push, email and scheduled reminders",
+      "macroTitle": "Macro Targets",
+      "macroSubtitle": "Calorie and macro distribution"
+    },
+    "macros": {
+      "infoTitle": "What Are Macronutrients?",
+      "infoSubtitle": "The role of calories, protein, carbs and fat",
+      "intro": "Macronutrients (macros) are the three core nutrient groups your body uses for energy and building blocks. Finding the right macro balance is the foundation for reaching your goals, sustaining energy, and optimizing your muscle-to-fat ratio.",
+      "perGramTitle": "Calories per gram:",
+      "calorieLabel": "Calories",
+      "calorieDesc": "Your body's unit of energy. Eat more than you burn and you store fat; eat less and you burn fat.",
+      "proteinLabel": "Protein",
+      "proteinDesc": "The building block of every cell, especially muscle tissue. Critical for recovery, satiety and lean mass.",
+      "carbsLabel": "Carbohydrate",
+      "carbsLabelShort": "Carb",
+      "carbsDesc": "The primary fuel for the brain and muscles. Required for training performance and glycogen stores.",
+      "fatLabel": "Fat",
+      "fatDesc": "Essential for hormone production, fat-soluble vitamins (A, D, E, K) and long-term energy.",
+      "tipPrefix": "Tip:",
+      "tipBody": "When setting macro targets, make sure they're consistent with your goal (fat loss, muscle gain, maintenance). The AI calculator below optimizes for you based on your profile and measurement data."
+    }
+  },
+  "sharing": {
+    "title": "Shared Plans",
+    "subtitle": "Programs shared with you",
+    "empty": "No plans have been shared with you yet",
+    "weekLabel": "Week {week} — {phase}",
+    "weeklyTitleFallback": "Shared Plan",
+    "sharedBy": "Shared by {name}",
+    "readOnlyNotice": "Read-only view",
+    "noDays": "No daily plans found",
+    "planType": {
+      "workout": "Workout",
+      "swimming": "Swimming",
+      "rest": "Rest"
+    },
+    "planTypeDay": {
+      "workout": "Workout Day",
+      "swimming": "Swimming Day",
+      "rest": "Rest Day"
+    },
+    "loading": "Loading...",
+    "tabMeals": "Nutrition",
+    "tabWorkout": "Workout",
+    "noMeals": "No meals found",
+    "noWorkout": "No workout program"
+  },
+  "validation": {
+    "password": {
+      "minLength": "Password must be at least 10 characters.",
+      "uppercase": "Password must contain at least 1 uppercase letter.",
+      "digit": "Password must contain at least 1 digit.",
+      "special": "Password must contain at least 1 special character.",
+      "generic": "Password requirements not met."
+    }
+  },
+  "profileComplete": {
+    "headerTitle": "Profile Setup",
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "letsBegin": "Let's Get Started!",
+    "errors": {
+      "heightRange": "Height must be between 100–250 cm.",
+      "weightRange": "Weight must be between 30–300 kg.",
+      "targetWeightRange": "Target weight must be between 30–300 kg.",
+      "ageRequired": "Age field is required.",
+      "goalRequired": "Please select a goal.",
+      "fitnessLevelRequired": "Experience level selection is required.",
+      "sportHistoryRequired": "Sport history field is required.",
+      "medicationsRequired": "Medications / Supplements field is required. Type 'None' if none.",
+      "generic": "An error occurred. Please try again."
+    },
+    "steps": {
+      "1": { "title": "Service Type", "desc": "How can we help you?" },
+      "2": { "title": "Physical Stats", "desc": "Basic measurements for healthy goals" },
+      "3": { "title": "Health Profile", "desc": "Specify your gender and activity level" },
+      "4": { "title": "Health Notes", "desc": "Allergies, health conditions, and medications" },
+      "5": { "title": "Goals", "desc": "Let's tailor the program to you" },
+      "6": { "title": "Daily Routine", "desc": "Optional — let's set your meal times" },
+      "7": { "title": "You're Ready!", "desc": "One last step to complete your profile" }
+    },
+    "service": {
+      "fullTitle": "Full Program",
+      "fullDesc": "Workout + Nutrition plan",
+      "nutritionTitle": "Nutrition Only",
+      "nutritionDesc": "Personalized nutrition plan"
+    },
+    "physical": {
+      "height": "Height (cm)",
+      "age": "Age",
+      "currentWeight": "Current Weight (kg)",
+      "targetWeight": "Target Weight (kg)"
+    },
+    "health": {
+      "biologicalGender": "Biological gender",
+      "dailyActivity": "Daily activity (excluding workout)",
+      "healthConditions": "Health conditions",
+      "flags": {
+        "eatingDisorder": "I have a history of eating disorders",
+        "pregnant": "I am pregnant or breastfeeding",
+        "diabetes": "I have diabetes (Type 1 or insulin-dependent Type 2)",
+        "thyroid": "I have an untreated thyroid condition"
+      }
+    },
+    "gender": {
+      "female": "Female",
+      "male": "Male",
+      "prefer_not_to_say": "Prefer not to say",
+      "unspecified": "Not specified"
+    },
+    "activity": {
+      "sedentary": { "label": "Mostly sitting", "hint": "Desk job, little movement", "short": "Desk job" },
+      "light": { "label": "Lightly active", "hint": "Office + daily walking, light housework", "short": "Lightly active" },
+      "moderate": { "label": "Standing job", "hint": "Teacher, server, retail", "short": "Standing job" },
+      "very_active": { "label": "Very active", "hint": "Construction, courier, physical work", "short": "Very active" }
+    },
+    "allergens": {
+      "label": "Food Allergies",
+      "modeNone": "I have no allergies",
+      "modeHas": "Yes, I want to specify",
+      "otherPlaceholder": "Other allergies (separate with comma)..."
+    },
+    "healthNotes": {
+      "label": "Health Notes",
+      "placeholder": "Injuries, chronic conditions, special situations..."
+    },
+    "medications": {
+      "label": "Medications / Supplements",
+      "placeholderRequired": "Medications or supplements you use. Type 'None' if none.",
+      "placeholderOptional": "Medications or supplements you use..."
+    },
+    "goals": {
+      "yourGoal": "Your goal",
+      "experienceLevel": "Experience Level",
+      "sportHistoryLabel": "Sport History",
+      "sportHistoryPlaceholder": "What sports have you done before, and for how long?",
+      "options": {
+        "loss": { "label": "Weight Loss", "desc": "Fat burning + calorie deficit" },
+        "recomp": { "label": "Fat Loss + Muscle Preservation", "desc": "Body recomposition, maintenance calories" },
+        "maintain": { "label": "Maintain Form", "desc": "Maintain current condition" },
+        "muscle_gain": { "label": "Muscle Gain", "desc": "Hypertrophy, slight calorie surplus" },
+        "weight_gain": { "label": "Weight Gain", "desc": "Overall weight gain, fast surplus" }
+      },
+      "levels": {
+        "beginner": "Beginner",
+        "returning": "Returning After Break",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced"
+      }
+    },
+    "routine": {
+      "intro": "This information helps the AI optimize your meal times and workout scheduling. You can skip this step if you prefer.",
+      "wakeTime": "Wake time",
+      "breakfastTime": "Breakfast time",
+      "workStartTime": "Work start",
+      "lunchTime": "Lunch",
+      "workEndTime": "Work end",
+      "dinnerTime": "Dinner",
+      "workoutTime": "Workout time",
+      "sleepTime": "Sleep time",
+      "weekendToggleAdded": "Weekend schedule added ✓",
+      "weekendToggleAdd": "Weekend different? Add →",
+      "weekendHeader": "Weekend",
+      "we": {
+        "wake": "Wake",
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "workout": "Workout",
+        "sleep": "Sleep"
+      }
+    },
+    "summary": {
+      "title": "Profile Summary",
+      "service": "Service",
+      "serviceFull": "Full Program (Workout + Nutrition)",
+      "serviceNutrition": "Nutrition Only",
+      "heightWeight": "Height / Weight",
+      "targetWeight": "Target Weight",
+      "age": "Age",
+      "goal": "Goal",
+      "gender": "Gender",
+      "activity": "Activity",
+      "footer": "After saving your profile, you can create your weekly program from the calendar page. All information can be changed later from Settings."
+    }
+  }
+}

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +20,14 @@ import {
   type MealCandidate,
   type DailyPlanCandidate,
 } from "@/actions/meal-picker";
+import {
+  MEAL_LABELS,
+  MEAL_LABEL_COLORS,
+  isMealLabel,
+  getLocalizedMealLabel,
+  type MealLabel,
+} from "@/lib/meal-labels";
+import { cn } from "@/lib/utils";
 
 export interface SelectedMeal {
   mealLabel: string;
@@ -54,6 +64,10 @@ function MealCandidateCard({
   candidate: MealCandidate;
   onSelect: () => void;
 }) {
+  const locale = useLocale() as Locale;
+  const colorClass = isMealLabel(candidate.mealLabel)
+    ? MEAL_LABEL_COLORS[candidate.mealLabel]
+    : "";
   return (
     <button
       type="button"
@@ -61,8 +75,10 @@ function MealCandidateCard({
       className="w-full text-left rounded-lg border p-2.5 hover:bg-muted/50 transition-colors space-y-1"
     >
       <div className="flex items-center justify-between gap-2">
-        <Badge variant="outline" className="text-[10px] h-4 px-1.5">
-          {candidate.mealLabel}
+        <Badge className={cn("text-[10px] h-4 px-1.5 border font-medium", colorClass)}>
+          {isMealLabel(candidate.mealLabel)
+            ? getLocalizedMealLabel(candidate.mealLabel, locale)
+            : candidate.mealLabel}
         </Badge>
         {candidate.meta && (
           <span className="text-[10px] text-muted-foreground">{candidate.meta}</span>
@@ -79,13 +95,6 @@ function MealCandidateCard({
   );
 }
 
-const PLAN_TYPE_LABELS: Record<string, string> = {
-  workout: "Antrenman",
-  rest: "Dinlenme",
-  swimming: "Yüzme",
-  nutrition: "Beslenme",
-};
-
 function DailyPlanCard({
   plan,
   onSelect,
@@ -93,13 +102,23 @@ function DailyPlanCard({
   plan: DailyPlanCandidate;
   onSelect: () => void;
 }) {
+  const locale = useLocale() as Locale;
+  const t = useTranslations("meals.picker");
+  const tPlanTypes = useTranslations("meals.picker.planTypes");
   const totalCals = plan.meals.reduce((s, m) => s + (m.calories ?? 0), 0);
   const dateLabel = plan.createdAt
-    ? new Date(plan.createdAt).toLocaleDateString("tr-TR", {
+    ? new Date(plan.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
         day: "numeric",
         month: "short",
       })
     : "";
+  const planTypeLabel = (() => {
+    try {
+      return tPlanTypes(plan.planType as never);
+    } catch {
+      return plan.planType;
+    }
+  })();
   return (
     <button
       type="button"
@@ -108,10 +127,14 @@ function DailyPlanCard({
     >
       <div className="flex items-center justify-between gap-2">
         <Badge variant="outline" className="text-[10px] h-4 px-1.5">
-          {PLAN_TYPE_LABELS[plan.planType] ?? plan.planType}
+          {planTypeLabel}
         </Badge>
         <span className="text-[10px] text-muted-foreground">
-          {plan.meals.length} öğün · {totalCals} kcal · {dateLabel}
+          {t("mealCountKcalDate", {
+            count: plan.meals.length,
+            kcal: totalCals,
+            date: dateLabel,
+          })}
         </span>
       </div>
       {plan.userNote && (
@@ -123,13 +146,16 @@ function DailyPlanCard({
         {plan.meals.slice(0, 3).map((m, i) => (
           <li key={i} className="line-clamp-1">
             <span className="text-muted-foreground">{m.mealTime}</span>{" "}
-            <span className="font-medium">{m.mealLabel}</span> —{" "}
+            <span className="font-medium">
+              {isMealLabel(m.mealLabel) ? getLocalizedMealLabel(m.mealLabel, locale) : m.mealLabel}
+            </span>{" "}
+            —{" "}
             <span className="text-muted-foreground">{m.content}</span>
           </li>
         ))}
         {plan.meals.length > 3 && (
           <li className="text-[10px] text-muted-foreground">
-            +{plan.meals.length - 3} daha…
+            {t("moreCount", { count: plan.meals.length - 3 })}
           </li>
         )}
       </ul>
@@ -153,14 +179,20 @@ export function UnifiedMealPicker({
   onSelect,
   onSelectDailyPlan,
 }: UnifiedMealPickerProps) {
+  const t = useTranslations("meals.picker");
+  const locale = useLocale() as Locale;
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [labelFilter, setLabelFilter] = useState<MealLabel | null>(null);
 
   // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 250);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => clearTimeout(timer);
   }, [search]);
+
+  // Reset filter when tab changes — handled via key on tab content
+  const handleTabChange = () => setLabelFilter(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["meal-picker", debouncedSearch, excludeDailyPlanId ?? 0],
@@ -181,36 +213,46 @@ export function UnifiedMealPicker({
     }
   };
 
+  const filteredFrequent = labelFilter
+    ? (data?.frequent ?? []).filter((c) => c.mealLabel === labelFilter)
+    : (data?.frequent ?? []);
+  const filteredHistory = labelFilter
+    ? (data?.history ?? []).filter((c) => c.mealLabel === labelFilter)
+    : (data?.history ?? []);
+  const filteredSaved = labelFilter
+    ? (data?.saved ?? []).filter((c) => c.mealLabel === labelFilter)
+    : (data?.saved ?? []);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-hidden p-4 flex flex-col gap-3">
         <DialogHeader className="space-y-0">
-          <DialogTitle className="text-base">Öğün Seç</DialogTitle>
+          <DialogTitle className="text-base">{t("title")}</DialogTitle>
         </DialogHeader>
 
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Ara (içerik, isim)..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-9"
           />
         </div>
 
-        <Tabs defaultValue="frequent" className="flex-1 flex flex-col min-h-0">
+        <Tabs defaultValue="frequent" className="flex-1 flex flex-col min-h-0" onValueChange={handleTabChange}>
           <TabsList className="grid grid-cols-4 w-full h-9">
             <TabsTrigger value="frequent" className="text-[10px] gap-1 px-1">
               <Clock className="h-3 w-3" />
-              Sık
+              {t("tabFrequent")}
             </TabsTrigger>
             <TabsTrigger value="history" className="text-[10px] gap-1 px-1">
               <History className="h-3 w-3" />
-              Geçmiş
+              {t("tabHistory")}
             </TabsTrigger>
             <TabsTrigger value="saved" className="text-[10px] gap-1 px-1">
               <Star className="h-3 w-3" />
-              Kayıtlı
+              {t("tabSaved")}
             </TabsTrigger>
             <TabsTrigger
               value="daily"
@@ -218,20 +260,49 @@ export function UnifiedMealPicker({
               disabled={!onSelectDailyPlan}
             >
               <ClipboardList className="h-3 w-3" />
-              Günlük
+              {t("tabDaily")}
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto mt-3 -mx-1 px-1">
+          {/* Meal label filter chips — hidden on daily tab */}
+          <div className="flex gap-1.5 overflow-x-auto py-2 scrollbar-none shrink-0">
+            <button
+              onClick={() => setLabelFilter(null)}
+              className={cn(
+                "shrink-0 text-[10px] rounded-full border px-2.5 py-0.5 transition-colors whitespace-nowrap",
+                !labelFilter
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:border-foreground/40",
+              )}
+            >
+              Tümü
+            </button>
+            {MEAL_LABELS.map((label) => (
+              <button
+                key={label}
+                onClick={() => setLabelFilter((l) => (l === label ? null : label))}
+                className={cn(
+                  "shrink-0 text-[10px] rounded-full border px-2.5 py-0.5 transition-colors whitespace-nowrap",
+                  labelFilter === label
+                    ? cn("border", MEAL_LABEL_COLORS[label])
+                    : "border-border text-muted-foreground hover:border-foreground/40",
+                )}
+              >
+                {getLocalizedMealLabel(label, locale)}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 overflow-y-auto -mx-1 px-1">
             {isLoading ? (
               <p className="text-sm text-muted-foreground text-center py-6">
-                Yükleniyor…
+                {t("loading")}
               </p>
             ) : (
               <>
                 <TabsContent value="frequent" className="space-y-2 mt-0">
-                  {data?.frequent.length ? (
-                    data.frequent.map((c) => (
+                  {filteredFrequent.length ? (
+                    filteredFrequent.map((c) => (
                       <MealCandidateCard
                         key={c.id}
                         candidate={c}
@@ -239,13 +310,13 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message="Henüz sık kullandığın öğün yok" />
+                    <EmptyState message={t("emptyFrequent")} />
                   )}
                 </TabsContent>
 
                 <TabsContent value="history" className="space-y-2 mt-0">
-                  {data?.history.length ? (
-                    data.history.map((c) => (
+                  {filteredHistory.length ? (
+                    filteredHistory.map((c) => (
                       <MealCandidateCard
                         key={c.id}
                         candidate={c}
@@ -253,13 +324,13 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message="Önceki günlerden öğün bulunamadı" />
+                    <EmptyState message={t("emptyHistory")} />
                   )}
                 </TabsContent>
 
                 <TabsContent value="saved" className="space-y-2 mt-0">
-                  {data?.saved.length ? (
-                    data.saved.map((c) => (
+                  {filteredSaved.length ? (
+                    filteredSaved.map((c) => (
                       <MealCandidateCard
                         key={c.id}
                         candidate={c}
@@ -267,7 +338,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message="Henüz favori öğün kaydetmedin" />
+                    <EmptyState message={t("emptySaved")} />
                   )}
                 </TabsContent>
 
@@ -281,7 +352,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message="Kayıtlı günlük plan yok" />
+                    <EmptyState message={t("emptyDaily")} />
                   )}
                 </TabsContent>
               </>
@@ -295,7 +366,7 @@ export function UnifiedMealPicker({
           size="sm"
           onClick={() => onOpenChange(false)}
         >
-          Kapat
+          {t("close")}
         </Button>
       </DialogContent>
     </Dialog>

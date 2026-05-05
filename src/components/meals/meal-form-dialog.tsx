@@ -18,7 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MEAL_LABELS, isMealLabel, type MealLabel } from "@/lib/meal-labels";
+import { MEAL_LABELS, isMealLabel, getLocalizedMealLabel, type MealLabel } from "@/lib/meal-labels";
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
 import { useCreateMeal, useUpdateMeal } from "@/hooks/use-meal-crud";
 import { useUserProfile } from "@/hooks/use-user";
 import { getDefaultMealTime, isWeekendDate } from "@/lib/meal-time-defaults";
@@ -26,7 +28,7 @@ import { saveMealSuggestion } from "@/actions/saved-meals";
 import { UnifiedMealPicker } from "./unified-meal-picker";
 import { FoodReferencePopover } from "./food-reference-popover";
 import { IconPicker } from "@/components/ui/icon-picker";
-import { BookOpen, X } from "lucide-react";
+import { Library, X } from "lucide-react";
 import { multiplyFood, formatScaledEntry, type FoodLike } from "@/lib/food-math";
 import { useDialogCloseGuard } from "@/hooks/use-dialog-close-guard";
 
@@ -61,6 +63,8 @@ export function MealFormDialog({
   const createMeal = useCreateMeal();
   const updateMeal = useUpdateMeal();
   const { data: profile } = useUserProfile();
+  const locale = useLocale() as Locale;
+  const t = useTranslations("meals.form");
 
   // Smart meal time default: use routine if available
   const getSmartDefault = () => {
@@ -74,9 +78,6 @@ export function MealFormDialog({
   };
 
   const [mealTime, setMealTime] = useState(getSmartDefault);
-  // mealLabel is constrained to the canonical vocabulary (matches the DB
-  // CHECK constraint). Existing meals that aren't in the set fall back to
-  // empty so the user must pick a valid label before saving.
   const [mealLabel, setMealLabel] = useState<MealLabel | "">(
     isMealLabel(meal?.mealLabel) ? meal.mealLabel : "",
   );
@@ -115,7 +116,8 @@ export function MealFormDialog({
       icon !== (meal?.icon ?? null) ||
       addedFoods.length > 0);
 
-  const guardedOpenChange = useDialogCloseGuard(isDirty, onOpenChange);
+  const { guardedOpenChange, confirmOpen, onConfirmClose, onCancelClose } =
+    useDialogCloseGuard(isDirty, onOpenChange);
 
   const handlePickerSelect = (data: {
     mealLabel: string;
@@ -125,8 +127,6 @@ export function MealFormDialog({
     carbs: string;
     fat: string;
   }) => {
-    // Picker sources (saved meals, history) may carry legacy free-form
-    // labels. Coerce to canonical or empty so the user re-confirms.
     setMealLabel(isMealLabel(data.mealLabel) ? data.mealLabel : "");
     setContent(data.content);
     setCalories(data.calories);
@@ -135,7 +135,6 @@ export function MealFormDialog({
     setFat(data.fat);
   };
 
-  // (c) Food reference: append to content and add scaled macros
   const handleAddFood = (food: FoodLike, multiplier: number) => {
     const scaled = multiplyFood(food, multiplier);
     const entry = formatScaledEntry(food, multiplier);
@@ -189,7 +188,6 @@ export function MealFormDialog({
     };
 
     const onSuccess = async () => {
-      // (b) Save as favorite if checked
       if (saveAsFavorite && !isEdit) {
         try {
           await saveMealSuggestion({
@@ -215,196 +213,216 @@ export function MealFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={guardedOpenChange}>
-      <DialogContent className="max-w-sm w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto p-4 gap-3">
-        <DialogHeader className="space-y-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-base">
-              {isEdit ? "Öğünü Düzenle" : "Yeni Öğün Ekle"}
-            </DialogTitle>
-            {!isEdit && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 mr-6 gap-1 text-xs"
-                type="button"
-                onClick={() => setPickerOpen(true)}
-                title="Öğün seç"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                Seç
-              </Button>
-            )}
-          </div>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={guardedOpenChange}>
+        <DialogContent className="relative max-w-sm w-[calc(100vw-2rem)] min-h-[75svh] max-h-[92svh] overflow-y-auto p-4 gap-3">
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="grid grid-cols-[1fr_1.5fr] gap-2">
-            <div className="space-y-1">
-              <Label htmlFor="mealTime" className="text-xs text-muted-foreground">
-                Saat
-              </Label>
-              <Input
-                id="mealTime"
-                type="time"
-                value={mealTime}
-                onChange={(e) => setMealTime(e.target.value)}
-                className="h-9"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="mealLabel" className="text-xs text-muted-foreground">
-                Öğün Adı *
-              </Label>
-              <div className="flex gap-1.5">
-                <IconPicker value={icon} onChange={setIcon} className="h-9 w-9" />
-                <Select
-                  value={mealLabel || undefined}
-                  onValueChange={(v) => setMealLabel(v as MealLabel)}
-                >
-                  <SelectTrigger id="mealLabel" className="h-9 flex-1">
-                    <SelectValue placeholder="Seç..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MEAL_LABELS.map((label) => (
-                      <SelectItem key={label} value={label}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {/* In-dialog unsaved changes confirmation overlay */}
+          {confirmOpen && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 rounded-lg p-6 text-center gap-4">
+              <p className="text-sm font-medium">Kaydedilmemiş değişiklikleriniz var</p>
+              <p className="text-xs text-muted-foreground">
+                Formu kapatırsanız girdiğiniz bilgiler kaybolacak.
+              </p>
+              <div className="flex gap-2 w-full">
+                <Button variant="outline" className="flex-1" onClick={onCancelClose}>
+                  Düzenlemeye Devam Et
+                </Button>
+                <Button variant="destructive" className="flex-1" onClick={onConfirmClose}>
+                  Kapat
+                </Button>
               </div>
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <div className="flex items-center gap-1">
-              <Label htmlFor="content" className="text-xs text-muted-foreground">
-                İçerik *
-              </Label>
-              <FoodReferencePopover onAdd={handleAddFood} />
-            </div>
-            <textarea
-              id="content"
-              className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-              placeholder="2 yumurta, 1 dilim tam buğday ekmeği..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
-            />
-            {addedFoods.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1">
-                {addedFoods.map((f) => (
-                  <button
-                    key={f.key}
-                    type="button"
-                    onClick={() => handleRemoveAddedFood(f.key)}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20"
-                    title="Kaldır"
-                  >
-                    {formatScaledEntry(f.food, f.multiplier)} · {f.scaled.calories}kcal
-                    <X className="h-2.5 w-2.5" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Macros */}
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Besin Değerleri</p>
-            <div className="grid grid-cols-4 gap-1.5">
-              <div className="space-y-0.5">
-                <Label htmlFor="calories" className="text-[10px] text-muted-foreground/70">
-                  Kalori
-                </Label>
-                <Input
-                  id="calories"
-                  type="number"
-                  min="0"
-                  placeholder="350"
-                  value={calories}
-                  onChange={(e) => setCalories(e.target.value)}
-                  className="h-8 px-2 text-xs"
-                />
-              </div>
-              <div className="space-y-0.5">
-                <Label htmlFor="protein" className="text-[10px] text-muted-foreground/70">
-                  Protein
-                </Label>
-                <Input
-                  id="protein"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="25g"
-                  value={protein}
-                  onChange={(e) => setProtein(e.target.value)}
-                  className="h-8 px-2 text-xs"
-                />
-              </div>
-              <div className="space-y-0.5">
-                <Label htmlFor="carbs" className="text-[10px] text-muted-foreground/70">
-                  Karb
-                </Label>
-                <Input
-                  id="carbs"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="40g"
-                  value={carbs}
-                  onChange={(e) => setCarbs(e.target.value)}
-                  className="h-8 px-2 text-xs"
-                />
-              </div>
-              <div className="space-y-0.5">
-                <Label htmlFor="fat" className="text-[10px] text-muted-foreground/70">
-                  Yağ
-                </Label>
-                <Input
-                  id="fat"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="15g"
-                  value={fat}
-                  onChange={(e) => setFat(e.target.value)}
-                  className="h-8 px-2 text-xs"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Save as favorite checkbox */}
-          {!isEdit && (
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="saveAsFavorite"
-                checked={saveAsFavorite}
-                onCheckedChange={(checked) => setSaveAsFavorite(!!checked)}
-              />
-              <Label htmlFor="saveAsFavorite" className="text-xs text-muted-foreground cursor-pointer">
-                Favorilere kaydet
-              </Label>
             </div>
           )}
 
-          <div className="flex gap-2 pt-1">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
-              İptal
-            </Button>
-            <Button type="submit" className="flex-1" disabled={isPending}>
-              {isPending ? "Kaydediliyor..." : isEdit ? "Güncelle" : "Ekle"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
+          <DialogHeader className="space-y-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-base">
+                {isEdit ? t("titleEdit") : t("titleNew")}
+              </DialogTitle>
+              {!isEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 mr-6 gap-1.5 text-xs"
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                >
+                  <Library className="h-3.5 w-3.5" />
+                  {t("pickFromLibrary")}
+                </Button>
+              )}
+            </div>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="grid grid-cols-[1fr_1.5fr] gap-2">
+              <div className="space-y-1">
+                <Label htmlFor="mealTime" className="text-xs text-muted-foreground">
+                  {t("time")}
+                </Label>
+                <Input
+                  id="mealTime"
+                  type="time"
+                  value={mealTime}
+                  onChange={(e) => setMealTime(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="mealLabel" className="text-xs text-muted-foreground">
+                  {t("mealName")} *
+                </Label>
+                <div className="flex gap-1.5">
+                  <IconPicker value={icon} onChange={setIcon} className="h-9 w-9" />
+                  <Select
+                    value={mealLabel || undefined}
+                    onValueChange={(v) => setMealLabel(v as MealLabel)}
+                  >
+                    <SelectTrigger id="mealLabel" className="h-9 flex-1">
+                      <SelectValue placeholder={t("selectPlaceholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MEAL_LABELS.map((label) => (
+                        <SelectItem key={label} value={label}>
+                          {getLocalizedMealLabel(label, locale)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="content" className="text-xs text-muted-foreground">
+                  {t("content")} *
+                </Label>
+                <FoodReferencePopover onAdd={handleAddFood} />
+              </div>
+              <textarea
+                id="content"
+                className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                placeholder={t("contentPlaceholder")}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                required
+              />
+              {addedFoods.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {addedFoods.map((f) => (
+                    <button
+                      key={f.key}
+                      type="button"
+                      onClick={() => handleRemoveAddedFood(f.key)}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20"
+                      title={t("remove")}
+                    >
+                      {formatScaledEntry(f.food, f.multiplier)} · {f.scaled.calories}kcal
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Macros */}
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">{t("nutritionFacts")}</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                <div className="space-y-0.5">
+                  <Label htmlFor="calories" className="text-[10px] text-muted-foreground/70">
+                    {t("calories")}
+                  </Label>
+                  <Input
+                    id="calories"
+                    type="number"
+                    min="0"
+                    placeholder="350"
+                    value={calories}
+                    onChange={(e) => setCalories(e.target.value)}
+                    className="h-8 px-2 text-xs"
+                  />
+                </div>
+                <div className="space-y-0.5">
+                  <Label htmlFor="protein" className="text-[10px] text-muted-foreground/70">
+                    {t("protein")}
+                  </Label>
+                  <Input
+                    id="protein"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="25g"
+                    value={protein}
+                    onChange={(e) => setProtein(e.target.value)}
+                    className="h-8 px-2 text-xs"
+                  />
+                </div>
+                <div className="space-y-0.5">
+                  <Label htmlFor="carbs" className="text-[10px] text-muted-foreground/70">
+                    {t("carbs")}
+                  </Label>
+                  <Input
+                    id="carbs"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="40g"
+                    value={carbs}
+                    onChange={(e) => setCarbs(e.target.value)}
+                    className="h-8 px-2 text-xs"
+                  />
+                </div>
+                <div className="space-y-0.5">
+                  <Label htmlFor="fat" className="text-[10px] text-muted-foreground/70">
+                    {t("fat")}
+                  </Label>
+                  <Input
+                    id="fat"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="15g"
+                    value={fat}
+                    onChange={(e) => setFat(e.target.value)}
+                    className="h-8 px-2 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Save as favorite checkbox */}
+            {!isEdit && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="saveAsFavorite"
+                  checked={saveAsFavorite}
+                  onCheckedChange={(checked) => setSaveAsFavorite(!!checked)}
+                />
+                <Label htmlFor="saveAsFavorite" className="text-xs text-muted-foreground cursor-pointer">
+                  {t("saveAsFavorite")}
+                </Label>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => onOpenChange(false)}
+              >
+                {t("cancel")}
+              </Button>
+              <Button type="submit" className="flex-1" disabled={isPending}>
+                {isPending ? t("saving") : isEdit ? t("update") : t("add")}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {pickerOpen && (
         <UnifiedMealPicker
@@ -414,6 +432,6 @@ export function MealFormDialog({
           onSelect={handlePickerSelect}
         />
       )}
-    </Dialog>
+    </>
   );
 }
