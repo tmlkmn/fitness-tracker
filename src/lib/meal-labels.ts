@@ -7,7 +7,7 @@
 // with existing data and the DB constraint). For display in non-Turkish
 // locales, use getLocalizedMealLabel().
 
-import type { Locale } from "./locale";
+type Locale = "tr" | "en";
 
 export const MEAL_LABELS = [
   "Kahvaltı",

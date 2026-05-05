@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@/lib/locale";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +22,6 @@ import {
   MEAL_LABELS,
   MEAL_LABEL_COLORS,
   isMealLabel,
-  getLocalizedMealLabel,
   type MealLabel,
 } from "@/lib/meal-labels";
 import { cn } from "@/lib/utils";
@@ -64,7 +61,6 @@ function MealCandidateCard({
   candidate: MealCandidate;
   onSelect: () => void;
 }) {
-  const locale = useLocale() as Locale;
   const colorClass = isMealLabel(candidate.mealLabel)
     ? MEAL_LABEL_COLORS[candidate.mealLabel]
     : "";
@@ -76,9 +72,7 @@ function MealCandidateCard({
     >
       <div className="flex items-center justify-between gap-2">
         <Badge className={cn("text-[10px] h-4 px-1.5 border font-medium", colorClass)}>
-          {isMealLabel(candidate.mealLabel)
-            ? getLocalizedMealLabel(candidate.mealLabel, locale)
-            : candidate.mealLabel}
+          {candidate.mealLabel}
         </Badge>
         {candidate.meta && (
           <span className="text-[10px] text-muted-foreground">{candidate.meta}</span>
@@ -102,23 +96,13 @@ function DailyPlanCard({
   plan: DailyPlanCandidate;
   onSelect: () => void;
 }) {
-  const locale = useLocale() as Locale;
-  const t = useTranslations("meals.picker");
-  const tPlanTypes = useTranslations("meals.picker.planTypes");
   const totalCals = plan.meals.reduce((s, m) => s + (m.calories ?? 0), 0);
   const dateLabel = plan.createdAt
-    ? new Date(plan.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+    ? new Date(plan.createdAt).toLocaleDateString("tr-TR", {
         day: "numeric",
         month: "short",
       })
     : "";
-  const planTypeLabel = (() => {
-    try {
-      return tPlanTypes(plan.planType as never);
-    } catch {
-      return plan.planType;
-    }
-  })();
   return (
     <button
       type="button"
@@ -127,14 +111,10 @@ function DailyPlanCard({
     >
       <div className="flex items-center justify-between gap-2">
         <Badge variant="outline" className="text-[10px] h-4 px-1.5">
-          {planTypeLabel}
+          {plan.planType}
         </Badge>
         <span className="text-[10px] text-muted-foreground">
-          {t("mealCountKcalDate", {
-            count: plan.meals.length,
-            kcal: totalCals,
-            date: dateLabel,
-          })}
+          {plan.meals.length} öğün • {totalCals} kcal • {dateLabel}
         </span>
       </div>
       {plan.userNote && (
@@ -146,16 +126,14 @@ function DailyPlanCard({
         {plan.meals.slice(0, 3).map((m, i) => (
           <li key={i} className="line-clamp-1">
             <span className="text-muted-foreground">{m.mealTime}</span>{" "}
-            <span className="font-medium">
-              {isMealLabel(m.mealLabel) ? getLocalizedMealLabel(m.mealLabel, locale) : m.mealLabel}
-            </span>{" "}
+            <span className="font-medium">{m.mealLabel}</span>{" "}
             —{" "}
             <span className="text-muted-foreground">{m.content}</span>
           </li>
         ))}
         {plan.meals.length > 3 && (
           <li className="text-[10px] text-muted-foreground">
-            {t("moreCount", { count: plan.meals.length - 3 })}
+            +{plan.meals.length - 3} daha
           </li>
         )}
       </ul>
@@ -179,19 +157,15 @@ export function UnifiedMealPicker({
   onSelect,
   onSelectDailyPlan,
 }: UnifiedMealPickerProps) {
-  const t = useTranslations("meals.picker");
-  const locale = useLocale() as Locale;
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [labelFilter, setLabelFilter] = useState<MealLabel | null>(null);
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 250);
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Reset filter when tab changes — handled via key on tab content
   const handleTabChange = () => setLabelFilter(null);
 
   const { data, isLoading } = useQuery({
@@ -227,13 +201,13 @@ export function UnifiedMealPicker({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-hidden p-4 flex flex-col gap-3">
         <DialogHeader className="space-y-0">
-          <DialogTitle className="text-base">{t("title")}</DialogTitle>
+          <DialogTitle className="text-base">Öğünlerimden Seç</DialogTitle>
         </DialogHeader>
 
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder={t("searchPlaceholder")}
+            placeholder="Ara..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-9"
@@ -244,15 +218,15 @@ export function UnifiedMealPicker({
           <TabsList className="grid grid-cols-4 w-full h-9">
             <TabsTrigger value="frequent" className="text-[10px] gap-1 px-1">
               <Clock className="h-3 w-3" />
-              {t("tabFrequent")}
+              Sık
             </TabsTrigger>
             <TabsTrigger value="history" className="text-[10px] gap-1 px-1">
               <History className="h-3 w-3" />
-              {t("tabHistory")}
+              Geçmiş
             </TabsTrigger>
             <TabsTrigger value="saved" className="text-[10px] gap-1 px-1">
               <Star className="h-3 w-3" />
-              {t("tabSaved")}
+              Kayıtlı
             </TabsTrigger>
             <TabsTrigger
               value="daily"
@@ -260,11 +234,10 @@ export function UnifiedMealPicker({
               disabled={!onSelectDailyPlan}
             >
               <ClipboardList className="h-3 w-3" />
-              {t("tabDaily")}
+              Günlük
             </TabsTrigger>
           </TabsList>
 
-          {/* Meal label filter chips — hidden on daily tab */}
           <div className="flex gap-1.5 overflow-x-auto py-2 scrollbar-none shrink-0">
             <button
               onClick={() => setLabelFilter(null)}
@@ -288,16 +261,14 @@ export function UnifiedMealPicker({
                     : "border-border text-muted-foreground hover:border-foreground/40",
                 )}
               >
-                {getLocalizedMealLabel(label, locale)}
+                {label}
               </button>
             ))}
           </div>
 
           <div className="flex-1 overflow-y-auto -mx-1 px-1">
             {isLoading ? (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                {t("loading")}
-              </p>
+              <p className="text-sm text-muted-foreground text-center py-6">Yükleniyor...</p>
             ) : (
               <>
                 <TabsContent value="frequent" className="space-y-2 mt-0">
@@ -310,7 +281,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message={t("emptyFrequent")} />
+                    <EmptyState message="Henüz sık kullanılan öğün yok" />
                   )}
                 </TabsContent>
 
@@ -324,7 +295,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message={t("emptyHistory")} />
+                    <EmptyState message="Geçmiş öğün bulunamadı" />
                   )}
                 </TabsContent>
 
@@ -338,7 +309,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message={t("emptySaved")} />
+                    <EmptyState message="Kayıtlı öğün bulunamadı" />
                   )}
                 </TabsContent>
 
@@ -352,7 +323,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message={t("emptyDaily")} />
+                    <EmptyState message="Kayıtlı günlük plan bulunamadı" />
                   )}
                 </TabsContent>
               </>
@@ -366,7 +337,7 @@ export function UnifiedMealPicker({
           size="sm"
           onClick={() => onOpenChange(false)}
         >
-          {t("close")}
+          Kapat
         </Button>
       </DialogContent>
     </Dialog>
