@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -23,13 +24,8 @@ import { NumericStepper } from "@/components/ui/numeric-stepper";
 import { Search } from "lucide-react";
 import { useDialogCloseGuard } from "@/hooks/use-dialog-close-guard";
 
-const SECTIONS = [
-  { value: "warmup", label: "Isınma" },
-  { value: "main", label: "Ana Antrenman" },
-  { value: "cooldown", label: "Soğuma" },
-  { value: "sauna", label: "Sauna" },
-  { value: "swimming", label: "Yüzme" },
-];
+const SECTION_VALUES = ["warmup", "main", "cooldown", "sauna", "swimming"] as const;
+type SectionValue = (typeof SECTION_VALUES)[number];
 
 interface ExerciseData {
   id?: number;
@@ -56,11 +52,14 @@ export function ExerciseFormDialog({
   dailyPlanId,
   exercise,
 }: ExerciseFormDialogProps) {
+  const t = useTranslations("exercises.form");
   const isEdit = !!exercise?.id;
   const createExercise = useCreateExercise();
   const updateExercise = useUpdateExercise();
 
-  const [section, setSection] = useState(exercise?.section ?? "main");
+  const [section, setSection] = useState<SectionValue>(
+    (exercise?.section as SectionValue) ?? "main"
+  );
   const [name, setName] = useState(exercise?.name ?? "");
   const [sets, setSets] = useState(exercise?.sets?.toString() ?? "");
   const [reps, setReps] = useState(exercise?.reps ?? "");
@@ -79,12 +78,12 @@ export function ExerciseFormDialog({
       restSeconds !== (exercise?.restSeconds?.toString() ?? "") ||
       durationMinutes !== (exercise?.durationMinutes?.toString() ?? "") ||
       notes !== (exercise?.notes ?? "") ||
-      section !== (exercise?.section ?? "main"));
+      section !== ((exercise?.section as SectionValue) ?? "main"));
 
-  const guardedOpenChange = useDialogCloseGuard(isDirty, onOpenChange);
+  const { guardedOpenChange, confirmOpen, onConfirmClose, onCancelClose } =
+    useDialogCloseGuard(isDirty, onOpenChange);
 
-  const sectionLabel =
-    SECTIONS.find((s) => s.value === section)?.label ?? "Ana Antrenman";
+  const sectionLabel = t(`sectionLabels.${section}` as `sectionLabels.${SectionValue}`);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,26 +113,37 @@ export function ExerciseFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={guardedOpenChange}>
-      <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
+    <>
+      <Dialog open={open} onOpenChange={guardedOpenChange}>
+      <DialogContent className="relative max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
+        {confirmOpen && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 rounded-lg p-6 text-center gap-4">
+            <p className="text-sm font-medium">Kaydedilmemiş değişiklikleriniz var</p>
+            <p className="text-xs text-muted-foreground">Formu kapatırsanız girdiğiniz bilgiler kaybolacak.</p>
+            <div className="flex gap-2 w-full">
+              <Button variant="outline" className="flex-1" onClick={onCancelClose}>Düzenlemeye Devam Et</Button>
+              <Button variant="destructive" className="flex-1" onClick={onConfirmClose}>Kapat</Button>
+            </div>
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Egzersizi Düzenle" : "Yeni Egzersiz Ekle"}
+            {isEdit ? t("titleEdit") : t("titleNew")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="section" className="text-xs">
-              Bölüm
+              {t("section")}
             </Label>
-            <Select value={section} onValueChange={setSection}>
+            <Select value={section} onValueChange={(v) => setSection(v as SectionValue)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SECTIONS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
+                {SECTION_VALUES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {t(`sectionLabels.${s}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -142,7 +152,7 @@ export function ExerciseFormDialog({
           <div className="space-y-1.5">
             <div className="flex items-center gap-1">
               <Label htmlFor="name" className="text-xs">
-                Egzersiz Adı *
+                {t("name")}
               </Label>
               {!isEdit && (
                 <Button
@@ -151,7 +161,7 @@ export function ExerciseFormDialog({
                   className="h-5 w-5"
                   type="button"
                   onClick={() => setLibraryOpen(true)}
-                  title="Kütüphaneden seç"
+                  title={t("pickFromLibrary")}
                 >
                   <Search className="h-3 w-3" />
                 </Button>
@@ -159,7 +169,7 @@ export function ExerciseFormDialog({
             </div>
             <Input
               id="name"
-              placeholder="Bench Press"
+              placeholder={t("namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -168,7 +178,7 @@ export function ExerciseFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="sets" className="text-xs">
-                Set
+                {t("sets")}
               </Label>
               <NumericStepper
                 id="sets"
@@ -182,7 +192,7 @@ export function ExerciseFormDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="reps" className="text-xs">
-                Tekrar
+                {t("reps")}
               </Label>
               <Input
                 id="reps"
@@ -209,7 +219,7 @@ export function ExerciseFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="restSeconds" className="text-xs">
-                Dinlenme (sn)
+                {t("rest")}
               </Label>
               <NumericStepper
                 id="restSeconds"
@@ -237,7 +247,7 @@ export function ExerciseFormDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="durationMinutes" className="text-xs">
-                Süre (dk)
+                {t("duration")}
               </Label>
               <Input
                 id="durationMinutes"
@@ -251,11 +261,11 @@ export function ExerciseFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes" className="text-xs">
-              Notlar
+              {t("notes")}
             </Label>
             <Input
               id="notes"
-              placeholder="Opsiyonel notlar..."
+              placeholder={t("notesPlaceholder")}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -267,14 +277,15 @@ export function ExerciseFormDialog({
               className="flex-1"
               onClick={() => onOpenChange(false)}
             >
-              İptal
+              {t("cancel")}
             </Button>
             <Button type="submit" className="flex-1" disabled={isPending}>
-              {isPending ? "Kaydediliyor..." : isEdit ? "Güncelle" : "Ekle"}
+              {isPending ? t("saving") : isEdit ? t("update") : t("add")}
             </Button>
           </div>
         </form>
       </DialogContent>
+      </Dialog>
 
       {libraryOpen && (
         <ExerciseLibraryPicker
@@ -289,6 +300,6 @@ export function ExerciseFormDialog({
           }}
         />
       )}
-    </Dialog>
+    </>
   );
 }
