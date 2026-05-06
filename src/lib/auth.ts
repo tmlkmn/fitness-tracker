@@ -20,7 +20,8 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: true,
     sendResetPassword: async ({ user, url }) => {
-      await sendResetEmail(user.email, url);
+      const locale = (user as { locale?: string }).locale === "en" ? "en" : "tr";
+      await sendResetEmail(user.email, url, locale);
     },
   },
   user: {
@@ -37,6 +38,8 @@ export const auth = betterAuth({
       membershipEndDate: { type: "date", required: false },
       membershipNotifiedAt: { type: "date", required: false },
       hasSeenOnboarding: { type: "boolean", required: false, defaultValue: false },
+      locale: { type: "string", required: false, defaultValue: "tr" },
+      frozenAt: { type: "date", required: false },
     },
   },
   session: {

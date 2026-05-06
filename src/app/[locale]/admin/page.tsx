@@ -33,6 +33,8 @@ import {
   MessageSquare,
   Snowflake,
   Play,
+  LockKeyhole,
+  LockKeyholeOpen,
 } from "lucide-react";
 
 const MEMBERSHIP_LABELS: Record<string, string> = {
@@ -118,6 +120,99 @@ function MembershipBadge({ user }: { user: UserWithStatus }) {
       {label}
       {endDate && ` · ${endDate}`}
     </span>
+  );
+}
+
+function ConfirmFreezeDialog({
+  type,
+  userName,
+  onConfirm,
+  onClose,
+}: {
+  type: "freeze" | "unfreeze";
+  userName: string;
+  onConfirm: () => Promise<void>;
+  onClose: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  const isFreeze = type === "freeze";
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      await onConfirm();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+      <Card className="w-full max-w-sm">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {isFreeze ? (
+                <div className="h-8 w-8 rounded-lg bg-blue-400/10 flex items-center justify-center">
+                  <LockKeyhole className="h-4 w-4 text-blue-400" />
+                </div>
+              ) : (
+                <div className="h-8 w-8 rounded-lg bg-green-400/10 flex items-center justify-center">
+                  <LockKeyholeOpen className="h-4 w-4 text-green-400" />
+                </div>
+              )}
+              <h2 className="text-base font-semibold">
+                {isFreeze ? "Üyeliği Dondur" : "Dondurma Kaldır"}
+              </h2>
+            </div>
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors disabled:opacity-50"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className={`rounded-lg p-3 text-sm ${isFreeze ? "bg-blue-400/10 text-blue-300" : "bg-green-400/10 text-green-300"}`}>
+            <p className="font-medium">{userName}</p>
+            <p className="mt-1 text-xs opacity-80">
+              {isFreeze
+                ? "Bu kullanıcı sisteme giriş yapamaz hale gelecek. Oturumu anında sonlandırılacak."
+                : "Bu kullanıcı tekrar sisteme giriş yapabilecek."}
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1 h-10 rounded-md border border-border text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+            >
+              İptal
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={loading}
+              className={`flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-md text-sm font-medium transition-colors disabled:opacity-50 ${
+                isFreeze
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-green-600 hover:bg-green-700 text-white"
+              }`}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isFreeze ? (
+                <><Snowflake className="h-4 w-4" /> Dondur</>
+              ) : (
+                <><Play className="h-4 w-4" /> Dondurma Kaldır</>
+              )}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -220,6 +315,7 @@ export default function AdminPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [extendUser, setExtendUser] = useState<UserWithStatus | null>(null);
+  const [freezeDialog, setFreezeDialog] = useState<{ type: "freeze" | "unfreeze"; userId: string; name: string } | null>(null);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [featureUsage, setFeatureUsage] = useState<FeatureUsage[]>([]);
   const [userAiUsage, setUserAiUsage] = useState<UserAiUsage[]>([]);
@@ -288,31 +384,13 @@ export default function AdminPage() {
     }
   };
 
-  const handleFreeze = async (userId: string, name: string) => {
-    if (!confirm(`"${name}" kullanıcısını dondurmak istediğinize emin misiniz? Dondurulunca sisteme giremez.`)) {
-      return;
-    }
-    setActionLoading(userId);
-    try {
-      await freezeUserAction(userId);
-      await fetchUsers();
-    } catch {
-      setError("Kullanıcı dondurulamadı.");
-    } finally {
-      setActionLoading(null);
-    }
+  const handleFreeze = (userId: string, name: string) => {
+    setFreezeDialog({ type: "freeze", userId, name });
   };
 
-  const handleUnfreeze = async (userId: string) => {
-    setActionLoading(userId);
-    try {
-      await unfreezeUserAction(userId);
-      await fetchUsers();
-    } catch {
-      setError("Kullanıcının dondurması kaldırılamadı.");
-    } finally {
-      setActionLoading(null);
-    }
+  const handleUnfreeze = (userId: string, name: string) => {
+    setFreezeDialog({ type: "unfreeze", userId, name });
+  };
   };
 
   if (loading) {
@@ -526,7 +604,7 @@ export default function AdminPage() {
                       )}
                       {user.status === "Dondurulmuş" && (
                         <button
-                          onClick={() => handleUnfreeze(user.id)}
+                          onClick={() => handleUnfreeze(user.id, user.name)}
                           disabled={isActionUser}
                           className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-green-500/10 text-green-400 transition-colors disabled:opacity-50"
                           title="Dondurma Kaldır"
@@ -583,6 +661,30 @@ export default function AdminPage() {
           onSuccess={() => {
             setExtendUser(null);
             fetchUsers();
+          }}
+        />
+      )}
+      {freezeDialog && (
+        <ConfirmFreezeDialog
+          type={freezeDialog.type}
+          userName={freezeDialog.name}
+          onClose={() => setFreezeDialog(null)}
+          onConfirm={async () => {
+            setActionLoading(freezeDialog.userId);
+            try {
+              if (freezeDialog.type === "freeze") {
+                await freezeUserAction(freezeDialog.userId);
+              } else {
+                await unfreezeUserAction(freezeDialog.userId);
+              }
+              setFreezeDialog(null);
+              await fetchUsers();
+            } catch {
+              setError(freezeDialog.type === "freeze" ? "Kullanıcı dondurulamadı." : "Dondurma kaldırılamadı.");
+              setFreezeDialog(null);
+            } finally {
+              setActionLoading(null);
+            }
           }}
         />
       )}
