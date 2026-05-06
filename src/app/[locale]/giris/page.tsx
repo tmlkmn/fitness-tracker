@@ -2,17 +2,15 @@
 
 import { useState } from "react";
 import { signIn, signOut, authClient } from "@/lib/auth-client";
-import { useRouter } from "@/i18n/navigation";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dumbbell, Loader2, Eye, EyeOff } from "lucide-react";
-import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function GirisPage() {
   const router = useRouter();
-  const t = useTranslations("auth.login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,15 +23,15 @@ export default function GirisPage() {
 
     const trimmed = email.trim();
     if (!trimmed) {
-      setError(t("errors.emailRequired"));
+      setError("E-posta adresi gereklidir.");
       return;
     }
     if (!EMAIL_REGEX.test(trimmed)) {
-      setError(t("errors.invalidEmail"));
+      setError("Geçerli bir e-posta adresi girin.");
       return;
     }
     if (!password) {
-      setError(t("errors.passwordRequired"));
+      setError("Şifre gereklidir.");
       return;
     }
 
@@ -50,7 +48,7 @@ export default function GirisPage() {
         ) {
           setError("Üyeliğiniz askıya alınmıştır. Detay için yöneticinizle iletişime geçin.");
         } else {
-          setError(t("errors.invalidCredentials"));
+          setError("E-posta veya şifre hatalı.");
         }
       } else {
         const { data: sessionData } = await authClient.getSession();
@@ -62,7 +60,7 @@ export default function GirisPage() {
             user.inviteExpiresAt &&
             new Date(user.inviteExpiresAt) < new Date()
           ) {
-            setError(t("errors.inviteExpired"));
+            setError("Davet linkinizin süresi dolmuş. Yöneticinizle iletişime geçin.");
             await signOut();
             return;
           }
@@ -81,7 +79,7 @@ export default function GirisPage() {
         router.refresh();
       }
     } catch {
-      setError(t("errors.generic"));
+      setError("Bir hata oluştu. Lütfen tekrar deneyin.");
     } finally {
       setLoading(false);
     }
@@ -97,7 +95,7 @@ export default function GirisPage() {
             </div>
             <h1 className="text-xl font-bold">FitMusc</h1>
             <p className="text-sm text-muted-foreground">
-              {t("subtitle")}
+              Hesabınıza giriş yapın
             </p>
           </div>
 
@@ -107,7 +105,7 @@ export default function GirisPage() {
                 htmlFor="email"
                 className="text-sm font-medium leading-none"
               >
-                {t("email")}
+                E-posta
               </label>
               <input
                 id="email"
@@ -125,7 +123,7 @@ export default function GirisPage() {
                 htmlFor="password"
                 className="text-sm font-medium leading-none"
               >
-                {t("password")}
+                Şifre
               </label>
               <div className="relative">
                 <input
@@ -160,7 +158,7 @@ export default function GirisPage() {
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                t("signIn")
+                "Giriş Yap"
               )}
             </button>
           </form>
@@ -170,7 +168,7 @@ export default function GirisPage() {
               href={email.trim() ? `/sifremi-unuttum?email=${encodeURIComponent(email.trim())}` : "/sifremi-unuttum"}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              {t("forgotPassword")}
+              Şifremi Unuttum
             </Link>
           </div>
         </CardContent>
