@@ -42,6 +42,7 @@ export const users = pgTable(
     banned: boolean("banned").default(false),
     banReason: text("ban_reason"),
     banExpires: timestamp("ban_expires"),
+    frozenAt: timestamp("frozen_at"),
     mustChangePassword: boolean("must_change_password").default(false),
     inviteExpiresAt: timestamp("invite_expires_at"),
     membershipType: text("membership_type"),
@@ -61,6 +62,7 @@ export const users = pgTable(
     isPregnantOrBreastfeeding: boolean("is_pregnant_or_breastfeeding").default(false),
     hasDiabetes: boolean("has_diabetes").default(false),
     hasThyroidCondition: boolean("has_thyroid_condition").default(false),
+    locale: text("locale").default("tr").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -80,6 +82,10 @@ export const users = pgTable(
     check(
       "user_service_type_check",
       sql`${t.serviceType} IN ('full', 'nutrition')`,
+    ),
+    check(
+      "user_locale_check",
+      sql`${t.locale} IN ('tr', 'en')`,
     ),
   ],
 );
@@ -103,7 +109,7 @@ export const sessions = pgTable("session", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: "cascade" }),
   token: text("token").notNull().unique(),
   expiresAt: timestamp("expires_at").notNull(),
   ipAddress: text("ip_address"),
@@ -117,7 +123,7 @@ export const accounts = pgTable("account", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: "cascade" }),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
   accessToken: text("access_token"),
@@ -148,7 +154,7 @@ export const weeklyPlans = pgTable(
     id: serial("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     weekNumber: integer("week_number").notNull(),
     title: text("title").notNull(),
     phase: text("phase").notNull(),
@@ -166,7 +172,7 @@ export const dailyPlans = pgTable(
   "daily_plans",
   {
     id: serial("id").primaryKey(),
-    weeklyPlanId: integer("weekly_plan_id").references(() => weeklyPlans.id),
+    weeklyPlanId: integer("weekly_plan_id").references(() => weeklyPlans.id, { onDelete: "cascade" }),
     dayOfWeek: integer("day_of_week").notNull(),
     dayName: text("day_name").notNull(),
     planType: text("plan_type").notNull(),
@@ -186,7 +192,7 @@ export const meals = pgTable(
   "meals",
   {
     id: serial("id").primaryKey(),
-    dailyPlanId: integer("daily_plan_id").references(() => dailyPlans.id),
+    dailyPlanId: integer("daily_plan_id").references(() => dailyPlans.id, { onDelete: "cascade" }),
     mealTime: text("meal_time").notNull(),
     mealLabel: text("meal_label").notNull(),
     content: text("content").notNull(),
@@ -210,7 +216,7 @@ export const exercises = pgTable(
   "exercises",
   {
     id: serial("id").primaryKey(),
-    dailyPlanId: integer("daily_plan_id").references(() => dailyPlans.id),
+    dailyPlanId: integer("daily_plan_id").references(() => dailyPlans.id, { onDelete: "cascade" }),
     section: text("section").notNull(),
     sectionLabel: text("section_label").notNull(),
     name: text("name").notNull(),
@@ -241,7 +247,7 @@ export const exercises = pgTable(
 
 export const supplements = pgTable("supplements", {
   id: serial("id").primaryKey(),
-  weeklyPlanId: integer("weekly_plan_id").references(() => weeklyPlans.id),
+  weeklyPlanId: integer("weekly_plan_id").references(() => weeklyPlans.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   dosage: text("dosage").notNull(),
   timing: text("timing").notNull(),
@@ -275,7 +281,7 @@ export const progressLogs = pgTable("progress_logs", {
   id: serial("id").primaryKey(),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: "cascade" }),
   logDate: date("log_date").notNull(),
   // Ana Bilgiler
   weight: numeric("weight"),
@@ -322,7 +328,7 @@ export const progressLogs = pgTable("progress_logs", {
 
 export const shoppingLists = pgTable("shopping_lists", {
   id: serial("id").primaryKey(),
-  weeklyPlanId: integer("weekly_plan_id").references(() => weeklyPlans.id),
+  weeklyPlanId: integer("weekly_plan_id").references(() => weeklyPlans.id, { onDelete: "cascade" }),
   category: text("category").notNull(),
   itemName: text("item_name").notNull(),
   quantity: text("quantity").notNull(),

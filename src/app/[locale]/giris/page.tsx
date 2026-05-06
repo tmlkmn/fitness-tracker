@@ -40,7 +40,16 @@ export default function GirisPage() {
     try {
       const result = await signIn.email({ email: trimmed, password });
       if (result.error) {
-        setError("E-posta veya şifre hatalı.");
+        const errMsg = result.error.message ?? "";
+        if (
+          result.error.status === 403 ||
+          errMsg.toLowerCase().includes("banned") ||
+          errMsg.toLowerCase().includes("ban")
+        ) {
+          setError("Üyeliğiniz askıya alınmıştır. Detay için yöneticinizle iletişime geçin.");
+        } else {
+          setError("E-posta veya şifre hatalı.");
+        }
       } else {
         const { data: sessionData } = await authClient.getSession();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,7 +60,7 @@ export default function GirisPage() {
             user.inviteExpiresAt &&
             new Date(user.inviteExpiresAt) < new Date()
           ) {
-            setError("Davet süreniz dolmuş. Yöneticinizle iletişime geçin.");
+            setError("Davet linkinizin süresi dolmuş. Yöneticinizle iletişime geçin.");
             await signOut();
             return;
           }
@@ -74,7 +83,7 @@ export default function GirisPage() {
         router.refresh();
       }
     } catch {
-      setError("Bir hata oluştu. Tekrar deneyin.");
+      setError("Bir hata oluştu. Lütfen tekrar deneyin.");
     } finally {
       setLoading(false);
     }

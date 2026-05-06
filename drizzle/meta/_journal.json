@@ -239,6 +239,20 @@
       "when": 1777373445895,
       "tag": "0033_overjoyed_owl",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1777807372494,
+      "tag": "0034_opposite_magik",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1778069056155,
+      "tag": "0035_careless_trauma",
+      "breakpoints": true
     }
   ]
 }
