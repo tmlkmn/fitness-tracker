@@ -18,7 +18,12 @@ export interface MembershipInput {
   customEndDate?: string;
 }
 
-export async function inviteUser(email: string, name: string, membership: MembershipInput) {
+export async function inviteUser(
+  email: string,
+  name: string,
+  membership: MembershipInput,
+  locale: "tr" | "en" = "tr",
+) {
   const admin = await getAuthAdmin();
 
   const tempPassword = crypto.randomUUID().slice(0, 12);
@@ -36,6 +41,7 @@ export async function inviteUser(email: string, name: string, membership: Member
         mustChangePassword: true,
         inviteExpiresAt,
         membershipType: membership.type,
+        locale,
         ...(membership.type === "custom" && membership.customEndDate
           ? { membershipEndDate: new Date(membership.customEndDate) }
           : {}),
@@ -43,7 +49,7 @@ export async function inviteUser(email: string, name: string, membership: Member
     },
   });
 
-  await sendInviteEmail(email, tempPassword);
+  await sendInviteEmail(email, tempPassword, locale);
 
   // Send welcome in-app notification (skip email since invite email already sent)
   const [newUser] = await db
@@ -68,7 +74,7 @@ export async function inviteUser(email: string, name: string, membership: Member
   return { success: true, tempPassword };
 }
 
-export type UserStatus = "Admin" | "Aktif" | "Bekliyor" | "Süresi Dolmuş" | "Üyelik Dolmuş";
+export type UserStatus = "Admin" | "Aktif" | "Bekliyor" | "Süresi Dolmuş" | "Üyelik Dolmuş" | "Dondurulmuş";
 
 export interface UserWithStatus {
   id: string;
@@ -79,10 +85,13 @@ export interface UserWithStatus {
   membershipType: string | null;
   membershipStartDate: Date | null;
   membershipEndDate: Date | null;
+  frozenAt: Date | null;
+  isFrozen: boolean;
 }
 
 function getUserStatus(user: typeof users.$inferSelect): UserStatus {
   if (user.role === "admin") return "Admin";
+  if (user.banned) return "Dondurulmuş";
   if (user.isApproved && !user.mustChangePassword) {
     // Check membership expiry for active users
     if (user.membershipEndDate && new Date(user.membershipEndDate) <= new Date()) {
@@ -113,6 +122,8 @@ export async function listAllUsers(): Promise<UserWithStatus[]> {
     membershipType: u.membershipType,
     membershipStartDate: u.membershipStartDate,
     membershipEndDate: u.membershipEndDate,
+    frozenAt: u.frozenAt,
+    isFrozen: !!u.banned,
   }));
 }
 
@@ -150,12 +161,18 @@ export async function removeUserAction(userId: string) {
   const admin = await getAuthAdmin();
 
   const [user] = await db
-    .select({ role: users.role })
+    .select({ role: users.role, banned: users.banned, frozenAt: users.frozenAt })
     .from(users)
     .where(eq(users.id, userId));
 
   if (!user) throw new Error("User not found");
   if (user.role === "admin") throw new Error("Cannot remove admin user");
+
+  if (user.banned) {
+    if (!user.frozenAt) throw new Error("Kullanıcı dondurulmuş ama dondurulma tarihi yok.");
+    const daysFrozen = (Date.now() - new Date(user.frozenAt).getTime()) / 86400000;
+    if (daysFrozen < 30) throw new Error("Kullanıcı henüz 30 gün dondurulmamış.");
+  }
 
   await auth.api.removeUser({
     headers: await headers(),
@@ -164,6 +181,53 @@ export async function removeUserAction(userId: string) {
 
   logAudit({ adminId: admin.id, action: "user.remove", entityType: "user", entityId: userId }).catch(() => {});
 
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function freezeUserAction(userId: string) {
+  const admin = await getAuthAdmin();
+
+  const [user] = await db
+    .select({ role: users.role, banned: users.banned })
+    .from(users)
+    .where(eq(users.id, userId));
+
+  if (!user) throw new Error("User not found");
+  if (user.role === "admin") throw new Error("Cannot freeze admin user");
+  if (user.banned) throw new Error("User is already frozen");
+
+  await auth.api.banUser({
+    headers: await headers(),
+    body: { userId },
+  });
+
+  await db.update(users).set({ frozenAt: new Date() }).where(eq(users.id, userId));
+
+  logAudit({ adminId: admin.id, action: "user.freeze", entityType: "user", entityId: userId }).catch(() => {});
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function unfreezeUserAction(userId: string) {
+  const admin = await getAuthAdmin();
+
+  const [user] = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, userId));
+
+  if (!user) throw new Error("User not found");
+  if (user.role === "admin") throw new Error("Cannot unfreeze admin user");
+
+  await auth.api.unbanUser({
+    headers: await headers(),
+    body: { userId },
+  });
+
+  await db.update(users).set({ frozenAt: null }).where(eq(users.id, userId));
+
+  logAudit({ adminId: admin.id, action: "user.unfreeze", entityType: "user", entityId: userId }).catch(() => {});
   revalidatePath("/admin");
   return { success: true };
 }
