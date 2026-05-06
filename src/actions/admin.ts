@@ -49,7 +49,7 @@ export async function inviteUser(
     },
   });
 
-  await sendInviteEmail(email, tempPassword, locale);
+  await sendInviteEmail(email, tempPassword);
 
   // Send welcome in-app notification (skip email since invite email already sent)
   const [newUser] = await db
