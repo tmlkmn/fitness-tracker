@@ -15,6 +15,7 @@ import {
   X,
   Share2,
   Bell,
+  AlarmClock,
   BookOpen,
   Target,
   Sliders,
@@ -154,9 +155,15 @@ useEffect(() => {
           />
           <SettingsMenuItem
             icon={Bell}
-            title="Bildirim ve Hatırlatıcılar"
-            subtitle="Push, e-posta, hatırlatıcı zamanları"
+            title="Bildirim Ayarları"
+            subtitle="Push, e-posta ve sessiz saatler"
             href="/ayarlar/bildirim"
+          />
+          <SettingsMenuItem
+            icon={AlarmClock}
+            title="Hatırlatıcılar"
+            subtitle="Öğün, antrenman ve özel hatırlatmalar"
+            href="/ayarlar/hatirlatici"
           />
         </SettingsGroup>
 

@@ -3,16 +3,16 @@
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
-import { NotificationPreferencesCard } from "@/components/notifications/notification-preferences-card";
-import { Bell } from "lucide-react";
+import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
+import { Clock } from "lucide-react";
 
-export default function BildirimPage() {
+export default function HatirlaticiPage() {
   return (
     <div className="animate-fade-in">
       <Header
-        title="Bildirim Ayarları"
-        subtitle="Push, e-posta ve sessiz saatler"
-        icon={Bell}
+        title="Hatırlatıcılar"
+        subtitle="Öğün, antrenman ve özel hatırlatmalar"
+        icon={Clock}
         showBack
         backHref="/ayarlar"
         rightSlot={
@@ -23,7 +23,7 @@ export default function BildirimPage() {
         }
       />
       <div className="p-4 space-y-4">
-        <NotificationPreferencesCard />
+        <ReminderSettingsCard />
       </div>
     </div>
   );

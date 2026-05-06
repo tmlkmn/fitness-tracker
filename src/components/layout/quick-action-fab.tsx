@@ -10,6 +10,8 @@ import {
   Dumbbell,
   Bot,
   CalendarDays,
+  Bell,
+  User,
   type LucideIcon,
 } from "lucide-react";
 import { useTodayDashboard } from "@/hooks/use-plans";
@@ -106,6 +108,18 @@ function QuickActionFabInner({ pathname }: { pathname: string }) {
       icon: CalendarDays,
       href: "/takvim",
       color: "bg-primary/15 text-primary",
+    },
+    {
+      label: "Hatırlatıcılar",
+      icon: Bell,
+      href: "/ayarlar/hatirlatici",
+      color: "bg-sky-500/15 text-sky-400",
+    },
+    {
+      label: "Profil",
+      icon: User,
+      href: "/ayarlar",
+      color: "bg-rose-500/15 text-rose-400",
     },
   ];
 
