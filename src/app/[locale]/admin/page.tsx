@@ -391,7 +391,6 @@ export default function AdminPage() {
   const handleUnfreeze = (userId: string, name: string) => {
     setFreezeDialog({ type: "unfreeze", userId, name });
   };
-  };
 
   if (loading) {
     return (
