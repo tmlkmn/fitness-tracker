@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { listAllUsers, resendInvite, removeUserAction, extendMembership, getAdminStats, getAiUsageByFeature, getAiUsageByUser } from "@/actions/admin";
+import Link from "next/link";
+import {
+  listAllUsers,
+  resendInvite,
+  removeUserAction,
+  extendMembership,
+  freezeUserAction,
+  unfreezeUserAction,
+  getAdminStats,
+  getAiUsageByFeature,
+  getAiUsageByUser,
+} from "@/actions/admin";
 import type { UserWithStatus, MembershipType, AdminStats, FeatureUsage, UserAiUsage } from "@/actions/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -20,66 +31,68 @@ import {
   BarChart3,
   Bot,
   MessageSquare,
+  Snowflake,
+  Play,
 } from "lucide-react";
-import Link from "next/link";
-
-const statusConfig: Record<
-  string,
-  { icon: typeof CheckCircle; className: string }
-> = {
-  Admin: { icon: Shield, className: "text-purple-400 bg-purple-400/10" },
-  Aktif: { icon: CheckCircle, className: "text-green-400 bg-green-400/10" },
-  Bekliyor: { icon: Clock, className: "text-yellow-400 bg-yellow-400/10" },
-  "Süresi Dolmuş": {
-    icon: AlertTriangle,
-    className: "text-red-400 bg-red-400/10",
-  },
-  "Üyelik Dolmuş": {
-    icon: AlertTriangle,
-    className: "text-orange-400 bg-orange-400/10",
-  },
-};
 
 const MEMBERSHIP_LABELS: Record<string, string> = {
-  unlimited: "Sınırsız",
   "1-month": "1 Ay",
   "3-month": "3 Ay",
   "6-month": "6 Ay",
   "1-year": "1 Yıl",
+  unlimited: "Sınırsız",
   custom: "Özel",
 };
 
-const MEMBERSHIP_OPTIONS: { value: MembershipType; label: string }[] = [
-  { value: "1-month", label: "1 Ay" },
-  { value: "3-month", label: "3 Ay" },
-  { value: "6-month", label: "6 Ay" },
-  { value: "1-year", label: "1 Yıl" },
-  { value: "unlimited", label: "Sınırsız" },
-  { value: "custom", label: "Özel Tarih" },
-];
-
 const FEATURE_LABELS: Record<string, string> = {
-  meal: "Öğün Önerisi",
-  exercise: "Egzersiz İpucu",
-  analyze: "İlerleme Analizi",
-  chat: "AI Asistan",
-  workout: "Antrenman Önerisi",
+  meal: "Öğün",
+  exercise: "Egzersiz",
+  analyze: "Analiz",
+  chat: "Chat",
+  workout: "Antrenman",
   "daily-meal": "Günlük Öğün",
-  weekly: "Haftalık Plan",
-  "exercise-demo": "Egzersiz Demo",
+  weekly: "Haftalık",
+  "exercise-demo": "Demo",
 };
 
+const statusConfig: Record<string, { icon: typeof CheckCircle; className: string }> = {
+  Admin: { icon: Shield, className: "text-purple-400 bg-purple-400/10" },
+  Aktif: { icon: CheckCircle, className: "text-green-400 bg-green-400/10" },
+  Bekliyor: { icon: Clock, className: "text-yellow-400 bg-yellow-400/10" },
+  "Süresi Dolmuş": { icon: AlertTriangle, className: "text-red-400 bg-red-400/10" },
+  "Üyelik Dolmuş": { icon: AlertTriangle, className: "text-orange-400 bg-orange-400/10" },
+  Dondurulmuş: { icon: Snowflake, className: "text-blue-400 bg-blue-400/10" },
+};
+
+const MEMBERSHIP_OPTION_VALUES: MembershipType[] = [
+  "1-month",
+  "3-month",
+  "6-month",
+  "1-year",
+  "unlimited",
+  "custom",
+];
+
+function daysSinceFrozen(user: UserWithStatus): number {
+  if (!user.frozenAt) return 0;
+  return (Date.now() - new Date(user.frozenAt).getTime()) / 86400000;
+}
+
 function formatTimeAgo(date: Date | null): string {
-  if (!date) return "-";
+  if (!date) return "—";
   const now = new Date();
   const diff = now.getTime() - new Date(date).getTime();
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return "Az önce";
-  if (minutes < 60) return `${minutes}dk önce`;
+  if (minutes < 60) return `${minutes} dk`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}sa önce`;
+  if (hours < 24) return `${hours} sa`;
   const days = Math.floor(hours / 24);
-  return `${days}g önce`;
+  return `${days} gün`;
+}
+
+function featureLabel(key: string): string {
+  return FEATURE_LABELS[key] ?? key;
 }
 
 function StatCard({ label, value, sub }: { label: string; value: number; sub?: string }) {
@@ -139,11 +152,7 @@ function ExtendDialog({
 
     setLoading(true);
     try {
-      await extendMembership(
-        user.id,
-        type,
-        type === "custom" ? customEndDate : undefined
-      );
+      await extendMembership(user.id, type, type === "custom" ? customEndDate : undefined);
       onSuccess();
     } catch {
       setError("Üyelik güncellenemedi.");
@@ -172,9 +181,9 @@ function ExtendDialog({
               onChange={(e) => setType(e.target.value as MembershipType)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              {MEMBERSHIP_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
+              {MEMBERSHIP_OPTION_VALUES.map((value) => (
+                <option key={value} value={value}>
+                  {value === "custom" ? "Özel Tarih" : (MEMBERSHIP_LABELS[value] ?? value)}
                 </option>
               ))}
             </select>
@@ -195,11 +204,7 @@ function ExtendDialog({
               disabled={loading}
               className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Güncelle"
-              )}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Güncelle"}
             </button>
           </form>
         </CardContent>
@@ -278,6 +283,33 @@ export default function AdminPage() {
       await fetchUsers();
     } catch {
       setError("Kullanıcı silinemedi.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleFreeze = async (userId: string, name: string) => {
+    if (!confirm(`"${name}" kullanıcısını dondurmak istediğinize emin misiniz? Dondurulunca sisteme giremez.`)) {
+      return;
+    }
+    setActionLoading(userId);
+    try {
+      await freezeUserAction(userId);
+      await fetchUsers();
+    } catch {
+      setError("Kullanıcı dondurulamadı.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleUnfreeze = async (userId: string) => {
+    setActionLoading(userId);
+    try {
+      await unfreezeUserAction(userId);
+      await fetchUsers();
+    } catch {
+      setError("Kullanıcının dondurması kaldırılamadı.");
     } finally {
       setActionLoading(null);
     }
@@ -366,7 +398,7 @@ export default function AdminPage() {
                   <tbody>
                     {featureUsage.map((f) => (
                       <tr key={f.feature} className="border-b border-border/50">
-                        <td className="py-1.5">{FEATURE_LABELS[f.feature] ?? f.feature}</td>
+                        <td className="py-1.5">{featureLabel(f.feature)}</td>
                         <td className="text-right py-1.5 tabular-nums">{f.today}</td>
                         <td className="text-right py-1.5 tabular-nums">{f.thisWeek}</td>
                         <td className="text-right py-1.5 tabular-nums font-medium">{f.total}</td>
@@ -403,7 +435,7 @@ export default function AdminPage() {
                           key={feature}
                           className="inline-flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-[10px]"
                         >
-                          {FEATURE_LABELS[feature] ?? feature}
+                          {featureLabel(feature)}
                           <span className="font-bold">{count}</span>
                         </span>
                       ))}
@@ -423,9 +455,10 @@ export default function AdminPage() {
 
         <div className="space-y-3">
           {users.map((user) => {
-            const config = statusConfig[user.status];
-            const StatusIcon = config.icon;
+            const cfg = statusConfig[user.status] ?? statusConfig["Aktif"];
+            const StatusIcon = cfg.icon;
             const isActionUser = actionLoading === user.id;
+            const canDelete = user.isFrozen && daysSinceFrozen(user) >= 30;
 
             return (
               <Card key={user.id}>
@@ -435,7 +468,7 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <p className="font-medium truncate">{user.name}</p>
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${config.className}`}
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.className}`}
                         >
                           <StatusIcon className="h-3 w-3" />
                           {user.status}
@@ -445,6 +478,12 @@ export default function AdminPage() {
                         {user.email}
                       </p>
                       <MembershipBadge user={user} />
+                      {user.isFrozen && user.frozenAt && (
+                        <p className="text-xs text-blue-400 mt-0.5">
+                          Donduruldu: {new Date(user.frozenAt).toLocaleDateString("tr-TR")}
+                          {" "}({Math.floor(daysSinceFrozen(user))} gün önce)
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -457,8 +496,7 @@ export default function AdminPage() {
                           <CalendarClock className="h-4 w-4" />
                         </button>
                       )}
-                      {(user.status === "Bekliyor" ||
-                        user.status === "Süresi Dolmuş") && (
+                      {(user.status === "Bekliyor" || user.status === "Süresi Dolmuş") && (
                         <button
                           onClick={() => handleResend(user.id)}
                           disabled={isActionUser}
@@ -472,7 +510,35 @@ export default function AdminPage() {
                           )}
                         </button>
                       )}
-                      {user.status !== "Admin" && (
+                      {user.status !== "Admin" && !user.isFrozen && (
+                        <button
+                          onClick={() => handleFreeze(user.id, user.name)}
+                          disabled={isActionUser}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-blue-500/10 text-blue-400 transition-colors disabled:opacity-50"
+                          title="Dondur"
+                        >
+                          {isActionUser ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Snowflake className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                      {user.status === "Dondurulmuş" && (
+                        <button
+                          onClick={() => handleUnfreeze(user.id)}
+                          disabled={isActionUser}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-green-500/10 text-green-400 transition-colors disabled:opacity-50"
+                          title="Dondurma Kaldır"
+                        >
+                          {isActionUser ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                      {user.status !== "Admin" && canDelete && (
                         <button
                           onClick={() => handleRemove(user.id, user.name)}
                           disabled={isActionUser}
