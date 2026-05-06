@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { users, aiUsageLogs } from "@/db/schema";
+import { users, sessions, aiUsageLogs } from "@/db/schema";
 import { eq, sql, gte, and, inArray, isNotNull, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { sendInviteEmail } from "@/lib/email";
@@ -91,7 +91,7 @@ export interface UserWithStatus {
 
 function getUserStatus(user: typeof users.$inferSelect): UserStatus {
   if (user.role === "admin") return "Admin";
-  if (user.banned) return "Dondurulmuş";
+  if (user.frozenAt !== null) return "Dondurulmuş";
   if (user.isApproved && !user.mustChangePassword) {
     // Check membership expiry for active users
     if (user.membershipEndDate && new Date(user.membershipEndDate) <= new Date()) {
@@ -123,7 +123,7 @@ export async function listAllUsers(): Promise<UserWithStatus[]> {
     membershipStartDate: u.membershipStartDate,
     membershipEndDate: u.membershipEndDate,
     frozenAt: u.frozenAt,
-    isFrozen: !!u.banned,
+    isFrozen: u.frozenAt !== null,
   }));
 }
 
@@ -161,15 +161,14 @@ export async function removeUserAction(userId: string) {
   const admin = await getAuthAdmin();
 
   const [user] = await db
-    .select({ role: users.role, banned: users.banned, frozenAt: users.frozenAt })
+    .select({ role: users.role, frozenAt: users.frozenAt })
     .from(users)
     .where(eq(users.id, userId));
 
   if (!user) throw new Error("User not found");
   if (user.role === "admin") throw new Error("Cannot remove admin user");
 
-  if (user.banned) {
-    if (!user.frozenAt) throw new Error("Kullanıcı dondurulmuş ama dondurulma tarihi yok.");
+  if (user.frozenAt !== null) {
     const daysFrozen = (Date.now() - new Date(user.frozenAt).getTime()) / 86400000;
     if (daysFrozen < 30) throw new Error("Kullanıcı henüz 30 gün dondurulmamış.");
   }
@@ -189,20 +188,16 @@ export async function freezeUserAction(userId: string) {
   const admin = await getAuthAdmin();
 
   const [user] = await db
-    .select({ role: users.role, banned: users.banned })
+    .select({ role: users.role, frozenAt: users.frozenAt })
     .from(users)
     .where(eq(users.id, userId));
 
   if (!user) throw new Error("User not found");
   if (user.role === "admin") throw new Error("Cannot freeze admin user");
-  if (user.banned) throw new Error("User is already frozen");
-
-  await auth.api.banUser({
-    headers: await headers(),
-    body: { userId },
-  });
+  if (user.frozenAt !== null) throw new Error("User is already frozen");
 
   await db.update(users).set({ frozenAt: new Date() }).where(eq(users.id, userId));
+  await db.delete(sessions).where(eq(sessions.userId, userId));
 
   logAudit({ adminId: admin.id, action: "user.freeze", entityType: "user", entityId: userId }).catch(() => {});
   revalidatePath("/admin");
@@ -219,11 +214,6 @@ export async function unfreezeUserAction(userId: string) {
 
   if (!user) throw new Error("User not found");
   if (user.role === "admin") throw new Error("Cannot unfreeze admin user");
-
-  await auth.api.unbanUser({
-    headers: await headers(),
-    body: { userId },
-  });
 
   await db.update(users).set({ frozenAt: null }).where(eq(users.id, userId));
 

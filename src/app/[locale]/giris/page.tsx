@@ -65,6 +65,10 @@ export default function GirisPage() {
             return;
           }
           router.push("/sifre-degistir");
+        } else if (user?.frozenAt) {
+          await signOut();
+          setError("Üyeliğiniz askıya alınmıştır. Detay için yöneticinizle iletişime geçin.");
+          return;
         } else if (user?.isApproved) {
           if (user.membershipEndDate && new Date(user.membershipEndDate) < new Date()) {
             router.push("/uyelik-doldu");
