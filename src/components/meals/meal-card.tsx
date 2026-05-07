@@ -76,7 +76,7 @@ export function MealCard({
   const cardElement = (
       <Card
         className={cn(
-          "transition-all duration-200 shadow border-border/80",
+          "transition-all duration-200 shadow border-border/80 bg-muted",
           isCompleted && "opacity-60"
         )}
       >

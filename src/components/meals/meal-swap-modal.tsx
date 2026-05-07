@@ -8,17 +8,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -27,22 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Search, UtensilsCrossed } from "lucide-react";
+import { Loader2, Search, UtensilsCrossed, ArrowLeft } from "lucide-react";
 import { getMealPickerData, type MealCandidate } from "@/actions/meal-picker";
 import { MEAL_LABELS, MEAL_LABEL_COLORS, isMealLabel } from "@/lib/meal-labels";
 import { useUpdateMeal } from "@/hooks/use-meal-crud";
 import { cn } from "@/lib/utils";
 
-interface MealSwapModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  mealId: number;
-  mealTime: string;
-  mealLabel: string;
-  dailyPlanId: number;
+interface CandidateCardProps {
+  candidate: MealCandidate;
+  onClick: () => void;
 }
 
-function CandidateCard({ candidate, onClick }: { candidate: MealCandidate; onClick: () => void }) {
+function CandidateCard({ candidate, onClick }: CandidateCardProps) {
   const colorClass = isMealLabel(candidate.mealLabel) ? MEAL_LABEL_COLORS[candidate.mealLabel] : "";
   return (
     <button
@@ -69,13 +57,52 @@ function CandidateCard({ candidate, onClick }: { candidate: MealCandidate; onCli
   );
 }
 
+interface CandidateListProps {
+  list: MealCandidate[];
+  isLoading: boolean;
+  onSelect: (c: MealCandidate) => void;
+}
+
+function CandidateList({ list, isLoading, onSelect }: CandidateListProps) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  if (list.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
+        <UtensilsCrossed className="h-8 w-8 opacity-40" />
+        <p className="text-sm">Öğün bulunamadı</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {list.map((c) => (
+        <CandidateCard key={c.id} candidate={c} onClick={() => onSelect(c)} />
+      ))}
+    </div>
+  );
+}
+
+interface MealSwapModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  mealId: number;
+  mealTime: string;
+  mealLabel: string;
+  dailyPlanId: number;
+}
+
 export function MealSwapModal({
   open,
   onOpenChange,
   mealId,
   mealTime,
   mealLabel,
-  dailyPlanId: _dailyPlanId,
 }: MealSwapModalProps) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -83,6 +110,15 @@ export function MealSwapModal({
   const [pending, setPending] = useState<MealCandidate | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const updateMeal = useUpdateMeal();
+
+  useEffect(() => {
+    if (!open) {
+      setSearch("");
+      setDebouncedSearch("");
+      setFilterLabel(mealLabel);
+      setPending(null);
+    }
+  }, [open, mealLabel]);
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -128,111 +164,101 @@ export function MealSwapModal({
     );
   };
 
-  const CandidateList = ({ list }: { list: MealCandidate[] }) => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      );
-    }
-    if (list.length === 0) {
-      return (
-        <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
-          <UtensilsCrossed className="h-8 w-8 opacity-40" />
-          <p className="text-sm">Öğün bulunamadı</p>
-        </div>
-      );
-    }
-    return (
-      <div className="space-y-2">
-        {list.map((c) => (
-          <CandidateCard key={c.id} candidate={c} onClick={() => setPending(c)} />
-        ))}
-      </div>
-    );
-  };
-
   return (
-    <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[85dvh] flex flex-col p-0">
-          <SheetHeader className="px-4 pt-4 pb-2 shrink-0">
-            <SheetTitle>Öğünü Değiştir</SheetTitle>
-          </SheetHeader>
-
-          <div className="px-4 pb-2 space-y-2 shrink-0">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Öğün ara..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Select value={filterLabel} onValueChange={setFilterLabel}>
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Tüm öğün tipleri</SelectItem>
-                {MEAL_LABELS.map((label) => (
-                  <SelectItem key={label} value={label}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Tabs defaultValue="saved" className="flex-1 flex flex-col min-h-0 px-4">
-            <TabsList className="shrink-0 w-full grid grid-cols-3">
-              <TabsTrigger value="saved">Favoriler</TabsTrigger>
-              <TabsTrigger value="frequent">Sık</TabsTrigger>
-              <TabsTrigger value="history">Geçmiş</TabsTrigger>
-            </TabsList>
-            <TabsContent value="saved" className="flex-1 overflow-y-auto mt-2 pb-4">
-              <CandidateList list={savedFiltered} />
-            </TabsContent>
-            <TabsContent value="frequent" className="flex-1 overflow-y-auto mt-2 pb-4">
-              <CandidateList list={frequentFiltered} />
-            </TabsContent>
-            <TabsContent value="history" className="flex-1 overflow-y-auto mt-2 pb-4">
-              <CandidateList list={historyFiltered} />
-            </TabsContent>
-          </Tabs>
-        </SheetContent>
-      </Sheet>
-
-      <Dialog open={pending !== null} onOpenChange={(v) => { if (!v) setPending(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Öğünü değiştir</DialogTitle>
-            <DialogDescription asChild>
-              <div className="space-y-2">
-                <p>Mevcut öğünü aşağıdaki öğünle değiştirmek istiyor musunuz?</p>
-                {pending && (
-                  <div className="rounded-md border p-2.5 text-sm">
-                    <p className="font-medium line-clamp-2">{pending.content}</p>
-                    {pending.calories !== null && (
-                      <p className="text-xs text-muted-foreground mt-1">{pending.calories} kcal</p>
-                    )}
-                  </div>
-                )}
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="h-[85dvh] flex flex-col p-0">
+        {pending ? (
+          /* Confirm view */
+          <div className="flex flex-col h-full p-4">
+            <SheetHeader className="mb-4">
+              <SheetTitle>Öğünü Değiştir</SheetTitle>
+            </SheetHeader>
+            <p className="text-sm text-muted-foreground mb-3">
+              Mevcut öğünü aşağıdaki öğünle değiştirmek istiyor musunuz?
+            </p>
+            <div className="rounded-lg border bg-muted/50 p-3 space-y-1 mb-6">
+              <p className="text-sm font-medium">{pending.content}</p>
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                {pending.calories !== null && <span>{pending.calories} kcal</span>}
+                {pending.proteinG && <span>P: {pending.proteinG}g</span>}
+                {pending.carbsG && <span>K: {pending.carbsG}g</span>}
+                {pending.fatG && <span>Y: {pending.fatG}g</span>}
               </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setPending(null)} disabled={updateMeal.isPending}>
-              İptal
-            </Button>
-            <Button onClick={handleConfirm} disabled={updateMeal.isPending}>
-              {updateMeal.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Değiştir"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+            </div>
+            <div className="mt-auto flex gap-2">
+              <Button
+                variant="ghost"
+                className="flex-1 gap-2"
+                onClick={() => setPending(null)}
+                disabled={updateMeal.isPending}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Geri Dön
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleConfirm}
+                disabled={updateMeal.isPending}
+              >
+                {updateMeal.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Değiştir"
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          /* Search / list view */
+          <>
+            <SheetHeader className="px-4 pt-4 pb-2 shrink-0">
+              <SheetTitle>Öğünü Değiştir</SheetTitle>
+            </SheetHeader>
+
+            <div className="px-4 pb-2 space-y-2 shrink-0">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Öğün ara..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <Select value={filterLabel} onValueChange={setFilterLabel}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tüm öğün tipleri</SelectItem>
+                  {MEAL_LABELS.map((label) => (
+                    <SelectItem key={label} value={label}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Tabs defaultValue="saved" className="flex-1 flex flex-col min-h-0 px-4">
+              <TabsList className="shrink-0 w-full grid grid-cols-3">
+                <TabsTrigger value="saved">Favoriler</TabsTrigger>
+                <TabsTrigger value="frequent">Sık</TabsTrigger>
+                <TabsTrigger value="history">Geçmiş</TabsTrigger>
+              </TabsList>
+              <TabsContent value="saved" className="flex-1 overflow-y-auto mt-2 pb-4">
+                <CandidateList list={savedFiltered} isLoading={isLoading} onSelect={setPending} />
+              </TabsContent>
+              <TabsContent value="frequent" className="flex-1 overflow-y-auto mt-2 pb-4">
+                <CandidateList list={frequentFiltered} isLoading={isLoading} onSelect={setPending} />
+              </TabsContent>
+              <TabsContent value="history" className="flex-1 overflow-y-auto mt-2 pb-4">
+                <CandidateList list={historyFiltered} isLoading={isLoading} onSelect={setPending} />
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }
