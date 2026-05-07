@@ -12,14 +12,17 @@ import { HelpCircle, Loader2, AlertCircle } from "lucide-react";
 import { useExerciseFormTips } from "@/hooks/use-exercise-form-tips";
 import { formatAiError } from "@/lib/ai-errors";
 import ReactMarkdown from "react-markdown";
+import { cn } from "@/lib/utils";
 
 interface ExerciseFormTipsProps {
   name: string;
   notes?: string | null;
   englishName?: string | null;
+  triggerClassName?: string;
+  triggerLabel?: string;
 }
 
-export function ExerciseFormTips({ name, notes, englishName }: ExerciseFormTipsProps) {
+export function ExerciseFormTips({ name, notes, englishName, triggerClassName, triggerLabel }: ExerciseFormTipsProps) {
   const [open, setOpen] = useState(false);
 
   const {
@@ -37,10 +40,16 @@ export function ExerciseFormTips({ name, notes, englishName }: ExerciseFormTipsP
       <Button
         variant="ghost"
         size="icon"
-        className="h-5 w-5 text-muted-foreground hover:text-primary"
+        className={cn(
+          "h-5 w-5 text-muted-foreground hover:text-primary",
+          triggerClassName,
+        )}
         onClick={() => setOpen(true)}
       >
-        <HelpCircle className="h-3.5 w-3.5" />
+        <HelpCircle className={triggerLabel ? "h-5 w-5" : "h-3.5 w-3.5"} />
+        {triggerLabel && (
+          <span className="text-[10px] leading-none font-medium">{triggerLabel}</span>
+        )}
       </Button>
       {open && (
         <Sheet open={open} onOpenChange={setOpen}>

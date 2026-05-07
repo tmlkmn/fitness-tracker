@@ -87,121 +87,135 @@ export function ExerciseCard({
   const error = generate.error ? formatAiError(generate.error) : null;
 
   const cardElement = (
-      <Card className={cn("transition-opacity", isCompleted && "opacity-60")}>
-        <CardContent className="p-3">
-          <div className="flex items-start gap-3">
-            {!readOnly && (
-              <Checkbox
-                checked={isCompleted}
-                onCheckedChange={(checked) => onToggle?.(id, !!checked)}
-                className="mt-0.5"
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1">
-                <p className={cn("font-medium text-sm", isCompleted && "line-through", readOnly && isCompleted && "opacity-60")}>
-                  {name}
-                </p>
-                <ExerciseDemoModal name={name} />
-                <a
-                  href={`https://www.google.com/search?q=${encodeURIComponent(englishName || name)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center h-5 w-5 rounded hover:bg-accent transition-colors"
-                  title="Google'da Ara"
-                >
-                  <Search className="h-3 w-3 text-muted-foreground" />
-                </a>
-                {!readOnly && <ExerciseFormTips name={name} notes={notes} englishName={englishName} />}
-              </div>
-              <div className={cn("flex flex-wrap gap-1.5 mt-1", readOnly && isCompleted && "opacity-60")}>
-                {sets && reps ? (
-                  <>
-                    {!readOnly && !isCompleted ? (
-                      <InlineEditBadge
-                        value={`${sets}x${reps}`}
-                        onSave={(v) => {
-                          const match = v.match(/^(\d+)x(.+)$/);
-                          if (match) {
-                            updateExercise.mutate({
-                              exerciseId: id,
-                              data: { section, sectionLabel, name, sets: parseInt(match[1]), reps: match[2], restSeconds, durationMinutes, notes },
-                            });
-                          }
-                        }}
-                      />
-                    ) : (
-                      <Badge variant="secondary" className="text-xs">
-                        {sets}x{reps}
-                      </Badge>
-                    )}
-                    {!readOnly && !isCompleted && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5"
-                        onClick={() =>
+    <Card className="transition-opacity">
+      <CardContent className="p-3 pb-2">
+        <div className={cn("flex items-start gap-3", isCompleted && "opacity-60")}>
+          {!readOnly && (
+            <Checkbox
+              checked={isCompleted}
+              onCheckedChange={(checked) => onToggle?.(id, !!checked)}
+              className="mt-0.5"
+            />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className={cn("font-medium text-sm", isCompleted && "line-through")}>
+              {name}
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {sets && reps ? (
+                <>
+                  {!readOnly && !isCompleted ? (
+                    <InlineEditBadge
+                      value={`${sets}x${reps}`}
+                      onSave={(v) => {
+                        const match = v.match(/^(\d+)x(.+)$/);
+                        if (match) {
                           updateExercise.mutate({
                             exerciseId: id,
-                            data: { section, sectionLabel, name, sets: (sets ?? 0) + 1, reps, restSeconds, durationMinutes, notes },
-                          })
+                            data: { section, sectionLabel, name, sets: parseInt(match[1]), reps: match[2], restSeconds, durationMinutes, notes },
+                          });
                         }
-                        title="+1 Set"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </>
-                ) : null}
-                {durationMinutes ? (
-                  <Badge variant="secondary" className="text-xs">
-                    {durationMinutes} dk
-                  </Badge>
-                ) : null}
-                {restSeconds ? (
-                  <Badge variant="outline" className="text-xs">
-                    <Timer className="h-3 w-3 mr-1" />
-                    {restSeconds}sn
-                  </Badge>
-                ) : null}
-              </div>
-              {notes ? (
-                <p className={cn("text-xs text-yellow-500 mt-1", readOnly && isCompleted && "line-through opacity-60")}>{notes}</p>
+                      }}
+                    />
+                  ) : (
+                    <Badge variant="secondary" className="text-xs">
+                      {sets}x{reps}
+                    </Badge>
+                  )}
+                  {!readOnly && !isCompleted && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={() =>
+                        updateExercise.mutate({
+                          exerciseId: id,
+                          data: { section, sectionLabel, name, sets: (sets ?? 0) + 1, reps, restSeconds, durationMinutes, notes },
+                        })
+                      }
+                      title="+1 Set"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  )}
+                </>
+              ) : null}
+              {durationMinutes ? (
+                <Badge variant="secondary" className="text-xs">
+                  {durationMinutes} dk
+                </Badge>
+              ) : null}
+              {restSeconds ? (
+                <Badge variant="outline" className="text-xs">
+                  <Timer className="h-3 w-3 mr-1" />
+                  {restSeconds}sn
+                </Badge>
               ) : null}
             </div>
-            {!readOnly && !isCompleted && (
-              <div className="flex items-center gap-0.5 shrink-0 mt-0.5">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => setEditOpen(true)}
-                >
-                  <Pencil className="h-3 w-3 text-muted-foreground" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  <Trash2 className="h-3 w-3 text-muted-foreground" />
-                </Button>
-                {dailyPlanId && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => handleOpenChange(true)}
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  </Button>
-                )}
-              </div>
-            )}
+            {notes ? (
+              <p className={cn("text-xs text-yellow-500 mt-1", isCompleted && "line-through")}>{notes}</p>
+            ) : null}
           </div>
-        </CardContent>
-      </Card>
+          {!readOnly && !isCompleted && (
+            <div className="flex items-center gap-0.5 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </CardContent>
+
+      <div className="border-t border-border/40 flex items-stretch px-1 pb-1">
+        <ExerciseDemoModal
+          name={name}
+          triggerClassName="flex-col h-11 w-auto px-3 gap-0.5"
+          triggerLabel="Demo"
+        />
+        <a
+          href={`https://www.google.com/search?q=${encodeURIComponent(englishName || name)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center justify-center h-11 px-3 gap-0.5 rounded-md hover:bg-accent transition-colors text-muted-foreground"
+          title="Google'da Ara"
+        >
+          <Search className="h-5 w-5" />
+          <span className="text-[10px] leading-none font-medium">Ara</span>
+        </a>
+        {!readOnly && (
+          <ExerciseFormTips
+            name={name}
+            notes={notes}
+            englishName={englishName}
+            triggerClassName="flex-col h-11 w-auto px-3 gap-0.5"
+            triggerLabel="Form"
+          />
+        )}
+        {!readOnly && !isCompleted && dailyPlanId && (
+          <Button
+            variant="ghost"
+            className="flex flex-col h-11 px-3 gap-0.5 text-primary ml-auto"
+            onClick={() => handleOpenChange(true)}
+          >
+            <Sparkles className="h-5 w-5" />
+            <span className="text-[10px] leading-none font-medium">Alternatif</span>
+          </Button>
+        )}
+      </div>
+    </Card>
   );
 
   return (

@@ -15,9 +15,12 @@ import { Eye, AlertCircle, ChevronDown, ChevronUp, X } from "lucide-react";
 import Image from "next/image";
 import { useExerciseDemo } from "@/hooks/use-exercise-demo";
 import { formatAiError } from "@/lib/ai-errors";
+import { cn } from "@/lib/utils";
 
 interface ExerciseDemoModalProps {
   name: string;
+  triggerClassName?: string;
+  triggerLabel?: string;
 }
 
 const muscleLabels: Record<string, string> = {
@@ -52,7 +55,7 @@ function getMuscleLabel(muscle: string): string {
   return muscleLabels[key] ?? muscleLabels[muscle] ?? muscle;
 }
 
-export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
+export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: ExerciseDemoModalProps) {
   const [open, setOpen] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showTips, setShowTips] = useState(false);
@@ -76,10 +79,16 @@ export function ExerciseDemoModal({ name }: ExerciseDemoModalProps) {
       <Button
         variant="ghost"
         size="icon"
-        className="h-5 w-5 text-muted-foreground hover:text-primary"
+        className={cn(
+          "h-5 w-5 text-muted-foreground hover:text-primary",
+          triggerClassName,
+        )}
         onClick={() => setOpen(true)}
       >
-        <Eye className="h-3.5 w-3.5" />
+        <Eye className={triggerLabel ? "h-5 w-5" : "h-3.5 w-3.5"} />
+        {triggerLabel && (
+          <span className="text-[10px] leading-none font-medium">{triggerLabel}</span>
+        )}
       </Button>
 
       {/* Fullscreen overlay */}
