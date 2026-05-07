@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useSession } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
 import { updateUserOnboarding } from "@/actions/user";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,8 +17,8 @@ import {
   ChevronLeft, CheckCircle2, Utensils, Activity, Shield
 } from "lucide-react";
 
-// ── constants ────────────────────────────────────────────────────────────────
-
+// Persisted-as-TR allergen list. The display label uses the same string;
+// switching locales does not retranslate stored allergens (DB compatibility).
 const ALLERGEN_TAGS = [
   "Süt ürünleri", "Yumurta", "Fıstık", "Yer fıstığı",
   "Balık", "Kabuklu deniz ürünü", "Buğday (Gluten)",
@@ -29,35 +30,14 @@ const TOTAL_STEPS = 7;
 type Gender = "male" | "female" | "prefer_not_to_say";
 type ActivityLevel = "sedentary" | "light" | "moderate" | "very_active";
 
-const GENDER_OPTIONS: { value: Gender; label: string }[] = [
-  { value: "female", label: "Kadın" },
-  { value: "male", label: "Erkek" },
-  { value: "prefer_not_to_say", label: "Belirtmek istemiyorum" },
-];
-
-const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string; hint: string }[] = [
-  { value: "sedentary", label: "Çoğunlukla otururum", hint: "Masa başı, az hareket" },
-  { value: "light", label: "Hafif aktif", hint: "Ofis + günlük yürüyüş, hafif ev işleri" },
-  { value: "moderate", label: "Ayakta çalışırım", hint: "Öğretmen, garson, perakende" },
-  { value: "very_active", label: "Çok aktif", hint: "İnşaat, kurye, fiziksel iş" },
-];
-
-const STEP_META = [
-  { title: "Hizmet Tipi", desc: "Sana nasıl yardımcı olalım?" },
-  { title: "Fiziksel Bilgiler", desc: "Sağlıklı hedefler için temel ölçümlerin" },
-  { title: "Sağlık Profili", desc: "Cinsiyet ve aktivite seviyeni belirt" },
-  { title: "Sağlık Notları", desc: "Alerjiler, sağlık durumun ve ilaçların" },
-  { title: "Hedefler", desc: "Programın sana göre şekillensin" },
-  { title: "Günlük Rutin", desc: "İsteğe bağlı — öğün saatlerini ayarlayalım" },
-  { title: "Hazırsın!", desc: "Profilini tamamlamak için son bir adım" },
-];
-
-// ── input style helper ────────────────────────────────────────────────────────
+const GENDER_VALUES: Gender[] = ["female", "male", "prefer_not_to_say"];
+const ACTIVITY_VALUES: ActivityLevel[] = ["sedentary", "light", "moderate", "very_active"];
+const FLAG_KEYS = ["eatingDisorder", "pregnant", "diabetes", "thyroid"] as const;
+const GOAL_VALUES = ["loss", "recomp", "maintain", "muscle_gain", "weight_gain"] as const;
+const LEVEL_VALUES = ["beginner", "returning", "intermediate", "advanced"] as const;
 
 const inputCls = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 const timeCls  = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
-
-// ── radio card ────────────────────────────────────────────────────────────────
 
 function RadioCard({ checked, onClick, label, hint, children }: {
   checked: boolean; onClick: () => void; label?: string; hint?: string; children?: React.ReactNode;
@@ -88,8 +68,6 @@ function RadioCard({ checked, onClick, label, hint, children }: {
   );
 }
 
-// ── FieldGroup ────────────────────────────────────────────────────────────────
-
 function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
@@ -99,9 +77,8 @@ function FieldGroup({ title, children }: { title: string; children: React.ReactN
   );
 }
 
-// ── main page ─────────────────────────────────────────────────────────────────
-
 export default function ProfilTamamlaPage() {
+  const t = useTranslations("profileComplete");
   const { data: session, isPending: sessionPending } = useSession();
   const { data: profile, isLoading: profileLoading } = useUserProfile();
   const router = useRouter();
@@ -112,8 +89,6 @@ export default function ProfilTamamlaPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
-
-  // ── form state ──────────────────────────────────────────────────────────────
 
   // Step 1
   const [serviceType, setServiceType] = useState("full");
@@ -144,7 +119,7 @@ export default function ProfilTamamlaPage() {
   const [fitnessLevel, setFitnessLevel] = useState("");
   const [sportHistory, setSportHistory] = useState("");
 
-  // Step 6 — daily routine (optional)
+  // Step 6
   const [wakeTime, setWakeTime] = useState("");
   const [breakfastTime, setBreakfastTime] = useState("");
   const [workStartTime, setWorkStartTime] = useState("");
@@ -161,13 +136,9 @@ export default function ProfilTamamlaPage() {
   const [weWorkoutTime, setWeWorkoutTime] = useState("");
   const [weSleepTime, setWeSleepTime] = useState("");
 
-  // ── auth guard ──────────────────────────────────────────────────────────────
-
   useEffect(() => {
     if (!sessionPending && !user) router.push("/giris");
   }, [sessionPending, user, router]);
-
-  // ── prefill from existing profile ──────────────────────────────────────────
 
   useEffect(() => {
     if (profile && !prefilled) {
@@ -236,27 +207,25 @@ export default function ProfilTamamlaPage() {
     }
   }, [profile, prefilled]);
 
-  // ── step validation ─────────────────────────────────────────────────────────
-
   const validateStep = (): string => {
     if (step === 2) {
       const h = parseInt(height, 10);
-      if (!h || h < 100 || h > 250) return "Boy 100–250 cm arasında olmalıdır.";
+      if (!h || h < 100 || h > 250) return t("errors.heightRange");
       const w = parseFloat(weight);
-      if (!w || w < 30 || w > 300) return "Kilo 30–300 kg arasında olmalıdır.";
+      if (!w || w < 30 || w > 300) return t("errors.weightRange");
       const tw = parseFloat(targetWeight);
-      if (!tw || tw < 30 || tw > 300) return "Hedef kilo 30–300 kg arasında olmalıdır.";
-      if (!age || !parseInt(age, 10)) return "Yaş alanı zorunludur.";
+      if (!tw || tw < 30 || tw > 300) return t("errors.targetWeightRange");
+      if (!age || !parseInt(age, 10)) return t("errors.ageRequired");
     }
     if (step === 4) {
       if (!healthNotes.trim()) return "Sağlık notları alanı zorunludur. Sağlık sorununuz yoksa 'Yok' yazın.";
-      if (!currentMedications.trim()) return "İlaçlar / Supplementler alanı zorunludur. Yoksa 'Yok' yazın.";
+      if (!currentMedications.trim()) return t("errors.medicationsRequired");
     }
     if (step === 5) {
-      if (!fitnessGoal) return "Lütfen bir hedef seç.";
+      if (!fitnessGoal) return t("errors.goalRequired");
       if (serviceType === "full") {
-        if (!fitnessLevel) return "Deneyim seviyesi seçimi zorunludur.";
-        if (!sportHistory.trim()) return "Spor geçmişi alanı zorunludur.";
+        if (!fitnessLevel) return t("errors.fitnessLevelRequired");
+        if (!sportHistory.trim()) return t("errors.sportHistoryRequired");
       }
     }
     return "";
@@ -270,8 +239,6 @@ export default function ProfilTamamlaPage() {
   };
 
   const goBack = () => { setError(""); setStep((s) => Math.max(s - 1, 1)); };
-
-  // ── final submit ────────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
     setSaving(true);
@@ -332,13 +299,11 @@ export default function ProfilTamamlaPage() {
       router.push("/?setup=done");
       router.refresh();
     } catch {
-      setError("Bir hata oluştu. Tekrar deneyin.");
+      setError(t("errors.generic"));
     } finally {
       setSaving(false);
     }
   };
-
-  // ── loading ─────────────────────────────────────────────────────────────────
 
   if (sessionPending || profileLoading) {
     return (
@@ -357,11 +322,9 @@ export default function ProfilTamamlaPage() {
 
   if (!user) return null;
 
-  const meta = STEP_META[step - 1];
+  const stepKey = String(step) as "1" | "2" | "3" | "4" | "5" | "6" | "7";
   const progress = ((step - 1) / (TOTAL_STEPS - 1)) * 100;
   const isOptionalStep = step === 6;
-
-  // ── render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-dvh flex flex-col bg-background">
@@ -373,7 +336,7 @@ export default function ProfilTamamlaPage() {
             <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center">
               <Dumbbell className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-sm font-semibold">Profil Kurulumu</span>
+            <span className="text-sm font-semibold">{t("headerTitle")}</span>
           </div>
           <span className="text-xs text-muted-foreground tabular-nums">{step}/{TOTAL_STEPS}</span>
         </div>
@@ -383,13 +346,12 @@ export default function ProfilTamamlaPage() {
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 max-w-lg mx-auto w-full">
 
-        {/* Step title */}
         <div className="space-y-1">
-          <h1 className="text-xl font-bold">{meta.title}</h1>
-          <p className="text-sm text-muted-foreground">{meta.desc}</p>
+          <h1 className="text-xl font-bold">{t(`steps.${stepKey}.title`)}</h1>
+          <p className="text-sm text-muted-foreground">{t(`steps.${stepKey}.desc`)}</p>
         </div>
 
-        {/* ── Step 1: Service Type ─────────────────────────────────────── */}
+        {/* Step 1 */}
         {step === 1 && (
           <div className="space-y-3">
             <button
@@ -406,8 +368,8 @@ export default function ProfilTamamlaPage() {
                   <Dumbbell className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">Tam Program</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Antrenman + Beslenme planı</p>
+                  <p className="font-semibold text-sm">{t("service.fullTitle")}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t("service.fullDesc")}</p>
                 </div>
                 {serviceType === "full" && <CheckCircle2 className="h-5 w-5 text-primary ml-auto" />}
               </div>
@@ -426,8 +388,8 @@ export default function ProfilTamamlaPage() {
                   <Utensils className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">Sadece Beslenme</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Kişiye özel beslenme planı</p>
+                  <p className="font-semibold text-sm">{t("service.nutritionTitle")}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t("service.nutritionDesc")}</p>
                 </div>
                 {serviceType === "nutrition" && <CheckCircle2 className="h-5 w-5 text-primary ml-auto" />}
               </div>
@@ -435,13 +397,13 @@ export default function ProfilTamamlaPage() {
           </div>
         )}
 
-        {/* ── Step 2: Physical Stats ───────────────────────────────────── */}
+        {/* Step 2 */}
         {step === 2 && (
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="height" className="text-sm font-medium flex items-center gap-2">
                 <Ruler className="h-4 w-4 text-muted-foreground" />
-                Boy (cm) <span className="text-destructive text-xs">*</span>
+                {t("physical.height")} <span className="text-destructive text-xs">*</span>
               </label>
               <input id="height" type="number" value={height} onChange={(e) => setHeight(e.target.value)}
                 min={100} max={250} className={inputCls} placeholder="175" />
@@ -449,7 +411,7 @@ export default function ProfilTamamlaPage() {
             <div className="space-y-1.5">
               <label htmlFor="age" className="text-sm font-medium flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                Yaş <span className="text-destructive text-xs">*</span>
+                {t("physical.age")} <span className="text-destructive text-xs">*</span>
               </label>
               <input id="age" type="number" value={age} onChange={(e) => setAge(e.target.value)}
                 min={10} max={100} className={inputCls} placeholder="28" />
@@ -457,7 +419,7 @@ export default function ProfilTamamlaPage() {
             <div className="space-y-1.5">
               <label htmlFor="weight" className="text-sm font-medium flex items-center gap-2">
                 <Scale className="h-4 w-4 text-muted-foreground" />
-                Mevcut Kilo (kg) <span className="text-destructive text-xs">*</span>
+                {t("physical.currentWeight")} <span className="text-destructive text-xs">*</span>
               </label>
               <input id="weight" type="number" step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)}
                 min={30} max={300} className={inputCls} placeholder="80" />
@@ -465,7 +427,7 @@ export default function ProfilTamamlaPage() {
             <div className="space-y-1.5">
               <label htmlFor="targetWeight" className="text-sm font-medium flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" />
-                Hedef Kilo (kg) <span className="text-destructive text-xs">*</span>
+                {t("physical.targetWeight")} <span className="text-destructive text-xs">*</span>
               </label>
               <input id="targetWeight" type="number" step="0.1" value={targetWeight} onChange={(e) => setTargetWeight(e.target.value)}
                 min={30} max={300} className={inputCls} placeholder="75" />
@@ -473,45 +435,50 @@ export default function ProfilTamamlaPage() {
           </div>
         )}
 
-        {/* ── Step 3: Health Profile ───────────────────────────────────── */}
+        {/* Step 3 */}
         {step === 3 && (
           <div className="space-y-5">
-            <FieldGroup title="Biyolojik cinsiyet">
-              {GENDER_OPTIONS.map((opt) => (
-                <RadioCard key={opt.value} checked={gender === opt.value} onClick={() => setGender(opt.value)} label={opt.label} />
+            <FieldGroup title={t("health.biologicalGender")}>
+              {GENDER_VALUES.map((value) => (
+                <RadioCard key={value} checked={gender === value} onClick={() => setGender(value)} label={t(`gender.${value}`)} />
               ))}
             </FieldGroup>
 
-            <FieldGroup title="Günlük aktivite (antrenman dışı)">
-              {ACTIVITY_OPTIONS.map((opt) => (
-                <RadioCard key={opt.value} checked={activityLevel === opt.value} onClick={() => setActivityLevel(opt.value)} label={opt.label} hint={opt.hint} />
+            <FieldGroup title={t("health.dailyActivity")}>
+              {ACTIVITY_VALUES.map((value) => (
+                <RadioCard
+                  key={value}
+                  checked={activityLevel === value}
+                  onClick={() => setActivityLevel(value)}
+                  label={t(`activity.${value}.label`)}
+                  hint={t(`activity.${value}.hint`)}
+                />
               ))}
             </FieldGroup>
 
-            <FieldGroup title="Sağlık durumları">
+            <FieldGroup title={t("health.healthConditions")}>
               {[
-                { key: "hasEatingDisorderHistory" as const, label: "Yeme bozukluğu öyküm var", state: hasEatingDisorderHistory, set: setHasEatingDisorderHistory },
-                { key: "isPregnantOrBreastfeeding" as const, label: "Hamileyim veya emziriyorum", state: isPregnantOrBreastfeeding, set: setIsPregnantOrBreastfeeding },
-                { key: "hasDiabetes" as const, label: "Diyabetim var (Tip 1 veya insülin kullanılan Tip 2)", state: hasDiabetes, set: setHasDiabetes },
-                { key: "hasThyroidCondition" as const, label: "Tedavi altında olmayan tiroid problemim var", state: hasThyroidCondition, set: setHasThyroidCondition },
+                { key: "eatingDisorder" as const, state: hasEatingDisorderHistory, set: setHasEatingDisorderHistory },
+                { key: "pregnant" as const, state: isPregnantOrBreastfeeding, set: setIsPregnantOrBreastfeeding },
+                { key: "diabetes" as const, state: hasDiabetes, set: setHasDiabetes },
+                { key: "thyroid" as const, state: hasThyroidCondition, set: setHasThyroidCondition },
               ].map((flag) => (
                 <label key={flag.key} className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/40 transition-colors">
                   <Checkbox checked={flag.state} onCheckedChange={() => flag.set(!flag.state)} className="mt-0.5" />
-                  <span className="text-xs leading-relaxed flex-1">{flag.label}</span>
+                  <span className="text-xs leading-relaxed flex-1">{t(`health.flags.${flag.key}`)}</span>
                 </label>
               ))}
             </FieldGroup>
           </div>
         )}
 
-        {/* ── Step 4: Health Notes & Allergens ────────────────────────── */}
+        {/* Step 4 */}
         {step === 4 && (
           <div className="space-y-4">
-            {/* Allergens */}
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">
                 <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-                Gıda Alerjilerin
+                {t("allergens.label")}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {(["none", "has"] as const).map((mode) => (
@@ -520,7 +487,7 @@ export default function ProfilTamamlaPage() {
                       allergenMode === mode ? "ring-2 ring-primary border-primary bg-primary/5" : "border-input hover:bg-accent"
                     }`}
                   >
-                    {mode === "none" ? "Alerjim yok" : "Var, belirtmek istiyorum"}
+                    {mode === "none" ? t("allergens.modeNone") : t("allergens.modeHas")}
                   </button>
                 ))}
               </div>
@@ -542,63 +509,55 @@ export default function ProfilTamamlaPage() {
                     })}
                   </div>
                   <input type="text" value={otherAllergens} onChange={(e) => setOtherAllergens(e.target.value)}
-                    placeholder="Diğer alerjiler (virgülle ayır)..."
+                    placeholder={t("allergens.otherPlaceholder")}
                     className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
               )}
             </div>
 
-            {/* Health Notes */}
             <div className="space-y-1.5">
               <label htmlFor="healthNotes" className="text-sm font-medium flex items-center gap-2">
                 <Heart className="h-4 w-4 text-muted-foreground" />
-                Sağlık Notları <span className="text-destructive text-xs">*</span>
+                {t("healthNotes.label")} <span className="text-destructive text-xs">*</span>
               </label>
               <textarea id="healthNotes" value={healthNotes} onChange={(e) => setHealthNotes(e.target.value)}
                 rows={3} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-                placeholder="Yaralanmalar, kronik hastalıklar, özel durumlar... Yoksa 'Yok' yazın." />
+                placeholder={t("healthNotes.placeholder")} />
             </div>
 
-            {/* Medications */}
             <div className="space-y-1.5">
               <label htmlFor="medications" className="text-sm font-medium flex items-center gap-2">
                 <Pill className="h-4 w-4 text-muted-foreground" />
-                İlaçlar / Supplementler <span className="text-destructive text-xs">*</span>
+                {t("medications.label")} <span className="text-destructive text-xs">*</span>
               </label>
               <textarea id="medications" value={currentMedications} onChange={(e) => setCurrentMedications(e.target.value)}
                 rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-                placeholder="Kullandığın ilaçlar veya supplementler. Yoksa 'Yok' yazın." />
+                placeholder={t("medications.placeholderRequired")} />
             </div>
           </div>
         )}
 
-        {/* ── Step 5: Goals ────────────────────────────────────────────── */}
+        {/* Step 5 */}
         {step === 5 && (
           <div className="space-y-5">
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Hedefin <span className="text-destructive normal-case font-normal tracking-normal">*</span>
+                {t("goals.yourGoal")} <span className="text-destructive normal-case font-normal tracking-normal">*</span>
               </p>
               <div className="space-y-2">
-                {[
-                  { value: "loss",        label: "Kilo Verme",             desc: "Yağ yakma + kalori açığı" },
-                  { value: "recomp",      label: "Yağ Yakma + Kas Koruma", desc: "Vücut rekompozisyonu, idame kalori" },
-                  { value: "maintain",    label: "Form Koruma",             desc: "Mevcut formu koruma" },
-                  { value: "muscle_gain", label: "Kas Kazanımı",           desc: "Hipertrofi, hafif kalori fazlası" },
-                  { value: "weight_gain", label: "Kilo Alma",               desc: "Genel kilo artışı, hızlı surplus" },
-                ].map((opt) => (
-                  <button key={opt.value} type="button" onClick={() => setFitnessGoal(fitnessGoal === opt.value ? "" : opt.value)}
+                {GOAL_VALUES.map((value) => (
+                  <button key={value} type="button" onClick={() => setFitnessGoal(fitnessGoal === value ? "" : value)}
                     className={`w-full p-3 rounded-lg border text-left transition-all ${
-                      fitnessGoal === opt.value ? "ring-2 ring-primary border-primary bg-primary/5" : "border-border hover:bg-accent/40"
+                      fitnessGoal === value ? "ring-2 ring-primary border-primary bg-primary/5" : "border-border hover:bg-accent/40"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium">{opt.label}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{opt.desc}</p>
+                        <p className="text-sm font-medium">{t(`goals.options.${value}.label`)}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{t(`goals.options.${value}.desc`)}</p>
                       </div>
-                      {fitnessGoal === opt.value && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+                      {fitnessGoal === value && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
                     </div>
                   </button>
                 ))}
@@ -609,21 +568,16 @@ export default function ProfilTamamlaPage() {
               <>
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Deneyim Seviyesi <span className="text-destructive normal-case font-normal tracking-normal">*</span>
+                    {t("goals.experienceLevel")} <span className="text-destructive normal-case font-normal tracking-normal">*</span>
                   </p>
                   <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { value: "beginner",     label: "Yeni Başlayan" },
-                      { value: "returning",    label: "Ara Verip Dönen" },
-                      { value: "intermediate", label: "Orta Düzey" },
-                      { value: "advanced",     label: "İleri Düzey" },
-                    ].map((opt) => (
-                      <button key={opt.value} type="button" onClick={() => setFitnessLevel(fitnessLevel === opt.value ? "" : opt.value)}
+                    {LEVEL_VALUES.map((value) => (
+                      <button key={value} type="button" onClick={() => setFitnessLevel(fitnessLevel === value ? "" : value)}
                         className={`p-2.5 rounded-lg border text-xs font-medium text-center transition-all ${
-                          fitnessLevel === opt.value ? "ring-2 ring-primary border-primary bg-primary/5" : "border-border hover:bg-accent/40"
+                          fitnessLevel === value ? "ring-2 ring-primary border-primary bg-primary/5" : "border-border hover:bg-accent/40"
                         }`}
                       >
-                        {opt.label}
+                        {t(`goals.levels.${value}`)}
                       </button>
                     ))}
                   </div>
@@ -632,43 +586,43 @@ export default function ProfilTamamlaPage() {
                 <div className="space-y-1.5">
                   <label htmlFor="sportHistory" className="text-sm font-medium flex items-center gap-2">
                     <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                    Spor Geçmişi <span className="text-destructive text-xs">*</span>
+                    {t("goals.sportHistoryLabel")} <span className="text-destructive text-xs">*</span>
                   </label>
                   <textarea id="sportHistory" value={sportHistory} onChange={(e) => setSportHistory(e.target.value)}
                     rows={2} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-                    placeholder="Daha önce hangi sporları yaptın, ne kadar süre?" />
+                    placeholder={t("goals.sportHistoryPlaceholder")} />
                 </div>
               </>
             )}
           </div>
         )}
 
-        {/* ── Step 6: Daily Routine (optional) ────────────────────────── */}
+        {/* Step 6 */}
         {step === 6 && (
           <div className="space-y-4">
             <div className="rounded-lg bg-muted/40 border border-border p-3">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Bu bilgiler AI'ın öğün saatlerini ve antrenman zamanlamasını optimize etmesine yardımcı olur. Dilersen bu adımı atlayabilirsin.
+                {t("routine.intro")}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               {[
-                { id: "wakeTime",     label: "Kalkış saatin",             icon: Sunrise,        val: wakeTime,      set: setWakeTime },
-                { id: "breakfastTime",label: "Kahvaltı saatin",           icon: UtensilsCrossed,val: breakfastTime, set: setBreakfastTime },
-                { id: "workStartTime",label: "İşe gidiş",                 icon: Briefcase,      val: workStartTime, set: setWorkStartTime },
-                { id: "lunchTime",    label: "Öğle yemeği",               icon: UtensilsCrossed,val: lunchTime,     set: setLunchTime },
-                { id: "workEndTime",  label: "İşten çıkış",               icon: Home,           val: workEndTime,   set: setWorkEndTime },
-                { id: "dinnerTime",   label: "Akşam yemeği",              icon: UtensilsCrossed,val: dinnerTime,    set: setDinnerTime },
-                ...(serviceType === "full" ? [{ id: "workoutTime", label: "Antrenman saatin", icon: Dumbbell, val: workoutTime, set: setWorkoutTime }] : []),
-                { id: "sleepTime",    label: "Uyku saatin",               icon: Moon,           val: sleepTime,     set: setSleepTime },
+                { id: "wakeTime",     labelKey: "wakeTime",      icon: Sunrise,        val: wakeTime,      set: setWakeTime },
+                { id: "breakfastTime",labelKey: "breakfastTime", icon: UtensilsCrossed,val: breakfastTime, set: setBreakfastTime },
+                { id: "workStartTime",labelKey: "workStartTime", icon: Briefcase,      val: workStartTime, set: setWorkStartTime },
+                { id: "lunchTime",    labelKey: "lunchTime",     icon: UtensilsCrossed,val: lunchTime,     set: setLunchTime },
+                { id: "workEndTime",  labelKey: "workEndTime",   icon: Home,           val: workEndTime,   set: setWorkEndTime },
+                { id: "dinnerTime",   labelKey: "dinnerTime",    icon: UtensilsCrossed,val: dinnerTime,    set: setDinnerTime },
+                ...(serviceType === "full" ? [{ id: "workoutTime", labelKey: "workoutTime", icon: Dumbbell, val: workoutTime, set: setWorkoutTime }] : []),
+                { id: "sleepTime",    labelKey: "sleepTime",     icon: Moon,           val: sleepTime,     set: setSleepTime },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
                   <div key={item.id} className="space-y-1.5">
                     <label htmlFor={item.id} className="text-xs font-medium flex items-center gap-1.5">
                       <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                      {item.label}
+                      {t(`routine.${item.labelKey}` as never)}
                     </label>
                     <input id={item.id} type="time" value={item.val} onChange={(e) => item.set(e.target.value)} className={timeCls} />
                   </div>
@@ -681,27 +635,27 @@ export default function ProfilTamamlaPage() {
                 hasWeekendRoutine ? "ring-2 ring-primary border-primary bg-primary/5" : "border-input hover:bg-accent"
               }`}
             >
-              {hasWeekendRoutine ? "Hafta sonu programı eklendi ✓" : "Hafta sonu farklı mı? Ekle →"}
+              {hasWeekendRoutine ? t("routine.weekendToggleAdded") : t("routine.weekendToggleAdd")}
             </button>
 
             {hasWeekendRoutine && (
               <div className="space-y-3">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Hafta Sonu</p>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t("routine.weekendHeader")}</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { id: "weWakeTime",     label: "Kalkış",       icon: Sunrise,        val: weWakeTime,      set: setWeWakeTime },
-                    { id: "weBreakfastTime",label: "Kahvaltı",     icon: UtensilsCrossed,val: weBreakfastTime, set: setWeBreakfastTime },
-                    { id: "weLunchTime",    label: "Öğle yemeği",  icon: UtensilsCrossed,val: weLunchTime,     set: setWeLunchTime },
-                    { id: "weDinnerTime",   label: "Akşam yemeği", icon: UtensilsCrossed,val: weDinnerTime,    set: setWeDinnerTime },
-                    ...(serviceType === "full" ? [{ id: "weWorkoutTime", label: "Antrenman", icon: Dumbbell, val: weWorkoutTime, set: setWeWorkoutTime }] : []),
-                    { id: "weSleepTime",    label: "Uyku",         icon: Moon,           val: weSleepTime,     set: setWeSleepTime },
+                    { id: "weWakeTime",     labelKey: "wake",      icon: Sunrise,        val: weWakeTime,      set: setWeWakeTime },
+                    { id: "weBreakfastTime",labelKey: "breakfast", icon: UtensilsCrossed,val: weBreakfastTime, set: setWeBreakfastTime },
+                    { id: "weLunchTime",    labelKey: "lunch",     icon: UtensilsCrossed,val: weLunchTime,     set: setWeLunchTime },
+                    { id: "weDinnerTime",   labelKey: "dinner",    icon: UtensilsCrossed,val: weDinnerTime,    set: setWeDinnerTime },
+                    ...(serviceType === "full" ? [{ id: "weWorkoutTime", labelKey: "workout", icon: Dumbbell, val: weWorkoutTime, set: setWeWorkoutTime }] : []),
+                    { id: "weSleepTime",    labelKey: "sleep",     icon: Moon,           val: weSleepTime,     set: setWeSleepTime },
                   ].map((item) => {
                     const Icon = item.icon;
                     return (
                       <div key={item.id} className="space-y-1.5">
                         <label htmlFor={item.id} className="text-xs font-medium flex items-center gap-1.5">
                           <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                          {item.label}
+                          {t(`routine.we.${item.labelKey}` as never)}
                         </label>
                         <input id={item.id} type="time" value={item.val} onChange={(e) => item.set(e.target.value)} className={timeCls} />
                       </div>
@@ -713,23 +667,20 @@ export default function ProfilTamamlaPage() {
           </div>
         )}
 
-        {/* ── Step 7: Summary ─────────────────────────────────────────── */}
+        {/* Step 7 */}
         {step === 7 && (
           <div className="space-y-4">
             <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 space-y-3">
-              <h2 className="text-sm font-semibold text-primary">Profil Özeti</h2>
+              <h2 className="text-sm font-semibold text-primary">{t("summary.title")}</h2>
               <div className="space-y-2 text-sm">
                 {[
-                  { label: "Hizmet", value: serviceType === "full" ? "Tam Program (Antrenman + Beslenme)" : "Sadece Beslenme" },
-                  { label: "Boy / Kilo", value: `${height} cm / ${weight} kg` },
-                  { label: "Hedef Kilo", value: `${targetWeight} kg` },
-                  { label: "Yaş", value: `${age}` },
-                  { label: "Hedef", value: (({
-                    loss: "Kilo Verme", recomp: "Yağ Yakma + Kas Koruma", maintain: "Form Koruma",
-                    muscle_gain: "Kas Kazanımı", weight_gain: "Kilo Alma",
-                  } as Record<string, string>)[fitnessGoal] ?? fitnessGoal ?? "—") },
-                  { label: "Cinsiyet", value: { male: "Erkek", female: "Kadın", prefer_not_to_say: "Belirtilmedi" }[gender] },
-                  { label: "Aktivite", value: { sedentary: "Masa başı", light: "Hafif aktif", moderate: "Ayakta çalışır", very_active: "Çok aktif" }[activityLevel] },
+                  { label: t("summary.service"), value: serviceType === "full" ? t("summary.serviceFull") : t("summary.serviceNutrition") },
+                  { label: t("summary.heightWeight"), value: `${height} cm / ${weight} kg` },
+                  { label: t("summary.targetWeight"), value: `${targetWeight} kg` },
+                  { label: t("summary.age"), value: `${age}` },
+                  { label: t("summary.goal"), value: fitnessGoal ? t(`goals.options.${fitnessGoal as typeof GOAL_VALUES[number]}.label`) : "—" },
+                  { label: t("summary.gender"), value: t(gender === "prefer_not_to_say" ? "gender.unspecified" : `gender.${gender}`) },
+                  { label: t("summary.activity"), value: t(`activity.${activityLevel}.short`) },
                 ].map((row) => (
                   <div key={row.label} className="flex justify-between items-baseline gap-2">
                     <span className="text-xs text-muted-foreground shrink-0">{row.label}</span>
@@ -741,7 +692,7 @@ export default function ProfilTamamlaPage() {
 
             <div className="rounded-lg bg-muted/40 p-3">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Profilini kaydettikten sonra takvim sayfasından haftalık programını oluşturabilirsin. Tüm bilgiler daha sonra Ayarlar'dan değiştirilebilir.
+                {t("summary.footer")}
               </p>
             </div>
 
@@ -759,14 +710,13 @@ export default function ProfilTamamlaPage() {
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4" />
-                  Hadi Başlayalım!
+                  {t("letsBegin")}
                 </>
               )}
             </Button>
           </div>
         )}
 
-        {/* Error */}
         {step !== 7 && error && (
           <p className="text-sm text-destructive text-center">{error}</p>
         )}
@@ -779,7 +729,7 @@ export default function ProfilTamamlaPage() {
             {step > 1 ? (
               <Button variant="outline" size="sm" onClick={goBack} className="gap-1.5">
                 <ChevronLeft className="h-4 w-4" />
-                Geri
+                {t("back")}
               </Button>
             ) : (
               <div />
@@ -787,11 +737,11 @@ export default function ProfilTamamlaPage() {
             <div className="flex-1" />
             {isOptionalStep && (
               <Button variant="ghost" size="sm" onClick={() => { setError(""); setStep((s) => s + 1); }} className="text-muted-foreground">
-                Atla
+                {t("skip")}
               </Button>
             )}
             <Button size="sm" onClick={goNext} className="gap-1.5">
-              İleri
+              {t("next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ export function ReminderSettingsCard() {
   const deleteMutation = useDeleteReminder();
   const toggleMutation = useToggleReminder();
   const templateMutation = useCreateFromTemplate();
+  const [pendingToggles, setPendingToggles] = useState<Record<string, boolean>>({});
 
   // Auto-detect timezone on mount
   useEffect(() => {
@@ -128,11 +129,20 @@ export function ReminderSettingsCard() {
   };
 
   const handleTemplateToggle = async (key: string, enabled: boolean) => {
+    setPendingToggles((prev) => ({ ...prev, [key]: enabled }));
     const existing = templateReminders.find((r) => r.templateKey === key);
-    if (enabled) {
-      await templateMutation.mutateAsync(key);
-    } else if (existing) {
-      await deleteMutation.mutateAsync(existing.id);
+    try {
+      if (enabled) {
+        await templateMutation.mutateAsync(key);
+      } else if (existing) {
+        await deleteMutation.mutateAsync(existing.id);
+      }
+    } finally {
+      setPendingToggles((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
     }
   };
 
@@ -229,7 +239,8 @@ export function ReminderSettingsCard() {
         <div className="space-y-3">
           <Label className="text-sm font-medium">Hazır Şablonlar</Label>
           {REMINDER_TEMPLATES.map((t) => {
-            const isActive = activeTemplateKeys.includes(t.key);
+            const isPending = t.key in pendingToggles;
+            const isActive = isPending ? pendingToggles[t.key] : activeTemplateKeys.includes(t.key);
             const existingReminder = templateReminders.find(
               (r) => r.templateKey === t.key
             );
@@ -245,6 +256,7 @@ export function ReminderSettingsCard() {
                   <Switch
                     checked={isActive}
                     onCheckedChange={(v) => handleTemplateToggle(t.key, v)}
+                    disabled={isPending}
                   />
                 </div>
                 {isActive && existingReminder && (
