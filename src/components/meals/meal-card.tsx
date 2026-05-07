@@ -10,8 +10,10 @@ import { stripEmoji, getMealIcon, DynamicIcon } from "@/lib/icon-map";
 import { AiSuggestionModal } from "@/components/ai/ai-suggestion-modal";
 import { MealFormDialog } from "./meal-form-dialog";
 import { MealDeleteDialog } from "./meal-delete-dialog";
-import { Pencil, Trash2, Sparkles } from "lucide-react";
+import { MealSwapModal } from "./meal-swap-modal";
+import { Pencil, Trash2, Sparkles, Bookmark, BookmarkCheck, ArrowLeftRight } from "lucide-react";
 import { SwipeableCard } from "@/components/ui/swipeable-card";
+import { useSaveMealSuggestion } from "@/hooks/use-saved-meals";
 
 interface MealCardProps {
   id: number;
@@ -49,6 +51,16 @@ export function MealCard({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [swapOpen, setSwapOpen] = useState(false);
+  const [favSaved, setFavSaved] = useState(false);
+  const saveMutation = useSaveMealSuggestion();
+
+  const handleFavorite = () => {
+    saveMutation.mutate(
+      { mealLabel, content, calories: calories ?? null, proteinG: proteinG ?? null, carbsG: carbsG ?? null, fatG: fatG ?? null },
+      { onSuccess: () => setFavSaved(true) },
+    );
+  };
 
   const mealIcon = getMealIcon(mealLabel);
 
@@ -64,11 +76,11 @@ export function MealCard({
   const cardElement = (
       <Card
         className={cn(
-          "transition-all duration-200",
+          "transition-all duration-200 shadow border-border/80",
           isCompleted && "opacity-60"
         )}
       >
-        <CardContent className="p-4">
+        <CardContent className="p-4 pb-2">
           <div className="flex items-start gap-3">
             {!readOnly && (
               <Checkbox
@@ -149,6 +161,34 @@ export function MealCard({
             </div>
           </div>
         </CardContent>
+
+        {!readOnly && !isCompleted && (
+          <div className="border-t border-border/40 flex items-stretch px-1 pb-1">
+            <Button
+              variant="ghost"
+              className="flex flex-col h-11 px-3 gap-0.5 text-muted-foreground"
+              onClick={handleFavorite}
+              disabled={favSaved || saveMutation.isPending}
+            >
+              {favSaved ? (
+                <BookmarkCheck className="h-5 w-5 text-primary" />
+              ) : (
+                <Bookmark className="h-5 w-5" />
+              )}
+              <span className="text-[10px] leading-none font-medium">
+                {favSaved ? "Kaydedildi" : "Favori"}
+              </span>
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex flex-col h-11 px-3 gap-0.5 text-muted-foreground"
+              onClick={() => setSwapOpen(true)}
+            >
+              <ArrowLeftRight className="h-5 w-5" />
+              <span className="text-[10px] leading-none font-medium">Değiştir</span>
+            </Button>
+          </div>
+        )}
       </Card>
   );
 
@@ -205,6 +245,17 @@ export function MealCard({
           proteinG={proteinG}
           carbsG={carbsG}
           fatG={fatG}
+        />
+      )}
+
+      {swapOpen && dailyPlanId && (
+        <MealSwapModal
+          open={swapOpen}
+          onOpenChange={setSwapOpen}
+          mealId={id}
+          mealTime={mealTime}
+          mealLabel={mealLabel}
+          dailyPlanId={dailyPlanId}
         />
       )}
     </>

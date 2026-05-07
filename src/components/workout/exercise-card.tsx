@@ -87,7 +87,7 @@ export function ExerciseCard({
   const error = generate.error ? formatAiError(generate.error) : null;
 
   const cardElement = (
-    <Card className="transition-opacity">
+    <Card className="transition-opacity shadow border-border/80">
       <CardContent className="p-3 pb-2">
         <div className={cn("flex items-start gap-3", isCompleted && "opacity-60")}>
           {!readOnly && (
