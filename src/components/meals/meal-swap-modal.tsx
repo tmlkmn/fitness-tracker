@@ -225,12 +225,12 @@ export function MealSwapModal({
                   className="pl-8"
                 />
               </div>
-              <Select value={filterLabel} onValueChange={setFilterLabel}>
+              <Select value={filterLabel || "all"} onValueChange={(v) => setFilterLabel(v === "all" ? "" : v)}>
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tüm öğün tipleri</SelectItem>
+                  <SelectItem value="all">Tüm öğün tipleri</SelectItem>
                   {MEAL_LABELS.map((label) => (
                     <SelectItem key={label} value={label}>
                       {label}

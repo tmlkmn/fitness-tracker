@@ -11,7 +11,7 @@ import { AiSuggestionModal } from "@/components/ai/ai-suggestion-modal";
 import { MealFormDialog } from "./meal-form-dialog";
 import { MealDeleteDialog } from "./meal-delete-dialog";
 import { MealSwapModal } from "./meal-swap-modal";
-import { Pencil, Trash2, Sparkles, Bookmark, BookmarkCheck, ArrowLeftRight } from "lucide-react";
+import { Pencil, Trash2, Sparkles, Star, ArrowLeftRight } from "lucide-react";
 import { SwipeableCard } from "@/components/ui/swipeable-card";
 import { useSaveMealSuggestion } from "@/hooks/use-saved-meals";
 
@@ -56,9 +56,10 @@ export function MealCard({
   const saveMutation = useSaveMealSuggestion();
 
   const handleFavorite = () => {
+    setFavSaved(true);
     saveMutation.mutate(
       { mealLabel, content, calories: calories ?? null, proteinG: proteinG ?? null, carbsG: carbsG ?? null, fatG: fatG ?? null },
-      { onSuccess: () => setFavSaved(true) },
+      { onError: () => setFavSaved(false) },
     );
   };
 
@@ -113,11 +114,6 @@ export function MealCard({
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {calories ? (
-                    <Badge variant="secondary" className="text-xs tabular-nums">
-                      {calories} kcal
-                    </Badge>
-                  ) : null}
                   {!readOnly && !isCompleted && (
                     <>
                       <Button
@@ -136,20 +132,15 @@ export function MealCard({
                       >
                         <Trash2 className="h-3 w-3 text-muted-foreground" />
                       </Button>
-                      {!isMealTimePast && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => setAiOpen(true)}
-                        >
-                          <Sparkles className="h-3.5 w-3.5 text-primary" />
-                        </Button>
-                      )}
                     </>
                   )}
                 </div>
               </div>
+              {calories ? (
+                <Badge variant="secondary" className="text-xs tabular-nums mt-0.5">
+                  {calories} kcal
+                </Badge>
+              ) : null}
               <p
                 className={cn(
                   "text-sm text-muted-foreground mt-1 transition-all duration-200",
@@ -168,13 +159,9 @@ export function MealCard({
               variant="ghost"
               className="flex flex-col h-11 px-3 gap-0.5 text-muted-foreground"
               onClick={handleFavorite}
-              disabled={favSaved || saveMutation.isPending}
+              disabled={saveMutation.isPending}
             >
-              {favSaved ? (
-                <BookmarkCheck className="h-5 w-5 text-primary" />
-              ) : (
-                <Bookmark className="h-5 w-5" />
-              )}
+              <Star className={cn("h-5 w-5", favSaved && "fill-current text-yellow-400")} />
               <span className="text-[10px] leading-none font-medium">
                 {favSaved ? "Kaydedildi" : "Favori"}
               </span>
@@ -187,6 +174,16 @@ export function MealCard({
               <ArrowLeftRight className="h-5 w-5" />
               <span className="text-[10px] leading-none font-medium">Değiştir</span>
             </Button>
+            {!isMealTimePast && (
+              <Button
+                variant="ghost"
+                className="flex flex-col h-11 px-3 gap-0.5 text-primary ml-auto"
+                onClick={() => setAiOpen(true)}
+              >
+                <Sparkles className="h-5 w-5" />
+                <span className="text-[10px] leading-none font-medium">AI</span>
+              </Button>
+            )}
           </div>
         )}
       </Card>

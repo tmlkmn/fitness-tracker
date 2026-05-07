@@ -212,7 +212,7 @@ export function MealFormDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={guardedOpenChange}>
-        <DialogContent className="relative max-w-sm w-[calc(100vw-2rem)] min-h-[75svh] max-h-[92svh] overflow-y-auto p-4 gap-3">
+        <DialogContent className="relative max-w-sm w-[calc(100vw-2rem)] max-h-[92svh] overflow-y-auto p-4 gap-3">
 
           {/* In-dialog unsaved changes confirmation overlay */}
           {confirmOpen && (
