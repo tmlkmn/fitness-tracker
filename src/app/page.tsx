@@ -41,6 +41,7 @@ import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
 import { DailyRingsCard } from "@/components/meals/daily-rings-card";
 import { useDashboardPrefs } from "@/hooks/use-dashboard-prefs";
 import { SetupCompleteBanner } from "@/components/onboarding/setup-complete-banner";
+import { NotificationPromptCard } from "@/components/notifications/notification-prompt-card";
 
 const PLAN_TYPE_CONFIG: Record<string, { icon: typeof Dumbbell; label: string; color: string }> = {
   workout: { icon: Dumbbell, label: "Antrenman", color: "text-green-400 bg-green-400/10" },
@@ -183,6 +184,7 @@ export default function HomePage() {
 
       <div className="p-4 space-y-4">
         <SetupCompleteBanner />
+        <NotificationPromptCard />
         {/* Hero Card — Greeting + Membership */}
         <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-transparent overflow-hidden">
           <CardContent className="p-4">

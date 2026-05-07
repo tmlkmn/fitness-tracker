@@ -385,9 +385,9 @@ export const notificationPreferences = pgTable("notification_preferences", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" })
     .unique(),
-  inAppEnabled: boolean("in_app_enabled").default(true),
-  emailEnabled: boolean("email_enabled").default(true),
-  pushEnabled: boolean("push_enabled").default(true),
+  inAppEnabled: boolean("in_app_enabled").default(false),
+  emailEnabled: boolean("email_enabled").default(false),
+  pushEnabled: boolean("push_enabled").default(false),
   defaultWorkoutTime: text("default_workout_time"),
   timezone: text("timezone"),
   quietHoursStart: text("quiet_hours_start"),

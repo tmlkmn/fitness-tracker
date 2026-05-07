@@ -13,9 +13,9 @@ export async function getNotificationPreferences() {
     .where(eq(notificationPreferences.userId, user.id));
 
   return prefs ?? {
-    inAppEnabled: true,
-    emailEnabled: true,
-    pushEnabled: true,
+    inAppEnabled: false,
+    emailEnabled: false,
+    pushEnabled: false,
     defaultWorkoutTime: "19:00",
     timezone: "Europe/Istanbul",
     quietHoursStart: null,

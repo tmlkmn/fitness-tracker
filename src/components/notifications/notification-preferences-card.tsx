@@ -100,9 +100,9 @@ export function NotificationPreferencesCard() {
 
   const toggle = (key: string, value: boolean) => {
     updateMutation.mutate({
-      inAppEnabled: prefs?.inAppEnabled ?? true,
-      emailEnabled: prefs?.emailEnabled ?? true,
-      pushEnabled: prefs?.pushEnabled ?? true,
+      inAppEnabled: prefs?.inAppEnabled ?? false,
+      emailEnabled: prefs?.emailEnabled ?? false,
+      pushEnabled: prefs?.pushEnabled ?? false,
       [key]: value,
     });
   };
@@ -170,14 +170,14 @@ export function NotificationPreferencesCard() {
         <div className="flex items-center justify-between">
           <Label className="text-sm">Uygulama içi bildirimler</Label>
           <Switch
-            checked={prefs?.inAppEnabled ?? true}
+            checked={prefs?.inAppEnabled ?? false}
             onCheckedChange={(v) => toggle("inAppEnabled", v)}
           />
         </div>
         <div className="flex items-center justify-between">
           <Label className="text-sm">E-posta bildirimleri</Label>
           <Switch
-            checked={prefs?.emailEnabled ?? true}
+            checked={prefs?.emailEnabled ?? false}
             onCheckedChange={(v) => toggle("emailEnabled", v)}
           />
         </div>
@@ -187,12 +187,12 @@ export function NotificationPreferencesCard() {
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Switch
-              checked={prefs?.pushEnabled ?? true}
+              checked={prefs?.pushEnabled ?? false}
               onCheckedChange={handlePushToggle}
             />
           )}
         </div>
-        {(prefs?.pushEnabled ?? true) && <PushStatus key={pushKey} />}
+        {(prefs?.pushEnabled ?? false) && <PushStatus key={pushKey} />}
 
         <div className="pt-3 border-t border-border/60 space-y-3">
           <div className="flex items-center justify-between">
