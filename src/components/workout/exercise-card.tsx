@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Timer, Sparkles, Pencil, Trash2, Plus } from "lucide-react";
+import { Timer, Sparkles, Pencil, Trash2, Plus, Search } from "lucide-react";
 import { ExerciseFormTips } from "./exercise-form-tips";
 import { ExerciseDemoModal } from "./exercise-demo-modal";
 import { ExerciseAlternativeModal } from "./exercise-alternative-modal";
@@ -103,6 +103,15 @@ export function ExerciseCard({
                   {name}
                 </p>
                 <ExerciseDemoModal name={name} />
+                <a
+                  href={`https://www.google.com/search?q=${encodeURIComponent(englishName || name)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center h-5 w-5 rounded hover:bg-accent transition-colors"
+                  title="Google'da Ara"
+                >
+                  <Search className="h-3 w-3 text-muted-foreground" />
+                </a>
                 {!readOnly && <ExerciseFormTips name={name} notes={notes} englishName={englishName} />}
               </div>
               <div className={cn("flex flex-wrap gap-1.5 mt-1", readOnly && isCompleted && "opacity-60")}>
