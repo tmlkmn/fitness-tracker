@@ -99,6 +99,22 @@
     "signOut": "Sign Out",
     "workout": "Workout"
   },
+  "notifications": {
+    "dropdown": {
+      "title": "Notifications",
+      "clear": "Clear",
+      "filterAll": "All",
+      "empty": "No notifications",
+      "emptyHint": "New notifications will appear here",
+      "emptyCategory": "No notifications in this category"
+    }
+  },
+  "notificationPrompt": {
+    "title": "Enable Notifications",
+    "description": "Get notified instantly when your meal times approach, your workout plan is ready, and your reminders trigger. Turn on notifications to stay on track with your program.",
+    "enableButton": "Enable Notifications",
+    "closeLabel": "Close"
+  },
   "cookieConsent": {
     "title": "Cookie Policy",
     "description": "This app uses essential cookies for session management. We'd also like to use analytics cookies to improve your experience.",
@@ -535,8 +551,20 @@
     "delete": {
       "title": "Delete Meal",
       "confirmation": "Are you sure you want to delete the <label></label> meal? This action cannot be undone.",
+      "confirmationPrefix": "Are you sure you want to delete the ",
+      "confirmationSuffix": " meal? This action cannot be undone.",
       "cancel": "Cancel",
       "delete": "Delete",
+      "deleting": "Deleting..."
+    },
+    "bulkDelete": {
+      "title": "Delete All Meals",
+      "warningPrefix": "All ",
+      "warningSuffix": " for this day will be deleted. This action cannot be undone.",
+      "warningCountStrong": "{count} meals",
+      "extraWarning": "All meal data, calories and macro information will be permanently deleted.",
+      "cancel": "Cancel",
+      "deleteAll": "Delete All",
       "deleting": "Deleting..."
     },
     "list": {
@@ -802,8 +830,20 @@
     "delete": {
       "title": "Delete Exercise",
       "confirmation": "Are you sure you want to delete <label></label>? This action cannot be undone.",
+      "confirmationPrefix": "Are you sure you want to delete the ",
+      "confirmationSuffix": " exercise? This action cannot be undone.",
       "cancel": "Cancel",
       "delete": "Delete",
+      "deleting": "Deleting..."
+    },
+    "bulkDelete": {
+      "title": "Delete All Exercises",
+      "warningPrefix": "All ",
+      "warningSuffix": " for this day will be deleted. This action cannot be undone.",
+      "warningCountStrong": "{count} exercises",
+      "extraWarning": "All exercise data, sets/reps info and notes will be permanently deleted.",
+      "cancel": "Cancel",
+      "deleteAll": "Delete All",
       "deleting": "Deleting..."
     }
   },

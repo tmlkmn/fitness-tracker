@@ -9,6 +9,7 @@ import {
   kcalToDisplay,
   type EnergyUnit,
 } from "@/lib/units";
+import { useTranslations } from "next-intl";
 
 interface MacroSummaryProps {
   calories: number;
@@ -71,6 +72,7 @@ export function DailyMacroSummary({
   targets,
 }: MacroSummaryProps) {
   const { data: profile } = useUserProfile();
+  const t = useTranslations("meals.form");
   const energyUnit = (profile?.energyUnit as EnergyUnit) ?? "kcal";
   const displayCalories = Math.round(kcalToDisplay(calories, energyUnit));
   const displayTarget = targets?.calories
@@ -85,9 +87,9 @@ export function DailyMacroSummary({
         target={displayTarget}
         highlight
       />
-      <MacroCell value={protein} unit="g" label="Protein" target={targets?.protein} />
-      <MacroCell value={carbs} unit="g" label="Karb" target={targets?.carbs} />
-      <MacroCell value={fat} unit="g" label="Yağ" target={targets?.fat} />
+      <MacroCell value={protein} unit="g" label={t("protein")} target={targets?.protein} />
+      <MacroCell value={carbs} unit="g" label={t("carbs")} target={targets?.carbs} />
+      <MacroCell value={fat} unit="g" label={t("fat")} target={targets?.fat} />
     </div>
   );
 }

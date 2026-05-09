@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import { Bell, X, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 const DISMISS_KEY = "notification_prompt_dismissed_v1";
 
 export function NotificationPromptCard() {
   const [visible, setVisible] = useState(false);
+  const t = useTranslations("notificationPrompt");
 
   useEffect(() => {
     if (localStorage.getItem(DISMISS_KEY)) return;
@@ -33,14 +35,14 @@ export function NotificationPromptCard() {
             <BellRing className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold">Bildirimleri Etkinleştirin</p>
+            <p className="text-sm font-semibold">{t("title")}</p>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Öğün saatleriniz yaklaşırken, antrenman planınız hazır olduğunda ve hatırlatıcılarınız tetiklendiğinde anında haberdar olun. Bildirimleri açarak programınıza sadık kalın.
+              {t("description")}
             </p>
             <Button asChild size="sm" className="mt-3 h-8 gap-1.5 text-xs">
               <Link href="/ayarlar/bildirim">
                 <Bell className="h-3.5 w-3.5" />
-                Bildirimleri Aç
+                {t("enableButton")}
               </Link>
             </Button>
           </div>
@@ -48,7 +50,7 @@ export function NotificationPromptCard() {
             type="button"
             onClick={dismiss}
             className="shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors mt-0.5"
-            aria-label="Kapat"
+            aria-label={t("closeLabel")}
           >
             <X className="h-3.5 w-3.5" />
           </button>

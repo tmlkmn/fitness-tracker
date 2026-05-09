@@ -99,6 +99,22 @@
     "signOut": "Çıkış Yap",
     "workout": "Antrenman"
   },
+  "notifications": {
+    "dropdown": {
+      "title": "Bildirimler",
+      "clear": "Temizle",
+      "filterAll": "Tümü",
+      "empty": "Bildirim bulunmuyor",
+      "emptyHint": "Yeni bildirimler burada görünecek",
+      "emptyCategory": "Bu kategoride bildirim yok"
+    }
+  },
+  "notificationPrompt": {
+    "title": "Bildirimleri Etkinleştirin",
+    "description": "Öğün saatleriniz yaklaşırken, antrenman planınız hazır olduğunda ve hatırlatıcılarınız tetiklendiğinde anında haberdar olun. Bildirimleri açarak programınıza sadık kalın.",
+    "enableButton": "Bildirimleri Aç",
+    "closeLabel": "Kapat"
+  },
   "cookieConsent": {
     "title": "Çerez Politikası",
     "description": "Bu uygulama, oturum yönetimi için zorunlu çerezler kullanır. Ayrıca deneyiminizi iyileştirmek için analitik çerezler kullanmak istiyoruz.",
@@ -535,8 +551,21 @@
     "delete": {
       "title": "Öğünü Sil",
       "confirmation": "<label></label> öğününü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+      "confirmationPrefix": "",
+      "confirmationSuffix": " öğününü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
       "cancel": "İptal",
       "delete": "Sil",
+      "deleting": "Siliniyor..."
+    },
+    "bulkDelete": {
+      "title": "Tüm Öğünleri Sil",
+      "warning": "Bu güne ait <strong>{count} öğünün tamamı</strong> silinecektir. Bu işlem geri alınamaz.",
+      "warningPrefix": "Bu güne ait ",
+      "warningSuffix": " silinecektir. Bu işlem geri alınamaz.",
+      "warningCountStrong": "{count} öğünün tamamı",
+      "extraWarning": "Tüm öğün verileri, kalori ve makro bilgileri kalıcı olarak silinecektir.",
+      "cancel": "Vazgeç",
+      "deleteAll": "Tümünü Sil",
       "deleting": "Siliniyor..."
     },
     "list": {
@@ -802,8 +831,20 @@
     "delete": {
       "title": "Egzersizi Sil",
       "confirmation": "<label></label> egzersizini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+      "confirmationPrefix": "",
+      "confirmationSuffix": " egzersizini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
       "cancel": "İptal",
       "delete": "Sil",
+      "deleting": "Siliniyor..."
+    },
+    "bulkDelete": {
+      "title": "Tüm Antrenmanı Sil",
+      "warningPrefix": "Bu güne ait ",
+      "warningSuffix": " silinecektir. Bu işlem geri alınamaz.",
+      "warningCountStrong": "{count} egzersizin tamamı",
+      "extraWarning": "Tüm egzersiz verileri, set/tekrar bilgileri ve notlar kalıcı olarak silinecektir.",
+      "cancel": "Vazgeç",
+      "deleteAll": "Tümünü Sil",
       "deleting": "Siliniyor..."
     }
   },

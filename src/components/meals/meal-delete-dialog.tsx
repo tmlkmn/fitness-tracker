@@ -8,6 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useDeleteMeal } from "@/hooks/use-meal-crud";
+import { useLocale, useTranslations } from "next-intl";
+import { getLocalizedMealLabel, isMealLabel } from "@/lib/meal-labels";
+import type { Locale } from "@/lib/locale";
 
 interface MealDeleteDialogProps {
   open: boolean;
@@ -23,6 +26,12 @@ export function MealDeleteDialog({
   mealLabel,
 }: MealDeleteDialogProps) {
   const deleteMeal = useDeleteMeal();
+  const t = useTranslations("meals.delete");
+  const locale = useLocale() as Locale;
+
+  const displayLabel = isMealLabel(mealLabel)
+    ? getLocalizedMealLabel(mealLabel, locale)
+    : mealLabel;
 
   const handleDelete = () => {
     deleteMeal.mutate(mealId, {
@@ -34,11 +43,10 @@ export function MealDeleteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4">
         <DialogHeader>
-          <DialogTitle>Öğünü Sil</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          <strong>{mealLabel}</strong> öğününü silmek istediğinize emin
-          misiniz? Bu işlem geri alınamaz.
+          {t("confirmationPrefix")}<strong>{displayLabel}</strong>{t("confirmationSuffix")}
         </p>
         <div className="flex gap-2 pt-2">
           <Button
@@ -46,7 +54,7 @@ export function MealDeleteDialog({
             className="flex-1"
             onClick={() => onOpenChange(false)}
           >
-            İptal
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -54,7 +62,7 @@ export function MealDeleteDialog({
             onClick={handleDelete}
             disabled={deleteMeal.isPending}
           >
-            {deleteMeal.isPending ? "Siliniyor..." : "Sil"}
+            {deleteMeal.isPending ? t("deleting") : t("delete")}
           </Button>
         </div>
       </DialogContent>

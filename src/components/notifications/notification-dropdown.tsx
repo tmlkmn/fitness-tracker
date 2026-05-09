@@ -15,6 +15,7 @@ import {
 } from "./notification-types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 type Filter = "all" | NotificationCategory;
 
@@ -22,6 +23,7 @@ export function NotificationDropdown() {
   const { data: notifications, isLoading } = useNotifications();
   const clearAll = useClearAllNotifications();
   const [filter, setFilter] = useState<Filter>("all");
+  const t = useTranslations("notifications.dropdown");
 
   const counts = useMemo(() => {
     const map: Record<NotificationCategory, number> = {
@@ -55,7 +57,7 @@ export function NotificationDropdown() {
     <div className="flex flex-col">
       <div className="px-3 py-2.5 border-b border-border flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="text-sm font-semibold">Bildirimler</h3>
+          <h3 className="text-sm font-semibold">{t("title")}</h3>
           {hasNotifications && (
             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
               {total}
@@ -71,7 +73,7 @@ export function NotificationDropdown() {
             disabled={clearAll.isPending}
           >
             <Trash2 className="h-3 w-3 mr-1" />
-            Temizle
+            {t("clear")}
           </Button>
         )}
       </div>
@@ -79,7 +81,7 @@ export function NotificationDropdown() {
       {showFilters && (
         <div className="px-2 py-2 border-b border-border flex gap-1 overflow-x-auto scrollbar-none">
           <FilterChip
-            label="Tümü"
+            label={t("filterAll")}
             count={total}
             active={filter === "all"}
             onClick={() => setFilter("all")}
@@ -114,14 +116,14 @@ export function NotificationDropdown() {
             <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-2">
               <Bell className="h-5 w-5 opacity-50" />
             </div>
-            <p className="text-sm">Bildirim bulunmuyor</p>
+            <p className="text-sm">{t("empty")}</p>
             <p className="text-[11px] mt-0.5 opacity-70">
-              Yeni bildirimler burada görünecek
+              {t("emptyHint")}
             </p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <p className="text-sm">Bu kategoride bildirim yok</p>
+            <p className="text-sm">{t("emptyCategory")}</p>
           </div>
         ) : (
           <div className="divide-y divide-border/60">

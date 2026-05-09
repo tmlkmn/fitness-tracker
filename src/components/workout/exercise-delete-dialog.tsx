@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useDeleteExercise } from "@/hooks/use-exercise-crud";
+import { useTranslations } from "next-intl";
 
 interface ExerciseDeleteDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ export function ExerciseDeleteDialog({
   exerciseName,
 }: ExerciseDeleteDialogProps) {
   const deleteExercise = useDeleteExercise();
+  const t = useTranslations("exercises.delete");
 
   const handleDelete = () => {
     deleteExercise.mutate(exerciseId, {
@@ -34,11 +36,10 @@ export function ExerciseDeleteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4">
         <DialogHeader>
-          <DialogTitle>Egzersizi Sil</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          <strong>{exerciseName}</strong> egzersizini silmek istediğinize emin
-          misiniz? Bu işlem geri alınamaz.
+          {t("confirmationPrefix")}<strong>{exerciseName}</strong>{t("confirmationSuffix")}
         </p>
         <div className="flex gap-2 pt-2">
           <Button
@@ -46,7 +47,7 @@ export function ExerciseDeleteDialog({
             className="flex-1"
             onClick={() => onOpenChange(false)}
           >
-            İptal
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -54,7 +55,7 @@ export function ExerciseDeleteDialog({
             onClick={handleDelete}
             disabled={deleteExercise.isPending}
           >
-            {deleteExercise.isPending ? "Siliniyor..." : "Sil"}
+            {deleteExercise.isPending ? t("deleting") : t("delete")}
           </Button>
         </div>
       </DialogContent>
