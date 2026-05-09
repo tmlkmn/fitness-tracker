@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { listAllFeedbacks, respondToFeedback, closeFeedback } from "@/actions/feedback";
 import type { FeedbackWithUser } from "@/actions/feedback";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,34 +20,36 @@ import {
   XCircle,
   ArrowLeft,
 } from "lucide-react";
-import Link from "next/link";
 
-const CATEGORY_CONFIG: Record<string, { label: string; icon: typeof MessageSquare; className: string }> = {
-  suggestion: { label: "Öneri", icon: Lightbulb, className: "text-blue-400 bg-blue-400/10" },
-  complaint: { label: "Şikayet", icon: AlertTriangle, className: "text-orange-400 bg-orange-400/10" },
-  bug: { label: "Hata", icon: Bug, className: "text-red-400 bg-red-400/10" },
-  general: { label: "Diğer", icon: MessageSquare, className: "text-muted-foreground bg-muted" },
+const CATEGORY_CONFIG: Record<string, { tKey: string; icon: typeof MessageSquare; className: string }> = {
+  suggestion: { tKey: "suggestion", icon: Lightbulb, className: "text-blue-400 bg-blue-400/10" },
+  complaint: { tKey: "complaint", icon: AlertTriangle, className: "text-orange-400 bg-orange-400/10" },
+  bug: { tKey: "bug", icon: Bug, className: "text-red-400 bg-red-400/10" },
+  general: { tKey: "general", icon: MessageSquare, className: "text-muted-foreground bg-muted" },
 };
 
-const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; className: string }> = {
-  open: { label: "Açık", icon: Clock, className: "text-yellow-400 bg-yellow-400/10" },
-  responded: { label: "Yanıtlandı", icon: CheckCircle, className: "text-green-400 bg-green-400/10" },
-  closed: { label: "Kapalı", icon: XCircle, className: "text-muted-foreground bg-muted" },
+const STATUS_CONFIG: Record<string, { tKey: string; icon: typeof Clock; className: string }> = {
+  open: { tKey: "open", icon: Clock, className: "text-yellow-400 bg-yellow-400/10" },
+  responded: { tKey: "responded", icon: CheckCircle, className: "text-green-400 bg-green-400/10" },
+  closed: { tKey: "closed", icon: XCircle, className: "text-muted-foreground bg-muted" },
 };
 
 type FilterStatus = "all" | "open" | "responded" | "closed";
 
-function formatTimeAgo(date: Date | null): string {
-  if (!date) return "-";
-  const now = new Date();
-  const diff = now.getTime() - new Date(date).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Az önce";
-  if (minutes < 60) return `${minutes}dk önce`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}sa önce`;
-  const days = Math.floor(hours / 24);
-  return `${days}g önce`;
+function useTimeAgo() {
+  const t = useTranslations("admin.feedbackPage.timeAgo");
+  return (date: Date | null): string => {
+    if (!date) return t("none");
+    const now = new Date();
+    const diff = now.getTime() - new Date(date).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return t("justNow");
+    if (minutes < 60) return t("minutes", { n: minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t("hours", { n: hours });
+    const days = Math.floor(hours / 24);
+    return t("days", { n: days });
+  };
 }
 
 function Stars({ count }: { count: number | null }) {
@@ -72,6 +75,7 @@ function RespondDialog({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const t = useTranslations("admin.feedbackPage.respondDialog");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -79,7 +83,7 @@ function RespondDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!response.trim()) {
-      setError("Yanıt boş olamaz.");
+      setError(t("errorEmpty"));
       return;
     }
     setLoading(true);
@@ -88,7 +92,7 @@ function RespondDialog({
       await respondToFeedback(feedback.id, response.trim());
       onSuccess();
     } catch {
-      setError("Yanıt gönderilemedi.");
+      setError(t("errorSubmit"));
     } finally {
       setLoading(false);
     }
@@ -99,7 +103,7 @@ function RespondDialog({
       <Card className="w-full max-w-sm">
         <CardContent className="p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">Yanıtla</h2>
+            <h2 className="text-base font-semibold">{t("title")}</h2>
             <button
               onClick={onClose}
               className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
@@ -117,7 +121,7 @@ function RespondDialog({
               onChange={(e) => setResponse(e.target.value)}
               rows={3}
               maxLength={2000}
-              placeholder="Yanıtınızı yazın..."
+              placeholder={t("placeholder")}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
             />
             {error && <p className="text-sm text-destructive text-center">{error}</p>}
@@ -131,7 +135,7 @@ function RespondDialog({
               ) : (
                 <>
                   <Send className="h-4 w-4" />
-                  Yanıt Gönder
+                  {t("send")}
                 </>
               )}
             </button>
@@ -144,6 +148,9 @@ function RespondDialog({
 
 export default function AdminFeedbackPage() {
   const router = useRouter();
+  const t = useTranslations("admin.feedbackPage");
+  const tCommon = useTranslations("common");
+  const formatTimeAgo = useTimeAgo();
   const [feedbackList, setFeedbackList] = useState<FeedbackWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterStatus>("all");
@@ -200,34 +207,32 @@ export default function AdminFeedbackPage() {
     );
   }
 
-  const FILTERS: { value: FilterStatus; label: string }[] = [
-    { value: "all", label: `Tümü (${counts.all})` },
-    { value: "open", label: `Açık (${counts.open})` },
-    { value: "responded", label: `Yanıtlanan (${counts.responded})` },
-    { value: "closed", label: `Kapalı (${counts.closed})` },
+  const FILTERS: { value: FilterStatus; tKey: string; count: number }[] = [
+    { value: "all", tKey: "all", count: counts.all },
+    { value: "open", tKey: "open", count: counts.open },
+    { value: "responded", tKey: "responded", count: counts.responded },
+    { value: "closed", tKey: "closed", count: counts.closed },
   ];
 
   return (
     <div className="min-h-dvh pb-8">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <Link
             href="/admin"
             className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-accent transition-colors shrink-0"
-            aria-label="Geri"
+            aria-label={tCommon("back")}
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <MessageSquare className="h-5 w-5 text-primary" />
           </div>
-          <h1 className="text-xl font-bold">Geri Bildirimler</h1>
+          <h1 className="text-xl font-bold">{t("title")}</h1>
         </div>
 
-        {/* Filter tabs */}
         <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {FILTERS.map(({ value, label }) => (
+          {FILTERS.map(({ value, tKey, count }) => (
             <button
               key={value}
               onClick={() => setFilter(value)}
@@ -237,12 +242,11 @@ export default function AdminFeedbackPage() {
                   : "bg-muted hover:bg-accent"
               }`}
             >
-              {label}
+              {t("filterWithCount", { label: t(`filters.${tKey}`), count })}
             </button>
           ))}
         </div>
 
-        {/* Feedback list */}
         <div className="space-y-3">
           {filtered.map((fb) => {
             const cat = CATEGORY_CONFIG[fb.category] ?? CATEGORY_CONFIG.general;
@@ -253,13 +257,12 @@ export default function AdminFeedbackPage() {
             return (
               <Card key={fb.id}>
                 <CardContent className="p-4 space-y-2.5">
-                  {/* Top row: rating + category + time */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Stars count={fb.rating} />
                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cat.className}`}>
                         <CatIcon className="h-3 w-3" />
-                        {cat.label}
+                        {t(`categories.${cat.tKey}`)}
                       </span>
                     </div>
                     <span className="text-xs text-muted-foreground">
@@ -267,31 +270,27 @@ export default function AdminFeedbackPage() {
                     </span>
                   </div>
 
-                  {/* User info */}
                   <div>
                     <p className="text-sm font-medium">{fb.userName}</p>
                     <p className="text-xs text-muted-foreground">{fb.userEmail}</p>
                   </div>
 
-                  {/* Message */}
                   <p className="text-sm leading-relaxed">{fb.message}</p>
 
-                  {/* Status + admin response */}
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${status.className}`}>
                       <StatusIcon className="h-3 w-3" />
-                      {status.label}
+                      {t(`statuses.${status.tKey}`)}
                     </span>
                   </div>
 
                   {fb.adminResponse && (
                     <div className="rounded-md bg-primary/5 border border-primary/20 p-3">
-                      <p className="text-xs text-muted-foreground mb-1">Admin Yanıtı:</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t("adminResponseLabel")}</p>
                       <p className="text-sm">{fb.adminResponse}</p>
                     </div>
                   )}
 
-                  {/* Actions */}
                   {fb.status === "open" && (
                     <div className="flex gap-2 pt-1">
                       <button
@@ -299,7 +298,7 @@ export default function AdminFeedbackPage() {
                         className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
                       >
                         <Send className="h-3 w-3" />
-                        Yanıtla
+                        {t("actions.respond")}
                       </button>
                       <button
                         onClick={() => handleClose(fb.id)}
@@ -311,7 +310,7 @@ export default function AdminFeedbackPage() {
                         ) : (
                           <>
                             <XCircle className="h-3 w-3" />
-                            Kapat
+                            {t("actions.close")}
                           </>
                         )}
                       </button>
@@ -330,7 +329,7 @@ export default function AdminFeedbackPage() {
                         ) : (
                           <>
                             <XCircle className="h-3 w-3" />
-                            Kapat
+                            {t("actions.close")}
                           </>
                         )}
                       </button>
@@ -343,7 +342,7 @@ export default function AdminFeedbackPage() {
 
           {filtered.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              {filter === "all" ? "Henüz geri bildirim yok." : "Bu filtrede geri bildirim yok."}
+              {filter === "all" ? t("emptyAll") : t("emptyFiltered")}
             </p>
           )}
         </div>
@@ -353,7 +352,7 @@ export default function AdminFeedbackPage() {
             href="/admin"
             className="text-sm text-muted-foreground hover:text-primary transition-colors"
           >
-            Admin Paneline Dön
+            {t("backToAdmin")}
           </Link>
         </div>
       </div>
