@@ -28,6 +28,7 @@ import { SettingsGroup } from "@/components/settings/settings-group";
 import { SettingsMenuItem } from "@/components/settings/settings-menu-item";
 import { PwaInstallCard } from "@/components/layout/pwa-install-card";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
+import { LocaleToggle } from "@/components/settings/locale-toggle";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
@@ -181,6 +182,8 @@ useEffect(() => {
             href="/ayarlar/paylasim"
           />
         </SettingsGroup>
+
+        <LocaleToggle />
 
         <PwaInstallCard />
 

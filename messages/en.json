@@ -1,4 +1,8 @@
 {
+  "metadata": {
+    "title": "FitMusc — Personal Fitness Tracker",
+    "description": "AI-powered personal fitness training and nutrition tracker. Weekly training and nutrition plans, progress tracking, smart suggestions."
+  },
   "layout": {
     "networkStatus": {
       "reconnected": "Connection restored",

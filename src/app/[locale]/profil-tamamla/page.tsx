@@ -648,7 +648,7 @@ export default function ProfilTamamlaPage() {
           <div className="space-y-4">
             <div className="rounded-lg bg-muted/40 border border-border p-3">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Bu bilgiler AI&apos;ın öğün saatlerini ve antrenman zamanlamasını optimize etmesine yardımcı olur. Dilersen bu adımı atlayabilirsin.
+                Bu bilgiler AI'ın öğün saatlerini ve antrenman zamanlamasını optimize etmesine yardımcı olur. Dilersen bu adımı atlayabilirsin.
               </p>
             </div>
 
@@ -741,7 +741,7 @@ export default function ProfilTamamlaPage() {
 
             <div className="rounded-lg bg-muted/40 p-3">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Profilini kaydettikten sonra takvim sayfasından haftalık programını oluşturabilirsin. Tüm bilgiler daha sonra Ayarlar&apos;dan değiştirilebilir.
+                Profilini kaydettikten sonra takvim sayfasından haftalık programını oluşturabilirsin. Tüm bilgiler daha sonra Ayarlar'dan değiştirilebilir.
               </p>
             </div>
 

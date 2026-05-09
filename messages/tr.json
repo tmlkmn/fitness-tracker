@@ -1,4 +1,8 @@
 {
+  "metadata": {
+    "title": "FitMusc — Kişisel Fitness Takip",
+    "description": "AI destekli kişisel fitness antrenman ve beslenme takip uygulaması. Haftalık antrenman ve beslenme planları, ilerleme takibi, akıllı öneriler."
+  },
   "layout": {
     "networkStatus": {
       "reconnected": "Bağlantı yeniden sağlandı",

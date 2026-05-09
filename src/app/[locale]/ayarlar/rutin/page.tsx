@@ -13,8 +13,8 @@ export default function RutinPage() {
   return (
     <div className="animate-fade-in">
       <Header
-        title="Günlük Rutin"
-        subtitle="Öğün saatlerinizi düzenleyin"
+        title="Günlük Akış"
+        subtitle="Hafta içi ve hafta sonu rutinin"
         icon={Clock}
         showBack
         backHref="/ayarlar"
