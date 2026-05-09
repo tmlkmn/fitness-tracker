@@ -10,12 +10,7 @@ import { useSharedDailyPlan, useSharedMealsByDay, useSharedExercisesByDay } from
 import { MealCard } from "@/components/meals/meal-card";
 import { ExerciseCard } from "@/components/workout/exercise-card";
 import { Separator } from "@/components/ui/separator";
-
-const planTypeLabel: Record<string, string> = {
-  workout: "Antrenman Günü",
-  swimming: "Yüzme Günü",
-  rest: "Dinlenme Günü",
-};
+import { useLocale, useTranslations } from "next-intl";
 
 interface PageProps {
   params: Promise<{ dayId: string }>;
@@ -27,23 +22,36 @@ export default function PaylasilanGunPage({ params }: PageProps) {
   const { data: dailyPlan, isLoading: loadingPlan } = useSharedDailyPlan(id);
   const { data: meals, isLoading: loadingMeals } = useSharedMealsByDay(id);
   const { data: exercises, isLoading: loadingExercises } = useSharedExercisesByDay(id);
+  const t = useTranslations("sharing");
+  const tDay = useTranslations("day");
+  const locale = useLocale();
 
   const isLoading = loadingPlan || loadingMeals || loadingExercises;
 
   const dateLabel = dailyPlan?.date
-    ? new Date(dailyPlan.date + "T00:00:00").toLocaleDateString("tr-TR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        weekday: "long",
-      })
+    ? new Date(dailyPlan.date + "T00:00:00").toLocaleDateString(
+        locale === "en" ? "en-US" : "tr-TR",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          weekday: "long",
+        },
+      )
     : null;
 
-  const subtitle = dateLabel
-    ? `${dateLabel} — ${dailyPlan?.workoutTitle ?? planTypeLabel[dailyPlan?.planType ?? ""] ?? ""}`
-    : dailyPlan?.workoutTitle ?? planTypeLabel[dailyPlan?.planType ?? ""] ?? "";
+  const planTypeDayLabel = (planType: string | undefined): string => {
+    if (!planType) return "";
+    if ((["workout", "swimming", "rest"] as const).includes(planType as "workout")) {
+      return t(`planTypeDay.${planType as "workout" | "swimming" | "rest"}`);
+    }
+    return planType;
+  };
 
-  // Group exercises by section
+  const subtitle = dateLabel
+    ? `${dateLabel} — ${dailyPlan?.workoutTitle ?? planTypeDayLabel(dailyPlan?.planType)}`
+    : dailyPlan?.workoutTitle ?? planTypeDayLabel(dailyPlan?.planType);
+
   const sections = exercises?.reduce(
     (acc, exercise) => {
       const key = exercise.section;
@@ -66,7 +74,7 @@ export default function PaylasilanGunPage({ params }: PageProps) {
   return (
     <div className="animate-fade-in">
       <Header
-        title={dailyPlan?.dayName ?? "Yükleniyor..."}
+        title={dailyPlan?.dayName ?? t("loading")}
         subtitle={subtitle}
         showBack
         backHref={dailyPlan ? `/paylasilan/hafta/${dailyPlan.weeklyPlanId}` : "/paylasilan"}
@@ -80,7 +88,7 @@ export default function PaylasilanGunPage({ params }: PageProps) {
       <div className="p-4">
         <div className="flex items-center gap-2 mb-4 p-2 rounded-md bg-primary/10 border border-primary/20">
           <Eye className="h-4 w-4 text-primary shrink-0" />
-          <p className="text-xs text-primary">Salt okunur görünüm</p>
+          <p className="text-xs text-primary">{t("readOnlyNotice")}</p>
         </div>
 
         {isLoading ? (
@@ -92,17 +100,17 @@ export default function PaylasilanGunPage({ params }: PageProps) {
             <TabsList className="grid grid-cols-2 w-full mb-4">
               <TabsTrigger value="meals" className="gap-1.5">
                 <Utensils className="h-4 w-4" />
-                Beslenme
+                {tDay("tabs.nutrition")}
               </TabsTrigger>
               <TabsTrigger value="workout" className="gap-1.5">
                 <Dumbbell className="h-4 w-4" />
-                Antrenman
+                {tDay("tabs.workout")}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="meals">
               {!meals?.length ? (
                 <p className="text-center text-muted-foreground py-8">
-                  Öğün bulunamadı
+                  {t("noMeals")}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -120,7 +128,7 @@ export default function PaylasilanGunPage({ params }: PageProps) {
             <TabsContent value="workout">
               {!sortedSections.length ? (
                 <p className="text-center text-muted-foreground py-8">
-                  Antrenman programı yok
+                  {t("noWorkout")}
                 </p>
               ) : (
                 <div className="space-y-6">

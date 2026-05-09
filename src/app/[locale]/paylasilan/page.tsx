@@ -8,16 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Users } from "lucide-react";
 import { usePlansSharedWithMe } from "@/hooks/use-sharing";
 import { formatWeekRange } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 export default function PaylasilanPage() {
   const { data: plans, isLoading } = usePlansSharedWithMe();
+  const t = useTranslations("sharing");
 
   return (
     <div className="animate-fade-in">
       <Header
-        title="Paylaşılan Planlar"
-        subtitle="Sizinle paylaşılan programlar"
+        title={t("title")}
+        subtitle={t("subtitle")}
         icon={Users}
         showBack
         backHref="/"
@@ -35,7 +37,7 @@ export default function PaylasilanPage() {
           </div>
         ) : !plans?.length ? (
           <p className="text-center text-muted-foreground py-12">
-            Henüz sizinle paylaşılan plan yok
+            {t("empty")}
           </p>
         ) : (
           plans.map((plan) => (
@@ -49,7 +51,7 @@ export default function PaylasilanPage() {
                     <div>
                       <p className="text-sm font-semibold">{plan.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        Hafta {plan.weekNumber} — {plan.phase}
+                        {t("weekLabel", { week: plan.weekNumber, phase: plan.phase })}
                       </p>
                       {plan.startDate && (
                         <p className="text-xs text-muted-foreground mt-0.5">

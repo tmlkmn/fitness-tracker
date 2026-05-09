@@ -1261,7 +1261,13 @@
     "tabMeals": "Nutrition",
     "tabWorkout": "Workout",
     "noMeals": "No meals found",
-    "noWorkout": "No workout program"
+    "noWorkout": "No workout program",
+    "loading": "Loading...",
+    "planTypeDay": {
+      "workout": "Workout Day",
+      "swimming": "Swimming Day",
+      "rest": "Rest Day"
+    }
   },
   "validation": {
     "password": {

@@ -41,10 +41,11 @@ import { useActivityStats } from "@/hooks/use-activity-stats";
 import { ActivityHeatmap } from "@/components/gamification/activity-heatmap";
 import { WaterChart } from "@/components/water/water-chart";
 import { SleepChart } from "@/components/sleep/sleep-chart";
+import { useLocale, useTranslations } from "next-intl";
 
-function formatTurkishDate(dateStr: string): string {
+function formatLocaleDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("tr-TR", {
+  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -78,6 +79,8 @@ export default function IlerlemePage() {
   const { data: profile } = useUserProfile();
   const deleteProgress = useDeleteProgress();
   const { data: activityStats } = useActivityStats();
+  const t = useTranslations("progress");
+  const locale = useLocale();
 
   const [modalOpen, setModalOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -108,14 +111,14 @@ export default function IlerlemePage() {
     if (deleteConfirmId == null) return;
     await deleteProgress.mutateAsync(deleteConfirmId);
     setDeleteConfirmId(null);
-    toast.success("Ölçüm silindi");
+    toast.success(t("logDeleted"));
   };
 
   return (
     <div className="animate-fade-in">
       <Header
-        title="İlerleme"
-        subtitle="Kilo ve ölçüm takibi"
+        title={t("title")}
+        subtitle={t("subtitle")}
         icon={TrendingUp}
         rightSlot={
           <div className="flex items-center gap-1">
@@ -132,7 +135,7 @@ export default function IlerlemePage() {
               <p className="text-lg font-bold tabular-nums">
                 {latestWeight ?? startingWeight ?? "—"}
               </p>
-              <p className="text-xs text-muted-foreground">kg (şimdi)</p>
+              <p className="text-xs text-muted-foreground">{t("summary.now")}</p>
             </CardContent>
           </Card>
           <Card>
@@ -148,7 +151,7 @@ export default function IlerlemePage() {
               >
                 {diff ? (parseFloat(diff) > 0 ? `+${diff}` : diff) : "—"}
               </p>
-              <p className="text-xs text-muted-foreground">kg fark</p>
+              <p className="text-xs text-muted-foreground">{t("summary.diff")}</p>
             </CardContent>
           </Card>
           <Card>
@@ -162,7 +165,7 @@ export default function IlerlemePage() {
               <p className="text-lg font-bold text-primary tabular-nums">
                 {targetWeight ?? "—"}
               </p>
-              <p className="text-xs text-muted-foreground">kg hedef</p>
+              <p className="text-xs text-muted-foreground">{t("summary.target")}</p>
             </CardContent>
           </Card>
         </div>
@@ -185,14 +188,14 @@ export default function IlerlemePage() {
         {/* Add measurement button */}
         <Button onClick={handleAdd} className="w-full gap-2">
           <Plus className="h-4 w-4" />
-          Yeni Ölçüm Ekle
+          {t("addMeasurement")}
         </Button>
 
         {/* History */}
         {logs && logs.length > 0 && (
           <Card>
             <CardHeader className="p-3 pb-0">
-              <CardTitle className="text-sm">Geçmiş Kayıtlar</CardTitle>
+              <CardTitle className="text-sm">{t("pastRecords")}</CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-2">
               <div className="space-y-1">
@@ -202,7 +205,7 @@ export default function IlerlemePage() {
                       <CollapsibleTrigger className="flex-1 flex items-center gap-2 text-left group">
                         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                         <span className="text-xs font-medium min-w-[80px]">
-                          {formatTurkishDate(log.logDate)}
+                          {formatLocaleDate(log.logDate, locale)}
                         </span>
                         <div className="flex flex-wrap gap-1 flex-1">
                           {log.weight && (
@@ -212,7 +215,7 @@ export default function IlerlemePage() {
                           )}
                           {log.fatPercent && (
                             <Badge variant="secondary" className="text-[10px]">
-                              %{log.fatPercent} yağ
+                              %{log.fatPercent} {t("badges.fat")}
                             </Badge>
                           )}
                           {log.bmi && (
@@ -222,7 +225,7 @@ export default function IlerlemePage() {
                           )}
                           {log.waistCm && (
                             <Badge variant="outline" className="text-[10px]">
-                              bel {log.waistCm}cm
+                              {t("badges.waist")} {log.waistCm}cm
                             </Badge>
                           )}
                         </div>
@@ -248,59 +251,59 @@ export default function IlerlemePage() {
                     </div>
                     <CollapsibleContent className="pb-3 pt-2 pl-6 space-y-3">
                       <LogDetailSection
-                        title="Ana Bilgiler"
+                        title={t("sections.main")}
                         icon={Scale}
                         items={[
-                          { label: "Kilo", value: log.weight ?? "", unit: "kg" },
-                          { label: "Sıvı", value: log.fluidPercent ?? "", unit: "%" },
-                          { label: "Sıvı", value: log.fluidKg ?? "", unit: "kg" },
-                          { label: "Yağ", value: log.fatPercent ?? "", unit: "%" },
-                          { label: "Yağ", value: log.fatKg ?? "", unit: "kg" },
-                          { label: "BMI", value: log.bmi ?? "", unit: "" },
+                          { label: t("labels.weight"), value: log.weight ?? "", unit: "kg" },
+                          { label: t("labels.fluid"), value: log.fluidPercent ?? "", unit: "%" },
+                          { label: t("labels.fluid"), value: log.fluidKg ?? "", unit: "kg" },
+                          { label: t("labels.fat"), value: log.fatPercent ?? "", unit: "%" },
+                          { label: t("labels.fat"), value: log.fatKg ?? "", unit: "kg" },
+                          { label: t("labels.bmi"), value: log.bmi ?? "", unit: "" },
                         ]}
                       />
                       <LogDetailSection
-                        title="Vücut Yağ & Kas"
+                        title={t("sections.bodyFatMuscle")}
                         icon={Dumbbell}
                         items={[
-                          { label: "Sol Kol Yağ", value: log.leftArmFatPercent ?? "", unit: "%" },
-                          { label: "Sol Kol Yağ", value: log.leftArmFatKg ?? "", unit: "kg" },
-                          { label: "Sol Kol Kas", value: log.leftArmMusclePercent ?? "", unit: "%" },
-                          { label: "Sol Kol Kas", value: log.leftArmMuscleKg ?? "", unit: "kg" },
-                          { label: "Sağ Kol Yağ", value: log.rightArmFatPercent ?? "", unit: "%" },
-                          { label: "Sağ Kol Yağ", value: log.rightArmFatKg ?? "", unit: "kg" },
-                          { label: "Sağ Kol Kas", value: log.rightArmMusclePercent ?? "", unit: "%" },
-                          { label: "Sağ Kol Kas", value: log.rightArmMuscleKg ?? "", unit: "kg" },
-                          { label: "Gövde Yağ", value: log.torsoFatPercent ?? "", unit: "%" },
-                          { label: "Gövde Yağ", value: log.torsoFatKg ?? "", unit: "kg" },
-                          { label: "Gövde Kas", value: log.torsoMusclePercent ?? "", unit: "%" },
-                          { label: "Gövde Kas", value: log.torsoMuscleKg ?? "", unit: "kg" },
-                          { label: "Sol Bacak Yağ", value: log.leftLegFatPercent ?? "", unit: "%" },
-                          { label: "Sol Bacak Yağ", value: log.leftLegFatKg ?? "", unit: "kg" },
-                          { label: "Sol Bacak Kas", value: log.leftLegMusclePercent ?? "", unit: "%" },
-                          { label: "Sol Bacak Kas", value: log.leftLegMuscleKg ?? "", unit: "kg" },
-                          { label: "Sağ Bacak Yağ", value: log.rightLegFatPercent ?? "", unit: "%" },
-                          { label: "Sağ Bacak Yağ", value: log.rightLegFatKg ?? "", unit: "kg" },
-                          { label: "Sağ Bacak Kas", value: log.rightLegMusclePercent ?? "", unit: "%" },
-                          { label: "Sağ Bacak Kas", value: log.rightLegMuscleKg ?? "", unit: "kg" },
+                          { label: t("labels.leftArmFat"), value: log.leftArmFatPercent ?? "", unit: "%" },
+                          { label: t("labels.leftArmFat"), value: log.leftArmFatKg ?? "", unit: "kg" },
+                          { label: t("labels.leftArmMuscle"), value: log.leftArmMusclePercent ?? "", unit: "%" },
+                          { label: t("labels.leftArmMuscle"), value: log.leftArmMuscleKg ?? "", unit: "kg" },
+                          { label: t("labels.rightArmFat"), value: log.rightArmFatPercent ?? "", unit: "%" },
+                          { label: t("labels.rightArmFat"), value: log.rightArmFatKg ?? "", unit: "kg" },
+                          { label: t("labels.rightArmMuscle"), value: log.rightArmMusclePercent ?? "", unit: "%" },
+                          { label: t("labels.rightArmMuscle"), value: log.rightArmMuscleKg ?? "", unit: "kg" },
+                          { label: t("labels.torsoFat"), value: log.torsoFatPercent ?? "", unit: "%" },
+                          { label: t("labels.torsoFat"), value: log.torsoFatKg ?? "", unit: "kg" },
+                          { label: t("labels.torsoMuscle"), value: log.torsoMusclePercent ?? "", unit: "%" },
+                          { label: t("labels.torsoMuscle"), value: log.torsoMuscleKg ?? "", unit: "kg" },
+                          { label: t("labels.leftLegFat"), value: log.leftLegFatPercent ?? "", unit: "%" },
+                          { label: t("labels.leftLegFat"), value: log.leftLegFatKg ?? "", unit: "kg" },
+                          { label: t("labels.leftLegMuscle"), value: log.leftLegMusclePercent ?? "", unit: "%" },
+                          { label: t("labels.leftLegMuscle"), value: log.leftLegMuscleKg ?? "", unit: "kg" },
+                          { label: t("labels.rightLegFat"), value: log.rightLegFatPercent ?? "", unit: "%" },
+                          { label: t("labels.rightLegFat"), value: log.rightLegFatKg ?? "", unit: "kg" },
+                          { label: t("labels.rightLegMuscle"), value: log.rightLegMusclePercent ?? "", unit: "%" },
+                          { label: t("labels.rightLegMuscle"), value: log.rightLegMuscleKg ?? "", unit: "kg" },
                         ]}
                       />
                       <LogDetailSection
-                        title="Ölçüler"
+                        title={t("sections.measurements")}
                         icon={Ruler}
                         items={[
-                          { label: "Bel", value: log.waistCm ?? "", unit: "cm" },
-                          { label: "Sağ Kol", value: log.rightArmCm ?? "", unit: "cm" },
-                          { label: "Sol Kol", value: log.leftArmCm ?? "", unit: "cm" },
-                          { label: "Sağ Bacak", value: log.rightLegCm ?? "", unit: "cm" },
-                          { label: "Sol Bacak", value: log.leftLegCm ?? "", unit: "cm" },
+                          { label: t("labels.waist"), value: log.waistCm ?? "", unit: "cm" },
+                          { label: t("labels.rightArm"), value: log.rightArmCm ?? "", unit: "cm" },
+                          { label: t("labels.leftArm"), value: log.leftArmCm ?? "", unit: "cm" },
+                          { label: t("labels.rightLeg"), value: log.rightLegCm ?? "", unit: "cm" },
+                          { label: t("labels.leftLeg"), value: log.leftLegCm ?? "", unit: "cm" },
                         ]}
                       />
                       {log.notes && (
                         <div>
                           <div className="flex items-center gap-1.5 mb-1">
                             <Activity className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-xs font-semibold">Not</span>
+                            <span className="text-xs font-semibold">{t("sections.note")}</span>
                           </div>
                           <p className="text-xs text-muted-foreground">{log.notes}</p>
                         </div>
@@ -328,21 +331,21 @@ export default function IlerlemePage() {
       <Dialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ölçümü Sil</DialogTitle>
+            <DialogTitle>{t("deleteTitle")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Bu ölçüm kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            {t("deleteConfirm")}
           </p>
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
-              İptal
+              {t("cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={deleteProgress.isPending}
             >
-              {deleteProgress.isPending ? "Siliniyor..." : "Sil"}
+              {deleteProgress.isPending ? t("deleting") : t("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

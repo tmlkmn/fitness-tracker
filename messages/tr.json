@@ -1261,7 +1261,13 @@
     "tabMeals": "Beslenme",
     "tabWorkout": "Antrenman",
     "noMeals": "Öğün bulunamadı",
-    "noWorkout": "Antrenman programı yok"
+    "noWorkout": "Antrenman programı yok",
+    "loading": "Yükleniyor...",
+    "planTypeDay": {
+      "workout": "Antrenman Günü",
+      "swimming": "Yüzme Günü",
+      "rest": "Dinlenme Günü"
+    }
   },
   "validation": {
     "password": {

@@ -11,13 +11,8 @@ import {
   useSharedWeeklyPlan,
   useSharedDailyPlansByWeek,
 } from "@/hooks/use-shared-plans";
-import Link from "next/link";
-
-const planTypeLabel: Record<string, string> = {
-  workout: "Antrenman",
-  swimming: "Yüzme",
-  rest: "Dinlenme",
-};
+import { Link } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 
 interface PageProps {
   params: Promise<{ weeklyPlanId: string }>;
@@ -29,16 +24,25 @@ export default function PaylasilanHaftaPage({ params }: PageProps) {
   const { data: weeklyPlan, isLoading: loadingPlan } = useSharedWeeklyPlan(id);
   const { data: days, isLoading: loadingDays } =
     useSharedDailyPlansByWeek(id);
+  const t = useTranslations("sharing");
+  const locale = useLocale();
+
+  const planTypeLabel = (planType: string): string => {
+    if ((["workout", "swimming", "rest"] as const).includes(planType as "workout")) {
+      return t(`planType.${planType as "workout" | "swimming" | "rest"}`);
+    }
+    return planType;
+  };
 
   const isLoading = loadingPlan || loadingDays;
 
   return (
     <div className="animate-fade-in">
       <Header
-        title={weeklyPlan?.title ?? "Paylaşılan Plan"}
+        title={weeklyPlan?.title ?? t("weeklyTitleFallback")}
         subtitle={
           weeklyPlan
-            ? `${weeklyPlan.ownerName} tarafından paylaşıldı`
+            ? t("sharedBy", { name: weeklyPlan.ownerName })
             : undefined
         }
         showBack
@@ -53,7 +57,7 @@ export default function PaylasilanHaftaPage({ params }: PageProps) {
       <div className="p-4">
         <div className="flex items-center gap-2 mb-4 p-2 rounded-md bg-primary/10 border border-primary/20">
           <Eye className="h-4 w-4 text-primary shrink-0" />
-          <p className="text-xs text-primary">Salt okunur görünüm</p>
+          <p className="text-xs text-primary">{t("readOnlyNotice")}</p>
         </div>
 
         {isLoading ? (
@@ -62,17 +66,20 @@ export default function PaylasilanHaftaPage({ params }: PageProps) {
           </div>
         ) : !days?.length ? (
           <p className="text-center text-muted-foreground py-12">
-            Günlük plan bulunamadı
+            {t("noDays")}
           </p>
         ) : (
           <div className="space-y-2">
             {days.map((day) => {
               const dateLabel = day.date
-                ? new Date(day.date + "T00:00:00").toLocaleDateString("tr-TR", {
-                    day: "numeric",
-                    month: "short",
-                    weekday: "short",
-                  })
+                ? new Date(day.date + "T00:00:00").toLocaleDateString(
+                    locale === "en" ? "en-US" : "tr-TR",
+                    {
+                      day: "numeric",
+                      month: "short",
+                      weekday: "short",
+                    },
+                  )
                 : null;
 
               return (
@@ -91,9 +98,7 @@ export default function PaylasilanHaftaPage({ params }: PageProps) {
                         )}
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {day.workoutTitle ??
-                          planTypeLabel[day.planType] ??
-                          day.planType}
+                        {day.workoutTitle ?? planTypeLabel(day.planType)}
                       </Badge>
                     </CardContent>
                   </Card>
