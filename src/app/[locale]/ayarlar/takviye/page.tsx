@@ -7,14 +7,16 @@ import { SupplementScheduleEditor } from "@/components/settings/supplement-sched
 import { useUserProfile } from "@/hooks/use-user";
 import { Pill } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 
 export default function TakviyePage() {
   const { data: profile } = useUserProfile();
+  const t = useTranslations("settings.subpages");
   return (
     <div className="animate-fade-in">
       <Header
-        title="Takviye Takvimi"
-        subtitle="Supplement ve ilaç zamanlaması"
+        title={t("supplementsTitle")}
+        subtitle={t("supplementsSubtitle")}
         icon={Pill}
         showBack
         backHref="/ayarlar"

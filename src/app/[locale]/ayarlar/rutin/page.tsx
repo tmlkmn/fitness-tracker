@@ -7,14 +7,16 @@ import { DailyRoutineEditor } from "@/components/settings/daily-routine-editor";
 import { useUserProfile } from "@/hooks/use-user";
 import { Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 
 export default function RutinPage() {
   const { data: profile } = useUserProfile();
+  const t = useTranslations("settings.subpages");
   return (
     <div className="animate-fade-in">
       <Header
-        title="Günlük Akış"
-        subtitle="Hafta içi ve hafta sonu rutinin"
+        title={t("routineTitle")}
+        subtitle={t("routineSubtitle")}
         icon={Clock}
         showBack
         backHref="/ayarlar"

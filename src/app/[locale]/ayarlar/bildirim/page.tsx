@@ -5,13 +5,15 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
 import { NotificationPreferencesCard } from "@/components/notifications/notification-preferences-card";
 import { Bell } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function BildirimPage() {
+  const t = useTranslations("settings.subpages");
   return (
     <div className="animate-fade-in">
       <Header
-        title="Bildirim Ayarları"
-        subtitle="Push, e-posta ve sessiz saatler"
+        title={t("notificationsTitle")}
+        subtitle={t("notificationsSubtitle")}
         icon={Bell}
         showBack
         backHref="/ayarlar"

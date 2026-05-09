@@ -1215,8 +1215,10 @@
       "sharingSubtitle": "Share your program with other users",
       "routineTitle": "Daily Routine",
       "routineSubtitle": "Your weekday and weekend routines",
-      "notificationsTitle": "Notifications & Reminders",
-      "notificationsSubtitle": "Push, email and scheduled reminders",
+      "notificationsTitle": "Notification Settings",
+      "notificationsSubtitle": "Push, email and quiet hours",
+      "remindersTitle": "Reminders",
+      "remindersSubtitle": "Meal, workout and custom reminders",
       "macroTitle": "Macro Targets",
       "macroSubtitle": "Calorie and macro distribution"
     },

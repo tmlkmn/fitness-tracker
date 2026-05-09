@@ -6,13 +6,15 @@ import { HeaderMenu } from "@/components/layout/header-menu";
 import { UnitPreferencesCard } from "@/components/settings/unit-preferences-card";
 import { DashboardPrefsCard } from "@/components/settings/dashboard-prefs-card";
 import { Sliders } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function TercihlerPage() {
+  const t = useTranslations("settings.subpages");
   return (
     <div className="animate-fade-in">
       <Header
-        title="Tercihler"
-        subtitle="Birim ve panel ayarları"
+        title={t("preferencesTitle")}
+        subtitle={t("preferencesSubtitle")}
         icon={Sliders}
         showBack
         backHref="/ayarlar"

@@ -5,13 +5,15 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
 import { ReminderSettingsCard } from "@/components/reminders/reminder-settings-card";
 import { Clock } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function HatirlaticiPage() {
+  const t = useTranslations("settings.subpages");
   return (
     <div className="animate-fade-in">
       <Header
-        title="Hatırlatıcılar"
-        subtitle="Öğün, antrenman ve özel hatırlatmalar"
+        title={t("remindersTitle")}
+        subtitle={t("remindersSubtitle")}
         icon={Clock}
         showBack
         backHref="/ayarlar"

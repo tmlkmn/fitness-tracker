@@ -1215,8 +1215,10 @@
       "sharingSubtitle": "Programını başka kullanıcılarla paylaş",
       "routineTitle": "Günlük Akış",
       "routineSubtitle": "Hafta içi ve hafta sonu rutinin",
-      "notificationsTitle": "Bildirim ve Hatırlatıcılar",
-      "notificationsSubtitle": "Push, e-posta ve zamanlı hatırlatmalar",
+      "notificationsTitle": "Bildirim Ayarları",
+      "notificationsSubtitle": "Push, e-posta ve sessiz saatler",
+      "remindersTitle": "Hatırlatıcılar",
+      "remindersSubtitle": "Öğün, antrenman ve özel hatırlatmalar",
       "macroTitle": "Makro Hedefleri",
       "macroSubtitle": "Kalori ve makro dağılımı"
     },
