@@ -25,6 +25,7 @@ import { computeMealMacros } from "@/lib/meal-macros";
 import { formatAiError } from "@/lib/ai-errors";
 import { formatEnergy, type EnergyUnit } from "@/lib/units";
 import type { AIMeal } from "@/actions/ai-meals";
+import { useTranslations } from "next-intl";
 
 interface MealListProps {
   dailyPlanId: number;
@@ -34,6 +35,7 @@ interface MealListProps {
 }
 
 export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: MealListProps) {
+  const t = useTranslations("meals.list");
   const { data: mealList, isLoading } = useMeals(dailyPlanId);
   const toggleMeal = useToggleMeal();
   const [addOpen, setAddOpen] = useState(false);
@@ -122,12 +124,8 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
         )}
         <EmptyState
           icon={UtensilsCrossed}
-          title="Bu güne ait öğün yok"
-          description={
-            readOnly
-              ? "Geçmiş bir gün görüntülüyorsun."
-              : "AI ile saniyeler içinde günlük plan oluştur veya manuel ekle."
-          }
+          title={t("emptyTitle")}
+          description={readOnly ? t("emptyReadOnly") : t("emptyDescription")}
           action={
             !readOnly && !isMonthBlocked && (
               <Button
@@ -137,7 +135,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
                 disabled={isDailyMealExhausted}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                AI ile Oluştur
+                {t("generateWithAI")}
                 <AiQuotaBadge feature="daily-meal" />
               </Button>
             )
@@ -151,7 +149,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
                 onClick={() => setAddOpen(true)}
               >
                 <Plus className="h-3.5 w-3.5" />
-                Manuel Ekle
+                {t("addManual")}
               </Button>
             )
           }
@@ -208,7 +206,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
       <div className="space-y-1.5">
         <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground tabular-nums">
-            {completedCount}/{mealList.length} tamamlandı
+            {t("completedCount", { completed: completedCount, total: mealList.length })}
           </span>
           <div className="flex items-center gap-2">
             {!readOnly && completedCount < mealList.length && (
@@ -220,7 +218,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
                 disabled={bulkComplete.isPending}
               >
                 <CheckCheck className="h-3 w-3" />
-                Tümünü Tamamla
+                {t("completeAll")}
               </Button>
             )}
             <span className="text-sm font-medium tabular-nums">
@@ -248,7 +246,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
           disabled={isDailyMealExhausted}
         >
           <Sparkles className="h-3.5 w-3.5" />
-          AI ile Programı Değiştir
+          {t("changeWithAI")}
           <AiQuotaBadge feature="daily-meal" />
         </Button>
       )}
@@ -278,14 +276,14 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
             onClick={() => setAddOpen(true)}
           >
             <Plus className="h-3.5 w-3.5" />
-            Öğün Ekle
+            {t("addMeal")}
           </Button>
           <Button
             variant="outline"
             size="sm"
             className="gap-1.5"
             onClick={() => setMoveOpen(true)}
-            title="Başka güne taşı"
+            title={t("moveToAnotherDay")}
           >
             <ArrowRightLeft className="h-3.5 w-3.5" />
           </Button>
@@ -306,7 +304,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
           onClick={() => setMoveOpen(true)}
         >
           <ArrowRightLeft className="h-3.5 w-3.5" />
-          Bugüne veya İleri Güne Taşı
+          {t("moveToTodayOrFuture")}
         </Button>
       )}
 
@@ -335,7 +333,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
           onConfirm={() => bulkComplete.mutate(dailyPlanId)}
           isPending={bulkComplete.isPending}
           itemCount={mealList.length - completedCount}
-          itemLabel="öğün"
+          itemLabel={t("itemLabel")}
         />
       )}
 

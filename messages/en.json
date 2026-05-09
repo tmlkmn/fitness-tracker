@@ -490,6 +490,12 @@
     }
   },
   "meals": {
+    "card": {
+      "favorite": "Favorite",
+      "saved": "Saved",
+      "swap": "Swap",
+      "ai": "AI"
+    },
     "form": {
       "titleNew": "Add New Meal",
       "titleEdit": "Edit Meal",

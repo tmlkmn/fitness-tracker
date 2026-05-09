@@ -490,6 +490,12 @@
     }
   },
   "meals": {
+    "card": {
+      "favorite": "Favori",
+      "saved": "Kaydedildi",
+      "swap": "Değiştir",
+      "ai": "AI"
+    },
     "form": {
       "titleNew": "Yeni Öğün Ekle",
       "titleEdit": "Öğünü Düzenle",

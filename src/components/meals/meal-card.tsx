@@ -14,6 +14,10 @@ import { MealSwapModal } from "./meal-swap-modal";
 import { Pencil, Trash2, Sparkles, Star, ArrowLeftRight } from "lucide-react";
 import { SwipeableCard } from "@/components/ui/swipeable-card";
 import { useSaveMealSuggestion } from "@/hooks/use-saved-meals";
+import { useTranslations } from "next-intl";
+import { getLocalizedMealLabel, isMealLabel } from "@/lib/meal-labels";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 interface MealCardProps {
   id: number;
@@ -54,6 +58,8 @@ export function MealCard({
   const [swapOpen, setSwapOpen] = useState(false);
   const [favSaved, setFavSaved] = useState(false);
   const saveMutation = useSaveMealSuggestion();
+  const t = useTranslations("meals.card");
+  const locale = useLocale() as Locale;
 
   const handleFavorite = () => {
     setFavSaved(true);
@@ -110,7 +116,10 @@ export function MealCard({
                     "text-sm font-semibold",
                     readOnly && isCompleted && "line-through opacity-60"
                   )}>
-                    {stripEmoji(mealLabel)}
+                    {(() => {
+                      const stripped = stripEmoji(mealLabel);
+                      return isMealLabel(stripped) ? getLocalizedMealLabel(stripped, locale) : stripped;
+                    })()}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -163,7 +172,7 @@ export function MealCard({
             >
               <Star className={cn("h-5 w-5", favSaved && "fill-current text-yellow-400")} />
               <span className="text-[10px] leading-none font-medium">
-                {favSaved ? "Kaydedildi" : "Favori"}
+                {favSaved ? t("saved") : t("favorite")}
               </span>
             </Button>
             <Button
@@ -172,7 +181,7 @@ export function MealCard({
               onClick={() => setSwapOpen(true)}
             >
               <ArrowLeftRight className="h-5 w-5" />
-              <span className="text-[10px] leading-none font-medium">Değiştir</span>
+              <span className="text-[10px] leading-none font-medium">{t("swap")}</span>
             </Button>
             {!isMealTimePast && (
               <Button
@@ -181,7 +190,7 @@ export function MealCard({
                 onClick={() => setAiOpen(true)}
               >
                 <Sparkles className="h-5 w-5" />
-                <span className="text-[10px] leading-none font-medium">AI</span>
+                <span className="text-[10px] leading-none font-medium">{t("ai")}</span>
               </Button>
             )}
           </div>

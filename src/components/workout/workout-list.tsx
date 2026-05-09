@@ -24,6 +24,7 @@ import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { formatAiError } from "@/lib/ai-errors";
+import { useTranslations } from "next-intl";
 
 interface WorkoutListProps {
   dailyPlanId: number;
@@ -33,6 +34,7 @@ interface WorkoutListProps {
 }
 
 export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: WorkoutListProps) {
+  const t = useTranslations("workout.list");
   const { data: exerciseList, isLoading } = useExercises(dailyPlanId);
   const toggleExercise = useToggleExercise();
   const [modalOpen, setModalOpen] = useState(false);
@@ -122,12 +124,8 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
         )}
         <EmptyState
           icon={Dumbbell}
-          title="Bu gün için antrenman programı yok"
-          description={
-            readOnly
-              ? "Geçmiş bir gün görüntülüyorsun."
-              : "AI ile saniyeler içinde oluştur veya geçen haftadan kopyala."
-          }
+          title={t("emptyTitle")}
+          description={readOnly ? t("emptyReadOnly") : t("emptyDescription")}
           action={
             !readOnly && !isMonthBlocked && (
               <Button
@@ -137,7 +135,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
                 disabled={workoutQuota?.remaining === 0}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                AI ile Oluştur
+                {t("generateWithAI")}
                 <AiQuotaBadge feature="workout" />
               </Button>
             )
@@ -152,7 +150,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
                   onClick={() => setCopyOpen(true)}
                 >
                   <Copy className="h-3.5 w-3.5" />
-                  Geçen Haftadan
+                  {t("fromLastWeek")}
                 </Button>
                 <Button
                   variant="outline"
@@ -161,7 +159,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
                   onClick={() => setAddOpen(true)}
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Manuel Ekle
+                  {t("addManual")}
                 </Button>
               </>
             )
@@ -178,7 +176,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
           <AiWorkoutModal
             open={modalOpen}
             onOpenChange={handleOpenChange}
-            title="AI ile Antrenman Oluştur"
+            title={t("aiCreateTitle")}
             currentExercises={[]}
             suggestedExercises={generate.data?.suggestedExercises ?? null}
             loading={generate.isPending}
@@ -233,7 +231,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
               <Dumbbell className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Bugünün Antrenmanı</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("todaysWorkout")}</p>
               <p className="text-sm font-semibold leading-tight mt-0.5">{workoutTitle}</p>
             </div>
           </div>
@@ -241,7 +239,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground tabular-nums">
-              {completedExercises}/{totalExercises} tamamlandı
+              {t("completedCount", { completed: completedExercises, total: totalExercises })}
             </span>
             <div className="flex items-center gap-2">
               {!readOnly && completedExercises < totalExercises && (
@@ -253,7 +251,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
                   disabled={bulkComplete.isPending}
                 >
                   <CheckCheck className="h-3 w-3" />
-                  Tümünü Tamamla
+                  {t("completeAll")}
                 </Button>
               )}
               <span className="text-sm font-medium tabular-nums">%{percent}</span>
@@ -277,7 +275,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
             disabled={workoutQuota?.remaining === 0}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            AI ile Programı Değiştir
+            {t("changeWithAI")}
             <AiQuotaBadge feature="workout" />
           </Button>
         )}
@@ -305,14 +303,14 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
               onClick={() => setAddOpen(true)}
             >
               <Plus className="h-3.5 w-3.5" />
-              Egzersiz Ekle
+              {t("addExercise")}
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="gap-1.5"
               onClick={() => setCopyOpen(true)}
-              title="Geçen haftadan kopyala"
+              title={t("copyFromLastWeek")}
             >
               <Copy className="h-3.5 w-3.5" />
             </Button>
@@ -321,7 +319,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
               size="sm"
               className="gap-1.5"
               onClick={() => setMoveOpen(true)}
-              title="Başka güne taşı"
+              title={t("moveToAnotherDay")}
             >
               <ArrowRightLeft className="h-3.5 w-3.5" />
             </Button>
@@ -330,7 +328,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
               size="sm"
               className="gap-1.5 text-destructive hover:text-destructive"
               onClick={() => setBulkDeleteOpen(true)}
-              title="Tümünü sil"
+              title={t("deleteAll")}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -343,7 +341,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
             onClick={() => setMoveOpen(true)}
           >
             <ArrowRightLeft className="h-3.5 w-3.5" />
-            Bugüne veya İleri Güne Taşı
+            {t("moveToTodayOrFuture")}
           </Button>
         )}
       </div>
@@ -372,7 +370,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
           onConfirm={() => bulkComplete.mutate(dailyPlanId)}
           isPending={bulkComplete.isPending}
           itemCount={totalExercises - completedExercises}
-          itemLabel="egzersiz"
+          itemLabel={t("itemLabel")}
         />
       )}
 
@@ -380,7 +378,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
         <AiWorkoutModal
           open={modalOpen}
           onOpenChange={handleOpenChange}
-          title="AI ile Programı Değiştir"
+          title={t("aiChangeTitle")}
           currentExercises={exerciseList}
           suggestedExercises={generate.data?.suggestedExercises ?? null}
           loading={generate.isPending}
