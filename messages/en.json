@@ -418,6 +418,19 @@
     }
   },
   "workout": {
+    "section": {
+      "aiChangeSection": "Change {section} with AI"
+    },
+    "card": {
+      "addOneSet": "+1 Set",
+      "demo": "Demo",
+      "googleSearch": "Search on Google",
+      "search": "Search",
+      "form": "Form",
+      "alternative": "Alternative",
+      "minutesShort": "min",
+      "secondsShort": "s"
+    },
     "list": {
       "emptyTitle": "No workout program for this day",
       "emptyReadOnly": "You're viewing a past day.",
@@ -757,6 +770,13 @@
     "form": {
       "titleEdit": "Edit Exercise",
       "titleNew": "Add New Exercise",
+      "titleNewShort": "New Exercise",
+      "unsavedTitle": "You have unsaved changes",
+      "unsavedDesc": "If you close the form, your entries will be lost.",
+      "keepEditing": "Keep Editing",
+      "close": "Close",
+      "namePlaceholderShort": "e.g. Bench Press",
+      "notesPlaceholderShort": "e.g. weight, form notes...",
       "section": "Section",
       "sectionLabels": {
         "warmup": "Warm-up",

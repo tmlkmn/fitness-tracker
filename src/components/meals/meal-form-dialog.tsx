@@ -30,6 +30,9 @@ import { IconPicker } from "@/components/ui/icon-picker";
 import { Library, X } from "lucide-react";
 import { multiplyFood, formatScaledEntry, type FoodLike } from "@/lib/food-math";
 import { useDialogCloseGuard } from "@/hooks/use-dialog-close-guard";
+import { useLocale, useTranslations } from "next-intl";
+import { getLocalizedMealLabel } from "@/lib/meal-labels";
+import type { Locale } from "@/lib/locale";
 
 interface MealData {
   id?: number;
@@ -62,6 +65,8 @@ export function MealFormDialog({
   const createMeal = useCreateMeal();
   const updateMeal = useUpdateMeal();
   const { data: profile } = useUserProfile();
+  const t = useTranslations("meals.form");
+  const locale = useLocale() as Locale;
 
   // Smart meal time default: use routine if available
   const getSmartDefault = () => {
@@ -235,7 +240,7 @@ export function MealFormDialog({
           <DialogHeader className="space-y-0">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-base">
-                {isEdit ? "Öğünü Düzenle" : "Yeni Öğün"}
+                {isEdit ? t("titleEdit") : t("titleNew")}
               </DialogTitle>
               {!isEdit && (
                 <Button
@@ -246,7 +251,7 @@ export function MealFormDialog({
                   onClick={() => setPickerOpen(true)}
                 >
                   <Library className="h-3.5 w-3.5" />
-                  Öğünlerimden Ekle
+                  {t("pickFromLibrary")}
                 </Button>
               )}
             </div>
@@ -256,7 +261,7 @@ export function MealFormDialog({
             <div className="grid grid-cols-[1fr_1.5fr] gap-2">
               <div className="space-y-1">
                 <Label htmlFor="mealTime" className="text-xs text-muted-foreground">
-                  Saat
+                  {t("time")}
                 </Label>
                 <Input
                   id="mealTime"
@@ -268,7 +273,7 @@ export function MealFormDialog({
               </div>
               <div className="space-y-1">
                 <Label htmlFor="mealLabel" className="text-xs text-muted-foreground">
-                  Öğün Adı *
+                  {t("mealName")} *
                 </Label>
                 <div className="flex gap-1.5">
                   <IconPicker value={icon} onChange={setIcon} className="h-9 w-9" />
@@ -277,12 +282,12 @@ export function MealFormDialog({
                     onValueChange={(v) => setMealLabel(v as MealLabel)}
                   >
                     <SelectTrigger id="mealLabel" className="h-9 flex-1">
-                      <SelectValue placeholder="Seç..." />
+                      <SelectValue placeholder={t("selectPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {MEAL_LABELS.map((label) => (
                         <SelectItem key={label} value={label}>
-                          {label}
+                          {getLocalizedMealLabel(label, locale)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -294,14 +299,14 @@ export function MealFormDialog({
             <div className="space-y-1">
               <div className="flex items-center gap-1">
                 <Label htmlFor="content" className="text-xs text-muted-foreground">
-                  İçerik *
+                  {t("content")} *
                 </Label>
                 <FoodReferencePopover onAdd={handleAddFood} />
               </div>
               <textarea
                 id="content"
                 className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-                placeholder="Örn. 2 yumurta, 1 dilim ekmek..."
+                placeholder={t("contentPlaceholder")}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required
@@ -314,7 +319,7 @@ export function MealFormDialog({
                       type="button"
                       onClick={() => handleRemoveAddedFood(f.key)}
                       className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20"
-                      title="Kaldır"
+                      title={t("remove")}
                     >
                       {formatScaledEntry(f.food, f.multiplier)} · {f.scaled.calories}kcal
                       <X className="h-2.5 w-2.5" />
@@ -326,11 +331,11 @@ export function MealFormDialog({
 
             {/* Macros */}
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Besin Değerleri</p>
+              <p className="text-xs text-muted-foreground">{t("nutritionFacts")}</p>
               <div className="grid grid-cols-4 gap-1.5">
                 <div className="space-y-0.5">
                   <Label htmlFor="calories" className="text-[10px] text-muted-foreground/70">
-                    Kalori
+                    {t("calories")}
                   </Label>
                   <Input
                     id="calories"
@@ -344,7 +349,7 @@ export function MealFormDialog({
                 </div>
                 <div className="space-y-0.5">
                   <Label htmlFor="protein" className="text-[10px] text-muted-foreground/70">
-                    Protein
+                    {t("protein")}
                   </Label>
                   <Input
                     id="protein"
@@ -359,7 +364,7 @@ export function MealFormDialog({
                 </div>
                 <div className="space-y-0.5">
                   <Label htmlFor="carbs" className="text-[10px] text-muted-foreground/70">
-                    Karb.
+                    {t("carbs")}.
                   </Label>
                   <Input
                     id="carbs"
@@ -374,7 +379,7 @@ export function MealFormDialog({
                 </div>
                 <div className="space-y-0.5">
                   <Label htmlFor="fat" className="text-[10px] text-muted-foreground/70">
-                    Yağ
+                    {t("fat")}
                   </Label>
                   <Input
                     id="fat"
@@ -399,7 +404,7 @@ export function MealFormDialog({
                   onCheckedChange={(checked) => setSaveAsFavorite(!!checked)}
                 />
                 <Label htmlFor="saveAsFavorite" className="text-xs text-muted-foreground cursor-pointer">
-                  Favorilere kaydet
+                  {t("saveAsFavorite")}
                 </Label>
               </div>
             )}
@@ -411,10 +416,10 @@ export function MealFormDialog({
                 className="flex-1"
                 onClick={() => onOpenChange(false)}
               >
-                İptal
+                {t("cancel")}
               </Button>
               <Button type="submit" className="flex-1" disabled={isPending}>
-                {isPending ? "Kaydediliyor..." : isEdit ? "Güncelle" : "Ekle"}
+                {isPending ? t("saving") : isEdit ? t("update") : t("add")}
               </Button>
             </div>
           </form>

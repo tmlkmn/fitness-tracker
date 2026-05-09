@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-workout-ai";
 import { useProfileCheck } from "@/hooks/use-profile-check";
 import { formatAiError } from "@/lib/ai-errors";
+import { useTranslations } from "next-intl";
 
 interface Exercise {
   id: number;
@@ -52,6 +53,7 @@ export function WorkoutSection({
   const generate = useGenerateSectionReplacement();
   const apply = useApplySectionReplacement();
   const { missingFields } = useProfileCheck();
+  const t = useTranslations("workout.section");
 
   const handleGenerate = (userNote?: string) => {
     generate.mutate({ dailyPlanId, section, sectionLabel, userNote });
@@ -123,7 +125,7 @@ export function WorkoutSection({
         <AiWorkoutModal
           open={modalOpen}
           onOpenChange={handleOpenChange}
-          title={`AI ile ${sectionLabel} Değiştir`}
+          title={t("aiChangeSection", { section: sectionLabel })}
           currentExercises={exercises}
           suggestedExercises={generate.data?.suggestedExercises ?? null}
           loading={generate.isPending}

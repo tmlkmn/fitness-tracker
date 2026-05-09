@@ -21,6 +21,7 @@ import {
 import { useUpdateExercise } from "@/hooks/use-exercise-crud";
 import type { AIExerciseVariation } from "@/actions/ai-workout";
 import { formatAiError } from "@/lib/ai-errors";
+import { useTranslations } from "next-intl";
 
 interface ExerciseCardProps {
   id: number;
@@ -61,6 +62,7 @@ export function ExerciseCard({
   const generate = useGenerateExerciseVariation();
   const apply = useApplyExerciseVariation();
   const updateExercise = useUpdateExercise();
+  const t = useTranslations("workout.card");
 
   const handleGenerate = (userNote?: string, forceRefresh?: boolean) => {
     if (!dailyPlanId) return;
@@ -133,7 +135,7 @@ export function ExerciseCard({
                           data: { section, sectionLabel, name, sets: (sets ?? 0) + 1, reps, restSeconds, durationMinutes, notes },
                         })
                       }
-                      title="+1 Set"
+                      title={t("addOneSet")}
                     >
                       <Plus className="h-3 w-3" />
                     </Button>
@@ -142,13 +144,13 @@ export function ExerciseCard({
               ) : null}
               {durationMinutes ? (
                 <Badge variant="secondary" className="text-xs">
-                  {durationMinutes} dk
+                  {durationMinutes} {t("minutesShort")}
                 </Badge>
               ) : null}
               {restSeconds ? (
                 <Badge variant="outline" className="text-xs">
                   <Timer className="h-3 w-3 mr-1" />
-                  {restSeconds}sn
+                  {restSeconds}{t("secondsShort")}
                 </Badge>
               ) : null}
             </div>
@@ -183,17 +185,17 @@ export function ExerciseCard({
         <ExerciseDemoModal
           name={name}
           triggerClassName="flex-col h-11 w-auto px-3 gap-0.5"
-          triggerLabel="Demo"
+          triggerLabel={t("demo")}
         />
         <a
           href={`https://www.google.com/search?q=${encodeURIComponent(englishName || name)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex flex-col items-center justify-center h-11 px-3 gap-0.5 rounded-md hover:bg-accent transition-colors text-muted-foreground"
-          title="Google'da Ara"
+          title={t("googleSearch")}
         >
           <Search className="h-5 w-5" />
-          <span className="text-[10px] leading-none font-medium">Ara</span>
+          <span className="text-[10px] leading-none font-medium">{t("search")}</span>
         </a>
         {!readOnly && (
           <ExerciseFormTips
@@ -201,7 +203,7 @@ export function ExerciseCard({
             notes={notes}
             englishName={englishName}
             triggerClassName="flex-col h-11 w-auto px-3 gap-0.5"
-            triggerLabel="Form"
+            triggerLabel={t("form")}
           />
         )}
         {!readOnly && !isCompleted && dailyPlanId && (
@@ -211,7 +213,7 @@ export function ExerciseCard({
             onClick={() => handleOpenChange(true)}
           >
             <Sparkles className="h-5 w-5" />
-            <span className="text-[10px] leading-none font-medium">Alternatif</span>
+            <span className="text-[10px] leading-none font-medium">{t("alternative")}</span>
           </Button>
         )}
       </div>

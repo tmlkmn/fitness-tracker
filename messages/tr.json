@@ -418,6 +418,19 @@
     }
   },
   "workout": {
+    "section": {
+      "aiChangeSection": "AI ile {section} Değiştir"
+    },
+    "card": {
+      "addOneSet": "+1 Set",
+      "demo": "Demo",
+      "googleSearch": "Google'da Ara",
+      "search": "Ara",
+      "form": "Form",
+      "alternative": "Alternatif",
+      "minutesShort": "dk",
+      "secondsShort": "sn"
+    },
     "list": {
       "emptyTitle": "Bu gün için antrenman programı yok",
       "emptyReadOnly": "Geçmiş bir gün görüntülüyorsun.",
@@ -757,6 +770,13 @@
     "form": {
       "titleEdit": "Egzersizi Düzenle",
       "titleNew": "Yeni Egzersiz Ekle",
+      "titleNewShort": "Yeni Egzersiz",
+      "unsavedTitle": "Kaydedilmemiş değişiklikleriniz var",
+      "unsavedDesc": "Formu kapatırsanız girdiğiniz bilgiler kaybolacak.",
+      "keepEditing": "Düzenlemeye Devam Et",
+      "close": "Kapat",
+      "namePlaceholderShort": "Örn. Bench Press",
+      "notesPlaceholderShort": "Örn. ağırlık, form notları...",
       "section": "Bölüm",
       "sectionLabels": {
         "warmup": "Isınma",
