@@ -99,9 +99,25 @@
     "signOut": "Sign Out",
     "workout": "Workout"
   },
+  "cookieConsent": {
+    "title": "Cookie Policy",
+    "description": "This app uses essential cookies for session management. We'd also like to use analytics cookies to improve your experience.",
+    "privacyLink": "Privacy Policy",
+    "necessaryLabel": "Essential Cookies",
+    "necessaryDescription": "Session management, security",
+    "analyticsLabel": "Analytics Cookies",
+    "analyticsDescription": "Usage statistics, performance metrics",
+    "acceptAll": "Accept All",
+    "necessaryOnly": "Essential Only",
+    "saveSelection": "Save Selection"
+  },
   "fab": {
     "aiAssistant": "AI Assistant",
+    "workout": "Workout",
     "addMeal": "Add Meal",
+    "calendar": "Calendar",
+    "reminders": "Reminders",
+    "profile": "Profile",
     "quickActions": "Quick actions",
     "closeQuickActions": "Close quick actions"
   },
@@ -117,6 +133,7 @@
         "invalidEmail": "Please enter a valid email address.",
         "passwordRequired": "Password is required.",
         "invalidCredentials": "Invalid email or password.",
+        "accountFrozen": "Your account has been suspended. Contact your administrator for details.",
         "inviteExpired": "Your invitation has expired. Please contact your administrator.",
         "generic": "An error occurred. Please try again."
       }

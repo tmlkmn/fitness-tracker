@@ -99,9 +99,25 @@
     "signOut": "Çıkış Yap",
     "workout": "Antrenman"
   },
+  "cookieConsent": {
+    "title": "Çerez Politikası",
+    "description": "Bu uygulama, oturum yönetimi için zorunlu çerezler kullanır. Ayrıca deneyiminizi iyileştirmek için analitik çerezler kullanmak istiyoruz.",
+    "privacyLink": "Gizlilik Politikası",
+    "necessaryLabel": "Zorunlu Çerezler",
+    "necessaryDescription": "Oturum yönetimi, güvenlik",
+    "analyticsLabel": "Analitik Çerezler",
+    "analyticsDescription": "Kullanım istatistikleri, performans ölçümü",
+    "acceptAll": "Tümünü Kabul Et",
+    "necessaryOnly": "Sadece Zorunlu",
+    "saveSelection": "Seçimi Kaydet"
+  },
   "fab": {
     "aiAssistant": "AI Asistan",
+    "workout": "Antrenman",
     "addMeal": "Öğün Ekle",
+    "calendar": "Takvim",
+    "reminders": "Hatırlatıcılar",
+    "profile": "Profil",
     "quickActions": "Hızlı eylemler",
     "closeQuickActions": "Hızlı eylemleri kapat"
   },
@@ -118,6 +134,7 @@
         "passwordRequired": "Şifre gereklidir.",
         "invalidCredentials": "E-posta veya şifre hatalı.",
         "inviteExpired": "Davet süreniz dolmuş. Yöneticinizle iletişime geçin.",
+        "accountFrozen": "Üyeliğiniz askıya alınmıştır. Detay için yöneticinizle iletişime geçin.",
         "generic": "Bir hata oluştu. Tekrar deneyin."
       }
     },

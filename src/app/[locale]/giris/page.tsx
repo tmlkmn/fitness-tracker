@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { signIn, signOut, authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useRouter, Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dumbbell, Loader2, Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function GirisPage() {
   const router = useRouter();
+  const t = useTranslations("auth.login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,15 +24,15 @@ export default function GirisPage() {
 
     const trimmed = email.trim();
     if (!trimmed) {
-      setError("E-posta adresi gereklidir.");
+      setError(t("errors.emailRequired"));
       return;
     }
     if (!EMAIL_REGEX.test(trimmed)) {
-      setError("Geçerli bir e-posta adresi girin.");
+      setError(t("errors.invalidEmail"));
       return;
     }
     if (!password) {
-      setError("Şifre gereklidir.");
+      setError(t("errors.passwordRequired"));
       return;
     }
 
@@ -40,7 +41,7 @@ export default function GirisPage() {
     try {
       const result = await signIn.email({ email: trimmed, password });
       if (result.error) {
-        setError("E-posta veya şifre hatalı.");
+        setError(t("errors.invalidCredentials"));
       } else {
         const { data: sessionData } = await authClient.getSession();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,14 +52,14 @@ export default function GirisPage() {
             user.inviteExpiresAt &&
             new Date(user.inviteExpiresAt) < new Date()
           ) {
-            setError("Davet süreniz dolmuş. Yöneticinizle iletişime geçin.");
+            setError(t("errors.inviteExpired"));
             await signOut();
             return;
           }
           router.push("/sifre-degistir");
         } else if (user?.frozenAt) {
           await signOut();
-          setError("Üyeliğiniz askıya alınmıştır. Detay için yöneticinizle iletişime geçin.");
+          setError(t("errors.accountFrozen"));
           return;
         } else if (user?.isApproved) {
           if (user.membershipEndDate && new Date(user.membershipEndDate) < new Date()) {
@@ -74,7 +75,7 @@ export default function GirisPage() {
         router.refresh();
       }
     } catch {
-      setError("Bir hata oluştu. Tekrar deneyin.");
+      setError(t("errors.generic"));
     } finally {
       setLoading(false);
     }
@@ -90,7 +91,7 @@ export default function GirisPage() {
             </div>
             <h1 className="text-xl font-bold">FitMusc</h1>
             <p className="text-sm text-muted-foreground">
-              Hesabınıza giriş yapın
+              {t("subtitle")}
             </p>
           </div>
 
@@ -100,7 +101,7 @@ export default function GirisPage() {
                 htmlFor="email"
                 className="text-sm font-medium leading-none"
               >
-                E-posta
+                {t("email")}
               </label>
               <input
                 id="email"
@@ -118,7 +119,7 @@ export default function GirisPage() {
                 htmlFor="password"
                 className="text-sm font-medium leading-none"
               >
-                Şifre
+                {t("password")}
               </label>
               <div className="relative">
                 <input
@@ -153,7 +154,7 @@ export default function GirisPage() {
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Giriş Yap"
+                t("signIn")
               )}
             </button>
           </form>
@@ -163,7 +164,7 @@ export default function GirisPage() {
               href={email.trim() ? `/sifremi-unuttum?email=${encodeURIComponent(email.trim())}` : "/sifremi-unuttum"}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              Şifremi Unuttum
+              {t("forgotPassword")}
             </Link>
           </div>
         </CardContent>

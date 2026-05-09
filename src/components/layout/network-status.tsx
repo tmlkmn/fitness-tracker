@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { WifiOff, Wifi, RefreshCw } from "lucide-react";
 import { useIsFetching, useIsMutating, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 
 export function NetworkStatus() {
+  const t = useTranslations("layout.networkStatus");
   const [isOnline, setIsOnline] = useState(true);
   const [showReconnected, setShowReconnected] = useState(false);
   const wasOfflineRef = useRef(false);
@@ -94,15 +96,15 @@ export function NetworkStatus() {
       {isOnline ? (
         <>
           <Wifi className="h-4 w-4" />
-          Bağlantı yeniden sağlandı
+          {t("reconnected")}
         </>
       ) : (
         <>
           <WifiOff className="h-4 w-4 shrink-0" />
-          <span>Çevrimdışısın</span>
+          <span>{t("offline")}</span>
           {queuedCount > 0 && (
             <span className="text-xs opacity-90 tabular-nums">
-              · {queuedCount} bekliyor
+              · {t("queued", { count: queuedCount })}
             </span>
           )}
           <button
@@ -111,7 +113,7 @@ export function NetworkStatus() {
             className="ml-2 inline-flex items-center gap-1 rounded-md bg-white/15 hover:bg-white/25 px-2 py-0.5 text-xs font-medium transition-colors"
           >
             <RefreshCw className="h-3 w-3" />
-            Tekrar Dene
+            {t("retry")}
           </button>
         </>
       )}

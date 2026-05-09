@@ -4,7 +4,8 @@ import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Cookie, Settings2 } from "lucide-react";
 import { saveCookieConsent } from "@/actions/cookie-consent";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 const CONSENT_KEY = "fitmusc_cookie_consent";
 const DISMISS_EVENT = "fitmusc:cookie-consent-dismissed";
@@ -44,9 +45,6 @@ function storeConsent(consent: ConsentState) {
 }
 
 export function CookieConsent() {
-  // useSyncExternalStore handles SSR safely (server snapshot = `true` —
-  // hasConsent treated as already given, so banner doesn't render on the
-  // server) and re-renders the moment localStorage changes.
   const hasConsent = useSyncExternalStore(
     subscribeConsent,
     readHasConsent,
@@ -54,6 +52,7 @@ export function CookieConsent() {
   );
   const [showDetails, setShowDetails] = useState(false);
   const [analytics, setAnalytics] = useState(false);
+  const t = useTranslations("cookieConsent");
 
   if (hasConsent) return null;
 
@@ -81,13 +80,11 @@ export function CookieConsent() {
         <div className="flex items-start gap-3">
           <Cookie className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           <div className="space-y-1.5">
-            <p className="text-sm font-medium">Çerez Politikası</p>
+            <p className="text-sm font-medium">{t("title")}</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Bu uygulama, oturum yönetimi için zorunlu çerezler kullanır.
-              Ayrıca deneyiminizi iyileştirmek için analitik çerezler kullanmak
-              istiyoruz.{" "}
+              {t("description")}{" "}
               <Link href="/gizlilik" className="underline hover:text-foreground">
-                Gizlilik Politikası
+                {t("privacyLink")}
               </Link>
             </p>
           </div>
@@ -103,7 +100,7 @@ export function CookieConsent() {
                 className="rounded border-border"
               />
               <span className="text-muted-foreground">
-                <strong className="text-foreground">Zorunlu Çerezler</strong> — Oturum yönetimi, güvenlik
+                <strong className="text-foreground">{t("necessaryLabel")}</strong> — {t("necessaryDescription")}
               </span>
             </label>
             <label className="flex items-center gap-2 text-xs cursor-pointer">
@@ -114,7 +111,7 @@ export function CookieConsent() {
                 className="rounded border-border"
               />
               <span className="text-muted-foreground">
-                <strong className="text-foreground">Analitik Çerezler</strong> — Kullanım istatistikleri, performans ölçümü
+                <strong className="text-foreground">{t("analyticsLabel")}</strong> — {t("analyticsDescription")}
               </span>
             </label>
           </div>
@@ -129,7 +126,7 @@ export function CookieConsent() {
                 onClick={handleAcceptAll}
                 className="flex-1"
               >
-                Tümünü Kabul Et
+                {t("acceptAll")}
               </Button>
               <Button
                 type="button"
@@ -138,7 +135,7 @@ export function CookieConsent() {
                 onClick={handleRejectOptional}
                 className="flex-1"
               >
-                Sadece Zorunlu
+                {t("necessaryOnly")}
               </Button>
               <Button
                 type="button"
@@ -158,7 +155,7 @@ export function CookieConsent() {
                 onClick={handleAcceptSelected}
                 className="flex-1"
               >
-                Seçimi Kaydet
+                {t("saveSelection")}
               </Button>
               <Button
                 type="button"
@@ -167,7 +164,7 @@ export function CookieConsent() {
                 onClick={handleAcceptAll}
                 className="flex-1"
               >
-                Tümünü Kabul Et
+                {t("acceptAll")}
               </Button>
             </>
           )}

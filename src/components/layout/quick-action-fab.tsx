@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import {
   Plus,
   X,
@@ -56,6 +56,7 @@ function QuickActionFabInner({ pathname }: { pathname: string }) {
   const [prevPathname, setPrevPathname] = useState(pathname);
   const containerRef = useRef<HTMLDivElement>(null);
   const { data: today } = useTodayDashboard();
+  const t = useTranslations("fab");
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
     if (open) setOpen(false);
@@ -86,37 +87,37 @@ function QuickActionFabInner({ pathname }: { pathname: string }) {
 
   const actions: QuickAction[] = [
     {
-      label: "AI Asistan",
+      label: t("aiAssistant"),
       icon: Bot,
       href: "/asistan",
       color: "bg-violet-500/15 text-violet-400",
     },
     {
-      label: "Antrenman",
+      label: t("workout"),
       icon: Dumbbell,
       href: `${todayHref}?tab=workout`,
       color: "bg-orange-500/15 text-orange-400",
     },
     {
-      label: "Öğün Ekle",
+      label: t("addMeal"),
       icon: Utensils,
       href: `${todayHref}?tab=meals`,
       color: "bg-emerald-500/15 text-emerald-400",
     },
     {
-      label: "Takvim",
+      label: t("calendar"),
       icon: CalendarDays,
       href: "/takvim",
       color: "bg-primary/15 text-primary",
     },
     {
-      label: "Hatırlatıcılar",
+      label: t("reminders"),
       icon: Bell,
       href: "/ayarlar/hatirlatici",
       color: "bg-sky-500/15 text-sky-400",
     },
     {
-      label: "Profil",
+      label: t("profile"),
       icon: User,
       href: "/ayarlar",
       color: "bg-rose-500/15 text-rose-400",
@@ -173,7 +174,7 @@ function QuickActionFabInner({ pathname }: { pathname: string }) {
             setOpen((v) => !v);
           }}
           aria-expanded={open}
-          aria-label={open ? "Hızlı eylemleri kapat" : "Hızlı eylemler"}
+          aria-label={open ? t("closeQuickActions") : t("quickActions")}
           className="h-13 w-13 rounded-full bg-primary text-primary-foreground shadow-lg border border-primary/30 flex items-center justify-center transition-all active:scale-95 hover:shadow-xl pointer-events-auto"
         >
           <span

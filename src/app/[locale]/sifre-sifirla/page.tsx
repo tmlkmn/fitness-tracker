@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Card, CardContent } from "@/components/ui/card";
 import { KeyRound, Loader2, CheckCircle, Eye, EyeOff, Check, X } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { validatePasswordStrength } from "@/lib/password-validation";
 
 export default function SifreSifirlaPage() {
@@ -25,6 +26,9 @@ export default function SifreSifirlaPage() {
 function SifreSifirlaContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const t = useTranslations("auth.resetPassword");
+  const tChange = useTranslations("auth.changePassword");
+  const tLogin = useTranslations("auth.login");
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,15 +43,15 @@ function SifreSifirlaContent() {
       <div className="min-h-dvh flex items-center justify-center p-4">
         <Card className="w-full max-w-sm">
           <CardContent className="p-6 space-y-4 text-center">
-            <h1 className="text-xl font-bold">Geçersiz Bağlantı</h1>
+            <h1 className="text-xl font-bold">{t("invalidLinkTitle")}</h1>
             <p className="text-sm text-muted-foreground">
-              Bu şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.
+              {t("invalidLinkDescription")}
             </p>
             <Link
               href="/giris"
               className="inline-flex items-center justify-center w-full h-10 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors"
             >
-              Giriş Sayfasına Dön
+              {t("backToLogin")}
             </Link>
           </CardContent>
         </Card>
@@ -59,11 +63,6 @@ function SifreSifirlaContent() {
     e.preventDefault();
     setError("");
 
-    if (newPassword.length < 10) {
-      setError("Şifre en az 10 karakter olmalıdır.");
-      return;
-    }
-
     const strength = validatePasswordStrength(newPassword);
     if (!strength.valid) {
       setError(strength.error!);
@@ -71,7 +70,7 @@ function SifreSifirlaContent() {
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Şifreler eşleşmiyor.");
+      setError(tChange("errors.passwordMismatch"));
       return;
     }
 
@@ -82,12 +81,12 @@ function SifreSifirlaContent() {
         token,
       });
       if (result.error) {
-        setError("Bağlantının süresi dolmuş. Tekrar deneyin.");
+        setError(t("errors.linkExpired"));
       } else {
         setSuccess(true);
       }
     } catch {
-      setError("Bir hata oluştu. Tekrar deneyin.");
+      setError(tLogin("errors.generic"));
     } finally {
       setLoading(false);
     }
@@ -101,15 +100,15 @@ function SifreSifirlaContent() {
             <div className="h-14 w-14 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto">
               <CheckCircle className="h-7 w-7 text-green-500" />
             </div>
-            <h1 className="text-xl font-bold">Şifre Değiştirildi</h1>
+            <h1 className="text-xl font-bold">{t("successTitle")}</h1>
             <p className="text-sm text-muted-foreground">
-              Yeni şifrenizle giriş yapabilirsiniz.
+              {t("successDescription")}
             </p>
             <Link
               href="/giris"
               className="inline-flex items-center justify-center w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
             >
-              Giriş Yap
+              {tLogin("signIn")}
             </Link>
           </CardContent>
         </Card>
@@ -125,9 +124,9 @@ function SifreSifirlaContent() {
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
               <KeyRound className="h-7 w-7 text-primary" />
             </div>
-            <h1 className="text-xl font-bold">Yeni Şifre Belirle</h1>
+            <h1 className="text-xl font-bold">{t("title")}</h1>
             <p className="text-sm text-muted-foreground">
-              Yeni şifrenizi girin
+              {t("description")}
             </p>
           </div>
 
@@ -137,7 +136,7 @@ function SifreSifirlaContent() {
                 htmlFor="newPassword"
                 className="text-sm font-medium leading-none"
               >
-                Yeni Şifre
+                {tChange("newPassword")}
               </label>
               <div className="relative">
                 <input
@@ -149,7 +148,7 @@ function SifreSifirlaContent() {
                   minLength={10}
                   autoComplete="new-password"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  placeholder="En az 10 karakter"
+                  placeholder={tChange("minTenCharsPlaceholder")}
                 />
                 <button
                   type="button"
@@ -163,10 +162,10 @@ function SifreSifirlaContent() {
               {newPassword && (
                 <ul className="space-y-0.5 mt-1.5">
                   {[
-                    { label: "En az 10 karakter", ok: newPassword.length >= 10 },
-                    { label: "Büyük harf (A-Z)", ok: /[A-Z]/.test(newPassword) },
-                    { label: "Rakam (0-9)", ok: /[0-9]/.test(newPassword) },
-                    { label: "Özel karakter", ok: /[^a-zA-Z0-9]/.test(newPassword) },
+                    { label: tChange("rules.minLength"), ok: newPassword.length >= 10 },
+                    { label: tChange("rules.uppercase"), ok: /[A-Z]/.test(newPassword) },
+                    { label: tChange("rules.digit"), ok: /[0-9]/.test(newPassword) },
+                    { label: tChange("rules.special"), ok: /[^a-zA-Z0-9]/.test(newPassword) },
                   ].map((r) => (
                     <li key={r.label} className="flex items-center gap-1.5 text-xs">
                       {r.ok ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-muted-foreground" />}
@@ -182,7 +181,7 @@ function SifreSifirlaContent() {
                 htmlFor="confirmPassword"
                 className="text-sm font-medium leading-none"
               >
-                Şifre Tekrar
+                {tChange("confirmPassword")}
               </label>
               <div className="relative">
                 <input
@@ -219,7 +218,7 @@ function SifreSifirlaContent() {
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Şifreyi Kaydet"
+                t("saveButton")
               )}
             </button>
           </form>

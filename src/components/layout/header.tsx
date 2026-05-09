@@ -1,5 +1,8 @@
+"use client";
+
 import { ArrowLeft, Dumbbell, type LucideIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import React from "react";
 
 interface HeaderProps {
@@ -19,6 +22,7 @@ export function Header({
   backHref = "/",
   rightSlot,
 }: HeaderProps) {
+  const t = useTranslations("common");
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
       <div className="flex items-center gap-3 px-4 py-3 max-w-lg mx-auto">
@@ -26,7 +30,7 @@ export function Header({
           <Link
             href={backHref}
             className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-accent transition-colors shrink-0"
-            aria-label="Geri"
+            aria-label={t("back")}
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>

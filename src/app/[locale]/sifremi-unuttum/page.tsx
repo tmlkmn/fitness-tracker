@@ -5,12 +5,15 @@ import { useSearchParams } from "next/navigation";
 import { requestPasswordReset } from "@/actions/password";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Loader2, CheckCircle } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function SifremiUnuttumForm() {
   const searchParams = useSearchParams();
+  const t = useTranslations("auth.forgotPassword");
+  const tLogin = useTranslations("auth.login");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -22,11 +25,11 @@ function SifremiUnuttumForm() {
 
     const trimmed = email.trim();
     if (!trimmed) {
-      setError("E-posta adresi gereklidir.");
+      setError(tLogin("errors.emailRequired"));
       return;
     }
     if (!EMAIL_REGEX.test(trimmed)) {
-      setError("Geçerli bir e-posta adresi girin.");
+      setError(tLogin("errors.invalidEmail"));
       return;
     }
 
@@ -35,12 +38,12 @@ function SifremiUnuttumForm() {
     try {
       const result = await requestPasswordReset(trimmed);
       if (result.error === "UserNotFound") {
-        setError("Bu e-posta adresi sistemde kayıtlı değil.");
+        setError(t("errors.userNotFound"));
       } else {
         setSent(true);
       }
     } catch {
-      setError("Bir hata oluştu. Tekrar deneyin.");
+      setError(tLogin("errors.generic"));
     } finally {
       setLoading(false);
     }
@@ -56,17 +59,16 @@ function SifremiUnuttumForm() {
                 <CheckCircle className="h-7 w-7 text-green-500" />
               </div>
               <div className="space-y-2">
-                <h1 className="text-xl font-bold">E-posta Gönderildi</h1>
+                <h1 className="text-xl font-bold">{t("sentTitle")}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Şifre sıfırlama bağlantısı e-postanıza gönderildi. Lütfen
-                  gelen kutunuzu kontrol edin.
+                  {t("sentDescription")}
                 </p>
               </div>
               <Link
                 href="/giris"
                 className="inline-flex items-center justify-center w-full h-10 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors"
               >
-                Giriş Sayfasına Dön
+                {t("backToLogin")}
               </Link>
             </div>
           ) : (
@@ -75,10 +77,9 @@ function SifremiUnuttumForm() {
                 <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
                   <Mail className="h-7 w-7 text-primary" />
                 </div>
-                <h1 className="text-xl font-bold">Şifremi Unuttum</h1>
+                <h1 className="text-xl font-bold">{t("title")}</h1>
                 <p className="text-sm text-muted-foreground">
-                  E-posta adresinizi girin, şifre sıfırlama bağlantısı
-                  göndereceğiz.
+                  {t("description")}
                 </p>
               </div>
 
@@ -88,7 +89,7 @@ function SifremiUnuttumForm() {
                     htmlFor="email"
                     className="text-sm font-medium leading-none"
                   >
-                    E-posta
+                    {tLogin("email")}
                   </label>
                   <input
                     id="email"
@@ -116,7 +117,7 @@ function SifremiUnuttumForm() {
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Sıfırlama Bağlantısı Gönder"
+                    t("submitButton")
                   )}
                 </button>
               </form>
@@ -126,7 +127,7 @@ function SifremiUnuttumForm() {
                   href="/giris"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  Giriş sayfasına dön
+                  {t("backToLoginLink")}
                 </Link>
               </div>
             </>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useSession } from "@/lib/auth-client";
 import { forceChangePassword } from "@/actions/password";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +11,8 @@ import { validatePasswordStrength } from "@/lib/password-validation";
 
 export default function SifreDegistirPage() {
   const router = useRouter();
+  const t = useTranslations("auth.changePassword");
+  const tLogin = useTranslations("auth.login");
   const { data: session, isPending } = useSession();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,11 +32,6 @@ export default function SifreDegistirPage() {
     e.preventDefault();
     setError("");
 
-    if (newPassword.length < 8) {
-      setError("Şifre en az 8 karakter olmalıdır.");
-      return;
-    }
-
     const strength = validatePasswordStrength(newPassword);
     if (!strength.valid) {
       setError(strength.error!);
@@ -41,7 +39,7 @@ export default function SifreDegistirPage() {
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Şifreler eşleşmiyor.");
+      setError(t("errors.passwordMismatch"));
       return;
     }
 
@@ -51,7 +49,7 @@ export default function SifreDegistirPage() {
       router.push("/profil-tamamla");
       router.refresh();
     } catch {
-      setError("Bir hata oluştu. Tekrar deneyin.");
+      setError(tLogin("errors.generic"));
     } finally {
       setLoading(false);
     }
@@ -65,9 +63,9 @@ export default function SifreDegistirPage() {
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
               <KeyRound className="h-7 w-7 text-primary" />
             </div>
-            <h1 className="text-xl font-bold">Şifre Değiştir</h1>
+            <h1 className="text-xl font-bold">{t("title")}</h1>
             <p className="text-sm text-muted-foreground">
-              Devam etmek için yeni bir şifre belirleyin
+              {t("description")}
             </p>
           </div>
 
@@ -77,7 +75,7 @@ export default function SifreDegistirPage() {
                 htmlFor="newPassword"
                 className="text-sm font-medium leading-none"
               >
-                Yeni Şifre
+                {t("newPassword")}
               </label>
               <div className="relative">
                 <input
@@ -89,7 +87,7 @@ export default function SifreDegistirPage() {
                   minLength={10}
                   autoComplete="new-password"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  placeholder="En az 10 karakter"
+                  placeholder={t("minTenCharsPlaceholder")}
                 />
                 <button
                   type="button"
@@ -103,10 +101,10 @@ export default function SifreDegistirPage() {
               {newPassword && (
                 <ul className="space-y-0.5 mt-1.5">
                   {[
-                    { label: "En az 10 karakter", ok: newPassword.length >= 10 },
-                    { label: "Büyük harf (A-Z)", ok: /[A-Z]/.test(newPassword) },
-                    { label: "Rakam (0-9)", ok: /[0-9]/.test(newPassword) },
-                    { label: "Özel karakter", ok: /[^a-zA-Z0-9]/.test(newPassword) },
+                    { label: t("rules.minLength"), ok: newPassword.length >= 10 },
+                    { label: t("rules.uppercase"), ok: /[A-Z]/.test(newPassword) },
+                    { label: t("rules.digit"), ok: /[0-9]/.test(newPassword) },
+                    { label: t("rules.special"), ok: /[^a-zA-Z0-9]/.test(newPassword) },
                   ].map((r) => (
                     <li key={r.label} className="flex items-center gap-1.5 text-xs">
                       {r.ok ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-muted-foreground" />}
@@ -122,7 +120,7 @@ export default function SifreDegistirPage() {
                 htmlFor="confirmPassword"
                 className="text-sm font-medium leading-none"
               >
-                Şifre Tekrar
+                {t("confirmPassword")}
               </label>
               <div className="relative">
                 <input
@@ -159,7 +157,7 @@ export default function SifreDegistirPage() {
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Şifreyi Değiştir"
+                t("submitButton")
               )}
             </button>
           </form>

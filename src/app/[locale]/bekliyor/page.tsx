@@ -1,12 +1,15 @@
 "use client";
 
 import { signOut } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, LogOut } from "lucide-react";
 
 export default function BekliyorPage() {
   const router = useRouter();
+  const t = useTranslations("auth.pending");
+  const tNav = useTranslations("nav");
 
   return (
     <div className="min-h-dvh flex items-center justify-center p-4">
@@ -16,9 +19,9 @@ export default function BekliyorPage() {
             <Clock className="h-7 w-7 text-yellow-500" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-bold">Onay Bekleniyor</h1>
+            <h1 className="text-xl font-bold">{t("title")}</h1>
             <p className="text-sm text-muted-foreground">
-              Hesabınız henüz onaylanmadı. Yönetici onayı bekleyin.
+              {t("description")}
             </p>
           </div>
           <button
@@ -30,7 +33,7 @@ export default function BekliyorPage() {
             className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors"
           >
             <LogOut className="h-4 w-4" />
-            Çıkış Yap
+            {tNav("signOut")}
           </button>
         </CardContent>
       </Card>

@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, ChevronRight, type LucideIcon } from "lucide-react";
 
 interface Props {
@@ -20,6 +21,7 @@ export function SettingsMenuItem({
   warning,
   external,
 }: Props) {
+  const t = useTranslations("settings.menuItem");
   const content = (
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors">
       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -32,7 +34,7 @@ export function SettingsMenuItem({
         )}
       </div>
       {warning && (
-        <AlertTriangle className="h-3.5 w-3.5 text-yellow-500 shrink-0" aria-label="Eksik bilgi" />
+        <AlertTriangle className="h-3.5 w-3.5 text-yellow-500 shrink-0" aria-label={t("missingInfoLabel")} />
       )}
       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
     </div>

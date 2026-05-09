@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -31,6 +31,7 @@ export function HeaderMenu() {
   const isAdmin = (session?.user as Record<string, unknown>)?.role === "admin";
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
+  const t = useTranslations("nav");
 
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -45,7 +46,7 @@ export function HeaderMenu() {
     <>
       <button
         className="h-9 w-9 inline-flex items-center justify-center rounded-lg hover:bg-accent transition-colors"
-        aria-label="Ara"
+        aria-label={t("search")}
         onClick={openSearch}
       >
         <Search className="h-5 w-5" />
@@ -54,7 +55,7 @@ export function HeaderMenu() {
         <DropdownMenuTrigger asChild>
           <button
             className="h-9 w-9 inline-flex items-center justify-center rounded-lg hover:bg-accent transition-colors"
-            aria-label="Menü"
+            aria-label={t("menu")}
           >
             <MoreVertical className="h-5 w-5" />
           </button>
@@ -62,17 +63,17 @@ export function HeaderMenu() {
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={() => setFeedbackOpen(true)}>
             <MessageSquarePlus className="h-4 w-4" />
-            Geri Bildirim
+            {t("feedback")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setOnboardingOpen(true)}>
             <HelpCircle className="h-4 w-4" />
-            Uygulama Rehberi
+            {t("appGuide")}
           </DropdownMenuItem>
           {isAdmin && (
             <DropdownMenuItem asChild>
               <Link href="/admin">
                 <Shield className="h-4 w-4" />
-                Admin Paneli
+                {t("adminPanel")}
               </Link>
             </DropdownMenuItem>
           )}
@@ -82,12 +83,12 @@ export function HeaderMenu() {
             ) : (
               <Moon className="h-4 w-4" />
             )}
-            {theme === "dark" ? "Açık Tema" : "Koyu Tema"}
+            {theme === "dark" ? t("lightTheme") : t("darkTheme")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
             <LogOut className="h-4 w-4" />
-            Çıkış Yap
+            {t("signOut")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
