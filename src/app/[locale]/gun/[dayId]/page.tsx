@@ -11,28 +11,25 @@ import { Utensils, Dumbbell, Pill } from "lucide-react";
 import { WaterTracker } from "@/components/water/water-tracker";
 import { SleepEntry } from "@/components/sleep/sleep-entry";
 import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  params: Promise<{ dayId: string }>;
+  params: Promise<{ dayId: string; locale: string }>;
   searchParams: Promise<{ tab?: string; focus?: string }>;
 }
 
 const VALID_TABS = ["meals", "workout", "supplements"] as const;
 type ValidTab = (typeof VALID_TABS)[number];
 
-const planTypeLabel: Record<string, string> = {
-  workout: "Antrenman Günü",
-  swimming: "Yüzme Günü",
-  rest: "Dinlenme Günü",
-};
-
 export default async function GunPage({ params, searchParams }: PageProps) {
-  const { dayId } = await params;
+  const { dayId, locale } = await params;
   const { tab, focus } = await searchParams;
   const id = parseInt(dayId);
   const dailyPlan = await getDailyPlan(id);
+
+  const t = await getTranslations({ locale, namespace: "day" });
 
   const initialTab: ValidTab = (VALID_TABS as readonly string[]).includes(
     tab ?? "",
@@ -48,19 +45,27 @@ export default async function GunPage({ params, searchParams }: PageProps) {
   const isPast = dailyPlan.date ? dailyPlan.date < todayStr : false;
 
   const dateLabel = dailyPlan.date
-    ? new Date(dailyPlan.date + "T00:00:00").toLocaleDateString("tr-TR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        weekday: "long",
-      })
+    ? new Date(dailyPlan.date + "T00:00:00").toLocaleDateString(
+        locale === "en" ? "en-US" : "tr-TR",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+          weekday: "long",
+        },
+      )
     : null;
 
+  const planTypeKey = (["workout", "swimming", "rest"] as const).includes(
+    dailyPlan.planType as "workout",
+  )
+    ? (dailyPlan.planType as "workout" | "swimming" | "rest")
+    : null;
+  const planTypeLabel = planTypeKey ? t(`planType.${planTypeKey}`) : dailyPlan.planType;
+
   const subtitle = dateLabel
-    ? `${dateLabel} — ${dailyPlan.workoutTitle ?? planTypeLabel[dailyPlan.planType] ?? dailyPlan.planType}`
-    : (dailyPlan.workoutTitle ??
-      planTypeLabel[dailyPlan.planType] ??
-      dailyPlan.planType);
+    ? `${dateLabel} — ${dailyPlan.workoutTitle ?? planTypeLabel}`
+    : (dailyPlan.workoutTitle ?? planTypeLabel);
 
   return (
     <div className="animate-fade-in">
@@ -81,15 +86,15 @@ export default async function GunPage({ params, searchParams }: PageProps) {
           <TabsList className="grid grid-cols-3 w-full mb-4">
             <TabsTrigger value="meals" className="gap-1.5">
               <Utensils className="h-4 w-4" />
-              Beslenme
+              {t("tabs.nutrition")}
             </TabsTrigger>
             <TabsTrigger value="workout" className="gap-1.5">
               <Dumbbell className="h-4 w-4" />
-              Antrenman
+              {t("tabs.workout")}
             </TabsTrigger>
             <TabsTrigger value="supplements" className="gap-1.5">
               <Pill className="h-4 w-4" />
-              Takviye
+              {t("tabs.supplements")}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="meals" className="space-y-3">

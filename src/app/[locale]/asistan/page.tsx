@@ -9,14 +9,15 @@ import { ChatInput } from "@/components/ai/chat-input";
 import { useAIChat } from "@/hooks/use-ai-chat";
 import { Bot, Trash2, Loader2 } from "lucide-react";
 import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
+import { useTranslations } from "next-intl";
 
 export default function AsistanPage() {
   const { messages, isStreaming, isLoading, send, abort, clearHistory } = useAIChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: quotaData } = useAiQuota();
   const chatQuota = getQuota(quotaData, "chat");
+  const t = useTranslations("assistant");
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     const el = scrollRef.current;
     if (el) {
@@ -24,11 +25,17 @@ export default function AsistanPage() {
     }
   }, [messages]);
 
+  const suggestionKeys = ["todayMeal", "kneeSquat", "weightLossSpeed", "waterIntake"] as const;
+
   return (
     <div className="flex flex-col h-[100dvh] animate-fade-in">
       <Header
-        title="AI Asistan"
-        subtitle={chatQuota ? `Kalan: ${chatQuota.remaining}/${chatQuota.limit}` : "Kişisel fitness koçunuz"}
+        title={t("title")}
+        subtitle={
+          chatQuota
+            ? t("remaining", { remaining: chatQuota.remaining, limit: chatQuota.limit })
+            : t("subtitleDefault")
+        }
         icon={Bot}
         rightSlot={
           <div className="flex items-center gap-1">
@@ -36,7 +43,7 @@ export default function AsistanPage() {
               <button
                 onClick={clearHistory}
                 className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
-                title="Sohbeti Temizle"
+                title={t("clearChat")}
               >
                 <Trash2 className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -60,27 +67,25 @@ export default function AsistanPage() {
               <Bot className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <p className="font-medium">FitMusc Asistan</p>
+              <p className="font-medium">{t("appName")}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Beslenme, antrenman ve sağlık hakkında sorular sorabilirsiniz.
+                {t("intro")}
               </p>
             </div>
             <div className="flex flex-wrap gap-2 mt-2 justify-center">
-              {[
-                "Bugün ne yemeliyim?",
-                "Menisküs ile squat yapabilir miyim?",
-                "Kilo verme hızım nasıl?",
-                "Su tüketimi ne kadar olmalı?",
-              ].map((q) => (
-                <button
-                  key={q}
-                  onClick={() => send(q)}
-                  disabled={chatQuota?.remaining === 0}
-                  className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
-                >
-                  {q}
-                </button>
-              ))}
+              {suggestionKeys.map((key) => {
+                const text = t(`suggestions.${key}`);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => send(text)}
+                    disabled={chatQuota?.remaining === 0}
+                    className="text-xs bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+                  >
+                    {text}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

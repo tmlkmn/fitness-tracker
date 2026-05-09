@@ -42,11 +42,12 @@ import {
 import { formatDateStr } from "@/lib/utils";
 import { ensureDailyPlan } from "@/actions/ensure-plan";
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 
-function formatTurkishDate(dateStr: string): string {
+function formatLocaleDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("tr-TR", {
+  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
     day: "numeric",
     month: "long",
     weekday: "long",
@@ -54,6 +55,8 @@ function formatTurkishDate(dateStr: string): string {
 }
 
 export default function TakvimPage() {
+  const t = useTranslations("calendar");
+  const locale = useLocale();
   const { data: prefs } = useNotificationPreferences();
   const weekStartsOn: WeekStart = (prefs?.weekStartsOn as WeekStart) ?? "monday";
   const getWeekStart = useCallback(
@@ -221,7 +224,7 @@ export default function TakvimPage() {
   };
 
   const weeklyError = generateWeekly.error
-    ? generateWeekly.error.message || "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin."
+    ? generateWeekly.error.message || t("aiUnavailable")
     : null;
 
   // Create a plan on demand for empty days
@@ -244,8 +247,8 @@ export default function TakvimPage() {
   return (
     <div className="animate-fade-in">
       <Header
-        title="Takvim"
-        subtitle="Antrenman & Beslenme Programı"
+        title={t("title")}
+        subtitle={t("subtitle")}
         icon={Calendar}
         rightSlot={
           <div className="flex items-center gap-1">
@@ -276,7 +279,7 @@ export default function TakvimPage() {
               onClick={() => setShowFullCalendar(false)}
             >
               <ChevronUp className="h-3.5 w-3.5" />
-              Haftalık Görünüm
+              {t("weeklyView")}
             </Button>
             {!isToday && (
               <Button
@@ -286,7 +289,7 @@ export default function TakvimPage() {
                 onClick={handleGoToToday}
               >
                 <CircleDot className="h-3.5 w-3.5" />
-                Bugün
+                {t("today")}
               </Button>
             )}
           </>
@@ -314,7 +317,7 @@ export default function TakvimPage() {
                 }}
               >
                 <CalendarDays className="h-3.5 w-3.5" />
-                Tüm Takvim
+                {t("fullCalendar")}
               </Button>
               {!isToday && (
                 <Button
@@ -324,7 +327,7 @@ export default function TakvimPage() {
                   onClick={handleGoToToday}
                 >
                   <CircleDot className="h-3.5 w-3.5" />
-                  Bugün
+                  {t("today")}
                 </Button>
               )}
             </div>
@@ -347,7 +350,7 @@ export default function TakvimPage() {
                 disabled={hasEmptyWeekGap}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                AI ile Haftalık Plan {data?.weeklyPlan ? "Değiştir" : "Oluştur"}
+                {t("aiWeeklyPlan", { action: data?.weeklyPlan ? t("actionChange") : t("actionCreate") })}
               </Button>
             )}
             {/* Delete button: hide for past week; current week: only weekdays */}
@@ -378,7 +381,7 @@ export default function TakvimPage() {
             <Link href={`/alisveris?week=${data.weeklyPlan.id}`}>
               <Button variant="outline" size="sm" className="gap-1.5">
                 <ShoppingCart className="h-3.5 w-3.5" />
-                Alışveriş Listesi
+                {t("shoppingList")}
               </Button>
             </Link>
           </div>
@@ -398,16 +401,16 @@ export default function TakvimPage() {
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
               <p className="text-sm font-medium text-yellow-500">
-                Önceki haftalarda plansız hafta bulunmaktadır
+                {t("emptyWeekGapTitle")}
               </p>
             </div>
             <p className="text-xs text-muted-foreground">
-              Önce aşağıdaki haftaların planlarını oluşturun:
+              {t("emptyWeekGapDescription")}
             </p>
             <div className="space-y-1">
               {emptyWeeks.map((monday) => {
                 const d = new Date(monday + "T00:00:00");
-                const label = d.toLocaleDateString("tr-TR", {
+                const label = d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
@@ -418,7 +421,7 @@ export default function TakvimPage() {
                     className="block w-full text-left text-sm text-primary hover:underline"
                     onClick={() => handleSelectDate(monday)}
                   >
-                    {label} haftası
+                    {label} {t("weekSuffix")}
                   </button>
                 );
               })}
@@ -427,7 +430,7 @@ export default function TakvimPage() {
         )}
 
         <p className="text-sm text-muted-foreground">
-          {formatTurkishDate(selectedDate)}
+          {formatLocaleDate(selectedDate, locale)}
         </p>
 
         {isLoading ? (
@@ -441,7 +444,7 @@ export default function TakvimPage() {
             dailyPlan={
               selectedDayPlan ?? {
                 id: activeDailyPlanId,
-                dayName: formatTurkishDate(selectedDate),
+                dayName: formatLocaleDate(selectedDate, locale),
                 planType: "workout",
               }
             }
@@ -451,7 +454,7 @@ export default function TakvimPage() {
           <div className="text-center py-8 space-y-3">
             <Dumbbell className="h-12 w-12 mx-auto opacity-20 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              Bu tarih için plan bulunamadı.
+              {t("noPlanForDate")}
             </p>
             {!isPastDay && (
               <div className="flex gap-2 justify-center">
@@ -464,7 +467,7 @@ export default function TakvimPage() {
                     disabled={hasEmptyWeekGap}
                   >
                     <Sparkles className="h-3.5 w-3.5" />
-                    AI ile Haftalık Plan
+                    {t("aiWeeklyPlanShort")}
                   </Button>
                 )}
                 <Button
@@ -475,7 +478,7 @@ export default function TakvimPage() {
                   disabled={creatingPlan || hasEmptyWeekGap}
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  {creatingPlan ? "Oluşturuluyor..." : "Manuel Ekle"}
+                  {creatingPlan ? t("creating") : t("manualAdd")}
                 </Button>
               </div>
             )}
@@ -513,14 +516,14 @@ export default function TakvimPage() {
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Haftalık Planı Sil</DialogTitle>
+            <DialogTitle>{t("deleteWeeklyTitle")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Bu haftanın planını silmek istediğinizden emin misiniz? Tüm günlük planlar, öğünler ve egzersizler silinecek. Bu işlem geri alınamaz.
+            {t("deleteWeeklyConfirm")}
           </p>
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setDeleteConfirmOpen(false)}>
-              İptal
+              {t("cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -539,7 +542,7 @@ export default function TakvimPage() {
                 deleteWeekly.mutate(wpId);
               }}
             >
-              {deleteWeekly.isPending ? "Siliniyor..." : "Sil"}
+              {deleteWeekly.isPending ? t("deleting") : t("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -21,17 +21,19 @@ import {
 } from "@/components/ui/dialog";
 import { ShoppingCart, CheckCircle, Sparkles, RefreshCw, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { formatAiError } from "@/lib/ai-errors";
 
-function formatWeekLabel(startDate: string | null, weekNumber: number): string {
-  if (!startDate) return `Hf ${weekNumber}`;
+function formatWeekLabel(startDate: string | null, weekNumber: number, locale: string, t: (key: string, values?: Record<string, string | number>) => string): string {
+  if (!startDate) return t("weekShort", { week: weekNumber });
   const start = new Date(startDate + "T00:00:00");
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
   const startDay = start.getDate();
   const endDay = end.getDate();
-  const startMonth = start.toLocaleDateString("tr-TR", { month: "short" });
-  const endMonth = end.toLocaleDateString("tr-TR", { month: "short" });
+  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
+  const startMonth = start.toLocaleDateString(dateLocale, { month: "short" });
+  const endMonth = end.toLocaleDateString(dateLocale, { month: "short" });
   if (startMonth === endMonth) {
     return `${startDay}-${endDay} ${startMonth}`;
   }
@@ -57,6 +59,8 @@ function AlisverisContent() {
   const searchParams = useSearchParams();
   const weekParam = searchParams.get("week");
   const { data: weeks, isLoading: weeksLoading } = useAllWeeks();
+  const t = useTranslations("shopping");
+  const locale = useLocale();
 
   const defaultWeekId = useMemo(() => {
     if (weekParam) return Number(weekParam);
@@ -98,7 +102,7 @@ function AlisverisContent() {
     generateShopping.mutate(activeWeekId, {
       onError: (err) => {
         if (err instanceof Error && err.message === "NO_MEALS") {
-          setError("Bu haftada öğün bulunamadı. Önce beslenme programı oluşturun.");
+          setError(t("noMealsError"));
           return;
         }
         setError(formatAiError(err));
@@ -118,8 +122,8 @@ function AlisverisContent() {
   return (
     <div className="animate-fade-in">
       <Header
-        title="Alışveriş Listesi"
-        subtitle="Haftalık market listesi"
+        title={t("title")}
+        subtitle={t("subtitle")}
         icon={ShoppingCart}
         rightSlot={
           <div className="flex items-center gap-1">
@@ -149,7 +153,7 @@ function AlisverisContent() {
                   value={String(week.id)}
                   className="text-xs px-1"
                 >
-                  {formatWeekLabel(week.startDate, week.weekNumber)}
+                  {formatWeekLabel(week.startDate, week.weekNumber, locale, t)}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -160,7 +164,7 @@ function AlisverisContent() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                {purchasedItems}/{totalItems} ürün
+                {t("itemsCount", { purchased: purchasedItems, total: totalItems })}
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -175,7 +179,7 @@ function AlisverisContent() {
                   ) : (
                     <RefreshCw className="h-3 w-3" />
                   )}
-                  Yenile
+                  {t("refresh")}
                 </Button>
                 <Badge
                   variant={purchasedItems === totalItems ? "default" : "secondary"}
@@ -184,7 +188,7 @@ function AlisverisContent() {
                   {purchasedItems === totalItems ? (
                     <>
                       <CheckCircle className="h-3 w-3" />
-                      Tamamlandı
+                      {t("completed")}
                     </>
                   ) : (
                     `%${percent}`
@@ -226,14 +230,14 @@ function AlisverisContent() {
           <div className="text-center py-8 space-y-3">
             <RefreshCw className="h-10 w-10 mx-auto animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">
-              Alışveriş listesi oluşturuluyor...
+              {t("generating")}
             </p>
           </div>
         ) : (
           <div className="text-center py-8 space-y-3">
             <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-20" />
             <p className="text-sm text-muted-foreground">
-              Bu hafta için alışveriş listesi henüz hazır değil.
+              {t("emptyDescription")}
             </p>
             <Button
               onClick={handleGenerate}
@@ -241,7 +245,7 @@ function AlisverisContent() {
               className="gap-2"
             >
               <Sparkles className="h-4 w-4" />
-              AI ile Alışveriş Listesi Oluştur
+              {t("generateButton")}
             </Button>
           </div>
         )}
@@ -251,18 +255,18 @@ function AlisverisContent() {
       <Dialog open={refreshConfirmOpen} onOpenChange={setRefreshConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Alışveriş Listesini Yenile</DialogTitle>
+            <DialogTitle>{t("refreshTitle")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Mevcut alışveriş listesi silinip beslenme programına göre yeniden oluşturulacak. Devam etmek istiyor musunuz?
+            {t("refreshConfirm")}
           </p>
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setRefreshConfirmOpen(false)}>
-              İptal
+              {t("cancel")}
             </Button>
             <Button onClick={confirmRefresh}>
               <RefreshCw className="h-4 w-4 mr-2" />
-              Yenile
+              {t("refresh")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -273,21 +277,26 @@ function AlisverisContent() {
 
 export default function AlisverisPage() {
   return (
-    <Suspense fallback={
-      <div className="animate-fade-in">
-        <Header
-          title="Alışveriş Listesi"
-          subtitle="Haftalık market listesi"
-          icon={ShoppingCart}
-        />
-        <div className="p-4 space-y-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full" />
-          ))}
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<AlisverisFallback />}>
       <AlisverisContent />
     </Suspense>
+  );
+}
+
+function AlisverisFallback() {
+  const t = useTranslations("shopping");
+  return (
+    <div className="animate-fade-in">
+      <Header
+        title={t("title")}
+        subtitle={t("subtitle")}
+        icon={ShoppingCart}
+      />
+      <div className="p-4 space-y-4">
+        {[...Array(4)].map((_, i) => (
+          <Skeleton key={i} className="h-32 w-full" />
+        ))}
+      </div>
+    </div>
   );
 }
