@@ -29,19 +29,22 @@ import { SettingsMenuItem } from "@/components/settings/settings-menu-item";
 import { PwaInstallCard } from "@/components/layout/pwa-install-card";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 import { LocaleToggle } from "@/components/settings/locale-toggle";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, Link } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useEffect, Suspense } from "react";
-import Link from "next/link";
 
 function AyarlarContent() {
   const { data: session } = useSession();
   const { data: profile } = useUserProfile();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("settings");
+  const tNav = useTranslations("nav");
   const [loggingOut, setLoggingOut] = useState(false);
   const user = session?.user;
 
-  
+
 const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
 useEffect(() => {
@@ -76,8 +79,8 @@ useEffect(() => {
   return (
     <div className="animate-fade-in">
       <Header
-        title="Ayarlar"
-        subtitle="Profil ve tercihler"
+        title={t("title")}
+        subtitle={t("subtitle")}
         icon={Settings}
         rightSlot={
           <div className="flex items-center gap-1">
@@ -94,11 +97,9 @@ useEffect(() => {
               <div className="flex items-start gap-3">
                 <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold">Profilinizi Tamamlayın</p>
+                  <p className="text-sm font-semibold">{t("onboardingBannerTitle")}</p>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Günlük akış, sağlık notları, fitness seviyesi ve supplement
-                    bilgileriniz AI değerlendirmelerinde kullanılır. Ne kadar detaylı
-                    doldurursanız, size özel program o kadar isabetli olur.
+                    {t("onboardingBannerDesc")}
                   </p>
                 </div>
                 <button
@@ -114,71 +115,71 @@ useEffect(() => {
 
         <ProfileSummaryCard />
 
-        <SettingsGroup label="Profil & Sağlık">
+        <SettingsGroup label={t("groups.profileHealth")}>
           <SettingsMenuItem
             icon={ShieldCheck}
-            title="Yeni profil bilgileri"
-            subtitle="Cinsiyet, günlük aktivite, sağlık durumları"
+            title={t("items.healthTitle")}
+            subtitle={t("items.healthSubtitle")}
             href="/ayarlar/saglik"
             warning={healthProfileMissing}
           />
           <SettingsMenuItem
             icon={Clock}
-            title="Günlük Akış"
-            subtitle="Hafta içi ve hafta sonu rutinin"
+            title={t("items.routineTitle")}
+            subtitle={t("items.routineSubtitle")}
             href="/ayarlar/rutin"
             warning={routineMissing}
           />
           <SettingsMenuItem
             icon={Pill}
-            title="Takviye Takvimi"
-            subtitle="Supplement ve ilaç zamanlaması"
+            title={t("items.supplementsTitle")}
+            subtitle={t("items.supplementsSubtitle")}
             href="/ayarlar/takviye"
             warning={supplementMissing}
           />
         </SettingsGroup>
 
-        <SettingsGroup label="Hedefler">
+        <SettingsGroup label={t("groups.goals")}>
           <SettingsMenuItem
             icon={Target}
-            title="Makro Hedefleri"
-            subtitle="Kalori, protein, karbonhidrat, yağ"
+            title={t("items.macroTitle")}
+            subtitle={t("items.macroSubtitle")}
             href="/ayarlar/makro"
           />
         </SettingsGroup>
 
-        <SettingsGroup label="Uygulama">
+        <SettingsGroup label={t("groups.app")}>
           <SettingsMenuItem
             icon={Sliders}
-            title="Birim ve Panel Tercihleri"
-            subtitle="Kg / lbs · kcal / kJ · dashboard kartları"
+            title={t("items.preferencesTitle")}
+            subtitle={t("items.preferencesSubtitle")}
             href="/ayarlar/tercihler"
           />
           <SettingsMenuItem
             icon={Bell}
-            title="Bildirim Ayarları"
-            subtitle="Push, e-posta ve sessiz saatler"
+            title={t("items.notificationsTitle")}
+            subtitle={t("items.notificationsSubtitle")}
             href="/ayarlar/bildirim"
           />
           <SettingsMenuItem
             icon={AlarmClock}
-            title="Hatırlatıcılar"
-            subtitle="Öğün, antrenman ve özel hatırlatmalar"
+            title={t("items.remindersTitle")}
+            subtitle={t("items.remindersSubtitle")}
             href="/ayarlar/hatirlatici"
           />
         </SettingsGroup>
 
-        <SettingsGroup label="Paylaşım ve Veri">
+        <SettingsGroup label={t("groups.sharingData")}>
           <SettingsMenuItem
             icon={BookOpen}
-            title="Öğün Kütüphanem"
-            subtitle="Kayıtlı öğünler ve günlük planlar"
+            title={t("items.mealLibraryTitle")}
+            subtitle={t("items.mealLibrarySubtitle")}
             href="/ogunlerim"
           />
           <SettingsMenuItem
             icon={Share2}
-            title="Plan Paylaşımı"
-            subtitle="Programını başka kullanıcılarla paylaş"
+            title={t("items.sharingTitle")}
+            subtitle={t("items.sharingSubtitle")}
             href="/ayarlar/paylasim"
           />
         </SettingsGroup>
@@ -194,7 +195,7 @@ useEffect(() => {
             className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md border border-primary/50 text-primary text-sm font-medium hover:bg-primary/10 transition-colors"
           >
             <Shield className="h-4 w-4" />
-            Admin Paneli
+            {tNav("adminPanel")}
           </Link>
         )}
 
@@ -208,7 +209,7 @@ useEffect(() => {
           ) : (
             <>
               <LogOut className="h-4 w-4" />
-              Çıkış Yap
+              {tNav("signOut")}
             </>
           )}
         </button>

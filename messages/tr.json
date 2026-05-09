@@ -220,7 +220,16 @@
     "target": "Hedef",
     "program": "Program",
     "weeks": "hafta",
-    "today": "Bugün"
+    "today": "Bugün",
+    "planTypes": {
+      "workout": "Antrenman",
+      "swimming": "Yüzme",
+      "rest": "Dinlenme",
+      "nutrition": "Beslenme"
+    },
+    "dayLabels": ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"],
+    "weightStats": "kg",
+    "weightTarget": "Hedef: {weight} kg"
   },
   "calendar": {
     "title": "Takvim",
@@ -1180,8 +1189,10 @@
       "macroSubtitle": "Kalori, protein, karbonhidrat, yağ",
       "preferencesTitle": "Birim ve Panel Tercihleri",
       "preferencesSubtitle": "Kg / lbs · kcal / kJ · dashboard kartları",
-      "notificationsTitle": "Bildirim ve Hatırlatıcılar",
-      "notificationsSubtitle": "Push, e-posta, hatırlatıcı zamanları",
+      "notificationsTitle": "Bildirim Ayarları",
+      "notificationsSubtitle": "Push, e-posta ve sessiz saatler",
+      "remindersTitle": "Hatırlatıcılar",
+      "remindersSubtitle": "Öğün, antrenman ve özel hatırlatmalar",
       "mealLibraryTitle": "Öğün Kütüphanem",
       "mealLibrarySubtitle": "Kayıtlı öğünler ve günlük planlar",
       "sharingTitle": "Plan Paylaşımı",

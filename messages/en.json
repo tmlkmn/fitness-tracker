@@ -220,7 +220,16 @@
     "target": "Target",
     "program": "Program",
     "weeks": "weeks",
-    "today": "Today"
+    "today": "Today",
+    "planTypes": {
+      "workout": "Workout",
+      "swimming": "Swimming",
+      "rest": "Rest",
+      "nutrition": "Nutrition"
+    },
+    "dayLabels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "weightStats": "kg",
+    "weightTarget": "Target: {weight} kg"
   },
   "calendar": {
     "title": "Calendar",
@@ -1180,8 +1189,10 @@
       "macroSubtitle": "Calories, protein, carbs, fat",
       "preferencesTitle": "Units and Panel Preferences",
       "preferencesSubtitle": "Kg / lbs · kcal / kJ · dashboard cards",
-      "notificationsTitle": "Notifications and Reminders",
-      "notificationsSubtitle": "Push, email, reminder times",
+      "notificationsTitle": "Notification Settings",
+      "notificationsSubtitle": "Push, email and quiet hours",
+      "remindersTitle": "Reminders",
+      "remindersSubtitle": "Meal, workout and custom reminders",
       "mealLibraryTitle": "My Meal Library",
       "mealLibrarySubtitle": "Saved meals and daily plans",
       "sharingTitle": "Plan Sharing",

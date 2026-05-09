@@ -25,11 +25,11 @@ import {
   AlertCircle,
   Users,
 } from "lucide-react";
-import Link from "next/link";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useSession } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
 import { useTodayDashboard, useWeekPlansByDate, useAllWeeks } from "@/hooks/use-plans";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useActivityStats } from "@/hooks/use-activity-stats";
 import { StreakCard } from "@/components/gamification/streak-card";
@@ -43,14 +43,12 @@ import { useDashboardPrefs } from "@/hooks/use-dashboard-prefs";
 import { SetupCompleteBanner } from "@/components/onboarding/setup-complete-banner";
 import { NotificationPromptCard } from "@/components/notifications/notification-prompt-card";
 
-const PLAN_TYPE_CONFIG: Record<string, { icon: typeof Dumbbell; label: string; color: string }> = {
-  workout: { icon: Dumbbell, label: "Antrenman", color: "text-green-400 bg-green-400/10" },
-  swimming: { icon: Waves, label: "Yüzme", color: "text-blue-400 bg-blue-400/10" },
-  rest: { icon: Moon, label: "Dinlenme", color: "text-yellow-400 bg-yellow-400/10" },
-  nutrition: { icon: Utensils, label: "Beslenme", color: "text-emerald-400 bg-emerald-400/10" },
+const PLAN_TYPE_ICONS: Record<string, { icon: typeof Dumbbell; color: string }> = {
+  workout: { icon: Dumbbell, color: "text-green-400 bg-green-400/10" },
+  swimming: { icon: Waves, color: "text-blue-400 bg-blue-400/10" },
+  rest: { icon: Moon, color: "text-yellow-400 bg-yellow-400/10" },
+  nutrition: { icon: Utensils, color: "text-emerald-400 bg-emerald-400/10" },
 };
-
-const DAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 
 function ProgressBar({ completed, total, color }: { completed: number; total: number; color: string }) {
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -72,6 +70,8 @@ function ProgressBar({ completed, total, color }: { completed: number; total: nu
 export default function HomePage() {
   const { data: session, isPending: sessionPending } = useSession();
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("dashboard");
   const user = session?.user;
 
   // Redirect if no session
@@ -92,28 +92,21 @@ export default function HomePage() {
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const onboardingOpen = profile?.hasSeenOnboarding === false && !onboardingDismissed;
 
-  // Health profile wizard — one-time mandatory setup. Triggered when gender
-  // is null (the column was added in migration 0029, so any user without it
-  // set hasn't completed the wizard yet). Render-time derived: open whenever
-  // the marketing carousel isn't blocking it AND the user hasn't been
-  // explicitly dismissed the wizard this session.
   const [healthWizardDismissed, setHealthWizardDismissed] = useState(false);
   const needsHealthProfile = profile != null && profile.gender == null;
   const healthWizardOpen =
     needsHealthProfile && !onboardingOpen && !healthWizardDismissed;
 
   const [currentDay] = useState(() =>
-    new Date().toLocaleDateString("tr-TR", {
+    new Date().toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
       weekday: "long",
       day: "numeric",
       month: "long",
     })
   );
 
-  // Capture "now" once at mount to avoid Date.now() in render
   const [nowMs] = useState(() => Date.now());
 
-  // Membership info — compute from profile using stable nowMs
   const membershipInfo = (() => {
     if (!profile?.membershipEndDate) return null;
     const end = new Date(profile.membershipEndDate).getTime();
@@ -121,17 +114,26 @@ export default function HomePage() {
     return { days: Math.ceil((end - nowMs) / (1000 * 60 * 60 * 24)), expired: false };
   })();
 
-  // Compute today's completion
   const mealsDone = today?.meals?.filter((m) => m.isCompleted).length ?? 0;
   const mealsTotal = today?.meals?.length ?? 0;
   const exercisesDone = today?.exercises?.filter((e) => e.isCompleted).length ?? 0;
   const exercisesTotal = today?.exercises?.length ?? 0;
 
-  // Today's day of week (0 = Mon in our schema)
   const todayDow = (() => {
     const d = new Date().getDay();
-    return d === 0 ? 6 : d - 1; // Convert JS Sunday=0 to our Monday=0
+    return d === 0 ? 6 : d - 1;
   })();
+
+  const dayLabels = t.raw("dayLabels") as string[];
+
+  const planTypeLabel = (planType: string): string => {
+    const key = (["workout", "swimming", "rest", "nutrition"] as const).includes(
+      planType as "workout"
+    )
+      ? (planType as "workout" | "swimming" | "rest" | "nutrition")
+      : "workout";
+    return t(`planTypes.${key}`);
+  };
 
   if (sessionPending) {
     return (
@@ -166,15 +168,12 @@ export default function HomePage() {
         }
       />
 
-      {/* Onboarding carousel — auto on first login, re-openable via trigger */}
       <OnboardingCarousel
         open={onboardingOpen}
         onOpenChange={(open) => { if (!open) setOnboardingDismissed(true); }}
         isFirstTime={profile?.hasSeenOnboarding === false}
       />
 
-      {/* Health profile wizard — one-time, mandatory once shown. Closes via
-          gender becoming non-null (after submit) or via session dismissal. */}
       <HealthProfileWizard
         open={healthWizardOpen}
         onOpenChange={(val) => {
@@ -185,19 +184,18 @@ export default function HomePage() {
       <div className="p-4 space-y-4">
         <SetupCompleteBanner />
         <NotificationPromptCard />
-        {/* Hero Card — Greeting + Membership */}
         <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-transparent overflow-hidden">
           <CardContent className="p-4">
             <div className="flex items-start justify-between">
               <div>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <p className="text-lg font-bold">Hoş geldin, {(user as any).name?.split(" ")[0] ?? ""}!</p>
+                <p className="text-lg font-bold">{t("welcome", { name: (user as any).name?.split(" ")[0] ?? "" })}</p>
                 {(profile?.weight || profile?.targetWeight || profile?.height) && (
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {[
                       profile.height ? `${profile.height} cm` : "",
                       profile.weight ? `${profile.weight} kg` : "",
-                      profile.targetWeight ? `Hedef: ${profile.targetWeight} kg` : "",
+                      profile.targetWeight ? t("weightTarget", { weight: profile.targetWeight }) : "",
                     ].filter(Boolean).join(" · ")}
                   </p>
                 )}
@@ -214,17 +212,16 @@ export default function HomePage() {
                 >
                   <CreditCard className="h-3 w-3 mr-1" />
                   {profile.membershipType === "unlimited"
-                    ? "Sınırsız"
+                    ? t("membershipUnlimited")
                     : membershipInfo?.expired
-                      ? "Süresi Doldu"
-                      : `${membershipInfo?.days} gün`}
+                      ? t("membershipExpired")
+                      : t("membershipDays", { days: membershipInfo?.days ?? 0 })}
                 </Badge>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Profile Incomplete Warning */}
         {profile && (!profile.height || !profile.weight || !profile.targetWeight) && (
           <Link href="/profil-tamamla">
             <Card className="border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-colors cursor-pointer">
@@ -233,8 +230,8 @@ export default function HomePage() {
                   <AlertCircle className="h-5 w-5 text-yellow-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Profilini tamamla</p>
-                  <p className="text-xs text-muted-foreground">AI kişiselleştirme için bilgilerine ihtiyaç var</p>
+                  <p className="text-sm font-medium">{t("completeProfile")}</p>
+                  <p className="text-xs text-muted-foreground">{t("completeProfileDesc")}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
               </CardContent>
@@ -242,18 +239,17 @@ export default function HomePage() {
           </Link>
         )}
 
-        {/* Today's Summary */}
         <Card>
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Bugünün Planı</h3>
+              <h3 className="text-sm font-semibold">{t("todayPlan")}</h3>
               {today?.dailyPlan && (() => {
-                const cfg = PLAN_TYPE_CONFIG[today.dailyPlan.planType] ?? PLAN_TYPE_CONFIG.workout;
+                const cfg = PLAN_TYPE_ICONS[today.dailyPlan.planType] ?? PLAN_TYPE_ICONS.workout;
                 const Icon = cfg.icon;
                 return (
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.color}`}>
                     <Icon className="h-3 w-3" />
-                    {cfg.label}
+                    {planTypeLabel(today.dailyPlan.planType)}
                   </span>
                 );
               })()}
@@ -275,7 +271,7 @@ export default function HomePage() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Utensils className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Öğünler</span>
+                      <span className="text-xs text-muted-foreground">{t("meals")}</span>
                     </div>
                     <ProgressBar completed={mealsDone} total={mealsTotal} color="bg-primary" />
                   </div>
@@ -283,7 +279,7 @@ export default function HomePage() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Egzersizler</span>
+                      <span className="text-xs text-muted-foreground">{t("exercises")}</span>
                     </div>
                     <ProgressBar completed={exercisesDone} total={exercisesTotal} color="bg-green-500" />
                   </div>
@@ -293,33 +289,32 @@ export default function HomePage() {
                   href={`/gun/${today.dailyPlan.id}`}
                   className="inline-flex items-center justify-center gap-2 w-full h-9 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
                 >
-                  Bugünün Planına Git
+                  {t("goToTodayPlan")}
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </>
             ) : (
               <div className="text-center py-4">
                 <p className="text-sm text-muted-foreground mb-3">
-                  Bugün için plan bulunmuyor
+                  {t("noPlanToday")}
                 </p>
                 <Link
                   href="/takvim"
                   className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors"
                 >
                   <Calendar className="h-4 w-4" />
-                  Takvime Git
+                  {t("goToCalendar")}
                 </Link>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Weekly Strip */}
         {weekData?.dailyPlans && weekData.dailyPlans.length > 0 && (
           <Card>
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Bu Hafta</h3>
+                <h3 className="text-sm font-semibold">{t("thisWeek")}</h3>
                 {weekData.weeklyPlan && (
                   <span className="text-xs text-muted-foreground">
                     {weekData.weeklyPlan.title}
@@ -328,7 +323,7 @@ export default function HomePage() {
               </div>
               <div className="flex justify-between gap-1">
                 {weekData.dailyPlans.map((day) => {
-                  const cfg = PLAN_TYPE_CONFIG[day.planType] ?? PLAN_TYPE_CONFIG.workout;
+                  const cfg = PLAN_TYPE_ICONS[day.planType] ?? PLAN_TYPE_ICONS.workout;
                   const Icon = cfg.icon;
                   const isToday = day.dayOfWeek === todayDow;
                   return (
@@ -342,7 +337,7 @@ export default function HomePage() {
                       }`}
                     >
                       <span className={`text-[10px] font-medium ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                        {DAY_LABELS[day.dayOfWeek]}
+                        {dayLabels[day.dayOfWeek]}
                       </span>
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
                         isToday ? "bg-primary/20" : "bg-muted/50"
@@ -365,14 +360,13 @@ export default function HomePage() {
           </Card>
         )}
 
-        {/* Stats Grid */}
         {isVisible("stats") && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-list">
           <Card>
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Scale className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Mevcut</span>
+                <span className="text-xs text-muted-foreground">{t("currentWeight")}</span>
               </div>
               <p className="text-lg font-bold">
                 {profile?.weight ? `${profile.weight}` : "—"}
@@ -384,7 +378,7 @@ export default function HomePage() {
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Target className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Hedef</span>
+                <span className="text-xs text-muted-foreground">{t("target")}</span>
               </div>
               <p className="text-lg font-bold text-primary">
                 {profile?.targetWeight ? `${profile.targetWeight}` : "—"}
@@ -396,11 +390,11 @@ export default function HomePage() {
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Program</span>
+                <span className="text-xs text-muted-foreground">{t("program")}</span>
               </div>
               <p className="text-lg font-bold">
                 {weeks?.length ?? 0}
-                <span className="text-xs font-normal text-muted-foreground ml-1">hafta</span>
+                <span className="text-xs font-normal text-muted-foreground ml-1">{t("weeks")}</span>
               </p>
             </CardContent>
           </Card>
@@ -410,12 +404,12 @@ export default function HomePage() {
                 {profile?.serviceType === "nutrition" ? (
                   <>
                     <Utensils className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Bugün</span>
+                    <span className="text-xs text-muted-foreground">{t("today")}</span>
                   </>
                 ) : (
                   <>
                     <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Bugün</span>
+                    <span className="text-xs text-muted-foreground">{t("today")}</span>
                   </>
                 )}
               </div>
@@ -433,10 +427,8 @@ export default function HomePage() {
         </div>
         )}
 
-        {/* Apple Fitness style activity rings */}
         {isVisible("rings") && <DailyRingsCard />}
 
-        {/* Su & Uyku Widgets */}
         {isVisible("water_sleep") && (
         <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
           <WaterDashboardWidget />
@@ -444,28 +436,26 @@ export default function HomePage() {
         </div>
         )}
 
-        {/* 7 Günlük Kalori Trendi */}
         {isVisible("macro_trend") && (
           <MacroTrendSparkline endDate={todayStr} metric="calories" />
         )}
 
-        {/* Quick Access */}
         {isVisible("quick_access") && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-list">
-          {[
-            { href: "/takvim", icon: Calendar, label: "Takvim", desc: "Haftalık program" },
-            { href: "/ilerleme", icon: TrendingUp, label: "İlerleme", desc: "Kilo & ölçümler" },
-            { href: "/asistan", icon: Bot, label: "AI Asistan", desc: "Fitness koçu" },
-            { href: "/alisveris", icon: ShoppingCart, label: "Alışveriş", desc: "Haftalık liste" },
-            { href: "/paylasilan", icon: Users, label: "Paylaşılan", desc: "Benimle paylaşılan" },
-          ].map(({ href, icon: Icon, label, desc }) => (
+          {([
+            { href: "/takvim" as const, icon: Calendar, labelKey: "calendar" as const, descKey: "calendarDesc" as const },
+            { href: "/ilerleme" as const, icon: TrendingUp, labelKey: "progress" as const, descKey: "progressDesc" as const },
+            { href: "/asistan" as const, icon: Bot, labelKey: "assistant" as const, descKey: "assistantDesc" as const },
+            { href: "/alisveris" as const, icon: ShoppingCart, labelKey: "shopping" as const, descKey: "shoppingDesc" as const },
+            { href: "/paylasilan" as const, icon: Users, labelKey: "shared" as const, descKey: "sharedDesc" as const },
+          ]).map(({ href, icon: Icon, labelKey, descKey }) => (
             <Link key={href} href={href}>
               <Card className="hover:bg-accent hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer h-full">
                 <CardContent className="p-3 flex flex-col gap-2">
                   <Icon className="h-5 w-5 text-primary" />
                   <div>
-                    <p className="text-sm font-medium">{label}</p>
-                    <p className="text-[11px] text-muted-foreground">{desc}</p>
+                    <p className="text-sm font-medium">{t(`quickAccess.${labelKey}`)}</p>
+                    <p className="text-[11px] text-muted-foreground">{t(`quickAccess.${descKey}`)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -474,7 +464,6 @@ export default function HomePage() {
         </div>
         )}
 
-        {/* Streak & Achievements */}
         {isVisible("streak") && activityStats && (
           <>
             <StreakCard
