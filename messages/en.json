@@ -896,7 +896,32 @@
       "Aktif": "Active",
       "Bekliyor": "Pending",
       "Süresi Dolmuş": "Expired",
-      "Üyelik Dolmuş": "Membership Ended"
+      "Üyelik Dolmuş": "Membership Ended",
+      "Dondurulmuş": "Frozen"
+    },
+    "featuresShort": {
+      "meal": "Meal",
+      "exercise": "Exercise",
+      "analyze": "Analysis",
+      "chat": "Chat",
+      "workout": "Workout",
+      "daily-meal": "Daily Meal",
+      "weekly": "Weekly",
+      "exercise-demo": "Demo"
+    },
+    "freeze": {
+      "freezeTitle": "Freeze Membership",
+      "unfreezeTitle": "Unfreeze Account",
+      "freezeWarning": "This user will be unable to sign in. Their session will be terminated immediately.",
+      "unfreezeWarning": "This user will be able to sign in again.",
+      "cancel": "Cancel",
+      "freezeButton": "Freeze",
+      "unfreezeButton": "Unfreeze",
+      "freezeFailed": "Could not freeze user.",
+      "unfreezeFailed": "Could not unfreeze user.",
+      "frozenAt": "Frozen on: {date} ({days} days ago)",
+      "tooltipFreeze": "Freeze",
+      "tooltipUnfreeze": "Unfreeze"
     },
     "features": {
       "meal": "Meal Suggestion",

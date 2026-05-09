@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   listAllUsers,
   resendInvite,
@@ -37,25 +37,8 @@ import {
   LockKeyholeOpen,
 } from "lucide-react";
 
-const MEMBERSHIP_LABELS: Record<string, string> = {
-  "1-month": "1 Ay",
-  "3-month": "3 Ay",
-  "6-month": "6 Ay",
-  "1-year": "1 Yıl",
-  unlimited: "Sınırsız",
-  custom: "Özel",
-};
-
-const FEATURE_LABELS: Record<string, string> = {
-  meal: "Öğün",
-  exercise: "Egzersiz",
-  analyze: "Analiz",
-  chat: "Chat",
-  workout: "Antrenman",
-  "daily-meal": "Günlük Öğün",
-  weekly: "Haftalık",
-  "exercise-demo": "Demo",
-};
+const MEMBERSHIP_KEYS = ["1-month", "3-month", "6-month", "1-year", "unlimited", "custom"] as const;
+const FEATURE_KEYS = ["meal", "exercise", "analyze", "chat", "workout", "daily-meal", "weekly", "exercise-demo"] as const;
 
 const statusConfig: Record<string, { icon: typeof CheckCircle; className: string }> = {
   Admin: { icon: Shield, className: "text-purple-400 bg-purple-400/10" },
@@ -80,21 +63,51 @@ function daysSinceFrozen(user: UserWithStatus): number {
   return (Date.now() - new Date(user.frozenAt).getTime()) / 86400000;
 }
 
-function formatTimeAgo(date: Date | null): string {
-  if (!date) return "—";
-  const now = new Date();
-  const diff = now.getTime() - new Date(date).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Az önce";
-  if (minutes < 60) return `${minutes} dk`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} sa`;
-  const days = Math.floor(hours / 24);
-  return `${days} gün`;
+function useTimeAgo() {
+  const t = useTranslations("admin.timeAgo");
+  return (date: Date | null): string => {
+    if (!date) return t("none");
+    const now = new Date();
+    const diff = now.getTime() - new Date(date).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return t("justNow");
+    if (minutes < 60) return t("minutes", { n: minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t("hours", { n: hours });
+    const days = Math.floor(hours / 24);
+    return t("days", { n: days });
+  };
 }
 
-function featureLabel(key: string): string {
-  return FEATURE_LABELS[key] ?? key;
+function useFeatureLabel() {
+  const t = useTranslations("admin.featuresShort");
+  return (key: string): string => {
+    if ((FEATURE_KEYS as readonly string[]).includes(key)) {
+      return t(key);
+    }
+    return key;
+  };
+}
+
+function useStatusLabel() {
+  const t = useTranslations("admin.status");
+  return (status: string): string => {
+    const STATUS_KEYS = ["Admin", "Aktif", "Bekliyor", "Süresi Dolmuş", "Üyelik Dolmuş", "Dondurulmuş"];
+    if (STATUS_KEYS.includes(status)) {
+      return t(status);
+    }
+    return status;
+  };
+}
+
+function useMembershipLabel() {
+  const t = useTranslations("admin.membership");
+  return (key: string): string => {
+    if ((MEMBERSHIP_KEYS as readonly string[]).includes(key)) {
+      return t(key);
+    }
+    return key;
+  };
 }
 
 function StatCard({ label, value, sub }: { label: string; value: number; sub?: string }) {
@@ -110,10 +123,12 @@ function StatCard({ label, value, sub }: { label: string; value: number; sub?: s
 }
 
 function MembershipBadge({ user }: { user: UserWithStatus }) {
+  const locale = useLocale();
+  const membershipLabel = useMembershipLabel();
   if (!user.membershipType || user.status === "Admin") return null;
-  const label = MEMBERSHIP_LABELS[user.membershipType] ?? user.membershipType;
+  const label = membershipLabel(user.membershipType);
   const endDate = user.membershipEndDate
-    ? new Date(user.membershipEndDate).toLocaleDateString("tr-TR")
+    ? new Date(user.membershipEndDate).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR")
     : null;
   return (
     <span className="text-xs text-muted-foreground">
@@ -135,6 +150,7 @@ function ConfirmFreezeDialog({
   onClose: () => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const t = useTranslations("admin.freeze");
 
   const isFreeze = type === "freeze";
 
@@ -163,7 +179,7 @@ function ConfirmFreezeDialog({
                 </div>
               )}
               <h2 className="text-base font-semibold">
-                {isFreeze ? "Üyeliği Dondur" : "Dondurma Kaldır"}
+                {isFreeze ? t("freezeTitle") : t("unfreezeTitle")}
               </h2>
             </div>
             <button
@@ -178,9 +194,7 @@ function ConfirmFreezeDialog({
           <div className={`rounded-lg p-3 text-sm ${isFreeze ? "bg-blue-400/10 text-blue-300" : "bg-green-400/10 text-green-300"}`}>
             <p className="font-medium">{userName}</p>
             <p className="mt-1 text-xs opacity-80">
-              {isFreeze
-                ? "Bu kullanıcı sisteme giriş yapamaz hale gelecek. Oturumu anında sonlandırılacak."
-                : "Bu kullanıcı tekrar sisteme giriş yapabilecek."}
+              {isFreeze ? t("freezeWarning") : t("unfreezeWarning")}
             </p>
           </div>
 
@@ -190,7 +204,7 @@ function ConfirmFreezeDialog({
               disabled={loading}
               className="flex-1 h-10 rounded-md border border-border text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
             >
-              İptal
+              {t("cancel")}
             </button>
             <button
               onClick={handleConfirm}
@@ -204,9 +218,9 @@ function ConfirmFreezeDialog({
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : isFreeze ? (
-                <><Snowflake className="h-4 w-4" /> Dondur</>
+                <><Snowflake className="h-4 w-4" /> {t("freezeButton")}</>
               ) : (
-                <><Play className="h-4 w-4" /> Dondurma Kaldır</>
+                <><Play className="h-4 w-4" /> {t("unfreezeButton")}</>
               )}
             </button>
           </div>
@@ -225,6 +239,8 @@ function ExtendDialog({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const t = useTranslations("admin");
+  const tMembership = useTranslations("admin.membership");
   const [type, setType] = useState<MembershipType>(
     (user.membershipType as MembershipType) ?? "1-month"
   );
@@ -237,11 +253,11 @@ function ExtendDialog({
     setError("");
 
     if (type === "custom" && !customEndDate) {
-      setError("Bitiş tarihi seçin.");
+      setError(t("errors.endDateRequired"));
       return;
     }
     if (type === "custom" && new Date(customEndDate) <= new Date()) {
-      setError("Bitiş tarihi bugünden sonra olmalı.");
+      setError(t("errors.endDateAfterToday"));
       return;
     }
 
@@ -250,7 +266,7 @@ function ExtendDialog({
       await extendMembership(user.id, type, type === "custom" ? customEndDate : undefined);
       onSuccess();
     } catch {
-      setError("Üyelik güncellenemedi.");
+      setError(t("errors.membershipUpdateFailed"));
     } finally {
       setLoading(false);
     }
@@ -261,7 +277,7 @@ function ExtendDialog({
       <Card className="w-full max-w-sm">
         <CardContent className="p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">Üyelik Güncelle</h2>
+            <h2 className="text-base font-semibold">{t("extendDialog.title")}</h2>
             <button
               onClick={onClose}
               className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
@@ -278,7 +294,7 @@ function ExtendDialog({
             >
               {MEMBERSHIP_OPTION_VALUES.map((value) => (
                 <option key={value} value={value}>
-                  {value === "custom" ? "Özel Tarih" : (MEMBERSHIP_LABELS[value] ?? value)}
+                  {value === "custom" ? tMembership("customDate") : tMembership(value)}
                 </option>
               ))}
             </select>
@@ -299,7 +315,7 @@ function ExtendDialog({
               disabled={loading}
               className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Güncelle"}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("extendDialog.submit")}
             </button>
           </form>
         </CardContent>
@@ -310,6 +326,12 @@ function ExtendDialog({
 
 export default function AdminPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("admin");
+  const tFreeze = useTranslations("admin.freeze");
+  const formatTimeAgo = useTimeAgo();
+  const featureLabel = useFeatureLabel();
+  const statusLabel = useStatusLabel();
   const [users, setUsers] = useState<UserWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -330,7 +352,7 @@ export default function AdminPage() {
         router.push("/");
         return;
       }
-      setError("Kullanıcılar yüklenemedi.");
+      setError(t("errors.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -363,14 +385,14 @@ export default function AdminPage() {
       await resendInvite(userId);
       await fetchUsers();
     } catch {
-      setError("Davet gönderilemedi.");
+      setError(t("errors.inviteFailed"));
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleRemove = async (userId: string, name: string) => {
-    if (!confirm(`"${name}" kullanıcısını silmek istediğinize emin misiniz?`)) {
+    if (!confirm(t("actions.confirmDelete", { name }))) {
       return;
     }
     setActionLoading(userId);
@@ -378,7 +400,7 @@ export default function AdminPage() {
       await removeUserAction(userId);
       await fetchUsers();
     } catch {
-      setError("Kullanıcı silinemedi.");
+      setError(t("errors.removeFailed"));
     } finally {
       setActionLoading(null);
     }
@@ -408,14 +430,14 @@ export default function AdminPage() {
             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <Users className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-xl font-bold">Kullanıcı Yönetimi</h1>
+            <h1 className="text-xl font-bold">{t("title")}</h1>
           </div>
           <Link
             href="/admin/davet"
             className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <UserPlus className="h-4 w-4" />
-            Davet Et
+            {t("inviteButton")}
           </Link>
         </div>
 
@@ -425,14 +447,14 @@ export default function AdminPage() {
             className="inline-flex items-center justify-center gap-2 h-10 rounded-md border border-primary/50 text-primary text-sm font-medium hover:bg-primary/10 transition-colors"
           >
             <MessageSquare className="h-4 w-4" />
-            Geri Bildirimler
+            {t("feedback")}
           </Link>
           <Link
             href="/admin/ai-warnings"
             className="inline-flex items-center justify-center gap-2 h-10 rounded-md border border-amber-500/40 text-amber-500 text-sm font-medium hover:bg-amber-500/10 transition-colors"
           >
             <AlertTriangle className="h-4 w-4" />
-            AI Uyarıları
+            {t("aiWarnings")}
           </Link>
         </div>
 
@@ -440,36 +462,38 @@ export default function AdminPage() {
           <p className="text-sm text-destructive text-center">{error}</p>
         )}
 
-        {/* ── Dashboard Stats ── */}
         {stats && (
           <div className="grid grid-cols-2 gap-3">
             <StatCard
-              label="Toplam Kullanıcı"
+              label={t("stats.totalUsers")}
               value={stats.totalUsers}
-              sub={`${stats.activeUsers} aktif · ${stats.pendingUsers} bekleyen · ${stats.adminUsers} admin`}
+              sub={t("stats.totalUsersSub", {
+                active: stats.activeUsers,
+                pending: stats.pendingUsers,
+                admin: stats.adminUsers,
+              })}
             />
-            <StatCard label="Bugün AI Kullanım" value={stats.aiUsageToday} />
-            <StatCard label="Bu Hafta AI" value={stats.aiUsageThisWeek} />
-            <StatCard label="Toplam AI" value={stats.aiUsageTotal} />
+            <StatCard label={t("stats.aiUsageToday")} value={stats.aiUsageToday} />
+            <StatCard label={t("stats.aiUsageWeek")} value={stats.aiUsageThisWeek} />
+            <StatCard label={t("stats.aiUsageTotal")} value={stats.aiUsageTotal} />
           </div>
         )}
 
-        {/* ── AI Feature Usage ── */}
         {featureUsage.length > 0 && (
           <Card>
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Bot className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold">AI Feature Kullanımı</h2>
+                <h2 className="text-sm font-semibold">{t("featureUsage")}</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-1.5 text-muted-foreground font-medium">Feature</th>
-                      <th className="text-right py-1.5 text-muted-foreground font-medium">Bugün</th>
-                      <th className="text-right py-1.5 text-muted-foreground font-medium">Hafta</th>
-                      <th className="text-right py-1.5 text-muted-foreground font-medium">Toplam</th>
+                      <th className="text-left py-1.5 text-muted-foreground font-medium">{t("tableHead.feature")}</th>
+                      <th className="text-right py-1.5 text-muted-foreground font-medium">{t("tableHead.today")}</th>
+                      <th className="text-right py-1.5 text-muted-foreground font-medium">{t("tableHead.week")}</th>
+                      <th className="text-right py-1.5 text-muted-foreground font-medium">{t("tableHead.total")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -488,13 +512,12 @@ export default function AdminPage() {
           </Card>
         )}
 
-        {/* ── User AI Usage ── */}
         {userAiUsage.length > 0 && (
           <Card>
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-semibold">Kullanıcı AI Kullanımı</h2>
+                <h2 className="text-sm font-semibold">{t("userUsage")}</h2>
               </div>
               <div className="space-y-2.5">
                 {userAiUsage.map((u) => (
@@ -524,10 +547,9 @@ export default function AdminPage() {
           </Card>
         )}
 
-        {/* ── User Management ── */}
         <div className="flex items-center gap-2 pt-2">
           <Users className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold text-muted-foreground">Kullanıcılar</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground">{t("users")}</h2>
         </div>
 
         <div className="space-y-3">
@@ -548,7 +570,7 @@ export default function AdminPage() {
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.className}`}
                         >
                           <StatusIcon className="h-3 w-3" />
-                          {user.status}
+                          {statusLabel(user.status)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
@@ -557,8 +579,10 @@ export default function AdminPage() {
                       <MembershipBadge user={user} />
                       {user.isFrozen && user.frozenAt && (
                         <p className="text-xs text-blue-400 mt-0.5">
-                          Donduruldu: {new Date(user.frozenAt).toLocaleDateString("tr-TR")}
-                          {" "}({Math.floor(daysSinceFrozen(user))} gün önce)
+                          {tFreeze("frozenAt", {
+                            date: new Date(user.frozenAt).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR"),
+                            days: Math.floor(daysSinceFrozen(user)),
+                          })}
                         </p>
                       )}
                     </div>
@@ -568,7 +592,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => setExtendUser(user)}
                           className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
-                          title="Üyelik Güncelle"
+                          title={t("actions.updateMembership")}
                         >
                           <CalendarClock className="h-4 w-4" />
                         </button>
@@ -578,7 +602,7 @@ export default function AdminPage() {
                           onClick={() => handleResend(user.id)}
                           disabled={isActionUser}
                           className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors disabled:opacity-50"
-                          title="Tekrar Davet"
+                          title={t("actions.resendInvite")}
                         >
                           {isActionUser ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -592,7 +616,7 @@ export default function AdminPage() {
                           onClick={() => handleFreeze(user.id, user.name)}
                           disabled={isActionUser}
                           className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-blue-500/10 text-blue-400 transition-colors disabled:opacity-50"
-                          title="Dondur"
+                          title={tFreeze("tooltipFreeze")}
                         >
                           {isActionUser ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -606,7 +630,7 @@ export default function AdminPage() {
                           onClick={() => handleUnfreeze(user.id, user.name)}
                           disabled={isActionUser}
                           className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-green-500/10 text-green-400 transition-colors disabled:opacity-50"
-                          title="Dondurma Kaldır"
+                          title={tFreeze("tooltipUnfreeze")}
                         >
                           {isActionUser ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -620,7 +644,7 @@ export default function AdminPage() {
                           onClick={() => handleRemove(user.id, user.name)}
                           disabled={isActionUser}
                           className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-50"
-                          title="Sil"
+                          title={t("actions.delete")}
                         >
                           {isActionUser ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -638,7 +662,7 @@ export default function AdminPage() {
 
           {users.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Henüz kullanıcı yok.
+              {t("emptyUsers")}
             </p>
           )}
         </div>
@@ -648,7 +672,7 @@ export default function AdminPage() {
             href="/ayarlar"
             className="text-sm text-muted-foreground hover:text-primary transition-colors"
           >
-            Ayarlara Dön
+            {t("backToSettings")}
           </Link>
         </div>
       </div>
@@ -679,7 +703,7 @@ export default function AdminPage() {
               setFreezeDialog(null);
               await fetchUsers();
             } catch {
-              setError(freezeDialog.type === "freeze" ? "Kullanıcı dondurulamadı." : "Dondurma kaldırılamadı.");
+              setError(freezeDialog.type === "freeze" ? tFreeze("freezeFailed") : tFreeze("unfreezeFailed"));
               setFreezeDialog(null);
             } finally {
               setActionLoading(null);

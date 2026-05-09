@@ -896,7 +896,32 @@
       "Aktif": "Aktif",
       "Bekliyor": "Bekliyor",
       "Süresi Dolmuş": "Süresi Dolmuş",
-      "Üyelik Dolmuş": "Üyelik Dolmuş"
+      "Üyelik Dolmuş": "Üyelik Dolmuş",
+      "Dondurulmuş": "Dondurulmuş"
+    },
+    "featuresShort": {
+      "meal": "Öğün",
+      "exercise": "Egzersiz",
+      "analyze": "Analiz",
+      "chat": "Chat",
+      "workout": "Antrenman",
+      "daily-meal": "Günlük Öğün",
+      "weekly": "Haftalık",
+      "exercise-demo": "Demo"
+    },
+    "freeze": {
+      "freezeTitle": "Üyeliği Dondur",
+      "unfreezeTitle": "Dondurma Kaldır",
+      "freezeWarning": "Bu kullanıcı sisteme giriş yapamaz hale gelecek. Oturumu anında sonlandırılacak.",
+      "unfreezeWarning": "Bu kullanıcı tekrar sisteme giriş yapabilecek.",
+      "cancel": "İptal",
+      "freezeButton": "Dondur",
+      "unfreezeButton": "Dondurma Kaldır",
+      "freezeFailed": "Kullanıcı dondurulamadı.",
+      "unfreezeFailed": "Dondurma kaldırılamadı.",
+      "frozenAt": "Donduruldu: {date} ({days} gün önce)",
+      "tooltipFreeze": "Dondur",
+      "tooltipUnfreeze": "Dondurma Kaldır"
     },
     "features": {
       "meal": "Öğün Önerisi",
