@@ -5,19 +5,21 @@ import { inviteUser } from "@/actions/admin";
 import type { MembershipType } from "@/actions/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserPlus, Loader2, CheckCircle, Copy, Check } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
-const MEMBERSHIP_OPTIONS: { value: MembershipType; label: string }[] = [
-  { value: "1-month", label: "1 Ay" },
-  { value: "3-month", label: "3 Ay" },
-  { value: "6-month", label: "6 Ay" },
-  { value: "1-year", label: "1 Yıl" },
-  { value: "unlimited", label: "Sınırsız" },
-  { value: "custom", label: "Özel Tarih" },
+const MEMBERSHIP_KEYS: { value: MembershipType; tKey: string }[] = [
+  { value: "1-month", tKey: "1-month" },
+  { value: "3-month", tKey: "3-month" },
+  { value: "6-month", tKey: "6-month" },
+  { value: "1-year", tKey: "1-year" },
+  { value: "unlimited", tKey: "unlimited" },
+  { value: "custom", tKey: "custom" },
 ];
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
+  const tInvite = useTranslations("admin.invite.success");
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
@@ -27,7 +29,7 @@ function CopyButton({ text }: { text: string }) {
     <button
       onClick={handleCopy}
       className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors shrink-0"
-      aria-label="Kopyala"
+      aria-label={tInvite("copy")}
     >
       {copied ? (
         <Check className="h-3.5 w-3.5 text-green-500" />
@@ -39,6 +41,8 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function DavetPage() {
+  const tInvite = useTranslations("admin.invite");
+  const tMembership = useTranslations("admin.membership");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [membershipType, setMembershipType] = useState<MembershipType>("1-month");
@@ -54,11 +58,11 @@ export default function DavetPage() {
     setError("");
 
     if (membershipType === "custom" && !customEndDate) {
-      setError("Özel tarih için bitiş tarihi seçin.");
+      setError(tInvite("errors.endDateRequired"));
       return;
     }
     if (membershipType === "custom" && new Date(customEndDate) <= new Date()) {
-      setError("Bitiş tarihi bugünden sonra olmalı.");
+      setError(tInvite("errors.endDateAfterToday"));
       return;
     }
 
@@ -75,9 +79,9 @@ export default function DavetPage() {
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "";
       if (message.includes("already exists") || message.includes("ALREADY_EXISTS")) {
-        setError("Bu e-posta adresi zaten kayıtlı.");
+        setError(tInvite("errors.alreadyExists"));
       } else {
-        setError("Davet gönderilemedi. Tekrar deneyin.");
+        setError(tInvite("errors.generic"));
       }
     } finally {
       setLoading(false);
@@ -92,23 +96,22 @@ export default function DavetPage() {
             <div className="h-14 w-14 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto">
               <CheckCircle className="h-7 w-7 text-green-500" />
             </div>
-            <h1 className="text-xl font-bold">Davet Gönderildi</h1>
+            <h1 className="text-xl font-bold">{tInvite("success.title")}</h1>
             <p className="text-sm text-muted-foreground">
-              Geçici şifre ile davet e-postası gönderildi.
+              {tInvite("success.description")}
             </p>
 
-            {/* Credentials with copy buttons */}
             <div className="rounded-lg border border-border bg-card p-3 space-y-3 text-left">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">E-posta</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{tInvite("success.emailLabel")}</p>
                   <p className="text-sm font-medium truncate">{invitedEmail}</p>
                 </div>
                 <CopyButton text={invitedEmail} />
               </div>
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Geçici Şifre</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{tInvite("success.tempPasswordLabel")}</p>
                   <p className="text-sm font-mono font-bold text-primary tracking-wider">{tempPassword}</p>
                 </div>
                 <CopyButton text={tempPassword} />
@@ -128,13 +131,13 @@ export default function DavetPage() {
                 }}
                 className="flex-1 h-10 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent transition-colors"
               >
-                Yeni Davet
+                {tInvite("success.newInvite")}
               </button>
               <Link
                 href="/admin"
                 className="flex-1 inline-flex items-center justify-center h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
               >
-                Kullanıcı Listesi
+                {tInvite("success.userList")}
               </Link>
             </div>
           </CardContent>
@@ -151,9 +154,9 @@ export default function DavetPage() {
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
               <UserPlus className="h-7 w-7 text-primary" />
             </div>
-            <h1 className="text-xl font-bold">Kullanıcı Davet Et</h1>
+            <h1 className="text-xl font-bold">{tInvite("title")}</h1>
             <p className="text-sm text-muted-foreground">
-              Yeni kullanıcıya geçici şifre ile davet gönderilecek
+              {tInvite("description")}
             </p>
           </div>
 
@@ -163,7 +166,7 @@ export default function DavetPage() {
                 htmlFor="name"
                 className="text-sm font-medium leading-none"
               >
-                İsim
+                {tInvite("name")}
               </label>
               <input
                 id="name"
@@ -172,7 +175,7 @@ export default function DavetPage() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                placeholder="Ad Soyad"
+                placeholder={tInvite("namePlaceholder")}
               />
             </div>
 
@@ -181,7 +184,7 @@ export default function DavetPage() {
                 htmlFor="email"
                 className="text-sm font-medium leading-none"
               >
-                E-posta
+                {tInvite("email")}
               </label>
               <input
                 id="email"
@@ -190,7 +193,7 @@ export default function DavetPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                placeholder="ornek@mail.com"
+                placeholder={tInvite("emailPlaceholder")}
               />
             </div>
 
@@ -199,7 +202,7 @@ export default function DavetPage() {
                 htmlFor="membership"
                 className="text-sm font-medium leading-none"
               >
-                Üyelik Süresi
+                {tInvite("membershipDuration")}
               </label>
               <select
                 id="membership"
@@ -207,9 +210,9 @@ export default function DavetPage() {
                 onChange={(e) => setMembershipType(e.target.value as MembershipType)}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                {MEMBERSHIP_OPTIONS.map((opt) => (
+                {MEMBERSHIP_KEYS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                    {tMembership(opt.tKey)}
                   </option>
                 ))}
               </select>
@@ -221,7 +224,7 @@ export default function DavetPage() {
                   htmlFor="customEndDate"
                   className="text-sm font-medium leading-none"
                 >
-                  Bitiş Tarihi
+                  {tInvite("endDate")}
                 </label>
                 <input
                   id="customEndDate"
@@ -246,7 +249,7 @@ export default function DavetPage() {
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Davet Gönder"
+                tInvite("submit")
               )}
             </button>
           </form>
@@ -256,7 +259,7 @@ export default function DavetPage() {
               href="/admin"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              Kullanıcı Listesine Dön
+              {tInvite("backToUsers")}
             </Link>
           </div>
         </CardContent>

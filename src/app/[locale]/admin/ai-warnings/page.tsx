@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Bar,
   BarChart,
@@ -23,23 +23,10 @@ import {
   CHART_TOOLTIP_STYLE,
 } from "@/lib/chart-theme";
 
-const FEATURE_LABELS: Record<string, string> = {
-  meal: "Öğün Önerisi",
-  exercise: "Egzersiz İpucu",
-  analyze: "İlerleme Analizi",
-  chat: "AI Asistan",
-  workout: "Antrenman Önerisi",
-  "daily-meal": "Günlük Öğün",
-  weekly: "Haftalık Plan",
-  "exercise-demo": "Egzersiz Demo",
-  shopping: "Alışveriş Listesi",
-  "target-weight": "Hedef Kilo",
-};
-
-function formatShortDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
-}
+const FEATURE_KEYS = [
+  "meal", "exercise", "analyze", "chat", "workout",
+  "daily-meal", "weekly", "exercise-demo", "shopping", "target-weight",
+] as const;
 
 function StatCard({
   label,
@@ -67,9 +54,27 @@ function StatCard({
 
 export default function AiWarningsPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("admin.aiWarningsPage");
+  const tFeatures = useTranslations("admin.aiWarningsPage.featureLabels");
   const [data, setData] = useState<AiWarningsAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const featureLabel = (feature: string): string => {
+    if ((FEATURE_KEYS as readonly string[]).includes(feature)) {
+      return tFeatures(feature);
+    }
+    return feature;
+  };
+
+  const formatShortDate = (iso: string): string => {
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+      day: "numeric",
+      month: "short",
+    });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -83,7 +88,7 @@ export default function AiWarningsPage() {
           router.push("/");
           return;
         }
-        if (!cancelled) setError("Veriler yüklenemedi.");
+        if (!cancelled) setError(t("loadFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -91,7 +96,7 @@ export default function AiWarningsPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, t]);
 
   if (loading) {
     return (
@@ -104,16 +109,19 @@ export default function AiWarningsPage() {
   if (error || !data) {
     return (
       <div className="min-h-dvh p-6 text-center">
-        <p className="text-sm text-destructive">{error || "Veri yok."}</p>
+        <p className="text-sm text-destructive">{error || t("noData")}</p>
         <Link
           href="/admin"
           className="text-sm text-muted-foreground hover:text-primary mt-3 inline-block"
         >
-          Admin paneline dön
+          {t("backToAdmin")}
         </Link>
       </div>
     );
   }
+
+  const successKey = t("success");
+  const warningsKey = t("warnings");
 
   return (
     <div className="min-h-dvh pb-8">
@@ -130,46 +138,44 @@ export default function AiWarningsPage() {
               <AlertTriangle className="h-4 w-4 text-amber-500" />
             </div>
             <div>
-              <h1 className="text-lg font-bold">AI Uyarıları</h1>
-              <p className="text-[11px] text-muted-foreground">Son 14 günün success_with_warnings dağılımı</p>
+              <h1 className="text-lg font-bold">AI Warnings</h1>
+              <p className="text-[11px] text-muted-foreground">{t("subtitle")}</p>
             </div>
           </div>
         </div>
 
-        {/* ── Top-line stats ── */}
         <div className="grid grid-cols-3 gap-3">
-          <StatCard label="Toplam Run" value={data.totalRuns} />
+          <StatCard label={t("totalRuns")} value={data.totalRuns} />
           <StatCard
-            label="Uyarılı Run"
+            label={t("warningRuns")}
             value={data.runsWithWarnings}
             sub="success_with_warnings"
             highlight={data.runsWithWarnings > 0}
           />
           <StatCard
-            label="Uyarı Oranı"
+            label={t("warningRate")}
             value={`%${data.warningRatePct}`}
             highlight={data.warningRatePct > 20}
           />
         </div>
 
-        {/* ── Daily timeline ── */}
         <Card>
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">14 Günlük Trend</h2>
+              <h2 className="text-sm font-semibold">{t("trend14d")}</h2>
             </div>
             {data.daily.every((d) => d.success === 0 && d.warnings === 0) ? (
               <p className="text-xs text-muted-foreground py-4 text-center">
-                Bu pencerede AI çağrısı yok.
+                {t("noCallsInWindow")}
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart
                   data={data.daily.map((d) => ({
                     date: formatShortDate(d.date),
-                    Başarılı: d.success,
-                    Uyarılı: d.warnings,
+                    [successKey]: d.success,
+                    [warningsKey]: d.warnings,
                   }))}
                   margin={{ top: 6, right: 6, left: -16, bottom: 0 }}
                 >
@@ -183,33 +189,32 @@ export default function AiWarningsPage() {
                     itemStyle={CHART_TOOLTIP_ITEM_STYLE}
                   />
                   <Legend wrapperStyle={{ fontSize: "11px" }} />
-                  <Bar dataKey="Başarılı" stackId="a" fill="hsl(var(--primary))" />
-                  <Bar dataKey="Uyarılı" stackId="a" fill="rgb(245, 158, 11)" />
+                  <Bar dataKey={successKey} stackId="a" fill="hsl(var(--primary))" />
+                  <Bar dataKey={warningsKey} stackId="a" fill="rgb(245, 158, 11)" />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
-        {/* ── Per-feature breakdown ── */}
         {data.perFeature.length > 0 && (
           <Card>
             <CardContent className="p-4 space-y-3">
-              <h2 className="text-sm font-semibold">Feature Bazında</h2>
+              <h2 className="text-sm font-semibold">{t("byFeature")}</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-1.5 text-muted-foreground font-medium">Feature</th>
-                      <th className="text-right py-1.5 text-muted-foreground font-medium">Başarılı</th>
-                      <th className="text-right py-1.5 text-muted-foreground font-medium">Uyarılı</th>
-                      <th className="text-right py-1.5 text-muted-foreground font-medium">Oran</th>
+                      <th className="text-left py-1.5 text-muted-foreground font-medium">{t("feature")}</th>
+                      <th className="text-right py-1.5 text-muted-foreground font-medium">{t("success")}</th>
+                      <th className="text-right py-1.5 text-muted-foreground font-medium">{t("warnings")}</th>
+                      <th className="text-right py-1.5 text-muted-foreground font-medium">{t("ratio")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.perFeature.map((f) => (
                       <tr key={f.feature} className="border-b border-border/50">
-                        <td className="py-1.5">{FEATURE_LABELS[f.feature] ?? f.feature}</td>
+                        <td className="py-1.5">{featureLabel(f.feature)}</td>
                         <td className="text-right py-1.5 tabular-nums">{f.successCount}</td>
                         <td className="text-right py-1.5 tabular-nums text-amber-500">
                           {f.warningCount}
@@ -234,13 +239,12 @@ export default function AiWarningsPage() {
           </Card>
         )}
 
-        {/* ── Top warning patterns ── */}
         {data.topPatterns.length > 0 ? (
           <Card>
             <CardContent className="p-4 space-y-3">
-              <h2 className="text-sm font-semibold">En Sık Uyarı Tipleri</h2>
+              <h2 className="text-sm font-semibold">{t("topPatterns")}</h2>
               <p className="text-[10px] text-muted-foreground">
-                Numerik değerler ve gün indeksleri normalize edildi. Aynı kalıbın varyasyonları gruplanır.
+                {t("topPatternsHint")}
               </p>
               <div className="space-y-2.5">
                 {data.topPatterns.map((p) => (
@@ -263,14 +267,17 @@ export default function AiWarningsPage() {
                             key={i}
                             className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
                           >
-                            {FEATURE_LABELS[s.feature] ?? s.feature}
+                            {featureLabel(s.feature)}
                             <span className="text-muted-foreground/60">·</span>
-                            {new Date(s.createdAt).toLocaleDateString("tr-TR", {
-                              day: "numeric",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {new Date(s.createdAt).toLocaleDateString(
+                              locale === "en" ? "en-US" : "tr-TR",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
                           </span>
                         ))}
                       </div>
@@ -282,7 +289,7 @@ export default function AiWarningsPage() {
           </Card>
         ) : data.totalRuns > 0 ? (
           <p className="text-sm text-muted-foreground text-center py-2">
-            Bu pencerede uyarı kaydedilmemiş. Pipeline temiz.
+            {t("cleanPipeline")}
           </p>
         ) : null}
       </div>
