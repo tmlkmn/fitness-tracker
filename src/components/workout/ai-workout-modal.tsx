@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 import { MeasurementNudge } from "@/components/ai/measurement-nudge";
+import { useTranslations } from "next-intl";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -26,7 +27,7 @@ const EQUIPMENT_OPTIONS = [
   "Yoga matı",
   "Bench",
   "Hiçbiri (vücut ağırlığı)",
-];
+] as const;
 
 interface ExerciseDisplay {
   name: string;
@@ -53,6 +54,7 @@ interface AiWorkoutModalProps {
 }
 
 function ExerciseRow({ ex }: { ex: ExerciseDisplay }) {
+  const t = useTranslations("workout.aiModal");
   return (
     <div className="flex items-start gap-2 py-1.5">
       <p className="text-sm font-medium flex-1 min-w-0 break-words">{ex.name}</p>
@@ -64,13 +66,13 @@ function ExerciseRow({ ex }: { ex: ExerciseDisplay }) {
         ) : null}
         {ex.durationMinutes ? (
           <Badge variant="secondary" className="text-[10px]">
-            {ex.durationMinutes} dk
+            {ex.durationMinutes} {t("minutesShort")}
           </Badge>
         ) : null}
         {ex.restSeconds ? (
           <Badge variant="outline" className="text-[10px]">
             <Timer className="h-2.5 w-2.5 mr-0.5" />
-            {ex.restSeconds}sn
+            {ex.restSeconds}{t("secondsShort")}
           </Badge>
         ) : null}
       </div>
@@ -85,6 +87,7 @@ function ExerciseList({
   exercises: ExerciseDisplay[];
   grouped?: boolean;
 }) {
+  const t = useTranslations("workout.aiModal");
   if (!grouped) {
     return (
       <div className="divide-y divide-border">
@@ -95,10 +98,9 @@ function ExerciseList({
     );
   }
 
-  // Group by sectionLabel
   const sections: Record<string, ExerciseDisplay[]> = {};
   for (const ex of exercises) {
-    const label = ex.sectionLabel ?? "Egzersizler";
+    const label = ex.sectionLabel ?? t("exercisesSection");
     if (!sections[label]) sections[label] = [];
     sections[label].push(ex);
   }
@@ -133,6 +135,7 @@ export function AiWorkoutModal({
   onGenerate,
   onApply,
 }: AiWorkoutModalProps) {
+  const t = useTranslations("workout.aiModal");
   const [userNote, setUserNote] = useState("");
   const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>(() => loadWorkoutPrefs().equipment);
@@ -140,13 +143,13 @@ export function AiWorkoutModal({
 
   useEffect(() => {
     if (!loading) { setProfileDone(false); return; }
-    const t = setTimeout(() => setProfileDone(true), 1200);
-    return () => clearTimeout(t);
+    const tm = setTimeout(() => setProfileDone(true), 1200);
+    return () => clearTimeout(tm);
   }, [loading]);
 
   const workoutOverlaySteps: GeneratingStep[] = [
-    { label: "Profil analizi", status: profileDone ? "completed" : loading ? "active" : "pending" },
-    { label: "Antrenman planı oluşturuluyor", status: loading && profileDone ? "active" : "pending" },
+    { label: t("stepProfile"), status: profileDone ? "completed" : loading ? "active" : "pending" },
+    { label: t("stepPlan"), status: loading && profileDone ? "active" : "pending" },
   ];
 
   const toggleEquipment = (eq: string) => {
@@ -163,9 +166,15 @@ export function AiWorkoutModal({
     saveWorkoutPrefs({ location, equipment: selectedEquipment });
     const parts: string[] = [];
     if (location === "home") {
-      parts.push(`Antrenman yeri: Ev. Mevcut ekipman: ${selectedEquipment.length > 0 ? selectedEquipment.join(", ") : "Vücut ağırlığı"}`);
+      const equipmentList =
+        selectedEquipment.length > 0
+          ? selectedEquipment
+              .map((eq) => t(`equipment.${eq}` as `equipment.${typeof EQUIPMENT_OPTIONS[number]}`))
+              .join(", ")
+          : t("bodyweight");
+      parts.push(`${t("locationHomePromptPrefix")} ${equipmentList}`);
     } else {
-      parts.push("Antrenman yeri: Salon (tüm ekipman mevcut)");
+      parts.push(t("locationGymPrompt"));
     }
     const note = userNote.trim();
     if (note) parts.push(note);
@@ -176,7 +185,7 @@ export function AiWorkoutModal({
     <>
       <AiGeneratingOverlay
         open={loading}
-        title="AI Antrenman Planını Hazırlıyor"
+        title={t("overlayTitle")}
         steps={workoutOverlaySteps}
       />
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -189,10 +198,9 @@ export function AiWorkoutModal({
         </SheetHeader>
 
         <div className="space-y-4">
-          {/* Current program — always show */}
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs text-muted-foreground mb-2 font-medium">
-              Mevcut Program
+              {t("currentProgram")}
             </p>
             {currentExercises.length > 0 ? (
               <ExerciseList
@@ -202,11 +210,10 @@ export function AiWorkoutModal({
                 }
               />
             ) : (
-              <p className="text-xs text-muted-foreground">Egzersiz yok</p>
+              <p className="text-xs text-muted-foreground">{t("noExercises")}</p>
             )}
           </div>
 
-          {/* Error */}
           {error && (
             <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
@@ -214,14 +221,12 @@ export function AiWorkoutModal({
             </div>
           )}
 
-          {/* Phase 1: User input */}
           {!loading && !suggestedExercises && (
             <div className="space-y-3">
               <MeasurementNudge />
-              {/* Location selection */}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Antrenman yeri:
+                  {t("trainingLocation")}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -233,7 +238,7 @@ export function AiWorkoutModal({
                     }`}
                   >
                     <Building2 className="h-3.5 w-3.5" />
-                    Salon
+                    {t("gym")}
                   </button>
                   <button
                     onClick={() => setLocation("home")}
@@ -244,16 +249,15 @@ export function AiWorkoutModal({
                     }`}
                   >
                     <Home className="h-3.5 w-3.5" />
-                    Ev
+                    {t("home")}
                   </button>
                 </div>
               </div>
 
-              {/* Equipment selection (home only) */}
               {location === "home" && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Mevcut ekipman:
+                    {t("availableEquipment")}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {EQUIPMENT_OPTIONS.map((eq) => {
@@ -268,7 +272,7 @@ export function AiWorkoutModal({
                               : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
                           }`}
                         >
-                          {eq}
+                          {t(`equipment.${eq}` as `equipment.${typeof EQUIPMENT_OPTIONS[number]}`)}
                         </button>
                       );
                     })}
@@ -279,14 +283,14 @@ export function AiWorkoutModal({
               <div className="flex items-start gap-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 <p className="text-sm text-muted-foreground">
-                  Bu antrenman için özel bir isteğin var mı?
+                  {t("specialRequest")}
                 </p>
               </div>
               <textarea
                 value={userNote}
                 onChange={(e) => setUserNote(e.target.value)}
                 rows={2}
-                placeholder="Örn: Ağırlıkları artır, daha fazla süperset ekle, omuz hareketlerini değiştir..."
+                placeholder={t("specialRequestPlaceholder")}
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               />
               <Button
@@ -295,16 +299,15 @@ export function AiWorkoutModal({
                 className="w-full"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Öneri Al
+                {t("getSuggestion")}
               </Button>
             </div>
           )}
 
-          {/* Loading state */}
           {loading && (
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
               <p className="text-xs text-primary mb-2 font-medium">
-                AI öneri oluşturuyor...
+                {t("generating")}
               </p>
               {[...Array(3)].map((_, i) => (
                 <Skeleton key={i} className="h-8 w-full" />
@@ -312,11 +315,10 @@ export function AiWorkoutModal({
             </div>
           )}
 
-          {/* Phase 2: Suggested program */}
           {!loading && suggestedExercises && (
             <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
               <p className="text-xs text-primary mb-2 font-medium">
-                Önerilen Program
+                {t("suggestedProgram")}
               </p>
               <ExerciseList
                 exercises={suggestedExercises}
@@ -325,7 +327,6 @@ export function AiWorkoutModal({
             </div>
           )}
 
-          {/* Phase 2 buttons */}
           {!loading && suggestedExercises && (
             <div className="flex gap-2">
               <Button
@@ -335,7 +336,7 @@ export function AiWorkoutModal({
                 className="flex-1"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Yeni Öneri
+                {t("newSuggestion")}
               </Button>
               <Button
                 onClick={onApply}
@@ -347,7 +348,7 @@ export function AiWorkoutModal({
                 ) : (
                   <Check className="h-4 w-4 mr-2" />
                 )}
-                Onayla
+                {t("approve")}
               </Button>
             </div>
           )}

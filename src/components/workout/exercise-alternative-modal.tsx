@@ -24,6 +24,7 @@ import type { AIExerciseVariation } from "@/actions/ai-workout";
 import { ExerciseDemoModal } from "./exercise-demo-modal";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
+import { useTranslations } from "next-intl";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -35,7 +36,7 @@ const EQUIPMENT_OPTIONS = [
   "Yoga matı",
   "Bench",
   "Hiçbiri (vücut ağırlığı)",
-];
+] as const;
 
 interface ExerciseAlternativeModalProps {
   open: boolean;
@@ -51,6 +52,7 @@ interface ExerciseAlternativeModalProps {
 }
 
 function AlternativeBadges({ ex }: { ex: AIExerciseVariation }) {
+  const t = useTranslations("workout.aiModal");
   return (
     <div className="flex gap-1 flex-wrap">
       {ex.sets && ex.reps ? (
@@ -60,12 +62,12 @@ function AlternativeBadges({ ex }: { ex: AIExerciseVariation }) {
       ) : null}
       {ex.durationMinutes ? (
         <Badge variant="secondary" className="text-[10px]">
-          {ex.durationMinutes} dk
+          {ex.durationMinutes} {t("minutesShort")}
         </Badge>
       ) : null}
       {ex.restSeconds ? (
         <Badge variant="outline" className="text-[10px]">
-          {ex.restSeconds}sn
+          {ex.restSeconds}{t("secondsShort")}
         </Badge>
       ) : null}
     </div>
@@ -84,6 +86,8 @@ export function ExerciseAlternativeModal({
   onGenerate,
   onApply,
 }: ExerciseAlternativeModalProps) {
+  const t = useTranslations("exercises.alternativeModal");
+  const tEquipment = useTranslations("workout.aiModal");
   const [userNote, setUserNote] = useState("");
   const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>(() => loadWorkoutPrefs().equipment);
@@ -98,11 +102,19 @@ export function ExerciseAlternativeModal({
   const buildNote = () => {
     const parts: string[] = [];
     if (location === "home") {
-      parts.push(
-        `Antrenman yeri: Ev. Mevcut ekipman: ${selectedEquipment.length > 0 ? selectedEquipment.join(", ") : "Vücut ağırlığı"}`,
-      );
+      const equipmentList =
+        selectedEquipment.length > 0
+          ? selectedEquipment
+              .map((eq) =>
+                tEquipment(
+                  `equipment.${eq}` as `equipment.${typeof EQUIPMENT_OPTIONS[number]}`,
+                ),
+              )
+              .join(", ")
+          : t("bodyweight");
+      parts.push(`${t("locationHomePromptPrefix")} ${equipmentList}`);
     } else {
-      parts.push("Antrenman yeri: Salon (tüm ekipman mevcut)");
+      parts.push(t("locationGymPrompt"));
     }
     const note = userNote.trim();
     if (note) parts.push(note);
@@ -131,7 +143,6 @@ export function ExerciseAlternativeModal({
         </SheetHeader>
 
         <div className="space-y-4">
-          {/* Error */}
           {error && (
             <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
@@ -139,12 +150,11 @@ export function ExerciseAlternativeModal({
             </div>
           )}
 
-          {/* Input phase — only show when no alternatives yet */}
           {!loading && !alternatives && (
             <div className="space-y-3">
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Antrenman yeri:
+                  {t("trainingLocation")}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -156,7 +166,7 @@ export function ExerciseAlternativeModal({
                     }`}
                   >
                     <Building2 className="h-3.5 w-3.5" />
-                    Salon
+                    {t("gym")}
                   </button>
                   <button
                     onClick={() => setLocation("home")}
@@ -167,7 +177,7 @@ export function ExerciseAlternativeModal({
                     }`}
                   >
                     <Home className="h-3.5 w-3.5" />
-                    Ev
+                    {t("home")}
                   </button>
                 </div>
               </div>
@@ -175,7 +185,7 @@ export function ExerciseAlternativeModal({
               {location === "home" && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Mevcut ekipman:
+                    {t("availableEquipment")}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {EQUIPMENT_OPTIONS.map((eq) => {
@@ -190,7 +200,7 @@ export function ExerciseAlternativeModal({
                               : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
                           }`}
                         >
-                          {eq}
+                          {tEquipment(`equipment.${eq}` as `equipment.${typeof EQUIPMENT_OPTIONS[number]}`)}
                         </button>
                       );
                     })}
@@ -201,14 +211,14 @@ export function ExerciseAlternativeModal({
               <div className="flex items-start gap-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 <p className="text-sm text-muted-foreground">
-                  Özel bir isteğin var mı?
+                  {t("specialRequest")}
                 </p>
               </div>
               <textarea
                 value={userNote}
                 onChange={(e) => setUserNote(e.target.value)}
                 rows={2}
-                placeholder="Örn: Daha zorlu bir hareket, ekipman gerektirmeden..."
+                placeholder={t("specialRequestPlaceholder")}
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               />
               <Button
@@ -217,17 +227,16 @@ export function ExerciseAlternativeModal({
                 className="w-full gap-1.5"
               >
                 <Sparkles className="h-4 w-4" />
-                Öneri Al
+                {t("getSuggestion")}
                 <AiQuotaBadge feature="workout" />
               </Button>
             </div>
           )}
 
-          {/* Loading */}
           {loading && (
             <div className="space-y-2">
               <p className="text-xs text-primary font-medium">
-                AI öneri oluşturuyor...
+                {t("generating")}
               </p>
               {[...Array(3)].map((_, i) => (
                 <Skeleton key={i} className="h-16 w-full rounded-lg" />
@@ -235,17 +244,16 @@ export function ExerciseAlternativeModal({
             </div>
           )}
 
-          {/* Alternatives list */}
           {!loading && alternatives && alternatives.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground font-medium">
-                  3 Alternatif Hareket
+                  {t("alternativesCount")}
                 </p>
                 {fromCache && (
                   <Badge variant="secondary" className="text-[10px] gap-1">
                     <Database className="h-2.5 w-2.5" />
-                    Kayıtlı öneri
+                    {t("fromCache")}
                   </Badge>
                 )}
               </div>
@@ -284,7 +292,6 @@ export function ExerciseAlternativeModal({
             </div>
           )}
 
-          {/* Action buttons — show when alternatives available */}
           {!loading && alternatives && (
             <div className="flex gap-2">
               <Button
@@ -294,7 +301,7 @@ export function ExerciseAlternativeModal({
                 className="flex-1"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Yeni Öneri
+                {t("newSuggestion")}
               </Button>
               <Button
                 onClick={handleApply}
@@ -306,7 +313,7 @@ export function ExerciseAlternativeModal({
                 ) : (
                   <Check className="h-4 w-4 mr-2" />
                 )}
-                Uygula
+                {t("apply")}
               </Button>
             </div>
           )}

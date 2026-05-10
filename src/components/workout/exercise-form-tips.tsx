@@ -13,6 +13,7 @@ import { useExerciseFormTips } from "@/hooks/use-exercise-form-tips";
 import { formatAiError } from "@/lib/ai-errors";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface ExerciseFormTipsProps {
   name: string;
@@ -24,6 +25,7 @@ interface ExerciseFormTipsProps {
 
 export function ExerciseFormTips({ name, notes, englishName, triggerClassName, triggerLabel }: ExerciseFormTipsProps) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("exercises.formTips");
 
   const {
     data,
@@ -60,7 +62,7 @@ export function ExerciseFormTips({ name, notes, englishName, triggerClassName, t
           >
             <SheetHeader>
               <SheetTitle className="text-sm">
-                Form İpuçları: {name}
+                {t("title", { name })}
               </SheetTitle>
             </SheetHeader>
             <div className="space-y-3">

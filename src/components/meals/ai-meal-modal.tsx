@@ -31,6 +31,9 @@ import {
 } from "@/hooks/use-meal-ai";
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 import { MeasurementNudge } from "@/components/ai/measurement-nudge";
+import { useTranslations, useLocale } from "next-intl";
+import { getLocalizedMealLabel, isMealLabel } from "@/lib/meal-labels";
+import type { Locale } from "@/lib/locale";
 
 type Tab = "suggest" | "saved";
 
@@ -49,14 +52,18 @@ interface AiMealModalProps {
 }
 
 function MealRow({ meal }: { meal: AIMeal }) {
+  const locale = useLocale() as Locale;
   const cal = meal.calories ?? 0;
+  const displayLabel = isMealLabel(meal.mealLabel)
+    ? getLocalizedMealLabel(meal.mealLabel, locale)
+    : meal.mealLabel;
   return (
     <div className="flex items-start gap-2 py-1.5">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <Clock className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
           <span className="text-[10px] text-muted-foreground">{meal.mealTime}</span>
-          <span className="text-xs font-medium truncate">{meal.mealLabel}</span>
+          <span className="text-xs font-medium truncate">{displayLabel}</span>
         </div>
         <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{meal.content}</p>
       </div>
@@ -76,6 +83,7 @@ function MealBlock({
   label: string;
   variant?: "default" | "suggested";
 }) {
+  const t = useTranslations("meals.aiModal");
   const totalCal = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
   return (
     <div
@@ -104,7 +112,7 @@ function MealBlock({
           ))}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">Öğün yok</p>
+        <p className="text-xs text-muted-foreground">{t("noMeals")}</p>
       )}
     </div>
   );
@@ -125,13 +133,15 @@ function SavedSuggestionRow({
   dailyPlanId: number;
   onApplied: () => void;
 }) {
+  const t = useTranslations("meals.aiModal");
+  const locale = useLocale() as Locale;
   const [expanded, setExpanded] = useState(false);
   const deleteMutation = useDeleteDailyMealSuggestion();
   const applyMutation = useApplyDailyMeals();
 
   const totalCal = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
   const dateStr = createdAt
-    ? new Date(createdAt).toLocaleDateString("tr-TR", {
+    ? new Date(createdAt).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
         day: "numeric",
         month: "short",
       })
@@ -152,7 +162,7 @@ function SavedSuggestionRow({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-medium">{dateStr}</span>
             <Badge variant="secondary" className="text-[10px]">
-              {meals.length} öğün
+              {t("mealCount", { count: meals.length })}
             </Badge>
             {totalCal > 0 && (
               <Badge variant="outline" className="text-[10px]">
@@ -192,7 +202,7 @@ function SavedSuggestionRow({
               ) : (
                 <Check className="h-3 w-3 mr-1" />
               )}
-              Uygula
+              {t("apply")}
             </Button>
             <Button
               variant="outline"
@@ -223,6 +233,7 @@ export function AiMealModal({
   onGenerate,
   onApply,
 }: AiMealModalProps) {
+  const t = useTranslations("meals.aiModal");
   const [tab, setTab] = useState<Tab>("suggest");
   const [ingredients, setIngredients] = useState("");
   const [userNote, setUserNote] = useState("");
@@ -230,13 +241,13 @@ export function AiMealModal({
 
   useEffect(() => {
     if (!loading) { setProfileDone(false); return; }
-    const t = setTimeout(() => setProfileDone(true), 1200);
-    return () => clearTimeout(t);
+    const tm = setTimeout(() => setProfileDone(true), 1200);
+    return () => clearTimeout(tm);
   }, [loading]);
 
   const mealOverlaySteps: GeneratingStep[] = [
-    { label: "Profil analizi", status: profileDone ? "completed" : loading ? "active" : "pending" },
-    { label: "Beslenme planı oluşturuluyor", status: loading && profileDone ? "active" : "pending" },
+    { label: t("stepProfile"), status: profileDone ? "completed" : loading ? "active" : "pending" },
+    { label: t("stepPlan"), status: loading && profileDone ? "active" : "pending" },
   ];
 
   const saved = useSavedDailyMealSuggestions(planType);
@@ -245,7 +256,7 @@ export function AiMealModal({
   const handleGenerate = () => {
     const parts: string[] = [];
     if (ingredients.trim()) {
-      parts.push(`Evde bulunan malzemeler: ${ingredients.trim()}`);
+      parts.push(`${t("ingredientsPrefix")}: ${ingredients.trim()}`);
     }
     if (userNote.trim()) {
       parts.push(userNote.trim());
@@ -256,7 +267,7 @@ export function AiMealModal({
   const handleSave = async () => {
     if (!suggestedMeals) return;
     const noteParts = [
-      ingredients.trim() ? `Malzemeler: ${ingredients.trim()}` : "",
+      ingredients.trim() ? `${t("ingredientsNote")}: ${ingredients.trim()}` : "",
       userNote.trim(),
     ].filter(Boolean);
     await saveMutation.mutateAsync({
@@ -270,7 +281,7 @@ export function AiMealModal({
     <>
       <AiGeneratingOverlay
         open={loading}
-        title="AI Beslenme Planını Hazırlıyor"
+        title={t("overlayTitle")}
         steps={mealOverlaySteps}
       />
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -278,11 +289,10 @@ export function AiMealModal({
         <SheetHeader sticky>
           <SheetTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            AI ile Beslenme Programı
+            {t("title")}
           </SheetTitle>
         </SheetHeader>
 
-        {/* Tabs */}
         <div className="flex gap-1 p-1 bg-muted rounded-lg">
           <button
             onClick={() => setTab("suggest")}
@@ -294,7 +304,7 @@ export function AiMealModal({
           >
             <span className="flex items-center justify-center gap-1.5">
               <Sparkles className="h-3 w-3" />
-              Öneri Al
+              {t("tabSuggest")}
             </span>
           </button>
           <button
@@ -307,7 +317,7 @@ export function AiMealModal({
           >
             <span className="flex items-center justify-center gap-1.5">
               <BookOpen className="h-3 w-3" />
-              Kayıtlı
+              {t("tabSaved")}
               {saved.data && saved.data.length > 0 && (
                 <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">
                   {saved.data.length}
@@ -317,13 +327,10 @@ export function AiMealModal({
           </button>
         </div>
 
-        {/* ── Tab: Öneri Al ── */}
         {tab === "suggest" && (
           <div className="space-y-4">
-            {/* Current meals */}
-            <MealBlock meals={currentMeals} label="Mevcut Öğünler" />
+            <MealBlock meals={currentMeals} label={t("currentMeals")} />
 
-            {/* Error */}
             {error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
@@ -331,47 +338,45 @@ export function AiMealModal({
               </div>
             )}
 
-            {/* Input phase */}
             {!loading && !suggestedMeals && (
               <div className="space-y-3">
                 <MeasurementNudge />
                 <div>
                   <p className="text-xs text-muted-foreground mb-1.5">
-                    Evdeki malzemeler (opsiyonel):
+                    {t("ingredientsLabel")}
                   </p>
                   <textarea
                     value={ingredients}
                     onChange={(e) => setIngredients(e.target.value)}
                     rows={2}
-                    placeholder="Örn: yumurta, yulaf, tavuk, brokoli, makarna..."
+                    placeholder={t("ingredientsPlaceholder")}
                     className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                   />
                 </div>
                 <div>
                   <div className="flex items-start gap-2 mb-1.5">
                     <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground">Özel istek (opsiyonel):</p>
+                    <p className="text-xs text-muted-foreground">{t("specialRequestLabel")}</p>
                   </div>
                   <textarea
                     value={userNote}
                     onChange={(e) => setUserNote(e.target.value)}
                     rows={2}
-                    placeholder="Örn: Daha az karbonhidrat, öğle öğününü atla..."
+                    placeholder={t("specialRequestPlaceholder")}
                     className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                   />
                 </div>
                 <Button onClick={handleGenerate} disabled={loading} className="w-full">
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Öneri Al
+                  {t("getSuggestion")}
                 </Button>
               </div>
             )}
 
-            {/* Loading */}
             {loading && (
               <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
                 <p className="text-xs text-primary font-medium">
-                  AI öneri oluşturuyor...
+                  {t("generating")}
                 </p>
                 {[...Array(4)].map((_, i) => (
                   <Skeleton key={i} className="h-10 w-full" />
@@ -379,16 +384,14 @@ export function AiMealModal({
               </div>
             )}
 
-            {/* Suggested meals */}
             {!loading && suggestedMeals && (
               <MealBlock
                 meals={suggestedMeals}
-                label="Önerilen Öğünler"
+                label={t("suggestedMeals")}
                 variant="suggested"
               />
             )}
 
-            {/* Action buttons */}
             {!loading && suggestedMeals && (
               <div className="space-y-2">
                 <div className="flex gap-2">
@@ -399,7 +402,7 @@ export function AiMealModal({
                     className="flex-1"
                   >
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Yeni Öneri
+                    {t("newSuggestion")}
                   </Button>
                   <Button
                     onClick={onApply}
@@ -411,7 +414,7 @@ export function AiMealModal({
                     ) : (
                       <Check className="h-4 w-4 mr-2" />
                     )}
-                    Onayla
+                    {t("approve")}
                   </Button>
                 </div>
                 <Button
@@ -426,14 +429,13 @@ export function AiMealModal({
                   ) : (
                     <BookOpen className="h-3 w-3 mr-1" />
                   )}
-                  Kayıtlara Ekle
+                  {t("saveToFavorites")}
                 </Button>
               </div>
             )}
           </div>
         )}
 
-        {/* ── Tab: Kayıtlı Öneriler ── */}
         {tab === "saved" && (
           <div className="space-y-2">
             {saved.isLoading && (
@@ -445,7 +447,7 @@ export function AiMealModal({
             )}
             {!saved.isLoading && (!saved.data || saved.data.length === 0) && (
               <p className="text-center text-sm text-muted-foreground py-6">
-                Kayıtlı öneri bulunamadı
+                {t("noSaved")}
               </p>
             )}
             {saved.data?.map((s) => (

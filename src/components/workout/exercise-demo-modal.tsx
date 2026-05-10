@@ -16,6 +16,7 @@ import Image from "next/image";
 import { useExerciseDemo } from "@/hooks/use-exercise-demo";
 import { formatAiError } from "@/lib/ai-errors";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface ExerciseDemoModalProps {
   name: string;
@@ -23,40 +24,25 @@ interface ExerciseDemoModalProps {
   triggerLabel?: string;
 }
 
-const muscleLabels: Record<string, string> = {
-  abdominals: "Karın",
-  abductors: "Kalça Dış",
-  adductors: "Kalça İç",
-  biceps: "Biceps",
-  calves: "Baldır",
-  chest: "Göğüs",
-  forearms: "Ön Kol",
-  glutes: "Kalça",
-  hamstrings: "Arka Bacak",
-  lats: "Sırt (Lat)",
-  lower_back: "Alt Sırt",
-  middle_back: "Orta Sırt",
-  neck: "Boyun",
-  quadriceps: "Ön Bacak",
-  shoulders: "Omuz",
-  traps: "Trapez",
-  triceps: "Triceps",
-  pectorals: "Göğüs",
-  delts: "Omuz",
-  serratus_anterior: "Ön Dişli Kas",
-  abs: "Karın",
-  cardiovascular_system: "Kardiyovasküler",
-  levator_scapulae: "Kürek Kaldırıcı",
-  spine: "Omurga",
-};
-
-function getMuscleLabel(muscle: string): string {
-  const key = muscle.toLowerCase().replace(/\s+/g, "_");
-  return muscleLabels[key] ?? muscleLabels[muscle] ?? muscle;
-}
+const MUSCLE_KEYS = new Set([
+  "abdominals", "abductors", "adductors", "biceps", "calves", "chest",
+  "forearms", "glutes", "hamstrings", "lats", "lower_back", "middle_back",
+  "neck", "quadriceps", "shoulders", "traps", "triceps", "pectorals",
+  "delts", "serratus_anterior", "abs", "cardiovascular_system",
+  "levator_scapulae", "spine",
+]);
 
 export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: ExerciseDemoModalProps) {
+  const t = useTranslations("exercises.demoModal");
   const [open, setOpen] = useState(false);
+
+  const getMuscleLabel = (muscle: string): string => {
+    const key = muscle.toLowerCase().replace(/\s+/g, "_");
+    if (MUSCLE_KEYS.has(key)) return t(`muscles.${key}` as `muscles.${string}`);
+    if (MUSCLE_KEYS.has(muscle)) return t(`muscles.${muscle}` as `muscles.${string}`);
+    return muscle;
+  };
+
   const [showInstructions, setShowInstructions] = useState(false);
   const [showTips, setShowTips] = useState(false);
   const [fullscreenSrc, setFullscreenSrc] = useState<string | null>(null);
@@ -101,7 +87,7 @@ export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: Exer
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={fullscreenSrc}
-              alt="Tam ekran görsel"
+              alt={t("fullscreenAlt")}
               className="max-w-full max-h-full object-contain"
             />
             <div className="absolute top-4 right-4 p-1 rounded-full bg-white/10">
@@ -139,7 +125,7 @@ export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: Exer
 
             {data && !data.found && (
               <p className="text-center text-muted-foreground py-6 text-sm">
-                Bu egzersiz için görsel bulunamadı.
+                {t("notFound")}
               </p>
             )}
 
@@ -149,25 +135,28 @@ export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: Exer
                 {data.images.length > 0 ? (
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">
-                      {data.images.slice(0, 2).map((url, i) => (
+                      {data.images.slice(0, 2).map((url, i) => {
+                        const phase = i === 0 ? t("phaseStart") : t("phaseEnd");
+                        return (
                         <div
                           key={i}
                           className="relative aspect-[3/4] cursor-pointer"
                           onClick={() => setFullscreenSrc(url)}
-                          title="Tam ekran için tıkla"
+                          title={t("fullscreenHint")}
                         >
                           <Image
                             src={url}
-                            alt={`${name} - ${i === 0 ? "başlangıç" : "bitiş"} pozisyonu`}
+                            alt={t("imageAlt", { name, phase })}
                             fill
                             className="rounded-lg bg-muted object-cover"
                             sizes="(max-width: 384px) 45vw, 170px"
                           />
                           <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
-                            {i === 0 ? "Başlangıç" : "Bitiş"}
+                            {phase}
                           </span>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : null}
@@ -184,7 +173,7 @@ export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: Exer
                   <div className="space-y-2">
                     {data.primaryMuscles.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-xs text-muted-foreground shrink-0">Hedef:</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{t("primaryMuscles")}</span>
                         {data.primaryMuscles.map((m) => (
                           <Badge key={m} className="text-[10px] bg-primary/20 text-primary border-primary/30">
                             {getMuscleLabel(m)}
@@ -194,7 +183,7 @@ export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: Exer
                     )}
                     {data.secondaryMuscles.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-xs text-muted-foreground shrink-0">Yardımcı:</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{t("secondaryMuscles")}</span>
                         {data.secondaryMuscles.map((m) => (
                           <Badge key={m} variant="secondary" className="text-[10px]">
                             {getMuscleLabel(m)}
@@ -208,7 +197,7 @@ export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: Exer
                 {/* Equipment */}
                 {data.equipment && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-muted-foreground">Ekipman:</span>
+                    <span className="text-xs text-muted-foreground">{t("equipment")}</span>
                     <Badge variant="outline" className="text-[10px]">
                       {data.equipment}
                     </Badge>
@@ -228,7 +217,7 @@ export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: Exer
                       ) : (
                         <ChevronDown className="h-3 w-3" />
                       )}
-                      Nasıl Yapılır ({data.instructions.length} adım)
+                      {t("instructions", { count: data.instructions.length })}
                     </button>
                     {showInstructions && (
                       <ol className="mt-2 space-y-1.5 pl-4 list-decimal">
@@ -255,7 +244,7 @@ export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: Exer
                       ) : (
                         <ChevronDown className="h-3 w-3" />
                       )}
-                      İpuçları ({data.tips.length})
+                      {t("tips", { count: data.tips.length })}
                     </button>
                     {showTips && (
                       <ul className="mt-2 space-y-1.5 pl-4 list-disc">
