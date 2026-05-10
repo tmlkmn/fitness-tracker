@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Bell, BellOff, CheckCircle2, Loader2 } from "lucide-react";
 import { subscribeToPush } from "@/lib/push-subscribe";
+import { useTranslations } from "next-intl";
 
 export function PushPermissionButton() {
+  const t = useTranslations("notifications.push");
   const [permission, setPermission] = useState<NotificationPermission | "loading">("loading");
   const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,9 +63,7 @@ export function PushPermissionButton() {
 
   if (typeof window !== "undefined" && typeof Notification === "undefined") {
     return (
-      <p className="text-xs text-muted-foreground">
-        Tarayıcınız push bildirimlerini desteklemiyor.
-      </p>
+      <p className="text-xs text-muted-foreground">{t("unsupported")}</p>
     );
   }
 
@@ -71,7 +71,7 @@ export function PushPermissionButton() {
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-        Push bildirimleri aktif
+        {t("active")}
       </div>
     );
   }
@@ -80,7 +80,7 @@ export function PushPermissionButton() {
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <BellOff className="h-3.5 w-3.5" />
-        Push bildirimleri tarayıcınız tarafından engellendi
+        {t("blocked")}
       </div>
     );
   }
@@ -99,7 +99,7 @@ export function PushPermissionButton() {
       ) : (
         <Bell className="h-4 w-4 mr-2" />
       )}
-      Push Bildirimlerini Etkinleştir
+      {t("enable")}
     </Button>
   );
 }

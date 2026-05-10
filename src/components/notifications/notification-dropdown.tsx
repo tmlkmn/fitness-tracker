@@ -8,7 +8,6 @@ import {
 } from "@/hooks/use-notifications";
 import { NotificationItem } from "./notification-item";
 import {
-  CATEGORY_LABELS,
   CATEGORY_ORDER,
   getNotificationConfig,
   type NotificationCategory,
@@ -24,6 +23,7 @@ export function NotificationDropdown() {
   const clearAll = useClearAllNotifications();
   const [filter, setFilter] = useState<Filter>("all");
   const t = useTranslations("notifications.dropdown");
+  const tTypes = useTranslations("notifications.types");
 
   const counts = useMemo(() => {
     const map: Record<NotificationCategory, number> = {
@@ -89,7 +89,7 @@ export function NotificationDropdown() {
           {presentCategories.map((c) => (
             <FilterChip
               key={c}
-              label={CATEGORY_LABELS[c]}
+              label={tTypes(c)}
               count={counts[c]}
               active={filter === c}
               onClick={() => setFilter(c)}

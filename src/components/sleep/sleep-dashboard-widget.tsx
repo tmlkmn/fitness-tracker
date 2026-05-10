@@ -2,11 +2,12 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Moon, Plus } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useSleepByDate } from "@/hooks/use-sleep";
 import { useTodayDashboard } from "@/hooks/use-plans";
 import { getTurkeyTodayStr } from "@/lib/utils";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -17,6 +18,7 @@ function formatDuration(minutes: number): string {
 }
 
 export function SleepDashboardWidget() {
+  const t = useTranslations("sleep");
   const [todayStr] = useState(() => getTurkeyTodayStr());
   const { data: log } = useSleepByDate(todayStr);
   const { data: today } = useTodayDashboard();
@@ -59,7 +61,7 @@ export function SleepDashboardWidget() {
           ) : (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Plus className="h-3.5 w-3.5" />
-              <span>Bugün için ekle</span>
+              <span>{t("addToday")}</span>
             </div>
           )}
         </CardContent>

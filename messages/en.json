@@ -80,7 +80,75 @@
     "yes": "Yes",
     "no": "No",
     "search": "Search",
-    "menu": "Menu"
+    "menu": "Menu",
+    "emojiPicker": "Pick emoji"
+  },
+  "bulkComplete": {
+    "title": "Complete All",
+    "body": "<strong>{count} {label}</strong> will be marked as completed.",
+    "cancel": "Cancel",
+    "processing": "Processing...",
+    "confirm": "Confirm"
+  },
+  "pwa": {
+    "installLabel": "Install App",
+    "dialogTitle": "Install App",
+    "dialogDescription": "Follow the steps below to add the app to your home screen.",
+    "fallbackAlert": "Use \"Add to Home Screen\" from your browser's menu.",
+    "installedTitle": "App Installed",
+    "installedBody": "FitMusc is installed on your device",
+    "promoTitle": "Install the App on Your Device",
+    "promoBody": "Add to your home screen — notifications turn on automatically",
+    "promoCta": "Install on Device",
+    "ios": {
+      "step1": "Tap the <icon></icon> <strong>Share</strong> icon in Safari's bottom menu",
+      "step2": "Scroll down and tap <strong>Add to Home Screen</strong>",
+      "step3": "Tap the <strong>Add</strong> button in the top right"
+    },
+    "android": {
+      "step1": "Tap the <icon></icon> <strong>menu</strong> icon in the top-right of the browser",
+      "step2": "Tap <strong>Add to Home Screen</strong> or <strong>Install app</strong>",
+      "step3": "Tap the <strong>Install</strong> button"
+    },
+    "desktop": {
+      "step1": "Click the <icon></icon> <strong>install</strong> icon in the address bar",
+      "step2": "Or use <strong>Install app</strong> from the browser's menu"
+    }
+  },
+  "globalSearch": {
+    "title": "Search",
+    "placeholder": "Search pages, meals, exercises, days…",
+    "noResults": "No results found",
+    "shortcutHint": "Open/close",
+    "escHint": "Press Esc to close",
+    "sectionPages": "Pages",
+    "sectionDays": "Days",
+    "sectionMeals": "Meals",
+    "sectionExercises": "Exercises",
+    "sectionFoods": "My Foods",
+    "navHome": "Today",
+    "navCalendar": "Calendar",
+    "navProgress": "Progress",
+    "navShopping": "Shopping",
+    "navMyMeals": "Meal Library",
+    "navAssistant": "AI Assistant",
+    "navSettings": "Settings"
+  },
+  "feedback": {
+    "ariaLabel": "Send Feedback",
+    "title": "Feedback",
+    "categoryLabel": "Category",
+    "categorySuggestion": "Suggestion",
+    "categoryComplaint": "Complaint",
+    "categoryBug": "Bug",
+    "categoryGeneral": "Other",
+    "ratingLabel": "Rate the app (optional)",
+    "messageLabel": "Your message",
+    "messagePlaceholder": "Write your suggestion, complaint, or bug report...",
+    "submit": "Send",
+    "missingMessage": "Please write a message.",
+    "sent": "Your feedback has been sent!",
+    "sendFailed": "Could not send, please try again."
   },
   "nav": {
     "primaryNavigation": "Primary navigation",
@@ -107,7 +175,28 @@
       "empty": "No notifications",
       "emptyHint": "New notifications will appear here",
       "emptyCategory": "No notifications in this category"
-    }
+    },
+    "time": {
+      "now": "just now",
+      "minutes": "{count} min ago",
+      "hours": "{count} h ago",
+      "days": "{count} d ago"
+    },
+    "types": {
+      "reminder": "Reminder",
+      "share": "Share",
+      "membership": "Membership",
+      "feedback": "Feedback",
+      "system": "System",
+      "other": "Other"
+    },
+    "push": {
+      "unsupported": "Your browser doesn't support push notifications.",
+      "active": "Push notifications are active",
+      "blocked": "Push notifications were blocked by your browser",
+      "enable": "Enable Push Notifications"
+    },
+    "deleteLabel": "Delete notification"
   },
   "notificationPrompt": {
     "title": "Enable Notifications",
@@ -1924,16 +2013,27 @@
   },
   "water": {
     "title": "Water Tracking",
-    "shortLabel": "Water"
+    "shortLabel": "Water",
+    "lastDays": "Last {count} days"
   },
   "sleep": {
     "title": "Sleep Tracking",
     "noEntry": "No entry",
     "addButton": "Add Sleep Entry",
+    "addToday": "Add for today",
+    "lastDays": "Last {count} days",
     "minutesShort": "m",
     "hoursShort": "h",
     "minutesLong": "min",
     "hoursLong": "hr",
+    "chart": {
+      "hoursValue": "{value} h",
+      "qualityValue": "{value}/5",
+      "duration": "Duration",
+      "quality": "Quality",
+      "durationLegend": "Duration (h)",
+      "qualityLegend": "Quality (1-5)"
+    },
     "form": {
       "addTitle": "Add Sleep Entry",
       "editTitle": "Edit Sleep Entry",

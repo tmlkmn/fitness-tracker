@@ -1,18 +1,22 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { X } from "lucide-react";
 import { useDeleteNotification } from "@/hooks/use-notifications";
 import { getNotificationConfig } from "./notification-types";
+import { useTranslations } from "next-intl";
 
-function timeAgo(date: Date): string {
-  const s = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (s < 60) return "az önce";
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m} dk önce`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} sa önce`;
-  return `${Math.floor(h / 24)} gün önce`;
+function useTimeAgo() {
+  const t = useTranslations("notifications.time");
+  return (date: Date): string => {
+    const s = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (s < 60) return t("now");
+    const m = Math.floor(s / 60);
+    if (m < 60) return t("minutes", { count: m });
+    const h = Math.floor(m / 60);
+    if (h < 24) return t("hours", { count: h });
+    return t("days", { count: Math.floor(h / 24) });
+  };
 }
 
 interface NotificationItemProps {
@@ -28,6 +32,8 @@ interface NotificationItemProps {
 }
 
 export function NotificationItem({ notification }: NotificationItemProps) {
+  const t = useTranslations("notifications");
+  const timeAgo = useTimeAgo();
   const router = useRouter();
   const deleteMutation = useDeleteNotification();
   const config = getNotificationConfig(notification.type);
@@ -80,7 +86,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
           e.stopPropagation();
           deleteMutation.mutate(notification.id);
         }}
-        aria-label="Bildirimi sil"
+        aria-label={t("deleteLabel")}
       >
         <X className="h-3.5 w-3.5 text-muted-foreground" />
       </button>

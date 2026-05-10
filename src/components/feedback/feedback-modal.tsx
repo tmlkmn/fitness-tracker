@@ -18,13 +18,7 @@ import {
 } from "lucide-react";
 import { submitFeedback } from "@/actions/feedback";
 import { toast } from "sonner";
-
-const CATEGORIES = [
-  { value: "suggestion", label: "Öneri", icon: Lightbulb },
-  { value: "complaint", label: "Şikayet", icon: AlertTriangle },
-  { value: "bug", label: "Hata", icon: Bug },
-  { value: "general", label: "Diğer", icon: MessageSquare },
-];
+import { useTranslations } from "next-intl";
 
 export function FeedbackModal({
   open,
@@ -33,6 +27,13 @@ export function FeedbackModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useTranslations("feedback");
+  const CATEGORIES = [
+    { value: "suggestion", label: t("categorySuggestion"), icon: Lightbulb },
+    { value: "complaint", label: t("categoryComplaint"), icon: AlertTriangle },
+    { value: "bug", label: t("categoryBug"), icon: Bug },
+    { value: "general", label: t("categoryGeneral"), icon: MessageSquare },
+  ];
   const [category, setCategory] = useState("suggestion");
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -41,7 +42,7 @@ export function FeedbackModal({
 
   const handleSubmit = async () => {
     if (!message.trim()) {
-      toast.error("Lütfen mesajınızı yazın.");
+      toast.error(t("missingMessage"));
       return;
     }
     setSending(true);
@@ -51,13 +52,13 @@ export function FeedbackModal({
         rating: rating > 0 ? rating : undefined,
         message: message.trim(),
       });
-      toast.success("Geri bildiriminiz iletildi!");
+      toast.success(t("sent"));
       setCategory("suggestion");
       setRating(0);
       setMessage("");
       onOpenChange(false);
     } catch {
-      toast.error("Gönderilemedi, tekrar deneyin.");
+      toast.error(t("sendFailed"));
     } finally {
       setSending(false);
     }
@@ -67,13 +68,13 @@ export function FeedbackModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Geri Bildirim</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
           {/* Category */}
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Kategori</label>
+            <label className="text-xs text-muted-foreground">{t("categoryLabel")}</label>
             <div className="grid grid-cols-4 gap-1.5">
               {CATEGORIES.map(({ value, label, icon: Icon }) => (
                 <button
@@ -96,7 +97,7 @@ export function FeedbackModal({
           {/* Rating */}
           <div className="space-y-1.5">
             <label className="text-xs text-muted-foreground">
-              Uygulamayı Puanla (isteğe bağlı)
+              {t("ratingLabel")}
             </label>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -122,13 +123,13 @@ export function FeedbackModal({
 
           {/* Message */}
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Mesajınız</label>
+            <label className="text-xs text-muted-foreground">{t("messageLabel")}</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
               maxLength={2000}
-              placeholder="Öneri, şikayet veya hata bildiriminizi yazın..."
+              placeholder={t("messagePlaceholder")}
               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
             />
           </div>
@@ -141,7 +142,7 @@ export function FeedbackModal({
             {sending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              "Gönder"
+              t("submit")
             )}
           </Button>
         </div>

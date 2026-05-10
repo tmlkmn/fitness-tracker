@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { useTranslations } from "next-intl";
 
 function getPlatform(): "ios" | "android" | "other" {
   if (typeof navigator === "undefined") return "other";
@@ -33,84 +34,55 @@ function StepNumber({ n }: { n: number }) {
   );
 }
 
+type RichTags = {
+  strong: (chunks: React.ReactNode) => React.ReactNode;
+  icon: () => React.ReactNode;
+};
+
+function richTags(icon: React.ReactNode): RichTags {
+  return {
+    strong: (chunks) => <strong>{chunks}</strong>,
+    icon: () => <>{icon}</>,
+  };
+}
+
 function IosInstructions() {
+  const t = useTranslations("pwa.ios");
+  const tags = richTags(<Share className="inline h-4 w-4 -mt-0.5" />);
   return (
     <ol className="space-y-3 list-none">
-      <li className="flex items-start gap-3">
-        <StepNumber n={1} />
-        <span>
-          Safari&apos;nin alt menüsündeki{" "}
-          <Share className="inline h-4 w-4 -mt-0.5" />{" "}
-          <strong>Paylaş</strong> simgesine dokunun
-        </span>
-      </li>
-      <li className="flex items-start gap-3">
-        <StepNumber n={2} />
-        <span>
-          Aşağı kaydırın ve <strong>Ana Ekrana Ekle</strong> seçeneğine dokunun
-        </span>
-      </li>
-      <li className="flex items-start gap-3">
-        <StepNumber n={3} />
-        <span>
-          Sağ üstteki <strong>Ekle</strong> butonuna dokunun
-        </span>
-      </li>
+      <li className="flex items-start gap-3"><StepNumber n={1} /><span>{t.rich("step1", tags)}</span></li>
+      <li className="flex items-start gap-3"><StepNumber n={2} /><span>{t.rich("step2", tags)}</span></li>
+      <li className="flex items-start gap-3"><StepNumber n={3} /><span>{t.rich("step3", tags)}</span></li>
     </ol>
   );
 }
 
 function AndroidInstructions() {
+  const t = useTranslations("pwa.android");
+  const tags = richTags(<MoreVertical className="inline h-4 w-4 -mt-0.5" />);
   return (
     <ol className="space-y-3 list-none">
-      <li className="flex items-start gap-3">
-        <StepNumber n={1} />
-        <span>
-          Tarayıcının sağ üst köşesindeki{" "}
-          <MoreVertical className="inline h-4 w-4 -mt-0.5" />{" "}
-          <strong>menü</strong> simgesine dokunun
-        </span>
-      </li>
-      <li className="flex items-start gap-3">
-        <StepNumber n={2} />
-        <span>
-          <strong>Ana ekrana ekle</strong> veya <strong>Uygulamayı yükle</strong>{" "}
-          seçeneğine dokunun
-        </span>
-      </li>
-      <li className="flex items-start gap-3">
-        <StepNumber n={3} />
-        <span>
-          <strong>Yükle</strong> butonuna dokunun
-        </span>
-      </li>
+      <li className="flex items-start gap-3"><StepNumber n={1} /><span>{t.rich("step1", tags)}</span></li>
+      <li className="flex items-start gap-3"><StepNumber n={2} /><span>{t.rich("step2", tags)}</span></li>
+      <li className="flex items-start gap-3"><StepNumber n={3} /><span>{t.rich("step3", tags)}</span></li>
     </ol>
   );
 }
 
 function DesktopInstructions() {
+  const t = useTranslations("pwa.desktop");
+  const tags = richTags(<Download className="inline h-4 w-4 -mt-0.5" />);
   return (
     <ol className="space-y-3 list-none">
-      <li className="flex items-start gap-3">
-        <StepNumber n={1} />
-        <span>
-          Adres çubuğundaki{" "}
-          <Download className="inline h-4 w-4 -mt-0.5" />{" "}
-          <strong>yükle</strong> simgesine tıklayın
-        </span>
-      </li>
-      <li className="flex items-start gap-3">
-        <StepNumber n={2} />
-        <span>
-          Veya tarayıcı menüsünden <strong>Uygulamayı yükle</strong> seçeneğini
-          kullanın
-        </span>
-      </li>
+      <li className="flex items-start gap-3"><StepNumber n={1} /><span>{t.rich("step1", tags)}</span></li>
+      <li className="flex items-start gap-3"><StepNumber n={2} /><span>{t.rich("step2", tags)}</span></li>
     </ol>
   );
 }
 
 export function PwaInstallButton() {
+  const t = useTranslations("pwa");
   const { canInstall, install } = usePwaInstall();
   const [installing, setInstalling] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -139,7 +111,7 @@ export function PwaInstallButton() {
         onClick={handleInstall}
         disabled={installing}
         className="relative flex items-center justify-center h-9 w-9 rounded-lg hover:bg-accent transition-colors"
-        aria-label="Uygulamayı İndir"
+        aria-label={t("installLabel")}
       >
         {installing ? (
           <Loader2 className="h-5 w-5 animate-spin" />
@@ -151,10 +123,8 @@ export function PwaInstallButton() {
       <Dialog open={showInstructions} onOpenChange={setShowInstructions}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Uygulamayı Yükle</DialogTitle>
-            <DialogDescription>
-              Uygulamayı ana ekranınıza eklemek için aşağıdaki adımları izleyin.
-            </DialogDescription>
+            <DialogTitle>{t("dialogTitle")}</DialogTitle>
+            <DialogDescription>{t("dialogDescription")}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 text-sm">

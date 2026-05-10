@@ -80,7 +80,75 @@
     "yes": "Evet",
     "no": "Hayır",
     "search": "Ara",
-    "menu": "Menü"
+    "menu": "Menü",
+    "emojiPicker": "Emoji seç"
+  },
+  "bulkComplete": {
+    "title": "Tümünü Tamamla",
+    "body": "<strong>{count} {label}</strong> tamamlandı olarak işaretlenecektir.",
+    "cancel": "Vazgeç",
+    "processing": "İşleniyor...",
+    "confirm": "Onayla"
+  },
+  "pwa": {
+    "installLabel": "Uygulamayı İndir",
+    "dialogTitle": "Uygulamayı Yükle",
+    "dialogDescription": "Uygulamayı ana ekranınıza eklemek için aşağıdaki adımları izleyin.",
+    "fallbackAlert": "Tarayıcınızın menüsünden \"Ana Ekrana Ekle\" seçeneğini kullanın.",
+    "installedTitle": "Uygulama Yüklü",
+    "installedBody": "FitMusc cihazınıza yüklenmiş durumda",
+    "promoTitle": "Uygulamayı Cihazına İndir",
+    "promoBody": "Ana ekranına ekle, bildirimler otomatik açılsın",
+    "promoCta": "Cihaza İndir",
+    "ios": {
+      "step1": "Safari'nin alt menüsündeki <icon></icon> <strong>Paylaş</strong> simgesine dokunun",
+      "step2": "Aşağı kaydırın ve <strong>Ana Ekrana Ekle</strong> seçeneğine dokunun",
+      "step3": "Sağ üstteki <strong>Ekle</strong> butonuna dokunun"
+    },
+    "android": {
+      "step1": "Tarayıcının sağ üst köşesindeki <icon></icon> <strong>menü</strong> simgesine dokunun",
+      "step2": "<strong>Ana ekrana ekle</strong> veya <strong>Uygulamayı yükle</strong> seçeneğine dokunun",
+      "step3": "<strong>Yükle</strong> butonuna dokunun"
+    },
+    "desktop": {
+      "step1": "Adres çubuğundaki <icon></icon> <strong>yükle</strong> simgesine tıklayın",
+      "step2": "Veya tarayıcı menüsünden <strong>Uygulamayı yükle</strong> seçeneğini kullanın"
+    }
+  },
+  "globalSearch": {
+    "title": "Arama",
+    "placeholder": "Sayfa, öğün, egzersiz, gün ara…",
+    "noResults": "Sonuç bulunamadı",
+    "shortcutHint": "Aç/kapat",
+    "escHint": "Esc ile kapat",
+    "sectionPages": "Sayfalar",
+    "sectionDays": "Günler",
+    "sectionMeals": "Öğünler",
+    "sectionExercises": "Egzersizler",
+    "sectionFoods": "Besinlerim",
+    "navHome": "Bugün",
+    "navCalendar": "Takvim",
+    "navProgress": "İlerleme",
+    "navShopping": "Alışveriş",
+    "navMyMeals": "Öğün Kütüphanem",
+    "navAssistant": "AI Asistan",
+    "navSettings": "Ayarlar"
+  },
+  "feedback": {
+    "ariaLabel": "Geri Bildirim Gönder",
+    "title": "Geri Bildirim",
+    "categoryLabel": "Kategori",
+    "categorySuggestion": "Öneri",
+    "categoryComplaint": "Şikayet",
+    "categoryBug": "Hata",
+    "categoryGeneral": "Diğer",
+    "ratingLabel": "Uygulamayı Puanla (isteğe bağlı)",
+    "messageLabel": "Mesajınız",
+    "messagePlaceholder": "Öneri, şikayet veya hata bildiriminizi yazın...",
+    "submit": "Gönder",
+    "missingMessage": "Lütfen mesajınızı yazın.",
+    "sent": "Geri bildiriminiz iletildi!",
+    "sendFailed": "Gönderilemedi, tekrar deneyin."
   },
   "nav": {
     "primaryNavigation": "Ana navigasyon",
@@ -107,7 +175,28 @@
       "empty": "Bildirim bulunmuyor",
       "emptyHint": "Yeni bildirimler burada görünecek",
       "emptyCategory": "Bu kategoride bildirim yok"
-    }
+    },
+    "time": {
+      "now": "az önce",
+      "minutes": "{count} dk önce",
+      "hours": "{count} sa önce",
+      "days": "{count} gün önce"
+    },
+    "types": {
+      "reminder": "Hatırlatıcı",
+      "share": "Paylaşım",
+      "membership": "Üyelik",
+      "feedback": "Geri Bildirim",
+      "system": "Sistem",
+      "other": "Diğer"
+    },
+    "push": {
+      "unsupported": "Tarayıcınız push bildirimlerini desteklemiyor.",
+      "active": "Push bildirimleri aktif",
+      "blocked": "Push bildirimleri tarayıcınız tarafından engellendi",
+      "enable": "Push Bildirimlerini Etkinleştir"
+    },
+    "deleteLabel": "Bildirimi sil"
   },
   "notificationPrompt": {
     "title": "Bildirimleri Etkinleştirin",
@@ -1925,16 +2014,27 @@
   },
   "water": {
     "title": "Su Takibi",
-    "shortLabel": "Su"
+    "shortLabel": "Su",
+    "lastDays": "Son {count} gün"
   },
   "sleep": {
     "title": "Uyku Takibi",
     "noEntry": "Kayıt yok",
     "addButton": "Uyku Kaydı Ekle",
+    "addToday": "Bugün için ekle",
+    "lastDays": "Son {count} gün",
     "minutesShort": "dk",
     "hoursShort": "sa",
     "minutesLong": "dk",
     "hoursLong": "saat",
+    "chart": {
+      "hoursValue": "{value} saat",
+      "qualityValue": "{value}/5",
+      "duration": "Süre",
+      "quality": "Kalite",
+      "durationLegend": "Süre (saat)",
+      "qualityLegend": "Kalite (1-5)"
+    },
     "form": {
       "addTitle": "Uyku Kaydı Ekle",
       "editTitle": "Uyku Kaydını Düzenle",

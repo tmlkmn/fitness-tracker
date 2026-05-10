@@ -22,10 +22,14 @@ import {
   CHART_TOOLTIP_STYLE,
   chartGradientId,
 } from "@/lib/chart-theme";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 const WATER_GRADIENT_ID = chartGradientId("water-bar");
 
 export function WaterChart() {
+  const t = useTranslations("water");
+  const locale = useLocale() as Locale;
   const { data: logs } = useWaterLogs();
 
   if (!logs || logs.length < 2) return null;
@@ -33,10 +37,10 @@ export function WaterChart() {
   const chartData = [...logs]
     .reverse()
     .map((l) => ({
-      date: new Date(l.logDate + "T00:00:00").toLocaleDateString("tr-TR", {
-        day: "numeric",
-        month: "short",
-      }),
+      date: new Date(l.logDate + "T00:00:00").toLocaleDateString(
+        locale === "en" ? "en-US" : "tr-TR",
+        { day: "numeric", month: "short" },
+      ),
       glasses: l.glasses,
       target: l.targetGlasses,
     }));
@@ -50,9 +54,9 @@ export function WaterChart() {
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <Droplets className="h-4 w-4 text-blue-400" />
-          <h3 className="text-sm font-semibold">Su Takibi</h3>
+          <h3 className="text-sm font-semibold">{t("title")}</h3>
           <span className="text-xs text-muted-foreground ml-auto">
-            Son {chartData.length} gün
+            {t("lastDays", { count: chartData.length })}
           </span>
         </div>
         <div className="h-[180px]">

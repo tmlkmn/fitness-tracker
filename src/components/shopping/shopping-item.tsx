@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { getMealsByIds } from "@/actions/shopping";
 import { Utensils } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ShoppingItemProps {
   id: number;
@@ -33,6 +34,7 @@ export function ShoppingItem({
   onToggle,
   readOnly,
 }: ShoppingItemProps) {
+  const t = useTranslations("shopping");
   const [open, setOpen] = useState(false);
   const hasMealRefs = Array.isArray(mealIds) && mealIds.length > 0;
 
@@ -70,16 +72,16 @@ export function ShoppingItem({
             <button
               type="button"
               className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground rounded px-1.5 py-0.5 bg-muted/50"
-              aria-label={`${mealIds!.length} öğünde kullanılıyor`}
+              aria-label={t("usedInMealsLabel", { count: mealIds!.length })}
             >
               <Utensils className="h-3 w-3" />
               {mealIds!.length}
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-64 p-3" align="end">
-            <p className="text-xs font-medium mb-2">Bu malzeme şu öğünlerde:</p>
+            <p className="text-xs font-medium mb-2">{t("linkedMealsTitle")}</p>
             {isLoading ? (
-              <p className="text-xs text-muted-foreground">Yükleniyor...</p>
+              <p className="text-xs text-muted-foreground">{t("loadingLinkedMeals")}</p>
             ) : linkedMeals && linkedMeals.length > 0 ? (
               <ul className="space-y-1">
                 {linkedMeals.map((m) => (
@@ -92,7 +94,7 @@ export function ShoppingItem({
               </ul>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Referans verilen öğünler bulunamadı.
+                {t("noLinkedMeals")}
               </p>
             )}
           </PopoverContent>

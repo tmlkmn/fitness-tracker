@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface BulkCompleteDialogProps {
   open: boolean;
@@ -26,18 +27,23 @@ export function BulkCompleteDialog({
   itemCount,
   itemLabel,
 }: BulkCompleteDialogProps) {
+  const t = useTranslations("bulkComplete");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCheck className="h-5 w-5 text-primary" />
-            Tümünü Tamamla
+            {t("title")}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            <strong>{itemCount} {itemLabel}</strong> tamamlandı olarak işaretlenecektir.
+            {t.rich("body", {
+              count: itemCount,
+              label: itemLabel,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
           <div className="flex gap-2 pt-1">
             <Button
@@ -45,7 +51,7 @@ export function BulkCompleteDialog({
               className="flex-1"
               onClick={() => onOpenChange(false)}
             >
-              Vazgeç
+              {t("cancel")}
             </Button>
             <Button
               className="flex-1"
@@ -55,7 +61,7 @@ export function BulkCompleteDialog({
               }}
               disabled={isPending}
             >
-              {isPending ? "İşleniyor..." : "Onayla"}
+              {isPending ? t("processing") : t("confirm")}
             </Button>
           </div>
         </div>

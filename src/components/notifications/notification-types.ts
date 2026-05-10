@@ -111,14 +111,6 @@ export function getNotificationConfig(type: string): NotificationTypeConfig {
   return FALLBACK;
 }
 
-export const CATEGORY_LABELS: Record<NotificationCategory, string> = {
-  reminder: "Hatırlatıcı",
-  share: "Paylaşım",
-  membership: "Üyelik",
-  feedback: "Geri Bildirim",
-  other: "Diğer",
-};
-
 export const CATEGORY_ORDER: NotificationCategory[] = [
   "reminder",
   "share",

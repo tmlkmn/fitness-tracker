@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useDeferredValue } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -31,22 +32,22 @@ interface NavItem {
   keywords: string[];
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { label: "Bugün", href: "/", icon: Home, keywords: ["dashboard", "anasayfa", "home"] },
-  { label: "Takvim", href: "/takvim", icon: Calendar, keywords: ["calendar", "hafta"] },
-  { label: "İlerleme", href: "/ilerleme", icon: TrendingUp, keywords: ["progress", "grafik", "kilo"] },
-  { label: "Alışveriş", href: "/alisveris", icon: ShoppingCart, keywords: ["shopping"] },
-  { label: "Öğün Kütüphanem", href: "/ogunlerim", icon: BookOpen, keywords: ["meal library", "kayıtlı"] },
-  { label: "AI Asistan", href: "/asistan", icon: Sparkles, keywords: ["ai", "chat", "koç"] },
-  { label: "Ayarlar", href: "/ayarlar", icon: Settings, keywords: ["settings", "profile"] },
-];
-
 interface GlobalSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogProps) {
+  const t = useTranslations("globalSearch");
+  const NAV_ITEMS: NavItem[] = [
+    { label: t("navHome"), href: "/", icon: Home, keywords: ["dashboard", "anasayfa", "home"] },
+    { label: t("navCalendar"), href: "/takvim", icon: Calendar, keywords: ["calendar", "hafta", "takvim"] },
+    { label: t("navProgress"), href: "/ilerleme", icon: TrendingUp, keywords: ["progress", "grafik", "kilo", "ilerleme"] },
+    { label: t("navShopping"), href: "/alisveris", icon: ShoppingCart, keywords: ["shopping", "alışveriş"] },
+    { label: t("navMyMeals"), href: "/ogunlerim", icon: BookOpen, keywords: ["meal library", "kayıtlı", "öğün"] },
+    { label: t("navAssistant"), href: "/asistan", icon: Sparkles, keywords: ["ai", "chat", "koç", "asistan"] },
+    { label: t("navSettings"), href: "/ayarlar", icon: Settings, keywords: ["settings", "profile", "ayarlar"] },
+  ];
   const router = useRouter();
   const [query, setQuery] = useState("");
   const deferred = useDeferredValue(query);
@@ -89,12 +90,12 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-4 pb-2">
-          <DialogTitle className="sr-only">Arama</DialogTitle>
+          <DialogTitle className="sr-only">{t("title")}</DialogTitle>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               autoFocus
-              placeholder="Sayfa, öğün, egzersiz, gün ara…"
+              placeholder={t("placeholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-9"
@@ -104,7 +105,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
 
         <div className="max-h-[60vh] overflow-y-auto p-2 space-y-3">
           {matchedNav.length > 0 && (
-            <Section title="Sayfalar">
+            <Section title={t("sectionPages")}>
               {matchedNav.map((n) => {
                 const Icon = n.icon;
                 return (
@@ -118,7 +119,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
           )}
 
           {data && data.days.length > 0 && (
-            <Section title="Günler">
+            <Section title={t("sectionDays")}>
               {data.days.map((d) => (
                 <Row key={d.id} onClick={() => go(`/gun/${d.id}`)}>
                   <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -137,7 +138,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
           )}
 
           {data && data.meals.length > 0 && (
-            <Section title="Öğünler">
+            <Section title={t("sectionMeals")}>
               {data.meals.map((m) => (
                 <Row key={m.id} onClick={() => m.dailyPlanId && go(`/gun/${m.dailyPlanId}`)}>
                   <UtensilsCrossed className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -156,7 +157,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
           )}
 
           {data && data.exercises.length > 0 && (
-            <Section title="Egzersizler">
+            <Section title={t("sectionExercises")}>
               {data.exercises.map((e) => (
                 <Row key={e.id} onClick={() => e.dailyPlanId && go(`/gun/${e.dailyPlanId}`)}>
                   <Dumbbell className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -172,7 +173,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
           )}
 
           {data && data.foods.length > 0 && (
-            <Section title="Besinlerim">
+            <Section title={t("sectionFoods")}>
               {data.foods.map((f) => (
                 <Row
                   key={f.id}
@@ -193,14 +194,14 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
 
           {q && !hasResults && (
             <p className="p-6 text-center text-sm text-muted-foreground">
-              Sonuç bulunamadı
+              {t("noResults")}
             </p>
           )}
         </div>
 
         <div className="border-t border-border/60 px-3 py-2 text-[11px] text-muted-foreground flex justify-between">
-          <span>Aç/kapat: <kbd className="rounded bg-muted px-1">Ctrl</kbd> + <kbd className="rounded bg-muted px-1">K</kbd></span>
-          <span>Esc ile kapat</span>
+          <span>{t("shortcutHint")}: <kbd className="rounded bg-muted px-1">Ctrl</kbd> + <kbd className="rounded bg-muted px-1">K</kbd></span>
+          <span>{t("escHint")}</span>
         </div>
       </DialogContent>
     </Dialog>

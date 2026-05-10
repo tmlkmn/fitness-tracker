@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Smile, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 const PRESET_ICONS = [
   "🍳", "🥐", "🥞", "🥓", "🍞", "🥖",
@@ -22,6 +23,7 @@ interface IconPickerProps {
 }
 
 export function IconPicker({ value, onChange, className }: IconPickerProps) {
+  const t = useTranslations("common");
   const [open, setOpen] = useState(false);
 
   return (
@@ -32,7 +34,7 @@ export function IconPicker({ value, onChange, className }: IconPickerProps) {
           variant="outline"
           size="icon"
           className={cn("h-10 w-10 shrink-0 text-lg", className)}
-          title="Emoji seç"
+          title={t("emojiPicker")}
         >
           {value ? (
             <span className="text-xl leading-none">{value}</span>

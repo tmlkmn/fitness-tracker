@@ -6,8 +6,10 @@ import { Download, Loader2, Smartphone, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { subscribeToPush } from "@/lib/push-subscribe";
+import { useTranslations } from "next-intl";
 
 export function PwaInstallCard() {
+  const t = useTranslations("pwa");
   const { canInstall, isInstalled, install } = usePwaInstall();
   const [installing, setInstalling] = useState(false);
 
@@ -23,7 +25,7 @@ export function PwaInstallCard() {
         setInstalling(false);
       }
     } else {
-      alert("Tarayıcınızın menüsünden \"Ana Ekrana Ekle\" seçeneğini kullanın.");
+      alert(t("fallbackAlert"));
     }
   };
 
@@ -34,10 +36,8 @@ export function PwaInstallCard() {
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
             <div>
-              <p className="text-sm font-medium">Uygulama Yüklü</p>
-              <p className="text-xs text-muted-foreground">
-                FitMusc cihazınıza yüklenmiş durumda
-              </p>
+              <p className="text-sm font-medium">{t("installedTitle")}</p>
+              <p className="text-xs text-muted-foreground">{t("installedBody")}</p>
             </div>
           </div>
         </CardContent>
@@ -51,10 +51,8 @@ export function PwaInstallCard() {
         <div className="flex items-start gap-3">
           <Smartphone className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">Uygulamayı Cihazına İndir</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Ana ekranına ekle, bildirimler otomatik açılsın
-            </p>
+            <p className="text-sm font-medium">{t("promoTitle")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("promoBody")}</p>
             <Button
               size="sm"
               onClick={handleInstall}
@@ -66,7 +64,7 @@ export function PwaInstallCard() {
               ) : (
                 <Download className="h-4 w-4 mr-2" />
               )}
-              Cihaza İndir
+              {t("promoCta")}
             </Button>
           </div>
         </div>

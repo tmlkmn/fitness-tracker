@@ -22,20 +22,26 @@ import {
   CHART_TOOLTIP_STYLE,
   chartGradientId,
 } from "@/lib/chart-theme";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 const SLEEP_HOURS_GRADIENT = chartGradientId("sleep-hours");
 const SLEEP_HOURS_COLOR = "hsl(240, 75%, 70%)";
 const SLEEP_QUALITY_COLOR = "hsl(280, 70%, 70%)";
 
 export function SleepChart() {
+  const t = useTranslations("sleep");
+  const tChart = useTranslations("sleep.chart");
+  const locale = useLocale() as Locale;
   const { data: logs } = useSleepLogs();
 
   if (!logs || logs.length < 2) return null;
 
+  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
   const chartData = [...logs]
     .reverse()
     .map((l) => ({
-      date: new Date(l.logDate + "T00:00:00").toLocaleDateString("tr-TR", {
+      date: new Date(l.logDate + "T00:00:00").toLocaleDateString(dateLocale, {
         day: "numeric",
         month: "short",
       }),
@@ -48,9 +54,9 @@ export function SleepChart() {
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <Moon className="h-4 w-4 text-indigo-400" />
-          <h3 className="text-sm font-semibold">Uyku Takibi</h3>
+          <h3 className="text-sm font-semibold">{t("title")}</h3>
           <span className="text-xs text-muted-foreground ml-auto">
-            Son {chartData.length} gün
+            {t("lastDays", { count: chartData.length })}
           </span>
         </div>
         <div className="h-[180px]">
@@ -89,8 +95,8 @@ export function SleepChart() {
                 cursor={CHART_TOOLTIP_CURSOR}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(value: any, name: any) => {
-                  if (name === "hours") return [`${value} saat`, "Süre"];
-                  if (name === "quality") return [`${value}/5`, "Kalite"];
+                  if (name === "hours") return [tChart("hoursValue", { value }), tChart("duration")];
+                  if (name === "quality") return [tChart("qualityValue", { value }), tChart("quality")];
                   return [value, name];
                 }}
               />
@@ -120,7 +126,7 @@ export function SleepChart() {
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-0.5 rounded" style={{ background: SLEEP_HOURS_COLOR }} />
             <span className="text-[10px] text-muted-foreground">
-              Süre (saat)
+              {tChart("durationLegend")}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -129,7 +135,7 @@ export function SleepChart() {
               style={{ background: SLEEP_QUALITY_COLOR }}
             />
             <span className="text-[10px] text-muted-foreground">
-              Kalite (1-5)
+              {tChart("qualityLegend")}
             </span>
           </div>
         </div>
