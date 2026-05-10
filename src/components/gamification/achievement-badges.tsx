@@ -5,12 +5,14 @@ import { ACHIEVEMENTS } from "@/data/achievements";
 import { AchievementDetailPopover } from "./achievement-detail-popover";
 import type { ActivityStats } from "@/actions/activity-stats";
 import { Trophy } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface AchievementBadgesProps {
   stats: ActivityStats;
 }
 
 export function AchievementBadges({ stats }: AchievementBadgesProps) {
+  const t = useTranslations("gamification.achievements");
   const unlockedCount = ACHIEVEMENTS.filter((a) => a.check(stats)).length;
 
   return (
@@ -19,10 +21,10 @@ export function AchievementBadges({ stats }: AchievementBadgesProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Trophy className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold">Rozetler</span>
+            <span className="text-sm font-semibold">{t("title")}</span>
           </div>
           <span className="text-xs text-muted-foreground">
-            {unlockedCount} / {ACHIEVEMENTS.length}
+            {t("unlockedCount", { unlocked: unlockedCount, total: ACHIEVEMENTS.length })}
           </span>
         </div>
         <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">

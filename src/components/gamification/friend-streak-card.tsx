@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Flame, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFriendStreaks } from "@/hooks/use-friend-stats";
+import { useTranslations } from "next-intl";
 
 function medalFor(rank: number) {
   if (rank === 0) return "text-amber-400";
@@ -21,6 +22,7 @@ function flameColor(streak: number) {
 }
 
 export function FriendStreakCard() {
+  const t = useTranslations("gamification.friend");
   const { data, isLoading } = useFriendStreaks();
 
   if (isLoading) {
@@ -29,7 +31,7 @@ export function FriendStreakCard() {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
-            Arkadaş Serileri
+            {t("title")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 pt-0">
@@ -50,7 +52,7 @@ export function FriendStreakCard() {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <Users className="h-4 w-4 text-muted-foreground" />
-          Arkadaş Serileri
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-1.5 pt-0">
@@ -78,7 +80,7 @@ export function FriendStreakCard() {
                   row.isMe && "font-semibold",
                 )}
               >
-                {row.isMe ? "Sen" : row.name}
+                {row.isMe ? t("you") : row.name}
               </span>
               {row.currentStreak > 0 && (
                 <div className="flex items-center gap-1">
@@ -95,7 +97,7 @@ export function FriendStreakCard() {
               )}
               {isLeader && row.isMe && (
                 <span className="text-[10px] text-amber-400 font-semibold">
-                  LİDER
+                  {t("leader")}
                 </span>
               )}
             </div>
@@ -103,7 +105,7 @@ export function FriendStreakCard() {
         })}
         {topStreak > 0 && data.find((r) => r.isMe)?.currentStreak === 0 && (
           <p className="pt-2 text-[11px] text-muted-foreground text-center">
-            Arkadaşlarına yetişmek için bugün başla!
+            {t("catchUp")}
           </p>
         )}
       </CardContent>

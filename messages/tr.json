@@ -1547,6 +1547,57 @@
       "weekStartSunday": "Pazar"
     }
   },
+  "gamification": {
+    "streak": {
+      "noStreak": "Seri yok",
+      "noStreakHint": "Bugün ilk günün olsun!",
+      "daysInARow": "{count} gün üst üste",
+      "longest": "En uzun: {days}",
+      "longestDays": "{days} gün",
+      "shareLabel": "Serini paylaş",
+      "fallbackName": "Ben"
+    },
+    "shareDialog": {
+      "title": "Serini Paylaş",
+      "imageAlt": "Seri görseli önizleme",
+      "downloadFilename": "fitmusc-seri-{count}gun.png",
+      "downloaded": "Görsel indirildi",
+      "download": "İndir",
+      "share": "Paylaş",
+      "shareTitle": "FitMusc Seri",
+      "shareText": "{count} gün üst üste! 🔥",
+      "imageSubtitle": "Günlük Seri",
+      "imageDaysInARow": "gün üst üste",
+      "imageLongestLabel": "En uzun seri",
+      "imageBadgesLabel": "Rozetler",
+      "imageDaysShort": "{days} gün"
+    },
+    "achievements": {
+      "title": "Rozetler",
+      "unlockedCount": "{unlocked} / {total}",
+      "earned": "Kazanıldı",
+      "locked": "Kilitli"
+    },
+    "heatmap": {
+      "title": "Aktivite Haritası",
+      "subtitle": "Son 365 gün",
+      "summary": "{full} tam, {partial} kısmi tamamlandı",
+      "less": "Az",
+      "more": "Çok",
+      "statusFull": "Tam tamamlandı",
+      "statusPartial": "Kısmen tamamlandı",
+      "statusNone": "Tamamlanmadı",
+      "statusEmpty": "Plan yok",
+      "dayLabels": ["Pzt", "", "Çar", "", "Cum", "", "Paz"],
+      "monthLabels": ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
+    },
+    "friend": {
+      "title": "Arkadaş Serileri",
+      "you": "Sen",
+      "leader": "LİDER",
+      "catchUp": "Arkadaşlarına yetişmek için bugün başla!"
+    }
+  },
   "water": {
     "title": "Su Takibi",
     "shortLabel": "Su"

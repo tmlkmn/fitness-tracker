@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface ShareStreakDialogProps {
   open: boolean;
@@ -41,9 +42,18 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
+interface ImageStrings {
+  subtitle: string;
+  daysInARow: string;
+  longestLabel: string;
+  badgesLabel: string;
+  daysShort: (n: number) => string;
+}
+
 function renderShareImage(
   canvas: HTMLCanvasElement,
   props: Omit<ShareStreakDialogProps, "open" | "onOpenChange">,
+  strings: ImageStrings,
 ) {
   // Set dimensions BEFORE getContext so the backing store is sized correctly
   // before any draw operations. (Setting width/height after acquiring the
@@ -87,7 +97,7 @@ function renderShareImage(
   ctx.fillStyle = "rgba(255,255,255,0.75)";
   ctx.font = "500 38px system-ui, -apple-system, Segoe UI, Roboto";
   ctx.textAlign = "center";
-  ctx.fillText("Günlük Seri", WIDTH / 2, 320);
+  ctx.fillText(strings.subtitle, WIDTH / 2, 320);
 
   // Flame
   ctx.font = "200px system-ui";
@@ -101,7 +111,7 @@ function renderShareImage(
   // "gün üst üste"
   ctx.fillStyle = "rgba(255,255,255,0.75)";
   ctx.font = "500 42px system-ui, -apple-system, Segoe UI, Roboto";
-  ctx.fillText("gün üst üste", WIDTH / 2, 790);
+  ctx.fillText(strings.daysInARow, WIDTH / 2, 790);
 
   // Stats card
   const cardY = 860;
@@ -119,12 +129,12 @@ function renderShareImage(
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.font = "500 26px system-ui";
-  ctx.fillText("En uzun seri", WIDTH / 4 + 40, cardY + 55);
-  ctx.fillText("Rozetler", (3 * WIDTH) / 4 - 40, cardY + 55);
+  ctx.fillText(strings.longestLabel, WIDTH / 4 + 40, cardY + 55);
+  ctx.fillText(strings.badgesLabel, (3 * WIDTH) / 4 - 40, cardY + 55);
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 52px system-ui";
-  ctx.fillText(`${props.longestStreak} gün`, WIDTH / 4 + 40, cardY + 110);
+  ctx.fillText(strings.daysShort(props.longestStreak), WIDTH / 4 + 40, cardY + 110);
   ctx.fillText(
     `${props.unlockedBadges}/${props.totalBadges}`,
     (3 * WIDTH) / 4 - 40,
@@ -147,6 +157,7 @@ export function ShareStreakDialog({
   unlockedBadges,
   totalBadges,
 }: ShareStreakDialogProps) {
+  const t = useTranslations("gamification.shareDialog");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -154,6 +165,14 @@ export function ShareStreakDialog({
     if (!open) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    const strings: ImageStrings = {
+      subtitle: t("imageSubtitle"),
+      daysInARow: t("imageDaysInARow"),
+      longestLabel: t("imageLongestLabel"),
+      badgesLabel: t("imageBadgesLabel"),
+      daysShort: (n: number) => t("imageDaysShort", { days: n }),
+    };
 
     let cancelled = false;
     // Wait for fonts so fillText() actually rasterizes text instead of
@@ -166,29 +185,33 @@ export function ShareStreakDialog({
 
     ready.then(() => {
       if (cancelled || !canvas) return;
-      renderShareImage(canvas, {
-        userName,
-        currentStreak,
-        longestStreak,
-        unlockedBadges,
-        totalBadges,
-      });
+      renderShareImage(
+        canvas,
+        {
+          userName,
+          currentStreak,
+          longestStreak,
+          unlockedBadges,
+          totalBadges,
+        },
+        strings,
+      );
       setPreviewUrl(canvas.toDataURL("image/png"));
     });
 
     return () => {
       cancelled = true;
     };
-  }, [open, userName, currentStreak, longestStreak, unlockedBadges, totalBadges]);
+  }, [open, userName, currentStreak, longestStreak, unlockedBadges, totalBadges, t]);
 
   const handleDownload = () => {
     if (!canvasRef.current) return;
     const url = canvasRef.current.toDataURL("image/png");
     const a = document.createElement("a");
     a.href = url;
-    a.download = `fitmusc-seri-${currentStreak}gun.png`;
+    a.download = t("downloadFilename", { count: currentStreak });
     a.click();
-    toast.success("Görsel indirildi");
+    toast.success(t("downloaded"));
   };
 
   const handleShare = async () => {
@@ -196,7 +219,7 @@ export function ShareStreakDialog({
     try {
       canvasRef.current.toBlob(async (blob) => {
         if (!blob) return;
-        const file = new File([blob], `fitmusc-seri.png`, {
+        const file = new File([blob], t("downloadFilename", { count: currentStreak }), {
           type: "image/png",
         });
         if (
@@ -206,8 +229,8 @@ export function ShareStreakDialog({
         ) {
           await navigator.share({
             files: [file],
-            title: "FitMusc Seri",
-            text: `${currentStreak} gün üst üste! 🔥`,
+            title: t("shareTitle"),
+            text: t("shareText", { count: currentStreak }),
           });
         } else {
           handleDownload();
@@ -222,7 +245,7 @@ export function ShareStreakDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Serini Paylaş</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           {/*
@@ -249,7 +272,7 @@ export function ShareStreakDialog({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewUrl}
-                alt="Seri görseli önizleme"
+                alt={t("imageAlt")}
                 className="w-full aspect-square object-cover"
               />
             </div>
@@ -262,7 +285,7 @@ export function ShareStreakDialog({
               onClick={handleDownload}
             >
               <Download className="h-3.5 w-3.5" />
-              İndir
+              {t("download")}
             </Button>
             <Button
               size="sm"
@@ -270,7 +293,7 @@ export function ShareStreakDialog({
               onClick={handleShare}
             >
               <Share2 className="h-3.5 w-3.5" />
-              Paylaş
+              {t("share")}
             </Button>
           </div>
         </div>

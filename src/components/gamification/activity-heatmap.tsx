@@ -11,17 +11,12 @@ import { cn } from "@/lib/utils";
 import { CalendarDays } from "lucide-react";
 import { useMemo, useRef } from "react";
 import type { ActivityStats } from "@/actions/activity-stats";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 interface ActivityHeatmapProps {
   completionMap: ActivityStats["completionMap"];
 }
-
-const DAY_LABELS = ["Pzt", "", "Çar", "", "Cum", "", "Paz"];
-
-const MONTH_LABELS = [
-  "Oca", "Şub", "Mar", "Nis", "May", "Haz",
-  "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara",
-];
 
 function getStatusColor(status: "full" | "partial" | "none" | "empty") {
   switch (status) {
@@ -36,24 +31,6 @@ function getStatusColor(status: "full" | "partial" | "none" | "empty") {
   }
 }
 
-function getStatusLabel(status: "full" | "partial" | "none" | "empty") {
-  switch (status) {
-    case "full":
-      return "Tam tamamlandı";
-    case "partial":
-      return "Kısmen tamamlandı";
-    case "none":
-      return "Tamamlanmadı";
-    case "empty":
-      return "Plan yok";
-  }
-}
-
-function formatDateTurkish(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long" });
-}
-
 interface DayCell {
   date: string;
   status: "full" | "partial" | "none" | "empty";
@@ -62,7 +39,33 @@ interface DayCell {
 }
 
 export function ActivityHeatmap({ completionMap }: ActivityHeatmapProps) {
+  const t = useTranslations("gamification.heatmap");
+  const locale = useLocale() as Locale;
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const dayLabels = t.raw("dayLabels") as string[];
+  const monthLabels = t.raw("monthLabels") as string[];
+
+  const getStatusLabel = (status: "full" | "partial" | "none" | "empty") => {
+    switch (status) {
+      case "full":
+        return t("statusFull");
+      case "partial":
+        return t("statusPartial");
+      case "none":
+        return t("statusNone");
+      case "empty":
+        return t("statusEmpty");
+    }
+  };
+
+  const formatDateLocalized = (dateStr: string): string => {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+      day: "numeric",
+      month: "long",
+    });
+  };
 
   const { cells, monthMarkers, totalWeeks, fullCount, partialCount } = useMemo(() => {
     const today = new Date();
@@ -91,7 +94,7 @@ export function ActivityHeatmap({ completionMap }: ActivityHeatmapProps) {
 
       // Track month changes for labels
       if (month !== lastMonth && dayOfWeek === 0) {
-        monthMarkers.push({ label: MONTH_LABELS[month], weekIndex });
+        monthMarkers.push({ label: monthLabels[month], weekIndex });
         lastMonth = month;
       }
 
@@ -120,7 +123,7 @@ export function ActivityHeatmap({ completionMap }: ActivityHeatmapProps) {
     }
 
     return { cells, monthMarkers, totalWeeks, fullCount, partialCount };
-  }, [completionMap]);
+  }, [completionMap, monthLabels]);
 
   // Scroll to end on mount
   const scrollRefCallback = (node: HTMLDivElement | null) => {
@@ -136,10 +139,10 @@ export function ActivityHeatmap({ completionMap }: ActivityHeatmapProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <CalendarDays className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold">Aktivite Haritası</span>
+            <span className="text-sm font-semibold">{t("title")}</span>
           </div>
           <span className="text-xs text-muted-foreground">
-            Son 365 gün
+            {t("subtitle")}
           </span>
         </div>
 
@@ -148,7 +151,7 @@ export function ActivityHeatmap({ completionMap }: ActivityHeatmapProps) {
           <div className="inline-flex gap-0">
             {/* Day labels column */}
             <div className="flex flex-col gap-[2px] mr-1 pt-[18px]">
-              {DAY_LABELS.map((label, i) => (
+              {dayLabels.map((label, i) => (
                 <div
                   key={i}
                   className="h-[10px] flex items-center"
@@ -207,7 +210,7 @@ export function ActivityHeatmap({ completionMap }: ActivityHeatmapProps) {
                             </TooltipTrigger>
                             <TooltipContent side="top" className="text-xs">
                               <p className="font-medium">
-                                {formatDateTurkish(cell.date)}
+                                {formatDateLocalized(cell.date)}
                               </p>
                               <p className="text-muted-foreground">
                                 {getStatusLabel(cell.status)}
@@ -227,15 +230,15 @@ export function ActivityHeatmap({ completionMap }: ActivityHeatmapProps) {
         {/* Summary + Legend */}
         <div className="flex items-center justify-between">
           <p className="text-[10px] text-muted-foreground">
-            {fullCount} tam, {partialCount} kısmi tamamlandı
+            {t("summary", { full: fullCount, partial: partialCount })}
           </p>
           <div className="flex items-center gap-1">
-            <span className="text-[9px] text-muted-foreground">Az</span>
+            <span className="text-[9px] text-muted-foreground">{t("less")}</span>
             <div className="w-[10px] h-[10px] rounded-[2px] bg-muted/20" />
             <div className="w-[10px] h-[10px] rounded-[2px] bg-muted/40" />
             <div className="w-[10px] h-[10px] rounded-[2px] bg-green-700/50" />
             <div className="w-[10px] h-[10px] rounded-[2px] bg-green-500" />
-            <span className="text-[9px] text-muted-foreground">Çok</span>
+            <span className="text-[9px] text-muted-foreground">{t("more")}</span>
           </div>
         </div>
       </CardContent>

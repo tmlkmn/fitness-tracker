@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { Lock } from "lucide-react";
 import { DynamicIcon } from "@/lib/icon-map";
 import type { Achievement } from "@/data/achievements";
+import { useTranslations } from "next-intl";
 
 interface AchievementDetailPopoverProps {
   achievement: Achievement;
@@ -20,6 +21,7 @@ export function AchievementDetailPopover({
   achievement,
   unlocked,
 }: AchievementDetailPopoverProps) {
+  const t = useTranslations("gamification.achievements");
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -58,7 +60,7 @@ export function AchievementDetailPopover({
             variant={unlocked ? "default" : "outline"}
             className="text-[10px]"
           >
-            {unlocked ? "Kazanıldı" : "Kilitli"}
+            {unlocked ? t("earned") : t("locked")}
           </Badge>
         </div>
       </PopoverContent>

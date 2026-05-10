@@ -1546,6 +1546,57 @@
       "weekStartSunday": "Sunday"
     }
   },
+  "gamification": {
+    "streak": {
+      "noStreak": "No streak",
+      "noStreakHint": "Make today day one!",
+      "daysInARow": "{count} days in a row",
+      "longest": "Longest: {days}",
+      "longestDays": "{days} days",
+      "shareLabel": "Share your streak",
+      "fallbackName": "Me"
+    },
+    "shareDialog": {
+      "title": "Share Your Streak",
+      "imageAlt": "Streak image preview",
+      "downloadFilename": "fitmusc-streak-{count}days.png",
+      "downloaded": "Image downloaded",
+      "download": "Download",
+      "share": "Share",
+      "shareTitle": "FitMusc Streak",
+      "shareText": "{count} days in a row! 🔥",
+      "imageSubtitle": "Daily Streak",
+      "imageDaysInARow": "days in a row",
+      "imageLongestLabel": "Longest streak",
+      "imageBadgesLabel": "Badges",
+      "imageDaysShort": "{days} days"
+    },
+    "achievements": {
+      "title": "Badges",
+      "unlockedCount": "{unlocked} / {total}",
+      "earned": "Earned",
+      "locked": "Locked"
+    },
+    "heatmap": {
+      "title": "Activity Map",
+      "subtitle": "Last 365 days",
+      "summary": "{full} full, {partial} partial",
+      "less": "Less",
+      "more": "More",
+      "statusFull": "Fully completed",
+      "statusPartial": "Partially completed",
+      "statusNone": "Not completed",
+      "statusEmpty": "No plan",
+      "dayLabels": ["Mon", "", "Wed", "", "Fri", "", "Sun"],
+      "monthLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    },
+    "friend": {
+      "title": "Friend Streaks",
+      "you": "You",
+      "leader": "LEADER",
+      "catchUp": "Start today to catch up with your friends!"
+    }
+  },
   "water": {
     "title": "Water Tracking",
     "shortLabel": "Water"
