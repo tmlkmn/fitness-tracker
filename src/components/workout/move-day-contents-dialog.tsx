@@ -19,6 +19,7 @@ import {
 import { useMoveDayContents } from "@/hooks/use-move-day-contents";
 import { getTurkeyTodayStr } from "@/lib/utils";
 import type { MoveMode } from "@/actions/day-content-move";
+import { useTranslations } from "next-intl";
 
 interface MoveDayContentsDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ export function MoveDayContentsDialog({
   defaultIncludeWorkout = true,
   defaultIncludeMeals = false,
 }: MoveDayContentsDialogProps) {
+  const t = useTranslations("exercises.moveDialog");
   const { data: source, isLoading: sourceLoading } = useDailyPlan(
     sourceDailyPlanId,
     open,
@@ -115,27 +117,27 @@ export function MoveDayContentsDialog({
     if (!selectedTarget) return null;
     const parts: string[] = [];
     if (includeWorkout && sourceCounts.exercise > 0)
-      parts.push(`${sourceCounts.exercise} egzersiz`);
+      parts.push(t("exerciseUnit", { count: sourceCounts.exercise }));
     if (includeMeals && sourceCounts.meal > 0)
-      parts.push(`${sourceCounts.meal} öğün`);
-    const summary = parts.length > 0 ? parts.join(" + ") : "boş içerik";
+      parts.push(t("mealUnit", { count: sourceCounts.meal }));
+    const summary = parts.length > 0 ? parts.join(" + ") : t("summaryEmpty");
 
     if (effectiveMode === "swap") {
-      return `${sourceLabel} ↔ ${targetLabel} içerikleri yer değişecek`;
+      return t("previewSwap", { source: sourceLabel, target: targetLabel });
     }
     if (effectiveMode === "replace") {
       const targetItems: string[] = [];
       if (includeWorkout && selectedTarget.exerciseCount > 0)
-        targetItems.push(`${selectedTarget.exerciseCount} egzersiz`);
+        targetItems.push(t("exerciseUnit", { count: selectedTarget.exerciseCount }));
       if (includeMeals && selectedTarget.mealCount > 0)
-        targetItems.push(`${selectedTarget.mealCount} öğün`);
+        targetItems.push(t("mealUnit", { count: selectedTarget.mealCount }));
       const deletedNote =
         targetItems.length > 0
-          ? ` · ${targetLabel}'in ${targetItems.join(" + ")}'i silinecek`
+          ? t("previewDeleted", { target: targetLabel, items: targetItems.join(" + ") })
           : "";
-      return `${sourceLabel} → ${targetLabel}: ${summary}${deletedNote}`;
+      return t("previewReplace", { source: sourceLabel, target: targetLabel, summary }) + deletedNote;
     }
-    return `${sourceLabel} → ${targetLabel}: ${summary} taşınacak`;
+    return t("previewMove", { source: sourceLabel, target: targetLabel, summary });
   })();
 
   return (
@@ -144,7 +146,7 @@ export function MoveDayContentsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <ArrowRightLeft className="h-4 w-4 text-primary shrink-0" />
-            <span className="truncate">Programı Taşı</span>
+            <span className="truncate">{t("title")}</span>
           </DialogTitle>
           {source && (
             <p className="text-xs text-muted-foreground">
@@ -160,7 +162,7 @@ export function MoveDayContentsDialog({
             <>
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground font-medium">
-                  Neyi taşımak istiyorsun?
+                  {t("whatToMove")}
                 </p>
                 <label className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md hover:bg-muted/40">
                   <Checkbox
@@ -169,9 +171,9 @@ export function MoveDayContentsDialog({
                     disabled={sourceCounts.exercise === 0}
                   />
                   <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="flex-1">Antrenman</span>
+                  <span className="flex-1">{t("workout")}</span>
                   <Badge variant="secondary" className="text-[10px]">
-                    {sourceCounts.exercise} egz
+                    {t("exerciseCount", { count: sourceCounts.exercise })}
                   </Badge>
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md hover:bg-muted/40">
@@ -181,16 +183,16 @@ export function MoveDayContentsDialog({
                     disabled={sourceCounts.meal === 0}
                   />
                   <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="flex-1">Beslenme</span>
+                  <span className="flex-1">{t("nutrition")}</span>
                   <Badge variant="secondary" className="text-[10px]">
-                    {sourceCounts.meal} öğün
+                    {t("mealCount", { count: sourceCounts.meal })}
                   </Badge>
                 </label>
               </div>
 
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground font-medium">
-                  Hedef gün:
+                  {t("targetDay")}
                 </p>
                 {daysLoading ? (
                   <div className="space-y-1.5">
@@ -200,7 +202,7 @@ export function MoveDayContentsDialog({
                   </div>
                 ) : candidates.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Bu hafta taşıyabileceğin başka gün yok
+                    {t("noTargets")}
                   </p>
                 ) : (
                   <div className="space-y-1.5">
@@ -244,7 +246,7 @@ export function MoveDayContentsDialog({
                                   variant="outline"
                                   className="text-[10px] h-4 px-1"
                                 >
-                                  {c.exerciseCount} egz
+                                  {t("exerciseCount", { count: c.exerciseCount })}
                                 </Badge>
                               )}
                               {c.mealCount > 0 && (
@@ -252,7 +254,7 @@ export function MoveDayContentsDialog({
                                   variant="outline"
                                   className="text-[10px] h-4 px-1"
                                 >
-                                  {c.mealCount} öğün
+                                  {t("mealCount", { count: c.mealCount })}
                                 </Badge>
                               )}
                               {isRest &&
@@ -262,7 +264,7 @@ export function MoveDayContentsDialog({
                                     variant="secondary"
                                     className="text-[10px] h-4 px-1"
                                   >
-                                    Dinlenme
+                                    {t("rest")}
                                   </Badge>
                                 )}
                             </div>
@@ -277,7 +279,7 @@ export function MoveDayContentsDialog({
               {showModeSelector && (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground font-medium">
-                    Hedef günde antrenman var. Ne yapılsın?
+                    {t("modeQuestion")}
                   </p>
                   <div className="space-y-1.5">
                     <button
@@ -288,10 +290,9 @@ export function MoveDayContentsDialog({
                           : "bg-muted/30 border-transparent hover:bg-muted/60"
                       }`}
                     >
-                      <p className="text-sm font-medium">İki günü değiştir</p>
+                      <p className="text-sm font-medium">{t("modeSwap")}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        Hedef günün içeriği bu güne, bu günün içeriği hedefe
-                        geçer
+                        {t("modeSwapDesc")}
                       </p>
                     </button>
                     <button
@@ -303,10 +304,10 @@ export function MoveDayContentsDialog({
                       }`}
                     >
                       <p className="text-sm font-medium">
-                        Hedef antrenmanın yerine geç
+                        {t("modeReplace")}
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        Hedef günün eski içeriği silinir, bu gün dinlenme olur
+                        {t("modeReplaceDesc")}
                       </p>
                     </button>
                   </div>
@@ -326,14 +327,14 @@ export function MoveDayContentsDialog({
                   onClick={() => onOpenChange(false)}
                   disabled={move.isPending}
                 >
-                  Vazgeç
+                  {t("cancel")}
                 </Button>
                 <Button
                   className="flex-1"
                   onClick={handleSubmit}
                   disabled={!canSubmit}
                 >
-                  {move.isPending ? "Taşınıyor..." : "Taşı"}
+                  {move.isPending ? t("submitting") : t("submit")}
                 </Button>
               </div>
             </>

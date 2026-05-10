@@ -544,6 +544,47 @@
         "spine": "Spine"
       }
     },
+    "moveDialog": {
+      "title": "Move Program",
+      "whatToMove": "What do you want to move?",
+      "workout": "Workout",
+      "exerciseCount": "{count} ex",
+      "nutrition": "Nutrition",
+      "mealCount": "{count} meals",
+      "targetDay": "Target day:",
+      "noTargets": "No other day available to move to this week",
+      "rest": "Rest",
+      "modeQuestion": "Target day has a workout. What to do?",
+      "modeSwap": "Swap the two days",
+      "modeSwapDesc": "Target day content moves here, this day content moves to target",
+      "modeReplace": "Replace target workout",
+      "modeReplaceDesc": "Target's old content is deleted, this day becomes a rest day",
+      "previewSwap": "{source} ↔ {target} contents will be swapped",
+      "previewReplace": "{source} → {target}: {summary}",
+      "previewMove": "{source} → {target}: {summary} will be moved",
+      "previewDeleted": " · {target}'s {items} will be deleted",
+      "summaryEmpty": "empty content",
+      "exerciseUnit": "{count} exercises",
+      "mealUnit": "{count} meals",
+      "cancel": "Cancel",
+      "submit": "Move",
+      "submitting": "Moving..."
+    },
+    "copyDialog": {
+      "title": "Copy from Last Week",
+      "loading": "Loading...",
+      "empty": "No exercises found from the same day last week",
+      "willCopy": "{count} exercises will be copied:",
+      "copy": "Copy",
+      "copying": "Copying..."
+    },
+    "libraryPicker": {
+      "title": "Exercise Library",
+      "searchPlaceholder": "Search exercises... (e.g. bench press)",
+      "searching": "Searching...",
+      "minChars": "Type at least 2 characters",
+      "noResults": "No results found"
+    },
     "alternativeModal": {
       "title": "Alternative Exercises",
       "originalExercise": "Original Exercise",

@@ -544,6 +544,47 @@
         "spine": "Omurga"
       }
     },
+    "moveDialog": {
+      "title": "Programı Taşı",
+      "whatToMove": "Neyi taşımak istiyorsun?",
+      "workout": "Antrenman",
+      "exerciseCount": "{count} egz",
+      "nutrition": "Beslenme",
+      "mealCount": "{count} öğün",
+      "targetDay": "Hedef gün:",
+      "noTargets": "Bu hafta taşıyabileceğin başka gün yok",
+      "rest": "Dinlenme",
+      "modeQuestion": "Hedef günde antrenman var. Ne yapılsın?",
+      "modeSwap": "İki günü değiştir",
+      "modeSwapDesc": "Hedef günün içeriği bu güne, bu günün içeriği hedefe geçer",
+      "modeReplace": "Hedef antrenmanın yerine geç",
+      "modeReplaceDesc": "Hedef günün eski içeriği silinir, bu gün dinlenme olur",
+      "previewSwap": "{source} ↔ {target} içerikleri yer değişecek",
+      "previewReplace": "{source} → {target}: {summary}",
+      "previewMove": "{source} → {target}: {summary} taşınacak",
+      "previewDeleted": " · {target} hedefinin {items} silinecek",
+      "summaryEmpty": "boş içerik",
+      "exerciseUnit": "{count} egzersiz",
+      "mealUnit": "{count} öğün",
+      "cancel": "Vazgeç",
+      "submit": "Taşı",
+      "submitting": "Taşınıyor..."
+    },
+    "copyDialog": {
+      "title": "Geçen Haftadan Kopyala",
+      "loading": "Yükleniyor...",
+      "empty": "Geçen haftanın aynı gününde egzersiz bulunamadı",
+      "willCopy": "{count} egzersiz kopyalanacak:",
+      "copy": "Kopyala",
+      "copying": "Kopyalanıyor..."
+    },
+    "libraryPicker": {
+      "title": "Egzersiz Kütüphanesi",
+      "searchPlaceholder": "Egzersiz ara... (ör. bench press)",
+      "searching": "Aranıyor...",
+      "minChars": "En az 2 karakter yazın",
+      "noResults": "Sonuç bulunamadı"
+    },
     "alternativeModal": {
       "title": "Alternatif Egzersizler",
       "originalExercise": "Orijinal Egzersiz",

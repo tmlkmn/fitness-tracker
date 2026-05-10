@@ -13,6 +13,7 @@ import { usePreviousWeekExercises } from "@/hooks/use-exercise-history";
 import { bulkCreateExercises } from "@/actions/exercise-crud";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface CopyWorkoutDialogProps {
   open: boolean;
@@ -25,6 +26,8 @@ export function CopyWorkoutDialog({
   onOpenChange,
   dailyPlanId,
 }: CopyWorkoutDialogProps) {
+  const t = useTranslations("exercises.copyDialog");
+  const tUnits = useTranslations("exercises");
   const { data: exercises, isLoading } = usePreviousWeekExercises(
     dailyPlanId,
     open,
@@ -48,25 +51,25 @@ export function CopyWorkoutDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Geçen Haftadan Kopyala</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-2 max-h-[55vh] overflow-y-auto">
           {isLoading ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Yükleniyor...
+              {t("loading")}
             </p>
           ) : !exercises?.length ? (
             <div className="text-center py-6 space-y-2">
               <Dumbbell className="h-8 w-8 mx-auto text-muted-foreground opacity-20" />
               <p className="text-sm text-muted-foreground">
-                Geçen haftanın aynı gününde egzersiz bulunamadı
+                {t("empty")}
               </p>
             </div>
           ) : (
             <>
               <p className="text-xs text-muted-foreground">
-                {exercises.length} egzersiz kopyalanacak:
+                {t("willCopy", { count: exercises.length })}
               </p>
               {exercises.map((ex, i) => (
                 <div
@@ -87,13 +90,13 @@ export function CopyWorkoutDialog({
                     )}
                     {ex.durationMinutes && (
                       <Badge variant="secondary" className="text-[10px] h-4 px-1">
-                        {ex.durationMinutes} dk
+                        {ex.durationMinutes} {tUnits("minutesShort")}
                       </Badge>
                     )}
                     {ex.restSeconds && (
                       <Badge variant="outline" className="text-[10px] h-4 px-1">
                         <Timer className="h-2.5 w-2.5 mr-0.5" />
-                        {ex.restSeconds}sn
+                        {ex.restSeconds}{tUnits("secondsShort")}
                       </Badge>
                     )}
                   </div>
@@ -105,7 +108,7 @@ export function CopyWorkoutDialog({
                 disabled={copying}
               >
                 <Copy className="h-3.5 w-3.5" />
-                {copying ? "Kopyalanıyor..." : "Kopyala"}
+                {copying ? t("copying") : t("copy")}
               </Button>
             </>
           )}

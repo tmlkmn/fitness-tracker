@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useExerciseSearch } from "@/hooks/use-exercise-library";
 import { getExerciseDefaults } from "@/data/exercise-defaults";
 import { Dumbbell } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ExerciseLibraryPickerProps {
   open: boolean;
@@ -30,6 +31,7 @@ export function ExerciseLibraryPicker({
   onOpenChange,
   onSelect,
 }: ExerciseLibraryPickerProps) {
+  const t = useTranslations("exercises.libraryPicker");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const { data: results, isLoading } = useExerciseSearch(debouncedQuery);
@@ -55,11 +57,11 @@ export function ExerciseLibraryPicker({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Egzersiz Kütüphanesi</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         <Input
-          placeholder="Egzersiz ara... (ör. bench press)"
+          placeholder={t("searchPlaceholder")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           autoFocus
@@ -68,18 +70,18 @@ export function ExerciseLibraryPicker({
         <div className="space-y-1 max-h-[55vh] overflow-y-auto">
           {isLoading && debouncedQuery.length >= 2 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Aranıyor...
+              {t("searching")}
             </p>
           ) : debouncedQuery.length < 2 ? (
             <div className="text-center py-6 space-y-2">
               <Dumbbell className="h-8 w-8 mx-auto text-muted-foreground opacity-20" />
               <p className="text-sm text-muted-foreground">
-                En az 2 karakter yazın
+                {t("minChars")}
               </p>
             </div>
           ) : results?.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Sonuç bulunamadı
+              {t("noResults")}
             </p>
           ) : (
             results?.map((ex) => (
