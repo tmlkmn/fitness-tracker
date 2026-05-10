@@ -7,6 +7,7 @@ import { useAllWeeks } from "@/hooks/use-plans";
 import { useMySharesForPlan, useRevokeShare } from "@/hooks/use-sharing";
 import { formatWeekRange, isWeekPast } from "@/lib/utils";
 import { ShareDialog } from "./share-dialog";
+import { useTranslations } from "next-intl";
 
 function PlanShareRow({
   weeklyPlanId,
@@ -17,6 +18,7 @@ function PlanShareRow({
   title: string;
   dateRange: string | null;
 }) {
+  const t = useTranslations("shareManager");
   const { data: shares, isLoading } = useMySharesForPlan(weeklyPlanId);
   const revokeMutation = useRevokeShare();
 
@@ -56,13 +58,14 @@ function PlanShareRow({
           ))}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">Henüz paylaşılmadı</p>
+        <p className="text-xs text-muted-foreground">{t("notShared")}</p>
       )}
     </div>
   );
 }
 
 export function ShareManager() {
+  const t = useTranslations("shareManager");
   const { data: weeks, isLoading } = useAllWeeks();
 
   // Only weeks that are still active (Sunday end >= today) can be shared.
@@ -75,7 +78,7 @@ export function ShareManager() {
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Share2 className="h-4 w-4" />
-          Plan Paylaşımı
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-4">
@@ -83,14 +86,14 @@ export function ShareManager() {
           <Loader2 className="h-5 w-5 animate-spin mx-auto" />
         ) : !activeWeeks?.length ? (
           <p className="text-sm text-muted-foreground">
-            Paylaşılacak aktif plan yok
+            {t("noActivePlans")}
           </p>
         ) : (
           activeWeeks.map((week) => (
             <PlanShareRow
               key={week.id}
               weeklyPlanId={week.id}
-              title={`Hafta ${week.weekNumber}: ${week.title}`}
+              title={t("weekTitle", { week: week.weekNumber, title: week.title })}
               dateRange={week.startDate ? formatWeekRange(week.startDate) : null}
             />
           ))

@@ -8,6 +8,7 @@ import {
   useIncrementWater,
   useDailyWaterTarget,
 } from "@/hooks/use-water";
+import { useTranslations } from "next-intl";
 
 interface WaterTrackerProps {
   date: string;
@@ -15,6 +16,7 @@ interface WaterTrackerProps {
 }
 
 export function WaterTracker({ date, readOnly }: WaterTrackerProps) {
+  const t = useTranslations("water");
   const { data: log } = useWaterLog(date);
   const { data: personalizedTarget } = useDailyWaterTarget(date);
   const increment = useIncrementWater();
@@ -38,7 +40,7 @@ export function WaterTracker({ date, readOnly }: WaterTrackerProps) {
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <Droplets className="h-4 w-4 text-blue-400" />
-          <h3 className="text-sm font-semibold">Su Takibi</h3>
+          <h3 className="text-sm font-semibold">{t("title")}</h3>
         </div>
 
         <div className="flex items-center justify-between gap-4">

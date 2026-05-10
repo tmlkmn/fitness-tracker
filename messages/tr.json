@@ -1547,6 +1547,32 @@
       "weekStartSunday": "Pazar"
     }
   },
+  "water": {
+    "title": "Su Takibi",
+    "shortLabel": "Su"
+  },
+  "sleep": {
+    "title": "Uyku Takibi",
+    "noEntry": "Kayıt yok",
+    "addButton": "Uyku Kaydı Ekle",
+    "minutesShort": "dk",
+    "hoursShort": "sa",
+    "minutesLong": "dk",
+    "hoursLong": "saat",
+    "form": {
+      "addTitle": "Uyku Kaydı Ekle",
+      "editTitle": "Uyku Kaydını Düzenle",
+      "bedtimeLabel": "Yatış Saati",
+      "wakeTimeLabel": "Kalkış Saati",
+      "durationSuffix": "uyku",
+      "qualityLabel": "Uyku Kalitesi",
+      "notesLabel": "Notlar (opsiyonel)",
+      "notesPlaceholder": "Rüya, uyanma sayısı vb.",
+      "cancel": "İptal",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor..."
+    }
+  },
   "supplements": {
     "form": {
       "addTitle": "Yeni Supplement Ekle",
@@ -1572,6 +1598,16 @@
         "yatmadan-once": "Yatmadan Önce"
       }
     }
+  },
+  "shareManager": {
+    "title": "Plan Paylaşımı",
+    "shareButton": "Paylaş",
+    "pickUserTitle": "Kullanıcı Seç",
+    "noUsers": "Paylaşılacak kullanıcı yok",
+    "select": "Seç",
+    "notShared": "Henüz paylaşılmadı",
+    "noActivePlans": "Paylaşılacak aktif plan yok",
+    "weekTitle": "Hafta {week}: {title}"
   },
   "sharing": {
     "title": "Paylaşılan Planlar",

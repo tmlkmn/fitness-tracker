@@ -9,8 +9,10 @@ import {
   useDailyWaterTarget,
 } from "@/hooks/use-water";
 import { getTurkeyTodayStr } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export function WaterDashboardWidget() {
+  const t = useTranslations("water");
   const [todayStr] = useState(() => getTurkeyTodayStr());
   const { data: log } = useTodayWater();
   const { data: personalizedTarget } = useDailyWaterTarget(todayStr);
@@ -30,7 +32,7 @@ export function WaterDashboardWidget() {
       <CardContent className="p-3">
         <div className="flex items-center gap-2 mb-1">
           <Droplets className="h-4 w-4 text-blue-400" />
-          <span className="text-xs text-muted-foreground">Su</span>
+          <span className="text-xs text-muted-foreground">{t("shortLabel")}</span>
         </div>
 
         <div className="flex items-center justify-between gap-1">

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Moon } from "lucide-react";
 import { useUpsertSleep } from "@/hooks/use-sleep";
+import { useTranslations } from "next-intl";
 
 interface SleepFormDialogProps {
   open: boolean;
@@ -35,20 +36,23 @@ function computeDuration(bedtime: string, wakeTime: string): number | null {
   return wakeMin - bedMin;
 }
 
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m} dk`;
-  if (m === 0) return `${h} saat`;
-  return `${h} saat ${m} dk`;
-}
-
 export function SleepFormDialog({
   open,
   onOpenChange,
   date,
   initial,
 }: SleepFormDialogProps) {
+  const t = useTranslations("sleep");
+  const tForm = useTranslations("sleep.form");
+
+  const formatDuration = (minutes: number): string => {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (h === 0) return `${m} ${t("minutesLong")}`;
+    if (m === 0) return `${h} ${t("hoursLong")}`;
+    return `${h} ${t("hoursLong")} ${m} ${t("minutesLong")}`;
+  };
+
   const [bedtime, setBedtime] = useState(initial?.bedtime ?? "23:00");
   const [wakeTime, setWakeTime] = useState(initial?.wakeTime ?? "07:00");
   const [quality, setQuality] = useState<number>(initial?.quality ?? 3);
@@ -85,7 +89,7 @@ export function SleepFormDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 mr-6">
             <Moon className="h-4 w-4 text-indigo-400" />
-            {initial ? "Uyku Kaydını Düzenle" : "Uyku Kaydı Ekle"}
+            {initial ? tForm("editTitle") : tForm("addTitle")}
           </DialogTitle>
         </DialogHeader>
 
@@ -94,7 +98,7 @@ export function SleepFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">
-                Yatış Saati
+                {tForm("bedtimeLabel")}
               </Label>
               <Input
                 type="time"
@@ -105,7 +109,7 @@ export function SleepFormDialog({
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">
-                Kalkış Saati
+                {tForm("wakeTimeLabel")}
               </Label>
               <Input
                 type="time"
@@ -122,14 +126,14 @@ export function SleepFormDialog({
               <span className="text-sm font-medium">
                 {formatDuration(duration)}
               </span>
-              <span className="text-xs text-muted-foreground ml-1">uyku</span>
+              <span className="text-xs text-muted-foreground ml-1">{tForm("durationSuffix")}</span>
             </div>
           )}
 
           {/* Quality selector */}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">
-              Uyku Kalitesi
+              {tForm("qualityLabel")}
             </Label>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((v) => (
@@ -157,12 +161,12 @@ export function SleepFormDialog({
           {/* Notes */}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">
-              Notlar (opsiyonel)
+              {tForm("notesLabel")}
             </Label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Rüya, uyanma sayısı vb."
+              placeholder={tForm("notesPlaceholder")}
               className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
               maxLength={200}
             />
@@ -176,14 +180,14 @@ export function SleepFormDialog({
             className="flex-1"
             onClick={() => onOpenChange(false)}
           >
-            İptal
+            {tForm("cancel")}
           </Button>
           <Button
             className="flex-1"
             onClick={handleSave}
             disabled={!bedtime || !wakeTime || upsert.isPending}
           >
-            {upsert.isPending ? "Kaydediliyor..." : "Kaydet"}
+            {upsert.isPending ? tForm("saving") : tForm("save")}
           </Button>
         </div>
       </DialogContent>

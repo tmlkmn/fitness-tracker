@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Moon, Plus, Pencil, Trash2 } from "lucide-react";
 import { useSleepByDate, useDeleteSleep } from "@/hooks/use-sleep";
 import { SleepFormDialog } from "./sleep-form-dialog";
+import { useTranslations } from "next-intl";
 
 interface SleepEntryProps {
   date: string;
@@ -14,15 +15,17 @@ interface SleepEntryProps {
   autoOpen?: boolean;
 }
 
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m}dk`;
-  if (m === 0) return `${h}sa`;
-  return `${h}sa ${m}dk`;
-}
-
 export function SleepEntry({ date, readOnly, autoOpen }: SleepEntryProps) {
+  const t = useTranslations("sleep");
+
+  const formatDuration = (minutes: number): string => {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (h === 0) return `${m}${t("minutesShort")}`;
+    if (m === 0) return `${h}${t("hoursShort")}`;
+    return `${h}${t("hoursShort")} ${m}${t("minutesShort")}`;
+  };
+
   const { data: log } = useSleepByDate(date);
   const deleteSleep = useDeleteSleep();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -50,7 +53,7 @@ export function SleepEntry({ date, readOnly, autoOpen }: SleepEntryProps) {
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
             <Moon className="h-4 w-4 text-indigo-400" />
-            <h3 className="text-sm font-semibold">Uyku Takibi</h3>
+            <h3 className="text-sm font-semibold">{t("title")}</h3>
           </div>
 
           {!log ? (
@@ -63,10 +66,10 @@ export function SleepEntry({ date, readOnly, autoOpen }: SleepEntryProps) {
                   onClick={() => setDialogOpen(true)}
                 >
                   <Plus className="h-4 w-4 mr-1" />
-                  Uyku Kaydı Ekle
+                  {t("addButton")}
                 </Button>
               ) : (
-                <p className="text-xs text-muted-foreground">Kayıt yok</p>
+                <p className="text-xs text-muted-foreground">{t("noEntry")}</p>
               )}
             </div>
           ) : (
