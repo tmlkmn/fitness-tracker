@@ -18,8 +18,10 @@ import {
   useUpdateNotificationPreferences,
 } from "@/hooks/use-notification-preferences";
 import { subscribeToPush } from "@/lib/push-subscribe";
+import { useTranslations } from "next-intl";
 
 function PushStatus() {
+  const t = useTranslations("settings.notificationPrefs");
   const [status, setStatus] = useState<"loading" | "active" | "denied" | "unsupported" | null>("loading");
 
   useEffect(() => {
@@ -60,7 +62,7 @@ function PushStatus() {
   if (status === "unsupported") {
     return (
       <p className="text-xs text-muted-foreground">
-        Tarayıcınız push bildirimlerini desteklemiyor.
+        {t("pushUnsupported")}
       </p>
     );
   }
@@ -69,7 +71,7 @@ function PushStatus() {
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <BellOff className="h-3.5 w-3.5" />
-        Push bildirimleri tarayıcı ayarlarından engellendi. Tarayıcı ayarlarından izin verin.
+        {t("pushBlocked")}
       </div>
     );
   }
@@ -77,12 +79,13 @@ function PushStatus() {
   return (
     <div className="flex items-center gap-2 text-xs text-muted-foreground">
       <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-      Push bildirimleri aktif
+      {t("pushActive")}
     </div>
   );
 }
 
 export function NotificationPreferencesCard() {
+  const t = useTranslations("settings.notificationPrefs");
   const { data: prefs, isLoading } = useNotificationPreferences();
   const updateMutation = useUpdateNotificationPreferences();
   const [pushLoading, setPushLoading] = useState(false);
@@ -163,26 +166,26 @@ export function NotificationPreferencesCard() {
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <BellRing className="h-4 w-4" />
-          Bildirim Tercihleri
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-4">
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Uygulama içi bildirimler</Label>
+          <Label className="text-sm">{t("inAppLabel")}</Label>
           <Switch
             checked={prefs?.inAppEnabled ?? false}
             onCheckedChange={(v) => toggle("inAppEnabled", v)}
           />
         </div>
         <div className="flex items-center justify-between">
-          <Label className="text-sm">E-posta bildirimleri</Label>
+          <Label className="text-sm">{t("emailLabel")}</Label>
           <Switch
             checked={prefs?.emailEnabled ?? false}
             onCheckedChange={(v) => toggle("emailEnabled", v)}
           />
         </div>
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Push bildirimleri</Label>
+          <Label className="text-sm">{t("pushLabel")}</Label>
           {pushLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
@@ -198,7 +201,7 @@ export function NotificationPreferencesCard() {
           <div className="flex items-center justify-between">
             <Label className="text-sm flex items-center gap-2">
               <Moon className="h-3.5 w-3.5" />
-              Sessiz Saatler
+              {t("quietHoursLabel")}
             </Label>
             <Switch checked={quietEnabled} onCheckedChange={toggleQuiet} />
           </div>
@@ -206,7 +209,7 @@ export function NotificationPreferencesCard() {
             <>
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1">
-                  <Label className="text-xs text-muted-foreground">Başlangıç</Label>
+                  <Label className="text-xs text-muted-foreground">{t("quietHoursStart")}</Label>
                   <Input
                     type="time"
                     value={prefs?.quietHoursStart ?? "22:00"}
@@ -214,7 +217,7 @@ export function NotificationPreferencesCard() {
                   />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <Label className="text-xs text-muted-foreground">Bitiş</Label>
+                  <Label className="text-xs text-muted-foreground">{t("quietHoursEnd")}</Label>
                   <Input
                     type="time"
                     value={prefs?.quietHoursEnd ?? "08:00"}
@@ -223,7 +226,7 @@ export function NotificationPreferencesCard() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Bu saatler arasında push ve e-posta bildirimleri gönderilmez. Uygulama içi bildirimler kaydedilmeye devam eder.
+                {t("quietHoursHint")}
               </p>
             </>
           )}
@@ -232,7 +235,7 @@ export function NotificationPreferencesCard() {
         <div className="pt-3 border-t border-border/60 space-y-2">
           <Label className="text-sm flex items-center gap-2">
             <CalendarDays className="h-3.5 w-3.5" />
-            Hafta Başlangıcı
+            {t("weekStartLabel")}
           </Label>
           <Select
             value={prefs?.weekStartsOn ?? "monday"}
@@ -244,8 +247,8 @@ export function NotificationPreferencesCard() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="monday">Pazartesi</SelectItem>
-              <SelectItem value="sunday">Pazar</SelectItem>
+              <SelectItem value="monday">{t("weekStartMonday")}</SelectItem>
+              <SelectItem value="sunday">{t("weekStartSunday")}</SelectItem>
             </SelectContent>
           </Select>
         </div>

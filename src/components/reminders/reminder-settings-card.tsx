@@ -22,8 +22,10 @@ import {
 import { REMINDER_TEMPLATES } from "@/lib/reminder-templates";
 import { ReminderItem } from "./reminder-item";
 import { AddReminderDialog } from "./add-reminder-dialog";
+import { useTranslations } from "next-intl";
 
 export function ReminderSettingsCard() {
+  const t = useTranslations("settings.remindersCard");
   const { data: allReminders, isLoading: remindersLoading } = useReminders();
   const { data: prefs } = useNotificationPreferences();
   const updatePrefs = useUpdateNotificationPreferences();
@@ -70,8 +72,8 @@ export function ReminderSettingsCard() {
     if (enabled && !mealReminder) {
       await createMutation.mutateAsync({
         type: "meal",
-        title: "Öğün Hatırlatıcısı",
-        body: "Öğün zamanı yaklaşıyor!",
+        title: t("defaultMealTitle"),
+        body: t("defaultMealBody"),
         minutesBefore: 10,
         recurrence: "daily",
         skipEmail: true,
@@ -96,8 +98,8 @@ export function ReminderSettingsCard() {
     if (enabled && !workoutReminder) {
       await createMutation.mutateAsync({
         type: "workout",
-        title: "Antrenman Hatırlatıcısı",
-        body: "Antrenman zamanı yaklaşıyor!",
+        title: t("defaultWorkoutTitle"),
+        body: t("defaultWorkoutBody"),
         minutesBefore: 15,
         recurrence: "daily",
         skipEmail: true,
@@ -156,14 +158,13 @@ export function ReminderSettingsCard() {
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Clock className="h-4 w-4" />
-          Hatırlatıcılar
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-4">
-        {/* Meal Reminders */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Öğün Hatırlatıcıları</Label>
+            <Label className="text-sm font-medium">{t("mealRemindersLabel")}</Label>
             <Switch
               checked={mealReminder?.isEnabled ?? false}
               onCheckedChange={handleMealToggle}
@@ -171,7 +172,7 @@ export function ReminderSettingsCard() {
           </div>
           {mealReminder?.isEnabled && (
             <div className="flex items-center gap-2 pl-1">
-              <span className="text-xs text-muted-foreground">Kaç dk önce:</span>
+              <span className="text-xs text-muted-foreground">{t("minutesBeforeLabel")}</span>
               <Select
                 value={String(mealReminder.minutesBefore ?? 10)}
                 onValueChange={handleMealMinutesChange}
@@ -180,10 +181,10 @@ export function ReminderSettingsCard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5">5 dk</SelectItem>
-                  <SelectItem value="10">10 dk</SelectItem>
-                  <SelectItem value="15">15 dk</SelectItem>
-                  <SelectItem value="30">30 dk</SelectItem>
+                  <SelectItem value="5">{t("minute5")}</SelectItem>
+                  <SelectItem value="10">{t("minute10")}</SelectItem>
+                  <SelectItem value="15">{t("minute15")}</SelectItem>
+                  <SelectItem value="30">{t("minute30")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -192,10 +193,9 @@ export function ReminderSettingsCard() {
 
         <Separator />
 
-        {/* Workout Reminders */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Antrenman Hatırlatıcısı</Label>
+            <Label className="text-sm font-medium">{t("workoutReminderLabel")}</Label>
             <Switch
               checked={workoutReminder?.isEnabled ?? false}
               onCheckedChange={handleWorkoutToggle}
@@ -204,7 +204,7 @@ export function ReminderSettingsCard() {
           {workoutReminder?.isEnabled && (
             <div className="space-y-2 pl-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Antrenman saati:</span>
+                <span className="text-xs text-muted-foreground">{t("workoutTimeLabel")}</span>
                 <Input
                   type="time"
                   value={workoutTime}
@@ -213,7 +213,7 @@ export function ReminderSettingsCard() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Kaç dk önce:</span>
+                <span className="text-xs text-muted-foreground">{t("minutesBeforeLabel")}</span>
                 <Select
                   value={String(workoutReminder.minutesBefore ?? 15)}
                   onValueChange={handleWorkoutMinutesChange}
@@ -222,10 +222,10 @@ export function ReminderSettingsCard() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="5">5 dk</SelectItem>
-                    <SelectItem value="10">10 dk</SelectItem>
-                    <SelectItem value="15">15 dk</SelectItem>
-                    <SelectItem value="30">30 dk</SelectItem>
+                    <SelectItem value="5">{t("minute5")}</SelectItem>
+                    <SelectItem value="10">{t("minute10")}</SelectItem>
+                    <SelectItem value="15">{t("minute15")}</SelectItem>
+                    <SelectItem value="30">{t("minute30")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -235,27 +235,26 @@ export function ReminderSettingsCard() {
 
         <Separator />
 
-        {/* Template Reminders */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Hazır Şablonlar</Label>
-          {REMINDER_TEMPLATES.map((t) => {
-            const isPending = t.key in pendingToggles;
-            const isActive = isPending ? pendingToggles[t.key] : activeTemplateKeys.includes(t.key);
+          <Label className="text-sm font-medium">{t("templatesLabel")}</Label>
+          {REMINDER_TEMPLATES.map((tpl) => {
+            const isPending = tpl.key in pendingToggles;
+            const isActive = isPending ? pendingToggles[tpl.key] : activeTemplateKeys.includes(tpl.key);
             const existingReminder = templateReminders.find(
-              (r) => r.templateKey === t.key
+              (r) => r.templateKey === tpl.key
             );
             return (
-              <div key={t.key} className="space-y-1">
+              <div key={tpl.key} className="space-y-1">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm">{t.title}</span>
+                    <span className="text-sm">{tpl.title}</span>
                     <p className="text-xs text-muted-foreground truncate">
-                      {t.body}
+                      {tpl.body}
                     </p>
                   </div>
                   <Switch
                     checked={isActive}
-                    onCheckedChange={(v) => handleTemplateToggle(t.key, v)}
+                    onCheckedChange={(v) => handleTemplateToggle(tpl.key, v)}
                     disabled={isPending}
                   />
                 </div>
@@ -264,26 +263,28 @@ export function ReminderSettingsCard() {
                     {existingReminder.recurrence === "interval" ? (
                       <>
                         <span className="font-mono">
-                          {existingReminder.intervalStart ?? t.defaultIntervalStart ?? "08:00"}-{existingReminder.intervalEnd ?? t.defaultIntervalEnd ?? "22:00"}
+                          {existingReminder.intervalStart ?? tpl.defaultIntervalStart ?? "08:00"}-{existingReminder.intervalEnd ?? tpl.defaultIntervalEnd ?? "22:00"}
                         </span>
-                        <span>·</span>
+                        <span>{t("intervalSeparator")}</span>
                         <span>
                           {(() => {
-                            const min = existingReminder.intervalMinutes ?? t.defaultIntervalMinutes ?? 60;
-                            return min >= 60 ? `${min / 60} saatte bir` : `${min} dk.da bir`;
+                            const min = existingReminder.intervalMinutes ?? tpl.defaultIntervalMinutes ?? 60;
+                            return min >= 60
+                              ? t("intervalHourly", { hours: min / 60 })
+                              : t("intervalMinutely", { minutes: min });
                           })()}
                         </span>
                       </>
                     ) : (
                       <>
                         <span className="font-mono">
-                          {existingReminder.time ?? t.defaultTime}
+                          {existingReminder.time ?? tpl.defaultTime}
                         </span>
-                        <span>·</span>
+                        <span>{t("intervalSeparator")}</span>
                         <span>
                           {existingReminder.recurrence === "daily"
-                            ? "Her gün tekrarlanır"
-                            : "Hafta içi tekrarlanır"}
+                            ? t("recurrenceDaily")
+                            : t("recurrenceWeekdays")}
                         </span>
                       </>
                     )}
@@ -296,9 +297,8 @@ export function ReminderSettingsCard() {
 
         <Separator />
 
-        {/* Custom Reminders */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Özel Hatırlatıcılar</Label>
+          <Label className="text-sm font-medium">{t("customRemindersLabel")}</Label>
           {userCustomReminders.length > 0 ? (
             userCustomReminders.map((r) => (
               <ReminderItem
@@ -321,7 +321,7 @@ export function ReminderSettingsCard() {
             ))
           ) : (
             <p className="text-xs text-muted-foreground">
-              Henüz özel hatırlatıcı yok.
+              {t("noCustomReminders")}
             </p>
           )}
           <AddReminderDialog />
