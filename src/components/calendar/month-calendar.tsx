@@ -3,6 +3,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatDateStr } from "@/lib/utils";
 import { getWeekDayLabels, type WeekStart } from "@/lib/week";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 interface MonthCalendarProps {
   selectedDate: string;
@@ -14,9 +16,12 @@ interface MonthCalendarProps {
   weekStartsOn?: WeekStart;
 }
 
-function getMonthLabel(year: number, month: number): string {
+function getMonthLabel(year: number, month: number, locale: Locale): string {
   const d = new Date(year, month - 1, 1);
-  return d.toLocaleDateString("tr-TR", { month: "long", year: "numeric" });
+  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function getCalendarDays(year: number, month: number, startsOn: WeekStart) {
@@ -70,6 +75,8 @@ export function MonthCalendar({
   datesWithPlans,
   weekStartsOn = "monday",
 }: MonthCalendarProps) {
+  const t = useTranslations("calendar");
+  const locale = useLocale() as Locale;
   const todayStr = formatDateStr(new Date());
   const days = getCalendarDays(viewYear, viewMonth, weekStartsOn);
   const DAY_LABELS = getWeekDayLabels(weekStartsOn);
@@ -104,17 +111,17 @@ export function MonthCalendar({
         <button
           onClick={handlePrev}
           className="p-2 rounded-lg hover:bg-accent transition-colors"
-          aria-label="Önceki ay"
+          aria-label={t("prevMonth")}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="text-sm font-semibold capitalize">
-          {getMonthLabel(viewYear, viewMonth)}
+          {getMonthLabel(viewYear, viewMonth, locale)}
         </span>
         <button
           onClick={handleNext}
           className="p-2 rounded-lg hover:bg-accent transition-colors"
-          aria-label="Sonraki ay"
+          aria-label={t("nextMonth")}
         >
           <ChevronRight className="h-4 w-4" />
         </button>

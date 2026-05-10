@@ -3,6 +3,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatDateStr } from "@/lib/utils";
 import { getWeekDayLabels, type WeekStart } from "@/lib/week";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 interface WeekStripProps {
   weekStartDate: Date;
@@ -14,11 +16,12 @@ interface WeekStripProps {
   weekStartsOn?: WeekStart;
 }
 
-function formatMonthRange(start: Date): string {
+function formatMonthRange(start: Date, locale: Locale): string {
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
-  const startMonth = start.toLocaleDateString("tr-TR", { month: "short" });
-  const endMonth = end.toLocaleDateString("tr-TR", { month: "short" });
+  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
+  const startMonth = start.toLocaleDateString(dateLocale, { month: "short" });
+  const endMonth = end.toLocaleDateString(dateLocale, { month: "short" });
   if (startMonth === endMonth) {
     return `${start.getDate()} - ${end.getDate()} ${startMonth} ${end.getFullYear()}`;
   }
@@ -34,6 +37,8 @@ export function WeekStrip({
   datesWithPlans,
   weekStartsOn = "monday",
 }: WeekStripProps) {
+  const t = useTranslations("calendar");
+  const locale = useLocale() as Locale;
   const todayStr = formatDateStr(new Date());
   const labels = getWeekDayLabels(weekStartsOn);
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -52,17 +57,17 @@ export function WeekStrip({
         <button
           onClick={onPrevWeek}
           className="p-2 rounded-lg hover:bg-accent transition-colors"
-          aria-label="Önceki hafta"
+          aria-label={t("prevWeek")}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="text-sm font-semibold">
-          {formatMonthRange(weekStart)}
+          {formatMonthRange(weekStart, locale)}
         </span>
         <button
           onClick={onNextWeek}
           className="p-2 rounded-lg hover:bg-accent transition-colors"
-          aria-label="Sonraki hafta"
+          aria-label={t("nextWeek")}
         >
           <ChevronRight className="h-4 w-4" />
         </button>

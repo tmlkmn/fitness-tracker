@@ -270,6 +270,10 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "deleting": "Deleting...",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
     "aiWeekly": {
       "title": "Weekly Plan with AI",
       "overlayTitleNutrition": "AI is preparing your nutrition plan",

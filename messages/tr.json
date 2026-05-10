@@ -270,6 +270,10 @@
     "cancel": "İptal",
     "delete": "Sil",
     "deleting": "Siliniyor...",
+    "prevMonth": "Önceki ay",
+    "nextMonth": "Sonraki ay",
+    "prevWeek": "Önceki hafta",
+    "nextWeek": "Sonraki hafta",
     "aiWeekly": {
       "title": "AI ile Haftalık Plan",
       "overlayTitleNutrition": "AI Beslenme Planını Hazırlıyor",
