@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { useToggleReminder, useDeleteReminder } from "@/hooks/use-reminders";
 import { EditReminderDialog } from "./edit-reminder-dialog";
+import { useTranslations } from "next-intl";
 
 interface ReminderItemProps {
   id: number;
@@ -24,15 +25,6 @@ interface ReminderItemProps {
   type: string;
 }
 
-const recurrenceLabels: Record<string, string> = {
-  daily: "Her gün tekrarlanır",
-  weekdays: "Hafta içi tekrarlanır",
-  weekends: "Hafta sonu tekrarlanır",
-  once: "Tek seferlik",
-  custom: "Özel günler",
-  interval: "Her gün tekrarlanır",
-};
-
 export function ReminderItem({
   id,
   title,
@@ -49,9 +41,28 @@ export function ReminderItem({
   isEnabled,
   type,
 }: ReminderItemProps) {
+  const t = useTranslations("settings.reminderItem");
   const [editOpen, setEditOpen] = useState(false);
   const toggleMutation = useToggleReminder();
   const deleteMutation = useDeleteReminder();
+
+  const recurrenceLabel = (() => {
+    switch (recurrence) {
+      case "daily":
+      case "interval":
+        return t("recurrenceDaily");
+      case "weekdays":
+        return t("recurrenceWeekdays");
+      case "weekends":
+        return t("recurrenceWeekends");
+      case "once":
+        return t("recurrenceOnce");
+      case "custom":
+        return t("recurrenceCustom");
+      default:
+        return recurrence;
+    }
+  })();
 
   return (
     <>
@@ -61,9 +72,9 @@ export function ReminderItem({
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {type === "custom" && recurrence === "interval" && intervalMinutes && (
               <span className="font-mono">
-                Her {intervalMinutes >= 60
-                  ? `${intervalMinutes / 60} sa`
-                  : `${intervalMinutes} dk`}
+                {intervalMinutes >= 60
+                  ? t("intervalHourly", { hours: intervalMinutes / 60 })
+                  : t("intervalMinutely", { minutes: intervalMinutes })}
                 {intervalStart && intervalEnd && ` · ${intervalStart}-${intervalEnd}`}
               </span>
             )}
@@ -71,9 +82,9 @@ export function ReminderItem({
               <span className="font-mono">{time}</span>
             )}
             {(type === "meal" || type === "workout") && minutesBefore && (
-              <span>{minutesBefore} dk önce</span>
+              <span>{t("minutesBefore", { minutes: minutesBefore })}</span>
             )}
-            <span>{recurrenceLabels[recurrence] ?? recurrence}</span>
+            <span>{recurrenceLabel}</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">

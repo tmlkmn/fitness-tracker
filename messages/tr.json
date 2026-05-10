@@ -1455,6 +1455,58 @@
       "tipPrefix": "İpucu:",
       "tipBody": "Makro hedefleri belirlerken hedefinle (yağ kaybı, kas kazanımı, idame) tutarlı olduğuna emin ol. Aşağıdaki AI hesaplayıcısı profil ve ölçüm verilerini baz alarak senin için optimize eder."
     },
+    "reminderItem": {
+      "intervalHourly": "Her {hours} sa",
+      "intervalMinutely": "Her {minutes} dk",
+      "minutesBefore": "{minutes} dk önce",
+      "recurrenceDaily": "Her gün tekrarlanır",
+      "recurrenceWeekdays": "Hafta içi tekrarlanır",
+      "recurrenceWeekends": "Hafta sonu tekrarlanır",
+      "recurrenceOnce": "Tek seferlik",
+      "recurrenceCustom": "Özel günler"
+    },
+    "reminderDialog": {
+      "addTitle": "Yeni Hatırlatıcı",
+      "editTitle": "Hatırlatıcıyı Düzenle",
+      "quickTemplates": "Hızlı Şablonlar",
+      "titleLabel": "Başlık",
+      "titlePlaceholder": "ör. Su iç, İlaç al...",
+      "bodyLabel": "Mesaj (isteğe bağlı)",
+      "bodyPlaceholder": "Bildirim içeriği...",
+      "recurrenceLabel": "Tekrar",
+      "recurrenceDaily": "Her gün",
+      "recurrenceWeekdays": "Hafta içi",
+      "recurrenceWeekends": "Hafta sonu",
+      "recurrenceInterval": "Belirli aralıklarla",
+      "recurrenceOnce": "Tek seferlik",
+      "recurrenceCustom": "Özel günler",
+      "intervalLabel": "Kaç dakikada bir",
+      "interval30": "30 dakika",
+      "interval60": "1 saat",
+      "interval90": "1.5 saat",
+      "interval120": "2 saat",
+      "interval180": "3 saat",
+      "interval240": "4 saat",
+      "rangeStart": "Başlangıç",
+      "rangeEnd": "Bitiş",
+      "intervalHint": "Bu hatırlatıcı her gün belirlenen saatler arasında otomatik tekrarlanır.",
+      "timeLabel": "Saat",
+      "onceDateLabel": "Tarih",
+      "emailToggle": "E-posta bildirimi gönder",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor...",
+      "cancel": "İptal",
+      "addNew": "Yeni Hatırlatıcı",
+      "days": {
+        "0": "Paz",
+        "1": "Pzt",
+        "2": "Sal",
+        "3": "Çar",
+        "4": "Per",
+        "5": "Cum",
+        "6": "Cmt"
+      }
+    },
     "remindersCard": {
       "title": "Hatırlatıcılar",
       "mealRemindersLabel": "Öğün Hatırlatıcıları",
@@ -1493,6 +1545,32 @@
       "weekStartLabel": "Hafta Başlangıcı",
       "weekStartMonday": "Pazartesi",
       "weekStartSunday": "Pazar"
+    }
+  },
+  "supplements": {
+    "form": {
+      "addTitle": "Yeni Supplement Ekle",
+      "editTitle": "Supplement Düzenle",
+      "nameLabel": "İsim *",
+      "namePlaceholder": "Kreatin",
+      "dosageLabel": "Doz *",
+      "dosagePlaceholder": "5g",
+      "timingLabel": "Zamanlama",
+      "notesLabel": "Notlar",
+      "notesPlaceholder": "Opsiyonel notlar...",
+      "cancel": "İptal",
+      "saving": "Kaydediliyor...",
+      "update": "Güncelle",
+      "add": "Ekle",
+      "timings": {
+        "sabah": "Sabah",
+        "kahvalti": "Kahvaltı ile",
+        "ogle": "Öğle",
+        "antrenman-once": "Antrenman Öncesi",
+        "antrenman-sonra": "Antrenman Sonrası",
+        "aksam": "Akşam",
+        "yatmadan-once": "Yatmadan Önce"
+      }
     }
   },
   "sharing": {

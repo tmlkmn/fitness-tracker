@@ -23,18 +23,12 @@ import { Plus } from "lucide-react";
 import { useCreateReminder } from "@/hooks/use-reminders";
 import { REMINDER_TEMPLATES, type ReminderTemplate } from "@/lib/reminder-templates";
 import { DynamicIcon } from "@/lib/icon-map";
+import { useTranslations } from "next-intl";
 
-const DAYS = [
-  { value: 1, label: "Pzt" },
-  { value: 2, label: "Sal" },
-  { value: 3, label: "Çar" },
-  { value: 4, label: "Per" },
-  { value: 5, label: "Cum" },
-  { value: 6, label: "Cmt" },
-  { value: 0, label: "Paz" },
-];
+const DAY_VALUES = [1, 2, 3, 4, 5, 6, 0] as const;
 
 export function AddReminderDialog() {
+  const t = useTranslations("settings.reminderDialog");
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -103,16 +97,16 @@ export function AddReminderDialog() {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="w-full gap-2">
           <Plus className="h-4 w-4" />
-          Yeni Hatırlatıcı
+          {t("addNew")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Yeni Hatırlatıcı</DialogTitle>
+          <DialogTitle>{t("addTitle")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Hızlı Şablonlar</Label>
+            <Label className="text-xs text-muted-foreground">{t("quickTemplates")}</Label>
             <div className="flex flex-wrap gap-1.5">
               {REMINDER_TEMPLATES.map((tpl) => (
                 <button
@@ -129,36 +123,36 @@ export function AddReminderDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm">Başlık</Label>
+            <Label className="text-sm">{t("titleLabel")}</Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="ör. Su iç, İlaç al..."
+              placeholder={t("titlePlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm">Mesaj (isteğe bağlı)</Label>
+            <Label className="text-sm">{t("bodyLabel")}</Label>
             <Input
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Bildirim içeriği..."
+              placeholder={t("bodyPlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm">Tekrar</Label>
+            <Label className="text-sm">{t("recurrenceLabel")}</Label>
             <Select value={recurrence} onValueChange={setRecurrence}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">Her gün</SelectItem>
-                <SelectItem value="weekdays">Hafta içi</SelectItem>
-                <SelectItem value="weekends">Hafta sonu</SelectItem>
-                <SelectItem value="interval">Belirli aralıklarla</SelectItem>
-                <SelectItem value="once">Tek seferlik</SelectItem>
-                <SelectItem value="custom">Özel günler</SelectItem>
+                <SelectItem value="daily">{t("recurrenceDaily")}</SelectItem>
+                <SelectItem value="weekdays">{t("recurrenceWeekdays")}</SelectItem>
+                <SelectItem value="weekends">{t("recurrenceWeekends")}</SelectItem>
+                <SelectItem value="interval">{t("recurrenceInterval")}</SelectItem>
+                <SelectItem value="once">{t("recurrenceOnce")}</SelectItem>
+                <SelectItem value="custom">{t("recurrenceCustom")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -166,24 +160,24 @@ export function AddReminderDialog() {
           {recurrence === "interval" ? (
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label className="text-sm">Kaç dakikada bir</Label>
+                <Label className="text-sm">{t("intervalLabel")}</Label>
                 <Select value={intervalMinutes} onValueChange={setIntervalMinutes}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="30">30 dakika</SelectItem>
-                    <SelectItem value="60">1 saat</SelectItem>
-                    <SelectItem value="90">1.5 saat</SelectItem>
-                    <SelectItem value="120">2 saat</SelectItem>
-                    <SelectItem value="180">3 saat</SelectItem>
-                    <SelectItem value="240">4 saat</SelectItem>
+                    <SelectItem value="30">{t("interval30")}</SelectItem>
+                    <SelectItem value="60">{t("interval60")}</SelectItem>
+                    <SelectItem value="90">{t("interval90")}</SelectItem>
+                    <SelectItem value="120">{t("interval120")}</SelectItem>
+                    <SelectItem value="180">{t("interval180")}</SelectItem>
+                    <SelectItem value="240">{t("interval240")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1">
-                  <Label className="text-xs text-muted-foreground">Başlangıç</Label>
+                  <Label className="text-xs text-muted-foreground">{t("rangeStart")}</Label>
                   <Input
                     type="time"
                     value={intervalStart}
@@ -191,7 +185,7 @@ export function AddReminderDialog() {
                   />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <Label className="text-xs text-muted-foreground">Bitiş</Label>
+                  <Label className="text-xs text-muted-foreground">{t("rangeEnd")}</Label>
                   <Input
                     type="time"
                     value={intervalEnd}
@@ -200,12 +194,12 @@ export function AddReminderDialog() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Bu hatırlatıcı her gün belirlenen saatler arasında otomatik tekrarlanır.
+                {t("intervalHint")}
               </p>
             </div>
           ) : (
             <div className="space-y-2">
-              <Label className="text-sm">Saat</Label>
+              <Label className="text-sm">{t("timeLabel")}</Label>
               <Input
                 type="time"
                 value={time}
@@ -216,15 +210,15 @@ export function AddReminderDialog() {
 
           {recurrence === "custom" && (
             <div className="flex flex-wrap gap-2">
-              {DAYS.map((d) => (
+              {DAY_VALUES.map((d) => (
                 <Button
-                  key={d.value}
-                  variant={daysOfWeek.includes(d.value) ? "default" : "outline"}
+                  key={d}
+                  variant={daysOfWeek.includes(d) ? "default" : "outline"}
                   size="sm"
                   className="h-8 w-10 text-xs"
-                  onClick={() => toggleDay(d.value)}
+                  onClick={() => toggleDay(d)}
                 >
-                  {d.label}
+                  {t(`days.${d}` as `days.${0 | 1 | 2 | 3 | 4 | 5 | 6}`)}
                 </Button>
               ))}
             </div>
@@ -232,7 +226,7 @@ export function AddReminderDialog() {
 
           {recurrence === "once" && (
             <div className="space-y-2">
-              <Label className="text-sm">Tarih</Label>
+              <Label className="text-sm">{t("onceDateLabel")}</Label>
               <Input
                 type="date"
                 value={onceDate}
@@ -242,7 +236,7 @@ export function AddReminderDialog() {
           )}
 
           <div className="flex items-center justify-between">
-            <Label className="text-sm">E-posta bildirimi gönder</Label>
+            <Label className="text-sm">{t("emailToggle")}</Label>
             <Switch
               checked={!skipEmail}
               onCheckedChange={(v) => setSkipEmail(!v)}
@@ -254,7 +248,7 @@ export function AddReminderDialog() {
             onClick={handleSubmit}
             disabled={!title.trim() || createMutation.isPending}
           >
-            Kaydet
+            {createMutation.isPending ? t("saving") : t("save")}
           </Button>
         </div>
       </DialogContent>

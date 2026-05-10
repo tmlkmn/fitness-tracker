@@ -18,16 +18,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateSupplement, useUpdateSupplement } from "@/hooks/use-supplement-crud";
+import { useTranslations } from "next-intl";
 
-const TIMING_OPTIONS = [
-  { value: "sabah", label: "Sabah" },
-  { value: "kahvalti", label: "Kahvaltı ile" },
-  { value: "ogle", label: "Öğle" },
-  { value: "antrenman-once", label: "Antrenman Öncesi" },
-  { value: "antrenman-sonra", label: "Antrenman Sonrası" },
-  { value: "aksam", label: "Akşam" },
-  { value: "yatmadan-once", label: "Yatmadan Önce" },
-];
+const TIMING_VALUES = [
+  "sabah",
+  "kahvalti",
+  "ogle",
+  "antrenman-once",
+  "antrenman-sonra",
+  "aksam",
+  "yatmadan-once",
+] as const;
+
+type TimingValue = (typeof TIMING_VALUES)[number];
 
 interface SupplementData {
   id?: number;
@@ -50,6 +53,7 @@ export function SupplementFormDialog({
   weeklyPlanId,
   supplement,
 }: SupplementFormDialogProps) {
+  const t = useTranslations("supplements.form");
   const isEdit = !!supplement?.id;
   const create = useCreateSupplement();
   const update = useUpdateSupplement();
@@ -86,17 +90,17 @@ export function SupplementFormDialog({
       <DialogContent className="max-w-sm mx-4">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Supplement Düzenle" : "Yeni Supplement Ekle"}
+            {isEdit ? t("editTitle") : t("addTitle")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="supName" className="text-xs">
-              İsim *
+              {t("nameLabel")}
             </Label>
             <Input
               id="supName"
-              placeholder="Kreatin"
+              placeholder={t("namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -104,11 +108,11 @@ export function SupplementFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="supDosage" className="text-xs">
-              Doz *
+              {t("dosageLabel")}
             </Label>
             <Input
               id="supDosage"
-              placeholder="5g"
+              placeholder={t("dosagePlaceholder")}
               value={dosage}
               onChange={(e) => setDosage(e.target.value)}
               required
@@ -116,16 +120,16 @@ export function SupplementFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="supTiming" className="text-xs">
-              Zamanlama
+              {t("timingLabel")}
             </Label>
             <Select value={timing} onValueChange={setTiming}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {TIMING_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
+                {TIMING_VALUES.map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {t(`timings.${v}` as `timings.${TimingValue}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -133,11 +137,11 @@ export function SupplementFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="supNotes" className="text-xs">
-              Notlar
+              {t("notesLabel")}
             </Label>
             <Input
               id="supNotes"
-              placeholder="Opsiyonel notlar..."
+              placeholder={t("notesPlaceholder")}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -149,10 +153,10 @@ export function SupplementFormDialog({
               className="flex-1"
               onClick={() => onOpenChange(false)}
             >
-              İptal
+              {t("cancel")}
             </Button>
             <Button type="submit" className="flex-1" disabled={isPending}>
-              {isPending ? "Kaydediliyor..." : isEdit ? "Güncelle" : "Ekle"}
+              {isPending ? t("saving") : isEdit ? t("update") : t("add")}
             </Button>
           </div>
         </form>

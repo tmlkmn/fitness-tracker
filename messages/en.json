@@ -1454,6 +1454,58 @@
       "tipPrefix": "Tip:",
       "tipBody": "When setting macro targets, make sure they're consistent with your goal (fat loss, muscle gain, maintenance). The AI calculator below optimizes for you based on your profile and measurement data."
     },
+    "reminderItem": {
+      "intervalHourly": "Every {hours}h",
+      "intervalMinutely": "Every {minutes}m",
+      "minutesBefore": "{minutes} min before",
+      "recurrenceDaily": "Repeats daily",
+      "recurrenceWeekdays": "Repeats on weekdays",
+      "recurrenceWeekends": "Repeats on weekends",
+      "recurrenceOnce": "One-time",
+      "recurrenceCustom": "Custom days"
+    },
+    "reminderDialog": {
+      "addTitle": "New Reminder",
+      "editTitle": "Edit Reminder",
+      "quickTemplates": "Quick Templates",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g. Drink water, Take vitamins...",
+      "bodyLabel": "Message (optional)",
+      "bodyPlaceholder": "Notification content...",
+      "recurrenceLabel": "Recurrence",
+      "recurrenceDaily": "Daily",
+      "recurrenceWeekdays": "Weekdays",
+      "recurrenceWeekends": "Weekends",
+      "recurrenceInterval": "At intervals",
+      "recurrenceOnce": "One-time",
+      "recurrenceCustom": "Custom days",
+      "intervalLabel": "Every",
+      "interval30": "30 minutes",
+      "interval60": "1 hour",
+      "interval90": "1.5 hours",
+      "interval120": "2 hours",
+      "interval180": "3 hours",
+      "interval240": "4 hours",
+      "rangeStart": "Start",
+      "rangeEnd": "End",
+      "intervalHint": "This reminder repeats automatically every day between the chosen hours.",
+      "timeLabel": "Time",
+      "onceDateLabel": "Date",
+      "emailToggle": "Send email notification",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "addNew": "New Reminder",
+      "days": {
+        "0": "Sun",
+        "1": "Mon",
+        "2": "Tue",
+        "3": "Wed",
+        "4": "Thu",
+        "5": "Fri",
+        "6": "Sat"
+      }
+    },
     "remindersCard": {
       "title": "Reminders",
       "mealRemindersLabel": "Meal Reminders",
@@ -1492,6 +1544,32 @@
       "weekStartLabel": "Week Starts On",
       "weekStartMonday": "Monday",
       "weekStartSunday": "Sunday"
+    }
+  },
+  "supplements": {
+    "form": {
+      "addTitle": "Add New Supplement",
+      "editTitle": "Edit Supplement",
+      "nameLabel": "Name *",
+      "namePlaceholder": "Creatine",
+      "dosageLabel": "Dosage *",
+      "dosagePlaceholder": "5g",
+      "timingLabel": "Timing",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Optional notes...",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "update": "Update",
+      "add": "Add",
+      "timings": {
+        "sabah": "Morning",
+        "kahvalti": "With breakfast",
+        "ogle": "Noon",
+        "antrenman-once": "Pre-workout",
+        "antrenman-sonra": "Post-workout",
+        "aksam": "Evening",
+        "yatmadan-once": "Before bed"
+      }
     }
   },
   "sharing": {
