@@ -22,9 +22,12 @@ import {
   MEAL_LABELS,
   MEAL_LABEL_COLORS,
   isMealLabel,
+  getLocalizedMealLabel,
   type MealLabel,
 } from "@/lib/meal-labels";
 import { cn } from "@/lib/utils";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 export interface SelectedMeal {
   mealLabel: string;
@@ -61,9 +64,13 @@ function MealCandidateCard({
   candidate: MealCandidate;
   onSelect: () => void;
 }) {
+  const locale = useLocale() as Locale;
   const colorClass = isMealLabel(candidate.mealLabel)
     ? MEAL_LABEL_COLORS[candidate.mealLabel]
     : "";
+  const displayLabel = isMealLabel(candidate.mealLabel)
+    ? getLocalizedMealLabel(candidate.mealLabel, locale)
+    : candidate.mealLabel;
   return (
     <button
       type="button"
@@ -72,7 +79,7 @@ function MealCandidateCard({
     >
       <div className="flex items-center justify-between gap-2">
         <Badge className={cn("text-[10px] h-4 px-1.5 border font-medium", colorClass)}>
-          {candidate.mealLabel}
+          {displayLabel}
         </Badge>
         {candidate.meta && (
           <span className="text-[10px] text-muted-foreground">{candidate.meta}</span>
@@ -96,13 +103,19 @@ function DailyPlanCard({
   plan: DailyPlanCandidate;
   onSelect: () => void;
 }) {
+  const t = useTranslations("meals.picker");
+  const locale = useLocale() as Locale;
   const totalCals = plan.meals.reduce((s, m) => s + (m.calories ?? 0), 0);
   const dateLabel = plan.createdAt
-    ? new Date(plan.createdAt).toLocaleDateString("tr-TR", {
+    ? new Date(plan.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
         day: "numeric",
         month: "short",
       })
     : "";
+  const planTypeKey = plan.planType in { workout: 1, rest: 1, swimming: 1, nutrition: 1 }
+    ? plan.planType as "workout" | "rest" | "swimming" | "nutrition"
+    : null;
+  const planTypeLabel = planTypeKey ? t(`planTypes.${planTypeKey}`) : plan.planType;
   return (
     <button
       type="button"
@@ -111,10 +124,10 @@ function DailyPlanCard({
     >
       <div className="flex items-center justify-between gap-2">
         <Badge variant="outline" className="text-[10px] h-4 px-1.5">
-          {plan.planType}
+          {planTypeLabel}
         </Badge>
         <span className="text-[10px] text-muted-foreground">
-          {plan.meals.length} öğün • {totalCals} kcal • {dateLabel}
+          {t("mealCountKcalDateShort", { count: plan.meals.length, kcal: totalCals, date: dateLabel })}
         </span>
       </div>
       {plan.userNote && (
@@ -123,17 +136,22 @@ function DailyPlanCard({
         </p>
       )}
       <ul className="text-xs text-foreground/80 space-y-0.5">
-        {plan.meals.slice(0, 3).map((m, i) => (
-          <li key={i} className="line-clamp-1">
-            <span className="text-muted-foreground">{m.mealTime}</span>{" "}
-            <span className="font-medium">{m.mealLabel}</span>{" "}
-            —{" "}
-            <span className="text-muted-foreground">{m.content}</span>
-          </li>
-        ))}
+        {plan.meals.slice(0, 3).map((m, i) => {
+          const mLabel = isMealLabel(m.mealLabel)
+            ? getLocalizedMealLabel(m.mealLabel, locale)
+            : m.mealLabel;
+          return (
+            <li key={i} className="line-clamp-1">
+              <span className="text-muted-foreground">{m.mealTime}</span>{" "}
+              <span className="font-medium">{mLabel}</span>{" "}
+              —{" "}
+              <span className="text-muted-foreground">{m.content}</span>
+            </li>
+          );
+        })}
         {plan.meals.length > 3 && (
           <li className="text-[10px] text-muted-foreground">
-            +{plan.meals.length - 3} daha
+            {t("moreCountShort", { count: plan.meals.length - 3 })}
           </li>
         )}
       </ul>
@@ -157,6 +175,8 @@ export function UnifiedMealPicker({
   onSelect,
   onSelectDailyPlan,
 }: UnifiedMealPickerProps) {
+  const t = useTranslations("meals.picker");
+  const locale = useLocale() as Locale;
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [labelFilter, setLabelFilter] = useState<MealLabel | null>(null);
@@ -201,13 +221,13 @@ export function UnifiedMealPicker({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-hidden p-4 flex flex-col gap-3">
         <DialogHeader className="space-y-0">
-          <DialogTitle className="text-base">Öğünlerimden Seç</DialogTitle>
+          <DialogTitle className="text-base">{t("titleAlt")}</DialogTitle>
         </DialogHeader>
 
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Ara..."
+            placeholder={t("searchShort")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 h-9"
@@ -218,15 +238,15 @@ export function UnifiedMealPicker({
           <TabsList className="grid grid-cols-4 w-full h-9">
             <TabsTrigger value="frequent" className="text-[10px] gap-1 px-1">
               <Clock className="h-3 w-3" />
-              Sık
+              {t("tabFrequent")}
             </TabsTrigger>
             <TabsTrigger value="history" className="text-[10px] gap-1 px-1">
               <History className="h-3 w-3" />
-              Geçmiş
+              {t("tabHistory")}
             </TabsTrigger>
             <TabsTrigger value="saved" className="text-[10px] gap-1 px-1">
               <Star className="h-3 w-3" />
-              Kayıtlı
+              {t("tabSaved")}
             </TabsTrigger>
             <TabsTrigger
               value="daily"
@@ -234,7 +254,7 @@ export function UnifiedMealPicker({
               disabled={!onSelectDailyPlan}
             >
               <ClipboardList className="h-3 w-3" />
-              Günlük
+              {t("tabDaily")}
             </TabsTrigger>
           </TabsList>
 
@@ -248,7 +268,7 @@ export function UnifiedMealPicker({
                   : "border-border text-muted-foreground hover:border-foreground/40",
               )}
             >
-              Tümü
+              {t("filterAll")}
             </button>
             {MEAL_LABELS.map((label) => (
               <button
@@ -261,14 +281,14 @@ export function UnifiedMealPicker({
                     : "border-border text-muted-foreground hover:border-foreground/40",
                 )}
               >
-                {label}
+                {getLocalizedMealLabel(label, locale)}
               </button>
             ))}
           </div>
 
           <div className="flex-1 overflow-y-auto -mx-1 px-1">
             {isLoading ? (
-              <p className="text-sm text-muted-foreground text-center py-6">Yükleniyor...</p>
+              <p className="text-sm text-muted-foreground text-center py-6">{t("loadingShort")}</p>
             ) : (
               <>
                 <TabsContent value="frequent" className="space-y-2 mt-0">
@@ -281,7 +301,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message="Henüz sık kullanılan öğün yok" />
+                    <EmptyState message={t("emptyFrequentShort")} />
                   )}
                 </TabsContent>
 
@@ -295,7 +315,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message="Geçmiş öğün bulunamadı" />
+                    <EmptyState message={t("emptyHistoryShort")} />
                   )}
                 </TabsContent>
 
@@ -309,7 +329,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message="Kayıtlı öğün bulunamadı" />
+                    <EmptyState message={t("emptySavedShort")} />
                   )}
                 </TabsContent>
 
@@ -323,7 +343,7 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message="Kayıtlı günlük plan bulunamadı" />
+                    <EmptyState message={t("emptyDailyShort")} />
                   )}
                 </TabsContent>
               </>
@@ -337,7 +357,7 @@ export function UnifiedMealPicker({
           size="sm"
           onClick={() => onOpenChange(false)}
         >
-          Kapat
+          {t("close")}
         </Button>
       </DialogContent>
     </Dialog>

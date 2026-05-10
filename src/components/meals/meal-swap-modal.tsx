@@ -21,9 +21,11 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Search, UtensilsCrossed, ArrowLeft } from "lucide-react";
 import { getMealPickerData, type MealCandidate } from "@/actions/meal-picker";
-import { MEAL_LABELS, MEAL_LABEL_COLORS, isMealLabel } from "@/lib/meal-labels";
+import { MEAL_LABELS, MEAL_LABEL_COLORS, isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
 import { useUpdateMeal } from "@/hooks/use-meal-crud";
 import { cn } from "@/lib/utils";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 interface CandidateCardProps {
   candidate: MealCandidate;
@@ -31,7 +33,11 @@ interface CandidateCardProps {
 }
 
 function CandidateCard({ candidate, onClick }: CandidateCardProps) {
+  const locale = useLocale() as Locale;
   const colorClass = isMealLabel(candidate.mealLabel) ? MEAL_LABEL_COLORS[candidate.mealLabel] : "";
+  const displayLabel = isMealLabel(candidate.mealLabel)
+    ? getLocalizedMealLabel(candidate.mealLabel, locale)
+    : candidate.mealLabel;
   return (
     <button
       type="button"
@@ -40,7 +46,7 @@ function CandidateCard({ candidate, onClick }: CandidateCardProps) {
     >
       <div className="flex items-center justify-between gap-2">
         <Badge className={cn("text-[10px] h-4 px-1.5 border font-medium", colorClass)}>
-          {candidate.mealLabel}
+          {displayLabel}
         </Badge>
         {candidate.meta && (
           <span className="text-[10px] text-muted-foreground">{candidate.meta}</span>
@@ -64,6 +70,7 @@ interface CandidateListProps {
 }
 
 function CandidateList({ list, isLoading, onSelect }: CandidateListProps) {
+  const t = useTranslations("meals.swap");
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -75,7 +82,7 @@ function CandidateList({ list, isLoading, onSelect }: CandidateListProps) {
     return (
       <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
         <UtensilsCrossed className="h-8 w-8 opacity-40" />
-        <p className="text-sm">Öğün bulunamadı</p>
+        <p className="text-sm">{t("empty")}</p>
       </div>
     );
   }
@@ -104,6 +111,8 @@ export function MealSwapModal({
   mealTime,
   mealLabel,
 }: MealSwapModalProps) {
+  const t = useTranslations("meals.swap");
+  const locale = useLocale() as Locale;
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterLabel, setFilterLabel] = useState(mealLabel);
@@ -171,10 +180,10 @@ export function MealSwapModal({
           /* Confirm view */
           <div className="flex flex-col h-full p-4">
             <SheetHeader className="mb-4">
-              <SheetTitle>Öğünü Değiştir</SheetTitle>
+              <SheetTitle>{t("title")}</SheetTitle>
             </SheetHeader>
             <p className="text-sm text-muted-foreground mb-3">
-              Mevcut öğünü aşağıdaki öğünle değiştirmek istiyor musunuz?
+              {t("confirmQuestion")}
             </p>
             <div className="rounded-lg border bg-muted/50 p-3 space-y-1 mb-6">
               <p className="text-sm font-medium">{pending.content}</p>
@@ -193,7 +202,7 @@ export function MealSwapModal({
                 disabled={updateMeal.isPending}
               >
                 <ArrowLeft className="h-4 w-4" />
-                Geri Dön
+                {t("back")}
               </Button>
               <Button
                 className="flex-1"
@@ -203,7 +212,7 @@ export function MealSwapModal({
                 {updateMeal.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Değiştir"
+                  t("confirm")
                 )}
               </Button>
             </div>
@@ -212,14 +221,14 @@ export function MealSwapModal({
           /* Search / list view */
           <>
             <SheetHeader className="px-4 pt-4 pb-2 shrink-0">
-              <SheetTitle>Öğünü Değiştir</SheetTitle>
+              <SheetTitle>{t("title")}</SheetTitle>
             </SheetHeader>
 
             <div className="px-4 pb-2 space-y-2 shrink-0">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Öğün ara..."
+                  placeholder={t("searchPlaceholder")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-8"
@@ -230,10 +239,10 @@ export function MealSwapModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tüm öğün tipleri</SelectItem>
+                  <SelectItem value="all">{t("allMealTypes")}</SelectItem>
                   {MEAL_LABELS.map((label) => (
                     <SelectItem key={label} value={label}>
-                      {label}
+                      {getLocalizedMealLabel(label, locale)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -242,9 +251,9 @@ export function MealSwapModal({
 
             <Tabs defaultValue="saved" className="flex-1 flex flex-col min-h-0 px-4">
               <TabsList className="shrink-0 w-full grid grid-cols-3">
-                <TabsTrigger value="saved">Favoriler</TabsTrigger>
-                <TabsTrigger value="frequent">Sık</TabsTrigger>
-                <TabsTrigger value="history">Geçmiş</TabsTrigger>
+                <TabsTrigger value="saved">{t("tabSaved")}</TabsTrigger>
+                <TabsTrigger value="frequent">{t("tabFrequent")}</TabsTrigger>
+                <TabsTrigger value="history">{t("tabHistory")}</TabsTrigger>
               </TabsList>
               <TabsContent value="saved" className="flex-1 overflow-y-auto mt-2 pb-4">
                 <CandidateList list={savedFiltered} isLoading={isLoading} onSelect={setPending} />

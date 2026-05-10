@@ -711,6 +711,18 @@
     "agenda": {
       "empty": "No meals found"
     },
+    "swap": {
+      "title": "Swap Meal",
+      "confirmQuestion": "Do you want to swap the current meal with the one below?",
+      "back": "Back",
+      "confirm": "Swap",
+      "searchPlaceholder": "Search meals...",
+      "allMealTypes": "All meal types",
+      "tabSaved": "Favorites",
+      "tabFrequent": "Frequent",
+      "tabHistory": "History",
+      "empty": "No meals found"
+    },
     "bulkDelete": {
       "title": "Delete All Meals",
       "warning": "<strong>All {count} meals for this day</strong> will be deleted. This action cannot be undone.",
@@ -721,19 +733,29 @@
     },
     "picker": {
       "title": "Pick a Meal",
+      "titleAlt": "Pick from My Meals",
       "searchPlaceholder": "Search (content, name)...",
+      "searchShort": "Search...",
       "tabFrequent": "Frequent",
       "tabHistory": "History",
       "tabSaved": "Saved",
       "tabDaily": "Daily",
+      "filterAll": "All",
       "loading": "Loading…",
+      "loadingShort": "Loading...",
       "emptyFrequent": "No frequently used meals yet",
+      "emptyFrequentShort": "No frequent meals yet",
       "emptyHistory": "No meals found from previous days",
+      "emptyHistoryShort": "No history meals found",
       "emptySaved": "No favorite meals saved yet",
+      "emptySavedShort": "No saved meals found",
       "emptyDaily": "No saved daily plans",
+      "emptyDailyShort": "No saved daily plans",
       "close": "Close",
       "moreCount": "+{count} more…",
+      "moreCountShort": "+{count} more",
       "mealCountKcalDate": "{count} meals · {kcal} kcal · {date}",
+      "mealCountKcalDateShort": "{count} meals • {kcal} kcal • {date}",
       "planTypes": {
         "workout": "Workout",
         "rest": "Rest",

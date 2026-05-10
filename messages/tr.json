@@ -712,6 +712,18 @@
     "agenda": {
       "empty": "Öğün bulunamadı"
     },
+    "swap": {
+      "title": "Öğünü Değiştir",
+      "confirmQuestion": "Mevcut öğünü aşağıdaki öğünle değiştirmek istiyor musunuz?",
+      "back": "Geri Dön",
+      "confirm": "Değiştir",
+      "searchPlaceholder": "Öğün ara...",
+      "allMealTypes": "Tüm öğün tipleri",
+      "tabSaved": "Favoriler",
+      "tabFrequent": "Sık",
+      "tabHistory": "Geçmiş",
+      "empty": "Öğün bulunamadı"
+    },
     "bulkDelete": {
       "title": "Tüm Öğünleri Sil",
       "warning": "Bu güne ait <strong>{count} öğünün tamamı</strong> silinecektir. Bu işlem geri alınamaz.",
@@ -722,19 +734,29 @@
     },
     "picker": {
       "title": "Öğün Seç",
+      "titleAlt": "Öğünlerimden Seç",
       "searchPlaceholder": "Ara (içerik, isim)...",
+      "searchShort": "Ara...",
       "tabFrequent": "Sık",
       "tabHistory": "Geçmiş",
       "tabSaved": "Kayıtlı",
       "tabDaily": "Günlük",
+      "filterAll": "Tümü",
       "loading": "Yükleniyor…",
+      "loadingShort": "Yükleniyor...",
       "emptyFrequent": "Henüz sık kullandığın öğün yok",
+      "emptyFrequentShort": "Henüz sık kullanılan öğün yok",
       "emptyHistory": "Önceki günlerden öğün bulunamadı",
+      "emptyHistoryShort": "Geçmiş öğün bulunamadı",
       "emptySaved": "Henüz favori öğün kaydetmedin",
+      "emptySavedShort": "Kayıtlı öğün bulunamadı",
       "emptyDaily": "Kayıtlı günlük plan yok",
+      "emptyDailyShort": "Kayıtlı günlük plan bulunamadı",
       "close": "Kapat",
       "moreCount": "+{count} daha…",
+      "moreCountShort": "+{count} daha",
       "mealCountKcalDate": "{count} öğün · {kcal} kcal · {date}",
+      "mealCountKcalDateShort": "{count} öğün • {kcal} kcal • {date}",
       "planTypes": {
         "workout": "Antrenman",
         "rest": "Dinlenme",
