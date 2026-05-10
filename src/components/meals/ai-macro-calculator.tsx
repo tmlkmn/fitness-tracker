@@ -14,8 +14,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { generateAIMacroTargets, type AIMacroResult } from "@/actions/ai-macro";
 import { updateMacroTargets } from "@/actions/user";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
+import { useTranslations } from "next-intl";
 
 export function AIMacroCalculator() {
+  const t = useTranslations("meals.aiMacro");
   const qc = useQueryClient();
   const [description, setDescription] = useState("");
   const [result, setResult] = useState<AIMacroResult | null>(null);
@@ -31,14 +33,14 @@ export function AIMacroCalculator() {
         setResult(res);
       } catch (err) {
         const msg =
-          err instanceof Error ? err.message : "Hesaplanamadı";
+          err instanceof Error ? err.message : t("computeFailed");
         if (msg.startsWith("COOLDOWN:")) {
           const secs = parseInt(msg.split(":")[1] ?? "60");
-          toast.error(`Lütfen ${secs} saniye bekle.`);
+          toast.error(t("cooldown", { seconds: secs }));
         } else if (msg === "RATE_LIMITED") {
-          toast.error("Günlük AI limitine ulaştın. Yarın tekrar dene.");
+          toast.error(t("rateLimited"));
         } else if (msg === "AI_UNAVAILABLE") {
-          toast.error("AI şu an kullanılamıyor. Daha sonra tekrar dene.");
+          toast.error(t("unavailable"));
         } else {
           toast.error(msg);
         }
@@ -59,10 +61,10 @@ export function AIMacroCalculator() {
       qc.invalidateQueries({ queryKey: ["user-profile"] });
       qc.invalidateQueries({ queryKey: ["macro.resolved"] });
       qc.invalidateQueries({ queryKey: ["ai.quota"] });
-      toast.success("Makro hedefleri kaydedildi");
+      toast.success(t("saved"));
       setResult(null);
     } catch {
-      toast.error("Kaydedilemedi");
+      toast.error(t("saveFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -73,17 +75,14 @@ export function AIMacroCalculator() {
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          AI ile Makro Hesapla
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-3">
-        <p className="text-xs text-muted-foreground">
-          Vücudun hakkında bölge bölge bilgi ver — karın, kol, bacak nasıl? AI
-          profilini ve son ölçümünü de baz alarak makrolarını hesaplar.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("subtitle")}</p>
 
         <textarea
-          placeholder="Örn: Karın bölgem dolgun ve sarkık, bacaklarım ince, kollarım da zayıf. Özellikle bel çevresini inceltmek istiyorum."
+          placeholder={t("placeholder")}
           value={description}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
             setDescription(e.target.value);
@@ -99,7 +98,7 @@ export function AIMacroCalculator() {
           </span>
           {description.trim().length > 0 && description.trim().length < 20 && (
             <span className="text-[10px] text-amber-500">
-              En az 20 karakter gerekli
+              {t("minChars")}
             </span>
           )}
         </div>
@@ -114,7 +113,7 @@ export function AIMacroCalculator() {
             disabled={!canCalculate}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            {isPending ? "Hesaplanıyor..." : "AI ile Hesapla"}
+            {isPending ? t("calculating") : t("calculate")}
           </Button>
           <AiQuotaBadge feature="macro-ai" />
         </div>
@@ -124,10 +123,10 @@ export function AIMacroCalculator() {
             <div className="grid grid-cols-4 gap-2 text-center">
               {(
                 [
-                  { label: "Kalori", value: result.macros.calories, unit: "kcal" },
-                  { label: "Protein", value: result.macros.protein, unit: "g" },
-                  { label: "Karb", value: result.macros.carbs, unit: "g" },
-                  { label: "Yağ", value: result.macros.fat, unit: "g" },
+                  { label: t("calorie"), value: result.macros.calories, unit: "kcal" },
+                  { label: t("protein"), value: result.macros.protein, unit: "g" },
+                  { label: t("carbs"), value: result.macros.carbs, unit: "g" },
+                  { label: t("fat"), value: result.macros.fat, unit: "g" },
                 ] as const
               ).map(({ label, value, unit }) => (
                 <div key={label} className="space-y-0.5">
@@ -155,7 +154,7 @@ export function AIMacroCalculator() {
                 disabled={isSaving}
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                {isSaving ? "Kaydediliyor..." : "Onayla ve Kaydet"}
+                {isSaving ? t("saving") : t("approve")}
               </Button>
               <Button
                 type="button"
@@ -166,7 +165,7 @@ export function AIMacroCalculator() {
                 disabled={isSaving}
               >
                 <X className="h-3.5 w-3.5" />
-                İptal
+                {t("cancel")}
               </Button>
             </div>
           </div>

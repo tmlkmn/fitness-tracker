@@ -14,6 +14,7 @@ import { TURKISH_FOODS, CATEGORY_LABELS, type TurkishFood } from "@/data/turkish
 import { useUserFoods, useCreateUserFood, useDeleteUserFood } from "@/hooks/use-user-foods";
 import type { FoodLike } from "@/lib/food-math";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface FoodReferencePopoverProps {
   onAdd: (food: FoodLike, multiplier: number) => void;
@@ -131,6 +132,7 @@ function PortionRow({
 }
 
 function NewUserFoodForm({ onCancel }: { onCancel: () => void }) {
+  const t = useTranslations("meals.foodReference");
   const create = useCreateUserFood();
   const [name, setName] = useState("");
   const [portion, setPortion] = useState("");
@@ -167,20 +169,20 @@ function NewUserFoodForm({ onCancel }: { onCancel: () => void }) {
   return (
     <div className="space-y-1.5 p-2 border border-dashed rounded">
       <Input
-        placeholder="Besin adı"
+        placeholder={t("namePlaceholder")}
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="h-7 text-xs"
       />
       <div className="grid grid-cols-2 gap-1.5">
         <Input
-          placeholder="Porsiyon (örn: 100g)"
+          placeholder={t("portionPlaceholder")}
           value={portion}
           onChange={(e) => setPortion(e.target.value)}
           className="h-7 text-xs"
         />
         <Input
-          placeholder="Kalori"
+          placeholder={t("caloriesPlaceholder")}
           type="number"
           value={calories}
           onChange={(e) => setCalories(e.target.value)}
@@ -189,7 +191,7 @@ function NewUserFoodForm({ onCancel }: { onCancel: () => void }) {
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         <Input
-          placeholder="P (g)"
+          placeholder={t("proteinPlaceholder")}
           type="number"
           step="0.1"
           value={protein}
@@ -197,7 +199,7 @@ function NewUserFoodForm({ onCancel }: { onCancel: () => void }) {
           className="h-7 text-xs"
         />
         <Input
-          placeholder="K (g)"
+          placeholder={t("carbsPlaceholder")}
           type="number"
           step="0.1"
           value={carbs}
@@ -205,7 +207,7 @@ function NewUserFoodForm({ onCancel }: { onCancel: () => void }) {
           className="h-7 text-xs"
         />
         <Input
-          placeholder="Y (g)"
+          placeholder={t("fatPlaceholder")}
           type="number"
           step="0.1"
           value={fat}
@@ -221,7 +223,7 @@ function NewUserFoodForm({ onCancel }: { onCancel: () => void }) {
           className="flex-1 h-7 text-xs"
           onClick={onCancel}
         >
-          İptal
+          {t("cancel")}
         </Button>
         <Button
           type="button"
@@ -230,7 +232,7 @@ function NewUserFoodForm({ onCancel }: { onCancel: () => void }) {
           onClick={handleSave}
           disabled={create.isPending || !name.trim() || !portion.trim() || !calories}
         >
-          {create.isPending ? "..." : "Kaydet"}
+          {create.isPending ? "..." : t("save")}
         </Button>
       </div>
     </div>
@@ -238,6 +240,7 @@ function NewUserFoodForm({ onCancel }: { onCancel: () => void }) {
 }
 
 export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
+  const t = useTranslations("meals.foodReference");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<TurkishFood["category"] | null>(null);
   const [open, setOpen] = useState(false);
@@ -283,7 +286,7 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-3" align="start">
         <div className="space-y-2">
-          <p className="text-xs font-semibold">Besin Değerleri</p>
+          <p className="text-xs font-semibold">{t("title")}</p>
           <div className="flex gap-1">
             <button
               type="button"
@@ -295,7 +298,7 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
                   : "bg-muted/50 text-muted-foreground hover:bg-muted",
               )}
             >
-              Hazır Besinler
+              {t("tabPreset")}
             </button>
             <button
               type="button"
@@ -307,11 +310,11 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
                   : "bg-muted/50 text-muted-foreground hover:bg-muted",
               )}
             >
-              Benim ({userFoodList?.length ?? 0})
+              {t("tabUser", { count: userFoodList?.length ?? 0 })}
             </button>
           </div>
           <Input
-            placeholder="Ara..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 text-sm"
@@ -325,7 +328,7 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
                 type="button"
                 onClick={() => setCategory(null)}
               >
-                Tümü
+                {t("categoryAll")}
               </Button>
               {categories.map(([key, label]) => (
                 <Button
@@ -368,13 +371,13 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
                   onClick={() => setShowNewForm(true)}
                 >
                   <Plus className="h-3 w-3" />
-                  Yeni besin ekle
+                  {t("addNewFood")}
                 </Button>
               )}
               <div className="max-h-[200px] overflow-y-auto space-y-1">
                 {filteredUser.length === 0 && !showNewForm && (
                   <p className="text-xs text-muted-foreground text-center py-4">
-                    Henüz kayıtlı besin yok
+                    {t("emptyUser")}
                   </p>
                 )}
                 {filteredUser.map((food) => (

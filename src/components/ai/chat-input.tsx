@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Square } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ChatInputProps {
   onSend: (content: string) => void;
@@ -12,6 +13,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, onAbort, isStreaming, disabled }: ChatInputProps) {
+  const t = useTranslations("assistant.input");
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -44,7 +46,7 @@ export function ChatInput({ onSend, onAbort, isStreaming, disabled }: ChatInputP
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={disabled ? "Günlük mesaj limitine ulaştınız" : "Bir soru sorun..."}
+        placeholder={disabled ? t("limitReached") : t("placeholder")}
         rows={1}
         className="flex-1 resize-none bg-muted rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[36px] max-h-[120px]"
         disabled={isStreaming || disabled}

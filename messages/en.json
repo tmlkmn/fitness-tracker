@@ -269,7 +269,106 @@
     "deleteWeeklyConfirm": "Are you sure you want to delete this week's plan? All daily plans, meals and exercises will be deleted. This action cannot be undone.",
     "cancel": "Cancel",
     "delete": "Delete",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "aiWeekly": {
+      "title": "Weekly Plan with AI",
+      "overlayTitleNutrition": "AI is preparing your nutrition plan",
+      "overlayTitleWorkout": "AI is preparing your workout plan",
+      "overlayTitleBoth": "AI is preparing your weekly plan",
+      "overlayProfile": "Profile analysis",
+      "overlayHealth": "Health data",
+      "overlayNutrition": "Nutrition plan",
+      "overlayNutritionLoading": "Generating nutrition plan",
+      "overlayWorkout": "Workout plan",
+      "overlayWorkoutLoading": "Generating workout plan",
+      "stepProfile": "Reading profile information",
+      "stepNutrition": "Generating nutrition program",
+      "stepWorkout": "Generating workout program",
+      "stepMerging": "Optimizing the program",
+      "stepDuration": "This may take 1–2 minutes",
+      "elapsedMin": "{minutes}m {seconds}s",
+      "elapsedSec": "{seconds}s",
+      "willReplace": "This will completely replace your existing weekly program. Previous meals and exercises will be deleted.",
+      "modeLabel": "Plan to generate:",
+      "modeBoth": "Nutrition + Workout",
+      "modeNutrition": "Nutrition only",
+      "modeWorkout": "Workout only",
+      "dayTypeLabel": "Daily plan type",
+      "dayTypeHint": "(tap to change)",
+      "dayTooltipPast": "{label}: this day has passed — AI will not suggest content",
+      "dayTooltipActive": "{label}: {mode}",
+      "dayCycleNote": "Cycles: Workout → Swimming → Rest. Nutrition program is written for every day.",
+      "pastDaysNote": "Strikethrough days have passed — AI will not generate content for them.",
+      "locationLabel": "Workout location:",
+      "locationGym": "Gym",
+      "locationHome": "Home",
+      "equipmentLabel": "Available equipment:",
+      "ingredientsLabel": "Ingredients at home for the nutrition program:",
+      "tagsLabel": "Pick your wishes for this week:",
+      "noteLabel": "Add an extra request:",
+      "notePlaceholder": "E.g. shoulder pain, only lower body...",
+      "limitReached": "Daily limit reached",
+      "generate": "Get Suggestion",
+      "generateWithQuota": "Get Suggestion ({remaining}/{limit})",
+      "savedSuggestions": "Saved Suggestions",
+      "back": "Back",
+      "savedItem": "Suggestion {n} — {title}",
+      "weekDateless": "Undated",
+      "weekLabel": "Week of {label}",
+      "emptySaved": "No saved suggestions yet.",
+      "approve": "Approve",
+      "newSuggestion": "New Suggestion",
+      "deleteTitle": "Delete Suggestion",
+      "deleteConfirm": "Are you sure you want to delete this saved suggestion?",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "mealsHeading": "Meals",
+      "exercisesHeading": "Exercises",
+      "moveCount": "({count} moves)",
+      "agoNow": "just now",
+      "agoMin": "{count} min ago",
+      "agoHour": "{count} h ago",
+      "agoDay": "{count} d ago",
+      "planTypeWorkout": "Workout",
+      "planTypeSwimming": "Swimming",
+      "planTypeRest": "Rest",
+      "homeInstruction": "Workout location: Home. Available equipment: {equipment}",
+      "gymInstruction": "Workout location: Gym (all equipment available)",
+      "bodyweight": "Bodyweight",
+      "tags": [
+        "Increase weights",
+        "Add new movements",
+        "Cardio / conditioning",
+        "Ab exercises",
+        "Flexibility / mobility",
+        "Shorter rest periods",
+        "More sets / reps",
+        "Drop set / superset",
+        "Light week (deload)",
+        "Only 3 training days"
+      ],
+      "equipment": [
+        "Dumbbell",
+        "Barbell",
+        "Resistance band",
+        "Pull-up bar",
+        "Kettlebell",
+        "TRX",
+        "Yoga mat",
+        "Bench",
+        "None (bodyweight)"
+      ],
+      "days": [
+        { "label": "Mon", "full": "Monday" },
+        { "label": "Tue", "full": "Tuesday" },
+        { "label": "Wed", "full": "Wednesday" },
+        { "label": "Thu", "full": "Thursday" },
+        { "label": "Fri", "full": "Friday" },
+        { "label": "Sat", "full": "Saturday" },
+        { "label": "Sun", "full": "Sunday" }
+      ]
+    }
   },
   "progress": {
     "title": "Progress",
@@ -648,7 +747,11 @@
       "cancel": "Cancel",
       "saving": "Saving...",
       "update": "Update",
-      "add": "Add"
+      "add": "Add",
+      "unsavedTitle": "You have unsaved changes",
+      "unsavedBody": "Closing the form will discard the data you entered.",
+      "unsavedKeep": "Keep Editing",
+      "unsavedClose": "Close"
     },
     "delete": {
       "title": "Delete Meal",
@@ -751,6 +854,111 @@
     },
     "agenda": {
       "empty": "No meals found"
+    },
+    "library": {
+      "tabMeals": "Meals",
+      "tabPlans": "Daily Plans",
+      "loading": "Loading…",
+      "searchPlaceholder": "Search...",
+      "filterAll": "All",
+      "noMatches": "No matching meals",
+      "emptySaved": "No saved meals yet",
+      "emptySavedHint": "When adding a new meal, check \"Save to favorites\"",
+      "deleted": "Meal deleted",
+      "noPlans": "No saved daily plans",
+      "noPlansHint": "Create one from the meal list via \"Change Program with AI\" and save it",
+      "noPlanMatches": "No matching plans",
+      "planTitleSuffix": "{type} plan",
+      "planLabelDefault": "{type} — {date}",
+      "mealsCount": "{count} meals",
+      "moreMeals": "+{count} more meals…",
+      "applyToDay": "Add to day's plan",
+      "planDeleted": "Plan deleted",
+      "applyDialogTitle": "Apply \"{label}\" Plan",
+      "applyDialogBody": "The plan contains {count} meals. The selected day's existing meals will be overwritten.",
+      "noUpcoming": "No suitable day found",
+      "selectDay": "Pick a day",
+      "applied": "Meals added",
+      "applyFailed": "Could not add",
+      "cancel": "Cancel",
+      "apply": "Apply",
+      "applying": "Applying…",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "daysAgo": "{count} days ago",
+      "planType": {
+        "workout": "Workout",
+        "rest": "Rest",
+        "swimming": "Swimming",
+        "nutrition": "Nutrition"
+      }
+    },
+    "foodReference": {
+      "title": "Food Values",
+      "tabPreset": "Preset Foods",
+      "tabUser": "Mine ({count})",
+      "searchPlaceholder": "Search...",
+      "categoryAll": "All",
+      "addNewFood": "Add new food",
+      "emptyUser": "No saved foods yet",
+      "namePlaceholder": "Food name",
+      "portionPlaceholder": "Portion (e.g. 100g)",
+      "caloriesPlaceholder": "Calories",
+      "proteinPlaceholder": "P (g)",
+      "carbsPlaceholder": "C (g)",
+      "fatPlaceholder": "F (g)",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "rings": {
+      "calorieLabel": "Calories: {value} / {target} kcal",
+      "proteinLabel": "Protein: {value} / {target} g",
+      "completedLabel": "Completed: {value} / {target}",
+      "completedShort": "Completed",
+      "calorie": "Calories",
+      "protein": "Protein",
+      "tasks": "Tasks"
+    },
+    "aiMacro": {
+      "title": "Calculate Macros with AI",
+      "subtitle": "Describe your body region by region — abs, arms, legs — and AI will use your profile and latest measurements to compute your macros.",
+      "placeholder": "E.g. my belly is full and saggy, legs are thin, arms are weak. I especially want to slim my waist.",
+      "minChars": "At least 20 characters required",
+      "calculate": "Calculate with AI",
+      "calculating": "Calculating...",
+      "computeFailed": "Could not compute",
+      "cooldown": "Please wait {seconds} seconds.",
+      "rateLimited": "You've hit your daily AI limit. Try again tomorrow.",
+      "unavailable": "AI is currently unavailable. Please try again later.",
+      "approve": "Approve & Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "saveFailed": "Could not save",
+      "saved": "Macro targets saved",
+      "calorie": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fat": "Fat"
+    },
+    "macroTargets": {
+      "title": "Macro Targets",
+      "subtitle": "Set targets to power the progress bars in the daily meal summary.",
+      "calories": "Calories",
+      "protein": "Protein (g)",
+      "carbs": "Carbs (g)",
+      "fat": "Fat (g)",
+      "auto": "Auto Calculate",
+      "save": "Save",
+      "saving": "Saving",
+      "missingPrefix": "Missing info: {fields}. ",
+      "missingSuffix": "Complete your details from the profile page.",
+      "fieldHeight": "height",
+      "fieldWeight": "weight",
+      "fieldAge": "age",
+      "computeFailed": "Could not compute",
+      "saveFailed": "Could not save",
+      "minCalories": "Calorie target must be at least 1200 kcal",
+      "saved": "Macro targets updated"
     },
     "swap": {
       "title": "Swap Meal",
@@ -888,6 +1096,33 @@
       "protein": "Protein",
       "kcal": "kcal",
       "g": "g"
+    },
+    "aiSuggestion": {
+      "buttonLabel": "Vary with AI",
+      "modalTitle": "AI Meal Suggestion",
+      "savedTitle": "Saved Meals",
+      "currentMeal": "Current meal:",
+      "homeIngredientsLabel": "Ingredients at home:",
+      "modeAll": "Everything available",
+      "modeSpecific": "Specify ingredients",
+      "noteHint": "Add a special request:",
+      "notePlaceholder": "E.g. lighter option, no dairy...",
+      "generate": "Get Suggestion",
+      "saved": "Saved ({count})",
+      "loading": "Preparing 3 different suggestions...",
+      "suggestionN": "Suggestion {n}",
+      "apply": "Apply",
+      "newSuggestions": "New Suggestions",
+      "emptySaved": "No saved meals yet",
+      "filterAll": "All ({count})",
+      "ingredientNote": "Available ingredients at home: {list}. Only suggest meals that can be made with these ingredients",
+      "ingredients": [
+        "Chicken", "Beef", "Fish", "Eggs", "Tuna",
+        "Rice", "Pasta", "Bread", "Oats", "Bulgur", "Quinoa",
+        "Broccoli", "Spinach", "Tomato", "Cucumber", "Pepper",
+        "Milk", "Yogurt", "Cheese", "Cottage cheese",
+        "Nuts", "Olives", "Olive oil", "Honey", "Avocado"
+      ]
     }
   },
   "toast": {
@@ -1191,6 +1426,30 @@
     "input": {
       "placeholder": "Ask a question...",
       "limitReached": "You've reached your daily message limit"
+    },
+    "generating": {
+      "defaultTitle": "AI is preparing your plan",
+      "subtitle": "Analyzing your data — this may take a few minutes."
+    },
+    "profileMissing": {
+      "title": "Profile Info Missing",
+      "body": "To build the best plan for you, AI needs the following information filled in:",
+      "cta": "Go to Settings"
+    },
+    "measurementNudge": {
+      "title": "Adding measurements improves recommendations",
+      "body": "Your weight, body fat, and waist size let AI tailor macros and training volume to you.",
+      "link": "Add measurement"
+    },
+    "monthGate": {
+      "title": "{month} is not complete",
+      "body": "To get an AI recommendation for next month, finish planning the {count} remaining weeks of {month} first."
+    },
+    "quotaBadge": {
+      "expiredLabel": "in {countdown}",
+      "remainingLabel": "{remaining}/{limit}",
+      "expiredTitle": "Daily AI limit reached — refreshes in {countdown}",
+      "activeTitle": "Remaining today: {remaining}/{limit} · resets in {countdown}"
     }
   },
   "shopping": {
@@ -1575,7 +1834,69 @@
       "title": "Badges",
       "unlockedCount": "{unlocked} / {total}",
       "earned": "Earned",
-      "locked": "Locked"
+      "locked": "Locked",
+      "items": {
+        "first-day": {
+          "title": "First Step",
+          "description": "You completed your very first day!"
+        },
+        "streak-3": {
+          "title": "3-Day Streak",
+          "description": "You completed the plan 3 days in a row."
+        },
+        "streak-7": {
+          "title": "Weekly Warrior",
+          "description": "You didn't miss a single day for a full week!"
+        },
+        "streak-14": {
+          "title": "2-Week Resolve",
+          "description": "14 days in a row — incredible discipline!"
+        },
+        "streak-30": {
+          "title": "30-Day Legend",
+          "description": "A full month every day. Legendary!"
+        },
+        "streak-60": {
+          "title": "60-Day Titan",
+          "description": "Two months without quitting. You're a titan!"
+        },
+        "days-10": {
+          "title": "10 Days Done",
+          "description": "You completed 10 days in total."
+        },
+        "days-30": {
+          "title": "30 Days Done",
+          "description": "30 full days total — great progress!"
+        },
+        "days-50": {
+          "title": "50 Days Done",
+          "description": "Half a hundred days! Unstoppable."
+        },
+        "days-100": {
+          "title": "Hundredth Day",
+          "description": "100 full days. It's a lifestyle now!"
+        },
+        "workouts-10": {
+          "title": "10 Workouts",
+          "description": "You completed 10 exercises!"
+        },
+        "workouts-50": {
+          "title": "50 Workouts",
+          "description": "50 exercises done — you're getting stronger!"
+        },
+        "workouts-100": {
+          "title": "100 Workouts",
+          "description": "100 exercises! Your body thanks you."
+        },
+        "meals-50": {
+          "title": "50 Meals Tracked",
+          "description": "50 meals logged — nutrition awareness!"
+        },
+        "meals-100": {
+          "title": "100 Meals Tracked",
+          "description": "100 meal entries. Nutrition master!"
+        }
+      }
     },
     "heatmap": {
       "title": "Activity Map",

@@ -22,6 +22,8 @@ export function AchievementDetailPopover({
   unlocked,
 }: AchievementDetailPopoverProps) {
   const t = useTranslations("gamification.achievements");
+  const title = t(`items.${achievement.id}.title` as `items.${string}.title`);
+  const description = t(`items.${achievement.id}.description` as `items.${string}.description`);
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -39,7 +41,7 @@ export function AchievementDetailPopover({
             <Lock className="h-5 w-5 text-muted-foreground" />
           )}
           <span className="text-[10px] text-center leading-tight max-w-[4rem] truncate">
-            {achievement.title}
+            {title}
           </span>
         </button>
       </PopoverTrigger>
@@ -51,10 +53,10 @@ export function AchievementDetailPopover({
             ) : (
               <Lock className="h-5 w-5 text-muted-foreground" />
             )}
-            <p className="text-sm font-semibold">{achievement.title}</p>
+            <p className="text-sm font-semibold">{title}</p>
           </div>
           <p className="text-xs text-muted-foreground">
-            {achievement.description}
+            {description}
           </p>
           <Badge
             variant={unlocked ? "default" : "outline"}

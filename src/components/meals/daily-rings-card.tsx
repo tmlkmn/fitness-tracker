@@ -7,8 +7,10 @@ import { Flame, Drumstick, CheckCircle2 } from "lucide-react";
 import { computeMealMacros } from "@/lib/meal-macros";
 import { useUserProfile, useResolvedMacroTargets } from "@/hooks/use-user";
 import { useTodayDashboard } from "@/hooks/use-plans";
+import { useTranslations } from "next-intl";
 
 export function DailyRingsCard() {
+  const t = useTranslations("meals.rings");
   const { data: profile } = useUserProfile();
   const { data: today } = useTodayDashboard();
   const { data: targets } = useResolvedMacroTargets();
@@ -52,21 +54,21 @@ export function DailyRingsCard() {
                 max: calorieTarget || 1,
                 indicatorClassName: "stroke-orange-500",
                 trackClassName: "stroke-orange-500/30",
-                label: `Kalori: ${macros.calories} / ${calorieTarget} kcal`,
+                label: t("calorieLabel", { value: macros.calories, target: calorieTarget }),
               },
               {
                 value: macros.protein,
                 max: proteinTarget || 1,
                 indicatorClassName: "stroke-sky-500",
                 trackClassName: "stroke-sky-500/30",
-                label: `Protein: ${macros.protein} / ${proteinTarget} g`,
+                label: t("proteinLabel", { value: macros.protein, target: proteinTarget }),
               },
               {
                 value: doneTasks,
                 max: totalTasks || 1,
                 indicatorClassName: "stroke-primary",
                 trackClassName: "stroke-primary/30",
-                label: `Tamamlanan: ${doneTasks} / ${totalTasks}`,
+                label: t("completedLabel", { value: doneTasks, target: totalTasks }),
               },
             ]}
             centerSlot={
@@ -75,7 +77,7 @@ export function DailyRingsCard() {
                   {completionPct}%
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wider">
-                  Tamamlandı
+                  {t("completedShort")}
                 </p>
               </div>
             }
@@ -85,7 +87,7 @@ export function DailyRingsCard() {
             <RingLegend
               icon={Flame}
               colorClass="text-orange-500"
-              label="Kalori"
+              label={t("calorie")}
               value={macros.calories}
               target={calorieTarget}
               unit="kcal"
@@ -93,7 +95,7 @@ export function DailyRingsCard() {
             <RingLegend
               icon={Drumstick}
               colorClass="text-sky-500"
-              label="Protein"
+              label={t("protein")}
               value={macros.protein}
               target={proteinTarget}
               unit="g"
@@ -101,7 +103,7 @@ export function DailyRingsCard() {
             <RingLegend
               icon={CheckCircle2}
               colorClass="text-primary"
-              label="Görevler"
+              label={t("tasks")}
               value={doneTasks}
               target={totalTasks}
               unit=""

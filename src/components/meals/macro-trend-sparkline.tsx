@@ -20,6 +20,8 @@ import {
   CHART_TOOLTIP_STYLE,
   chartGradientId,
 } from "@/lib/chart-theme";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 type Metric = "calories" | "protein" | "carbs" | "fat";
 
@@ -29,16 +31,19 @@ interface MacroTrendSparklineProps {
   title?: string;
 }
 
-const METRIC_LABELS: Record<Metric, { label: string; unit: string }> = {
-  calories: { label: "Kalori", unit: "kcal" },
-  protein: { label: "Protein", unit: "g" },
-  carbs: { label: "Karb", unit: "g" },
-  fat: { label: "Yağ", unit: "g" },
+const METRIC_UNITS: Record<Metric, string> = {
+  calories: "kcal",
+  protein: "g",
+  carbs: "g",
+  fat: "g",
 };
 
-function formatShortDate(iso: string): string {
+function formatShortDate(iso: string, locale: Locale): string {
   const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("tr-TR", { weekday: "short", day: "numeric" });
+  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+    weekday: "short",
+    day: "numeric",
+  });
 }
 
 export function MacroTrendSparkline({
@@ -46,13 +51,16 @@ export function MacroTrendSparkline({
   metric = "calories",
   title,
 }: MacroTrendSparklineProps) {
+  const t = useTranslations("meals.macroTrend");
+  const locale = useLocale() as Locale;
   const { data, isLoading } = useQuery({
     queryKey: ["weekly-macro-totals", endDate],
     queryFn: () => getWeeklyMacroTotals(endDate),
   });
   const { data: targets } = useResolvedMacroTargets();
 
-  const { label, unit } = METRIC_LABELS[metric];
+  const label = t(metric);
+  const unit = METRIC_UNITS[metric];
   const chartData = (data ?? []).map((p: DailyMacroPoint) => ({
     date: p.date,
     value: p[metric],
@@ -72,12 +80,12 @@ export function MacroTrendSparkline({
         <CardTitle className="text-sm flex items-center justify-between">
           <span className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            {title ?? `7 Günlük ${label}`}
+            {title ?? t("titleDefault", { label })}
           </span>
           <span className="text-xs font-normal text-muted-foreground">
-            Ort. {avg}
-            {unit}
-            {target ? ` / ${target}${unit}` : ""}
+            {target
+              ? t("averageWithTarget", { value: avg, unit, target })
+              : t("average", { value: avg, unit })}
           </span>
         </CardTitle>
       </CardHeader>
@@ -106,7 +114,7 @@ export function MacroTrendSparkline({
                   cursor={CHART_TOOLTIP_CURSOR}
                   labelFormatter={(l) => {
                     if (typeof l !== "string" || !l.includes("-")) return "";
-                    return formatShortDate(l);
+                    return formatShortDate(l, locale);
                   }}
                   formatter={(value) => [`${value}${unit}`, label]}
                 />
@@ -123,14 +131,14 @@ export function MacroTrendSparkline({
             </ResponsiveContainer>
             <div className="flex items-center justify-between text-[10px] text-muted-foreground">
               <span>
-                {chartData.length > 0 ? formatShortDate(chartData[0].date) : ""}
+                {chartData.length > 0 ? formatShortDate(chartData[0].date, locale) : ""}
               </span>
               <span>
-                Bugün: <span className="text-foreground font-medium">{todayValue}{unit}</span>
+                {t("today")}: <span className="text-foreground font-medium">{todayValue}{unit}</span>
               </span>
               <span>
                 {chartData.length > 0
-                  ? formatShortDate(chartData[chartData.length - 1].date)
+                  ? formatShortDate(chartData[chartData.length - 1].date, locale)
                   : ""}
               </span>
             </div>

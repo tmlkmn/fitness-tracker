@@ -269,7 +269,106 @@
     "deleteWeeklyConfirm": "Bu haftanın planını silmek istediğinizden emin misiniz? Tüm günlük planlar, öğünler ve egzersizler silinecek. Bu işlem geri alınamaz.",
     "cancel": "İptal",
     "delete": "Sil",
-    "deleting": "Siliniyor..."
+    "deleting": "Siliniyor...",
+    "aiWeekly": {
+      "title": "AI ile Haftalık Plan",
+      "overlayTitleNutrition": "AI Beslenme Planını Hazırlıyor",
+      "overlayTitleWorkout": "AI Antrenman Planını Hazırlıyor",
+      "overlayTitleBoth": "AI Haftalık Planını Hazırlıyor",
+      "overlayProfile": "Profil analizi",
+      "overlayHealth": "Sağlık verileri",
+      "overlayNutrition": "Beslenme planı",
+      "overlayNutritionLoading": "Beslenme planı oluşturuluyor",
+      "overlayWorkout": "Antrenman planı",
+      "overlayWorkoutLoading": "Antrenman planı oluşturuluyor",
+      "stepProfile": "Profil bilgileri okunuyor",
+      "stepNutrition": "Beslenme programı oluşturuluyor",
+      "stepWorkout": "Antrenman programı oluşturuluyor",
+      "stepMerging": "Program optimize ediliyor",
+      "stepDuration": "Bu işlem 1-2 dakika sürebilir",
+      "elapsedMin": "{minutes}dk {seconds}sn",
+      "elapsedSec": "{seconds}sn",
+      "willReplace": "Bu işlem mevcut haftalık programınızı tamamen değiştirecektir. Önceki öğün ve egzersiz verileri silinecektir.",
+      "modeLabel": "Oluşturulacak plan:",
+      "modeBoth": "Beslenme + Antrenman",
+      "modeNutrition": "Sadece Beslenme",
+      "modeWorkout": "Sadece Antrenman",
+      "dayTypeLabel": "Günlük plan tipi",
+      "dayTypeHint": "(üzerine basarak değiştir)",
+      "dayTooltipPast": "{label}: bu gün geçti — AI öneri sunmayacak",
+      "dayTooltipActive": "{label}: {mode}",
+      "dayCycleNote": "Antrenman → Yüzme → Dinlenme sırasıyla döner. Beslenme programı her güne yazılır.",
+      "pastDaysNote": "Üstü çizili günler geçti — AI bu günler için içerik üretmeyecek.",
+      "locationLabel": "Antrenman yeri:",
+      "locationGym": "Salon",
+      "locationHome": "Ev",
+      "equipmentLabel": "Mevcut ekipman:",
+      "ingredientsLabel": "Beslenme Programı için Evdeki malzemeler:",
+      "tagsLabel": "Bu hafta için isteklerini seç:",
+      "noteLabel": "Ekstra bir isteğin varsa yaz:",
+      "notePlaceholder": "Örn: Omzum ağrıyor, sadece alt vücut çalışayım...",
+      "limitReached": "Günlük limit doldu",
+      "generate": "Öneri Al",
+      "generateWithQuota": "Öneri Al ({remaining}/{limit})",
+      "savedSuggestions": "Kayıtlı Öneriler",
+      "back": "Geri",
+      "savedItem": "Öneri {n} — {title}",
+      "weekDateless": "Tarihsiz",
+      "weekLabel": "{label} haftası",
+      "emptySaved": "Henüz kayıtlı öneri yok.",
+      "approve": "Onayla",
+      "newSuggestion": "Yeni Öneri",
+      "deleteTitle": "Öneriyi Sil",
+      "deleteConfirm": "Bu kayıtlı öneriyi silmek istediğinizden emin misiniz?",
+      "cancel": "İptal",
+      "delete": "Sil",
+      "deleting": "Siliniyor...",
+      "mealsHeading": "Öğünler",
+      "exercisesHeading": "Egzersizler",
+      "moveCount": "({count} hareket)",
+      "agoNow": "az önce",
+      "agoMin": "{count} dk önce",
+      "agoHour": "{count} saat önce",
+      "agoDay": "{count} gün önce",
+      "planTypeWorkout": "Antrenman",
+      "planTypeSwimming": "Yüzme",
+      "planTypeRest": "Dinlenme",
+      "homeInstruction": "Antrenman yeri: Ev. Mevcut ekipman: {equipment}",
+      "gymInstruction": "Antrenman yeri: Salon (tüm ekipman mevcut)",
+      "bodyweight": "Vücut ağırlığı",
+      "tags": [
+        "Ağırlıkları artır",
+        "Yeni hareketler ekle",
+        "Kardiyo / kondisyon",
+        "Karın kası hareketleri",
+        "Esneklik / mobilite",
+        "Dinlenme sürelerini kısalt",
+        "Daha fazla set / tekrar",
+        "Drop set / süperset",
+        "Hafif hafta (deload)",
+        "Sadece 3 gün antrenman"
+      ],
+      "equipment": [
+        "Dumbbell",
+        "Barbell",
+        "Direnç bandı",
+        "Pull-up bar",
+        "Kettlebell",
+        "TRX",
+        "Yoga matı",
+        "Bench",
+        "Hiçbiri (vücut ağırlığı)"
+      ],
+      "days": [
+        { "label": "Pzt", "full": "Pazartesi" },
+        { "label": "Sal", "full": "Salı" },
+        { "label": "Çar", "full": "Çarşamba" },
+        { "label": "Per", "full": "Perşembe" },
+        { "label": "Cum", "full": "Cuma" },
+        { "label": "Cmt", "full": "Cumartesi" },
+        { "label": "Paz", "full": "Pazar" }
+      ]
+    }
   },
   "progress": {
     "title": "İlerleme",
@@ -648,7 +747,11 @@
       "cancel": "İptal",
       "saving": "Kaydediliyor...",
       "update": "Güncelle",
-      "add": "Ekle"
+      "add": "Ekle",
+      "unsavedTitle": "Kaydedilmemiş değişiklikleriniz var",
+      "unsavedBody": "Formu kapatırsanız girdiğiniz bilgiler kaybolacak.",
+      "unsavedKeep": "Düzenlemeye Devam Et",
+      "unsavedClose": "Kapat"
     },
     "delete": {
       "title": "Öğünü Sil",
@@ -752,6 +855,111 @@
     },
     "agenda": {
       "empty": "Öğün bulunamadı"
+    },
+    "library": {
+      "tabMeals": "Öğünler",
+      "tabPlans": "Günlük Planlar",
+      "loading": "Yükleniyor…",
+      "searchPlaceholder": "Ara...",
+      "filterAll": "Tümü",
+      "noMatches": "Eşleşen öğün yok",
+      "emptySaved": "Henüz kayıtlı öğün yok",
+      "emptySavedHint": "Yeni öğün eklerken \"Favorilere kaydet\"i işaretle",
+      "deleted": "Öğün silindi",
+      "noPlans": "Kayıtlı günlük plan yok",
+      "noPlansHint": "Öğün listesinde \"AI ile Programı Değiştir\"den oluşturup kaydet",
+      "noPlanMatches": "Eşleşen plan yok",
+      "planTitleSuffix": "{type} planı",
+      "planLabelDefault": "{type} — {date}",
+      "mealsCount": "{count} öğün",
+      "moreMeals": "+{count} öğün daha…",
+      "applyToDay": "Günün planına ekle",
+      "planDeleted": "Plan silindi",
+      "applyDialogTitle": "\"{label}\" Planını Uygula",
+      "applyDialogBody": "Plan {count} öğün içeriyor. Uygulanacak gün mevcut öğünlerin üzerine yazılır.",
+      "noUpcoming": "Uygun gün bulunamadı",
+      "selectDay": "Bir gün seç",
+      "applied": "Öğünler eklendi",
+      "applyFailed": "Eklenemedi",
+      "cancel": "İptal",
+      "apply": "Uygula",
+      "applying": "Uygulanıyor…",
+      "today": "Bugün",
+      "yesterday": "Dün",
+      "daysAgo": "{count} gün önce",
+      "planType": {
+        "workout": "Antrenman",
+        "rest": "Dinlenme",
+        "swimming": "Yüzme",
+        "nutrition": "Beslenme"
+      }
+    },
+    "foodReference": {
+      "title": "Besin Değerleri",
+      "tabPreset": "Hazır Besinler",
+      "tabUser": "Benim ({count})",
+      "searchPlaceholder": "Ara...",
+      "categoryAll": "Tümü",
+      "addNewFood": "Yeni besin ekle",
+      "emptyUser": "Henüz kayıtlı besin yok",
+      "namePlaceholder": "Besin adı",
+      "portionPlaceholder": "Porsiyon (örn: 100g)",
+      "caloriesPlaceholder": "Kalori",
+      "proteinPlaceholder": "P (g)",
+      "carbsPlaceholder": "K (g)",
+      "fatPlaceholder": "Y (g)",
+      "cancel": "İptal",
+      "save": "Kaydet"
+    },
+    "rings": {
+      "calorieLabel": "Kalori: {value} / {target} kcal",
+      "proteinLabel": "Protein: {value} / {target} g",
+      "completedLabel": "Tamamlanan: {value} / {target}",
+      "completedShort": "Tamamlandı",
+      "calorie": "Kalori",
+      "protein": "Protein",
+      "tasks": "Görevler"
+    },
+    "aiMacro": {
+      "title": "AI ile Makro Hesapla",
+      "subtitle": "Vücudun hakkında bölge bölge bilgi ver — karın, kol, bacak nasıl? AI profilini ve son ölçümünü de baz alarak makrolarını hesaplar.",
+      "placeholder": "Örn: Karın bölgem dolgun ve sarkık, bacaklarım ince, kollarım da zayıf. Özellikle bel çevresini inceltmek istiyorum.",
+      "minChars": "En az 20 karakter gerekli",
+      "calculate": "AI ile Hesapla",
+      "calculating": "Hesaplanıyor...",
+      "computeFailed": "Hesaplanamadı",
+      "cooldown": "Lütfen {seconds} saniye bekle.",
+      "rateLimited": "Günlük AI limitine ulaştın. Yarın tekrar dene.",
+      "unavailable": "AI şu an kullanılamıyor. Daha sonra tekrar dene.",
+      "approve": "Onayla ve Kaydet",
+      "saving": "Kaydediliyor...",
+      "cancel": "İptal",
+      "saveFailed": "Kaydedilemedi",
+      "saved": "Makro hedefleri kaydedildi",
+      "calorie": "Kalori",
+      "protein": "Protein",
+      "carbs": "Karb",
+      "fat": "Yağ"
+    },
+    "macroTargets": {
+      "title": "Makro Hedefleri",
+      "subtitle": "Günlük öğün özetinde ilerleme barı için hedefleri belirle.",
+      "calories": "Kalori",
+      "protein": "Protein (g)",
+      "carbs": "Karb (g)",
+      "fat": "Yağ (g)",
+      "auto": "Otomatik Hesapla",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor",
+      "missingPrefix": "Eksik bilgi: {fields}. ",
+      "missingSuffix": "Profil sayfasından bilgilerini tamamla.",
+      "fieldHeight": "boy",
+      "fieldWeight": "kilo",
+      "fieldAge": "yaş",
+      "computeFailed": "Hesaplanamadı",
+      "saveFailed": "Kaydedilemedi",
+      "minCalories": "Kalori hedefi en az 1200 kcal olmalıdır",
+      "saved": "Makro hedefleri güncellendi"
     },
     "swap": {
       "title": "Öğünü Değiştir",
@@ -889,6 +1097,33 @@
       "protein": "Protein",
       "kcal": "kcal",
       "g": "g"
+    },
+    "aiSuggestion": {
+      "buttonLabel": "AI ile Çeşitlendir",
+      "modalTitle": "AI Öğün Önerisi",
+      "savedTitle": "Kayıtlı Öğünler",
+      "currentMeal": "Mevcut öğün:",
+      "homeIngredientsLabel": "Evdeki malzemeler:",
+      "modeAll": "Her şey var",
+      "modeSpecific": "Malzeme belirt",
+      "noteHint": "Özel bir isteğin varsa yaz:",
+      "notePlaceholder": "Örn: Daha hafif bir alternatif olsun, süt ürünleri olmasın...",
+      "generate": "Öneri Al",
+      "saved": "Kayıtlı ({count})",
+      "loading": "3 farklı öneri hazırlanıyor...",
+      "suggestionN": "Öneri {n}",
+      "apply": "Uygula",
+      "newSuggestions": "Yeni Öneriler",
+      "emptySaved": "Henüz kayıtlı öğün yok",
+      "filterAll": "Tümü ({count})",
+      "ingredientNote": "Evde mevcut malzemeler: {list}. Sadece bu malzemelerle yapılabilecek yemekler öner",
+      "ingredients": [
+        "Tavuk", "Kırmızı et", "Balık", "Yumurta", "Ton balığı",
+        "Pirinç", "Makarna", "Ekmek", "Yulaf", "Bulgur", "Kinoa",
+        "Brokoli", "Ispanak", "Domates", "Salatalık", "Biber",
+        "Süt", "Yoğurt", "Peynir", "Lor",
+        "Kuruyemiş", "Zeytin", "Zeytinyağı", "Bal", "Avokado"
+      ]
     }
   },
   "toast": {
@@ -1192,6 +1427,30 @@
     "input": {
       "placeholder": "Bir soru sorun...",
       "limitReached": "Günlük mesaj limitine ulaştınız"
+    },
+    "generating": {
+      "defaultTitle": "AI programını hazırlıyor",
+      "subtitle": "Verilerini analiz ediyoruz, bu birkaç dakika sürebilir."
+    },
+    "profileMissing": {
+      "title": "Profil Bilgileri Eksik",
+      "body": "AI'ın size en uygun programı oluşturabilmesi için aşağıdaki bilgilerin doldurulması gerekiyor:",
+      "cta": "Ayarlara Git"
+    },
+    "measurementNudge": {
+      "title": "Ölçüm eklemek önerileri geliştirir",
+      "body": "Kilo, yağ oranı ve bel ölçünüz AI'ın size özel makro ve antrenman hacmi belirlemesini sağlar.",
+      "link": "Ölçüm ekle"
+    },
+    "monthGate": {
+      "title": "{month} ayı tamamlanmadı",
+      "body": "Sonraki ay için AI önerisi alabilmek için önce {month} ayındaki {count} haftayı planla."
+    },
+    "quotaBadge": {
+      "expiredLabel": "{countdown} sonra",
+      "remainingLabel": "{remaining}/{limit}",
+      "expiredTitle": "Günlük AI limitine ulaştın — {countdown} sonra yenilenir",
+      "activeTitle": "Bugün kalan: {remaining}/{limit} · sıfırlanma: {countdown} sonra"
     }
   },
   "shopping": {
@@ -1576,7 +1835,69 @@
       "title": "Rozetler",
       "unlockedCount": "{unlocked} / {total}",
       "earned": "Kazanıldı",
-      "locked": "Kilitli"
+      "locked": "Kilitli",
+      "items": {
+        "first-day": {
+          "title": "İlk Adım",
+          "description": "İlk günü tamamen tamamladın!"
+        },
+        "streak-3": {
+          "title": "3 Gün Serisi",
+          "description": "Üst üste 3 gün boyunca planı tamamladın."
+        },
+        "streak-7": {
+          "title": "Haftalık Savaşçı",
+          "description": "Tam 1 hafta boyunca hiç aksatmadın!"
+        },
+        "streak-14": {
+          "title": "2 Hafta Kararlılık",
+          "description": "14 gün üst üste — inanılmaz disiplin!"
+        },
+        "streak-30": {
+          "title": "30 Gün Efsanesi",
+          "description": "Bir ay boyunca her gün tamamladın. Efsane!"
+        },
+        "streak-60": {
+          "title": "60 Gün Titanı",
+          "description": "2 ay boyunca vazgeçmedin. Sen bir titansın!"
+        },
+        "days-10": {
+          "title": "10 Gün Tamamlandı",
+          "description": "Toplam 10 günü tamamen tamamladın."
+        },
+        "days-30": {
+          "title": "30 Gün Tamamlandı",
+          "description": "Toplam 30 tam gün — harika ilerleme!"
+        },
+        "days-50": {
+          "title": "50 Gün Tamamlandı",
+          "description": "Yarım yüz gün! Durdurulamıyorsun."
+        },
+        "days-100": {
+          "title": "Yüzüncü Gün",
+          "description": "100 tam gün. Bu bir yaşam tarzı artık!"
+        },
+        "workouts-10": {
+          "title": "10 Antrenman",
+          "description": "10 egzersizi tamamladın!"
+        },
+        "workouts-50": {
+          "title": "50 Antrenman",
+          "description": "50 egzersiz tamamlandı — güçleniyorsun!"
+        },
+        "workouts-100": {
+          "title": "100 Antrenman",
+          "description": "100 egzersiz! Vücudun sana teşekkür ediyor."
+        },
+        "meals-50": {
+          "title": "50 Öğün Takibi",
+          "description": "50 öğünü takip ettim — beslenme bilinci!"
+        },
+        "meals-100": {
+          "title": "100 Öğün Takibi",
+          "description": "100 öğün kaydı. Beslenme ustası!"
+        }
+      }
     },
     "heatmap": {
       "title": "Aktivite Haritası",

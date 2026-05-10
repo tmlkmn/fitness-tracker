@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { AiSuggestionModal } from "./ai-suggestion-modal";
+import { useTranslations } from "next-intl";
 
 interface AiSuggestButtonProps {
   mealId: number;
@@ -26,6 +27,7 @@ export function AiSuggestButton({
   carbsG,
   fatG,
 }: AiSuggestButtonProps) {
+  const t = useTranslations("meals.aiSuggestion");
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -36,7 +38,7 @@ export function AiSuggestButton({
         onClick={() => setOpen(true)}
       >
         <Sparkles className="h-3 w-3" />
-        AI ile Çeşitlendir
+        {t("buttonLabel")}
       </Button>
       <AiSuggestionModal
         open={open}

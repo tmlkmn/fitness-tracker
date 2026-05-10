@@ -28,33 +28,45 @@ import {
 import { useUpcomingDailyPlans } from "@/hooks/use-plans";
 import type { AIMeal } from "@/actions/ai-meals";
 import { computeMealMacros } from "@/lib/meal-macros";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
-function formatRelativeDate(input: Date | string | null | undefined): string {
-  if (!input) return "";
-  const date = typeof input === "string" ? new Date(input) : input;
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+function useFormatRelativeDate() {
+  const t = useTranslations("meals.library");
+  const locale = useLocale() as Locale;
+  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
+  return (input: Date | string | null | undefined): string => {
+    if (!input) return "";
+    const date = typeof input === "string" ? new Date(input) : input;
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return date.toLocaleDateString("tr-TR", { day: "numeric", month: "long" });
-  if (diffDays === 0) return "Bugün";
-  if (diffDays === 1) return "Dün";
-  if (diffDays < 7) return `${diffDays} gün önce`;
-  return date.toLocaleDateString("tr-TR", {
-    day: "numeric",
-    month: "long",
-    year: now.getFullYear() === date.getFullYear() ? undefined : "numeric",
-  });
+    if (diffDays < 0)
+      return date.toLocaleDateString(dateLocale, { day: "numeric", month: "long" });
+    if (diffDays === 0) return t("today");
+    if (diffDays === 1) return t("yesterday");
+    if (diffDays < 7) return t("daysAgo", { count: diffDays });
+    return date.toLocaleDateString(dateLocale, {
+      day: "numeric",
+      month: "long",
+      year: now.getFullYear() === date.getFullYear() ? undefined : "numeric",
+    });
+  };
 }
 
-const PLAN_TYPE_LABELS: Record<string, string> = {
-  workout: "Antrenman",
-  rest: "Dinlenme",
-  swimming: "Yüzme",
-  nutrition: "Beslenme",
-};
+function usePlanTypeLabels(): Record<string, string> {
+  const t = useTranslations("meals.library.planType");
+  return {
+    workout: t("workout"),
+    rest: t("rest"),
+    swimming: t("swimming"),
+    nutrition: t("nutrition"),
+  };
+}
 
 function SavedMealsTab() {
+  const t = useTranslations("meals.library");
   const { data: saved, isLoading } = useSavedMealSuggestions();
   const deleteSaved = useDeleteSavedMealSuggestion();
   const [search, setSearch] = useState("");
@@ -81,7 +93,7 @@ function SavedMealsTab() {
   if (isLoading) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8">
-        Yükleniyor…
+        {t("loading")}
       </p>
     );
   }
@@ -91,9 +103,9 @@ function SavedMealsTab() {
       <div className="text-center py-10 space-y-3">
         <Star className="h-10 w-10 mx-auto text-muted-foreground opacity-20" />
         <div>
-          <p className="text-sm font-medium">Henüz kayıtlı öğün yok</p>
+          <p className="text-sm font-medium">{t("emptySaved")}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Yeni öğün eklerken &ldquo;Favorilere kaydet&rdquo;i işaretle
+            {t("emptySavedHint")}
           </p>
         </div>
       </div>
@@ -105,7 +117,7 @@ function SavedMealsTab() {
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
-          placeholder="Ara..."
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-8 h-9"
@@ -120,7 +132,7 @@ function SavedMealsTab() {
             className="h-6 px-2 text-xs"
             onClick={() => setLabelFilter(null)}
           >
-            Tümü
+            {t("filterAll")}
           </Button>
           {labels.map((l) => (
             <Button
@@ -138,7 +150,7 @@ function SavedMealsTab() {
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">
-          Eşleşen öğün yok
+          {t("noMatches")}
         </p>
       ) : (
         <div className="space-y-2">
@@ -155,7 +167,7 @@ function SavedMealsTab() {
                     className="h-6 w-6 text-destructive"
                     onClick={() => {
                       deleteSaved.mutate(item.id);
-                      toast.success("Öğün silindi");
+                      toast.success(t("deleted"));
                     }}
                   >
                     <Trash2 className="h-3 w-3" />
@@ -188,24 +200,27 @@ function ApplyPlanDialog({
   mealList: AIMeal[];
   planLabel: string;
 }) {
+  const t = useTranslations("meals.library");
+  const locale = useLocale() as Locale;
+  const PLAN_TYPE_LABELS = usePlanTypeLabels();
   const { data: upcomingPlans, isLoading } = useUpcomingDailyPlans();
   const applyMeals = useApplyDailyMeals();
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const handleApply = () => {
     if (selectedId === null) {
-      toast.error("Bir gün seç");
+      toast.error(t("selectDay"));
       return;
     }
     applyMeals.mutate(
       { dailyPlanId: selectedId, newMeals: mealList },
       {
         onSuccess: () => {
-          toast.success("Öğünler eklendi");
+          toast.success(t("applied"));
           onOpenChange(false);
           setSelectedId(null);
         },
-        onError: () => toast.error("Eklenemedi"),
+        onError: () => toast.error(t("applyFailed")),
       },
     );
   };
@@ -215,21 +230,20 @@ function ApplyPlanDialog({
       <DialogContent className="max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base">
-            &ldquo;{planLabel}&rdquo; Planını Uygula
+            {t("applyDialogTitle", { label: planLabel })}
           </DialogTitle>
         </DialogHeader>
         <p className="text-xs text-muted-foreground">
-          Plan {mealList.length} öğün içeriyor. Uygulanacak gün mevcut öğünlerin
-          üzerine yazılır.
+          {t("applyDialogBody", { count: mealList.length })}
         </p>
         <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
           {isLoading ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Yükleniyor…
+              {t("loading")}
             </p>
           ) : !upcomingPlans || upcomingPlans.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Uygun gün bulunamadı
+              {t("noUpcoming")}
             </p>
           ) : (
             upcomingPlans.map((p) => (
@@ -247,10 +261,10 @@ function ApplyPlanDialog({
                   <span className="font-medium">{p.dayName}</span>
                   {p.date && (
                     <span className="text-muted-foreground">
-                      {new Date(p.date + "T00:00:00").toLocaleDateString("tr-TR", {
-                        day: "numeric",
-                        month: "short",
-                      })}
+                      {new Date(p.date + "T00:00:00").toLocaleDateString(
+                        locale === "en" ? "en-US" : "tr-TR",
+                        { day: "numeric", month: "short" },
+                      )}
                     </span>
                   )}
                 </div>
@@ -269,7 +283,7 @@ function ApplyPlanDialog({
             onClick={() => onOpenChange(false)}
             className="flex-1"
           >
-            İptal
+            {t("cancel")}
           </Button>
           <Button
             size="sm"
@@ -277,7 +291,7 @@ function ApplyPlanDialog({
             disabled={applyMeals.isPending || selectedId === null}
             className="flex-1"
           >
-            {applyMeals.isPending ? "Uygulanıyor…" : "Uygula"}
+            {applyMeals.isPending ? t("applying") : t("apply")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -286,6 +300,9 @@ function ApplyPlanDialog({
 }
 
 function DailyPlansTab() {
+  const t = useTranslations("meals.library");
+  const formatRelativeDate = useFormatRelativeDate();
+  const PLAN_TYPE_LABELS = usePlanTypeLabels();
   const { data: plans, isLoading } = useSavedDailyMealSuggestions();
   const deletePlan = useDeleteDailyMealSuggestion();
   const [search, setSearch] = useState("");
@@ -339,9 +356,9 @@ function DailyPlansTab() {
       <div className="text-center py-10 space-y-3">
         <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground opacity-20" />
         <div>
-          <p className="text-sm font-medium">Kayıtlı günlük plan yok</p>
+          <p className="text-sm font-medium">{t("noPlans")}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Öğün listesinde &ldquo;AI ile Programı Değiştir&rdquo;den oluşturup kaydet
+            {t("noPlansHint")}
           </p>
         </div>
       </div>
@@ -353,7 +370,7 @@ function DailyPlansTab() {
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
-          placeholder="Ara..."
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-8 h-9"
@@ -362,7 +379,7 @@ function DailyPlansTab() {
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">
-          Eşleşen plan yok
+          {t("noPlanMatches")}
         </p>
       ) : (
         <div className="space-y-2">
@@ -370,8 +387,8 @@ function DailyPlansTab() {
             const macros = computeMealMacros(p.meals);
             const dateLabel = formatRelativeDate(p.createdAt);
             const planTypeLabel = PLAN_TYPE_LABELS[p.planType] ?? p.planType;
-            const planTitle = p.userNote ?? `${planTypeLabel} planı`;
-            const dialogLabel = p.userNote ?? `${planTypeLabel} — ${dateLabel}`;
+            const planTitle = p.userNote ?? t("planTitleSuffix", { type: planTypeLabel });
+            const dialogLabel = p.userNote ?? t("planLabelDefault", { type: planTypeLabel, date: dateLabel });
             return (
               <Card
                 key={p.id}
@@ -388,7 +405,7 @@ function DailyPlansTab() {
                           {planTypeLabel}
                         </Badge>
                         <Badge variant="secondary" className="text-[10px] h-5">
-                          {p.meals.length} öğün
+                          {t("mealsCount", { count: p.meals.length })}
                         </Badge>
                         <span className="text-[10px] text-muted-foreground">
                           {dateLabel}
@@ -401,7 +418,7 @@ function DailyPlansTab() {
                       className="h-7 w-7 text-destructive shrink-0"
                       onClick={() => {
                         deletePlan.mutate(p.id);
-                        toast.success("Plan silindi");
+                        toast.success(t("planDeleted"));
                       }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -434,7 +451,7 @@ function DailyPlansTab() {
                     ))}
                     {p.meals.length > 4 && (
                       <li className="text-[10px] text-muted-foreground">
-                        +{p.meals.length - 4} öğün daha…
+                        {t("moreMeals", { count: p.meals.length - 4 })}
                       </li>
                     )}
                   </ul>
@@ -447,7 +464,7 @@ function DailyPlansTab() {
                     }
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    Günün planına ekle
+                    {t("applyToDay")}
                   </Button>
                 </CardContent>
               </Card>
@@ -471,16 +488,17 @@ function DailyPlansTab() {
 }
 
 export function MealLibrary() {
+  const t = useTranslations("meals.library");
   return (
     <Tabs defaultValue="meals">
       <TabsList className="grid grid-cols-2 w-full mb-4">
         <TabsTrigger value="meals" className="gap-1.5">
           <UtensilsCrossed className="h-4 w-4" />
-          Öğünler
+          {t("tabMeals")}
         </TabsTrigger>
         <TabsTrigger value="plans" className="gap-1.5">
           <ClipboardList className="h-4 w-4" />
-          Günlük Planlar
+          {t("tabPlans")}
         </TabsTrigger>
       </TabsList>
       <TabsContent value="meals">

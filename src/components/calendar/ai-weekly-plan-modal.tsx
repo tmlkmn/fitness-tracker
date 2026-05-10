@@ -52,60 +52,8 @@ import {
 } from "@/hooks/use-weekly-ai";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
-
-// ─── Template tags for quick suggestions ────────────────────────────────────
-
-const SUGGESTION_TAGS = [
-  "Ağırlıkları artır",
-  "Yeni hareketler ekle",
-  "Kardiyo / kondisyon",
-  "Karın kası hareketleri",
-  "Esneklik / mobilite",
-  "Dinlenme sürelerini kısalt",
-  "Daha fazla set / tekrar",
-  "Drop set / süperset",
-  "Hafif hafta (deload)",
-  "Sadece 3 gün antrenman",
-];
-
-const WORKOUT_DAYS = [
-  { value: 0, label: "Pzt", full: "Pazartesi" },
-  { value: 1, label: "Sal", full: "Salı" },
-  { value: 2, label: "Çar", full: "Çarşamba" },
-  { value: 3, label: "Per", full: "Perşembe" },
-  { value: 4, label: "Cum", full: "Cuma" },
-  { value: 5, label: "Cmt", full: "Cumartesi" },
-  { value: 6, label: "Paz", full: "Pazar" },
-];
-
-const EQUIPMENT_OPTIONS = [
-  "Dumbbell",
-  "Barbell",
-  "Direnç bandı",
-  "Pull-up bar",
-  "Kettlebell",
-  "TRX",
-  "Yoga matı",
-  "Bench",
-  "Hiçbiri (vücut ağırlığı)",
-];
-
-const INGREDIENT_TAGS = [
-  "Tavuk", "Kırmızı et", "Balık", "Yumurta", "Ton balığı",
-  "Pirinç", "Makarna", "Ekmek", "Yulaf", "Bulgur", "Kinoa",
-  "Brokoli", "Ispanak", "Domates", "Salatalık", "Biber",
-  "Süt", "Yoğurt", "Peynir", "Lor",
-  "Kuruyemiş", "Zeytin", "Zeytinyağı", "Bal", "Avokado",
-];
-
-// ─── Stepped loading progress ───────────────────────────────────────────────
-
-const ALL_STEPS: { label: string; step: GenerationStep }[] = [
-  { label: "Profil bilgileri okunuyor",        step: "profile"   },
-  { label: "Beslenme programı oluşturuluyor",  step: "nutrition" },
-  { label: "Antrenman programı oluşturuluyor", step: "workout"   },
-  { label: "Program optimize ediliyor",        step: "merging"   },
-];
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 function SteppedProgress({
   loading,
@@ -116,11 +64,19 @@ function SteppedProgress({
   step: GenerationStep | null;
   generateMode?: "both" | "nutrition" | "workout";
 }) {
+  const t = useTranslations("calendar.aiWeekly");
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
-  const visibleSteps = ALL_STEPS.filter((s) => {
+  const allSteps: { label: string; step: GenerationStep }[] = [
+    { label: t("stepProfile"), step: "profile" },
+    { label: t("stepNutrition"), step: "nutrition" },
+    { label: t("stepWorkout"), step: "workout" },
+    { label: t("stepMerging"), step: "merging" },
+  ];
+
+  const visibleSteps = allSteps.filter((s) => {
     if (s.step === "nutrition" && generateMode === "workout") return false;
     if (s.step === "workout" && generateMode === "nutrition") return false;
     return true;
@@ -183,7 +139,9 @@ function SteppedProgress({
     const s = Math.floor(ms / 1000);
     const m = Math.floor(s / 60);
     const sec = s % 60;
-    return m > 0 ? `${m}dk ${sec}sn` : `${sec}sn`;
+    return m > 0
+      ? t("elapsedMin", { minutes: m, seconds: sec })
+      : t("elapsedSec", { seconds: sec });
   };
 
   return (
@@ -233,7 +191,7 @@ function SteppedProgress({
       <div className="flex items-center justify-between">
         <p className="text-[10px] text-muted-foreground flex items-center gap-1">
           <Clock className="h-3 w-3" />
-          Bu işlem 1-2 dakika sürebilir
+          {t("stepDuration")}
         </p>
         <p className="text-[10px] text-muted-foreground font-mono">
           {formatTime(elapsed)}
@@ -276,15 +234,15 @@ const planTypeIcons = {
   rest: Moon,
 };
 
-const planTypeLabels: Record<string, string> = {
-  workout: "Antrenman",
-  swimming: "Yüzme",
-  rest: "Dinlenme",
-};
-
 // ─── Day Summary (collapsible) ──────────────────────────────────────────────
 
 function DaySummary({ day }: { day: AIWeeklyDay }) {
+  const t = useTranslations("calendar.aiWeekly");
+  const planTypeLabels: Record<string, string> = {
+    workout: t("planTypeWorkout"),
+    swimming: t("planTypeSwimming"),
+    rest: t("planTypeRest"),
+  };
   const Icon =
     planTypeIcons[day.planType as keyof typeof planTypeIcons] ?? Dumbbell;
   const totalCalories = day.meals.reduce(
@@ -341,7 +299,7 @@ function DaySummary({ day }: { day: AIWeeklyDay }) {
               <div className="flex items-center gap-1.5 mb-1.5">
                 <UtensilsCrossed className="h-3 w-3 text-primary" />
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Öğünler
+                  {t("mealsHeading")}
                 </span>
                 <span className="text-[10px] text-muted-foreground">
                   ({totalCalories} kcal)
@@ -376,10 +334,10 @@ function DaySummary({ day }: { day: AIWeeklyDay }) {
               <div className="flex items-center gap-1.5 mb-1.5">
                 <Dumbbell className="h-3 w-3 text-primary" />
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Egzersizler
+                  {t("exercisesHeading")}
                 </span>
                 <span className="text-[10px] text-muted-foreground">
-                  ({day.exercises.length} hareket)
+                  {t("moveCount", { count: day.exercises.length })}
                 </span>
               </div>
               <div className="space-y-2.5">
@@ -433,20 +391,26 @@ function DaySummary({ day }: { day: AIWeeklyDay }) {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-function formatTimeAgo(date: Date): string {
-  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (s < 60) return "az önce";
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m} dk önce`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} saat önce`;
-  const d = Math.floor(h / 24);
-  return `${d} gün önce`;
+function useFormatTimeAgo() {
+  const t = useTranslations("calendar.aiWeekly");
+  return (date: Date): string => {
+    const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+    if (s < 60) return t("agoNow");
+    const m = Math.floor(s / 60);
+    if (m < 60) return t("agoMin", { count: m });
+    const h = Math.floor(m / 60);
+    if (h < 24) return t("agoHour", { count: h });
+    const d = Math.floor(h / 24);
+    return t("agoDay", { count: d });
+  };
 }
 
-function formatWeekLabel(mondayStr: string): string {
+function formatWeekLabel(mondayStr: string, locale: Locale): string {
   const d = new Date(mondayStr + "T00:00:00");
-  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long" });
+  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+    day: "numeric",
+    month: "long",
+  });
 }
 
 // ─── Main Modal ─────────────────────────────────────────────────────────────
@@ -468,6 +432,16 @@ export function AiWeeklyPlanModal({
   weekStartStr,
   todayStr,
 }: AiWeeklyPlanModalProps) {
+  const t = useTranslations("calendar.aiWeekly");
+  const tIngredients = useTranslations("meals.aiSuggestion");
+  const locale = useLocale() as Locale;
+  const formatTimeAgo = useFormatTimeAgo();
+  const SUGGESTION_TAGS = t.raw("tags") as string[];
+  const EQUIPMENT_OPTIONS = t.raw("equipment") as string[];
+  const INGREDIENT_TAGS = tIngredients.raw("ingredients") as string[];
+  const WORKOUT_DAYS = (t.raw("days") as { label: string; full: string }[]).map(
+    (d, i) => ({ value: i, label: d.label, full: d.full }),
+  );
   const [userNote, setUserNote] = useState("");
   // Per-day plan type: workout / swimming / rest. Default Pzt-Cum workout,
   // Cmt-Paz rest. User cycles each day through the 3 states.
@@ -602,14 +576,23 @@ export function AiWeeklyPlanModal({
     const hasWorkoutOrSwim = Object.values(dayModes).some((m) => m === "workout" || m === "swimming");
     if (hasWorkoutOrSwim) {
       if (location === "home") {
-        parts.push(`Antrenman yeri: Ev. Mevcut ekipman: ${selectedEquipment.length > 0 ? selectedEquipment.join(", ") : "Vücut ağırlığı"}`);
+        parts.push(
+          t("homeInstruction", {
+            equipment:
+              selectedEquipment.length > 0
+                ? selectedEquipment.join(", ")
+                : t("bodyweight"),
+          }),
+        );
       } else {
-        parts.push("Antrenman yeri: Salon (tüm ekipman mevcut)");
+        parts.push(t("gymInstruction"));
       }
     }
     // Ingredients
     if (ingredientMode === "specific" && selectedIngredients.length > 0) {
-      parts.push(`Evde mevcut malzemeler: ${selectedIngredients.join(", ")}. Sadece bu malzemelerle yapılabilecek yemekler öner`);
+      parts.push(
+        tIngredients("ingredientNote", { list: selectedIngredients.join(", ") }),
+      );
     }
     // Tags
     parts.push(...selectedTags);
@@ -638,10 +621,10 @@ export function AiWeeklyPlanModal({
 
   const overlayTitle =
     generateMode === "nutrition"
-      ? "AI Beslenme Planını Hazırlıyor"
+      ? t("overlayTitleNutrition")
       : generateMode === "workout"
-        ? "AI Antrenman Planını Hazırlıyor"
-        : "AI Haftalık Planını Hazırlıyor";
+        ? t("overlayTitleWorkout")
+        : t("overlayTitleBoth");
 
   const overlaySteps: GeneratingStep[] = (() => {
     const profileStatus =
@@ -663,23 +646,23 @@ export function AiWeeklyPlanModal({
 
     if (generateMode === "nutrition") {
       return [
-        { label: "Profil analizi", status: profileStatus },
-        { label: "Sağlık verileri", status: healthStatus },
-        { label: "Beslenme planı oluşturuluyor", status: nutritionStatus },
+        { label: t("overlayProfile"), status: profileStatus },
+        { label: t("overlayHealth"), status: healthStatus },
+        { label: t("overlayNutritionLoading"), status: nutritionStatus },
       ];
     }
     if (generateMode === "workout") {
       return [
-        { label: "Profil analizi", status: profileStatus },
-        { label: "Sağlık verileri", status: healthStatus },
-        { label: "Antrenman planı oluşturuluyor", status: workoutStatus },
+        { label: t("overlayProfile"), status: profileStatus },
+        { label: t("overlayHealth"), status: healthStatus },
+        { label: t("overlayWorkoutLoading"), status: workoutStatus },
       ];
     }
     return [
-      { label: "Profil analizi", status: profileStatus },
-      { label: "Sağlık verileri", status: healthStatus },
-      { label: "Beslenme planı", status: nutritionStatus },
-      { label: "Antrenman planı", status: workoutStatus },
+      { label: t("overlayProfile"), status: profileStatus },
+      { label: t("overlayHealth"), status: healthStatus },
+      { label: t("overlayNutrition"), status: nutritionStatus },
+      { label: t("overlayWorkout"), status: workoutStatus },
     ];
   })();
 
@@ -700,7 +683,7 @@ export function AiWeeklyPlanModal({
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            AI ile Haftalık Plan
+            {t("title")}
           </SheetTitle>
         </SheetHeader>
 
@@ -708,10 +691,7 @@ export function AiWeeklyPlanModal({
           {hasExistingPlan && (
             <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-yellow-500">
-                Bu işlem mevcut haftalık programınızı tamamen değiştirecektir.
-                Önceki öğün ve egzersiz verileri silinecektir.
-              </p>
+              <p className="text-xs text-yellow-500">{t("willReplace")}</p>
             </div>
           )}
 
@@ -730,13 +710,13 @@ export function AiWeeklyPlanModal({
               {serviceType === "full" && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Oluşturulacak plan:
+                    {t("modeLabel")}
                   </p>
                   <div className="flex gap-1.5">
                     {([
-                      { value: "both" as const, label: "Beslenme + Antrenman" },
-                      { value: "nutrition" as const, label: "Sadece Beslenme" },
-                      { value: "workout" as const, label: "Sadece Antrenman" },
+                      { value: "both" as const, label: t("modeBoth") },
+                      { value: "nutrition" as const, label: t("modeNutrition") },
+                      { value: "workout" as const, label: t("modeWorkout") },
                     ]).map(({ value, label }) => (
                       <button
                         key={value}
@@ -759,7 +739,7 @@ export function AiWeeklyPlanModal({
               <>
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Günlük plan tipi <span className="text-muted-foreground/60">(üzerine basarak değiştir)</span>:
+                  {t("dayTypeLabel")} <span className="text-muted-foreground/60">{t("dayTypeHint")}</span>:
                 </p>
                 <div className="grid grid-cols-7 gap-1.5">
                   {WORKOUT_DAYS.map(({ value, label }) => {
@@ -774,6 +754,12 @@ export function AiWeeklyPlanModal({
                           : "bg-muted/50 border-transparent text-muted-foreground";
                     const Icon =
                       mode === "workout" ? Dumbbell : mode === "swimming" ? Waves : Moon;
+                    const modeLabel =
+                      mode === "workout"
+                        ? t("planTypeWorkout")
+                        : mode === "swimming"
+                          ? t("planTypeSwimming")
+                          : t("planTypeRest");
                     return (
                       <button
                         key={value}
@@ -784,8 +770,8 @@ export function AiWeeklyPlanModal({
                         className={`flex flex-col items-center justify-center py-2 gap-0.5 rounded-md text-[10px] font-medium border transition-colors ${isPast ? "" : "hover:opacity-80"} ${styles}`}
                         title={
                           isPast
-                            ? `${label}: bu gün geçti — AI öneri sunmayacak`
-                            : `${label}: ${mode === "workout" ? "Antrenman" : mode === "swimming" ? "Yüzme" : "Dinlenme"}`
+                            ? t("dayTooltipPast", { label })
+                            : t("dayTooltipActive", { label, mode: modeLabel })
                         }
                       >
                         <span>{label}</span>
@@ -795,11 +781,9 @@ export function AiWeeklyPlanModal({
                   })}
                 </div>
                 <p className="text-[10px] text-muted-foreground/70 mt-1.5">
-                  Antrenman → Yüzme → Dinlenme sırasıyla döner. Beslenme programı her güne yazılır.
+                  {t("dayCycleNote")}
                   {pastDows.size > 0 && (
-                    <span className="block mt-0.5">
-                      Üstü çizili günler geçti — AI bu günler için içerik üretmeyecek.
-                    </span>
+                    <span className="block mt-0.5">{t("pastDaysNote")}</span>
                   )}
                 </p>
               </div>
@@ -807,7 +791,7 @@ export function AiWeeklyPlanModal({
               {/* Location selection */}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Antrenman yeri:
+                  {t("locationLabel")}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -819,7 +803,7 @@ export function AiWeeklyPlanModal({
                     }`}
                   >
                     <Building2 className="h-3.5 w-3.5" />
-                    Salon
+                    {t("locationGym")}
                   </button>
                   <button
                     onClick={() => setLocation("home")}
@@ -830,7 +814,7 @@ export function AiWeeklyPlanModal({
                     }`}
                   >
                     <Home className="h-3.5 w-3.5" />
-                    Ev
+                    {t("locationHome")}
                   </button>
                 </div>
               </div>
@@ -839,7 +823,7 @@ export function AiWeeklyPlanModal({
               {location === "home" && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Mevcut ekipman:
+                    {t("equipmentLabel")}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {EQUIPMENT_OPTIONS.map((eq) => {
@@ -868,7 +852,7 @@ export function AiWeeklyPlanModal({
               {generateMode !== "workout" && (
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Beslenme Programı için Evdeki malzemeler:
+                  {t("ingredientsLabel")}
                 </p>
                 <div className="flex gap-2 mb-2">
                   <button
@@ -879,7 +863,7 @@ export function AiWeeklyPlanModal({
                         : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    Her şey var
+                    {tIngredients("modeAll")}
                   </button>
                   <button
                     onClick={() => setIngredientMode("specific")}
@@ -889,7 +873,7 @@ export function AiWeeklyPlanModal({
                         : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    Malzeme belirt
+                    {tIngredients("modeSpecific")}
                   </button>
                 </div>
                 {ingredientMode === "specific" && (
@@ -919,7 +903,7 @@ export function AiWeeklyPlanModal({
               {generateMode !== "nutrition" && (
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Bu hafta için isteklerini seç:
+                  {t("tagsLabel")}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {SUGGESTION_TAGS.map((tag) => {
@@ -946,14 +930,14 @@ export function AiWeeklyPlanModal({
               <div className="flex items-start gap-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground">
-                  Ekstra bir isteğin varsa yaz:
+                  {t("noteLabel")}
                 </p>
               </div>
               <textarea
                 value={userNote}
                 onChange={(e) => setUserNote(e.target.value)}
                 rows={2}
-                placeholder="Örn: Omzum ağrıyor, sadece alt vücut çalışayım..."
+                placeholder={t("notePlaceholder")}
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               />
               <Button
@@ -963,8 +947,10 @@ export function AiWeeklyPlanModal({
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 {weeklyQuota?.remaining === 0
-                  ? "Günlük limit doldu"
-                  : `Öneri Al${weeklyQuota ? ` (${weeklyQuota.remaining}/${weeklyQuota.limit})` : ""}`}
+                  ? t("limitReached")
+                  : weeklyQuota
+                    ? t("generateWithQuota", { remaining: weeklyQuota.remaining, limit: weeklyQuota.limit })
+                    : t("generate")}
               </Button>
               {savedList && savedList.length > 0 && (
                 <Button
@@ -974,7 +960,7 @@ export function AiWeeklyPlanModal({
                   className="w-full gap-2"
                 >
                   <History className="h-4 w-4" />
-                  Kayıtlı Öneriler
+                  {t("savedSuggestions")}
                   <Badge variant="secondary" className="ml-auto text-[10px] px-1.5">
                     {savedList.length}
                   </Badge>
@@ -991,7 +977,7 @@ export function AiWeeklyPlanModal({
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Geri
+                {t("back")}
               </button>
               {loadingSavedDetail && (
                 <div className="flex items-center justify-center py-4">
@@ -1004,8 +990,8 @@ export function AiWeeklyPlanModal({
                     <div key={weekDate}>
                       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
                         {weekDate !== "unknown"
-                          ? `${formatWeekLabel(weekDate)} haftası`
-                          : "Tarihsiz"}
+                          ? t("weekLabel", { label: formatWeekLabel(weekDate, locale) })
+                          : t("weekDateless")}
                       </p>
                       <div className="space-y-1.5">
                         {items.map((item, idx) => (
@@ -1021,7 +1007,7 @@ export function AiWeeklyPlanModal({
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <span className="text-xs font-medium line-clamp-2">
-                                  Öneri {idx + 1} — {item.title}
+                                  {t("savedItem", { n: idx + 1, title: item.title })}
                                 </span>
                                 <Badge variant="outline" className="text-[10px] shrink-0">
                                   {item.phase}
@@ -1053,7 +1039,7 @@ export function AiWeeklyPlanModal({
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-4">
-                  Henüz kayıtlı öneri yok.
+                  {t("emptySaved")}
                 </p>
               )}
             </div>
@@ -1088,7 +1074,7 @@ export function AiWeeklyPlanModal({
                   className="flex-1"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Geri
+                  {t("back")}
                 </Button>
                 <Button
                   onClick={() => {
@@ -1102,7 +1088,7 @@ export function AiWeeklyPlanModal({
                   ) : (
                     <Check className="h-4 w-4 mr-2" />
                   )}
-                  Onayla
+                  {t("approve")}
                 </Button>
               </div>
             </div>
@@ -1145,7 +1131,7 @@ export function AiWeeklyPlanModal({
                 className="flex-1"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Yeni Öneri
+                {t("newSuggestion")}
               </Button>
               <Button
                 onClick={onApply}
@@ -1157,7 +1143,7 @@ export function AiWeeklyPlanModal({
                 ) : (
                   <Check className="h-4 w-4 mr-2" />
                 )}
-                Onayla
+                {t("approve")}
               </Button>
             </div>
           )}
@@ -1168,17 +1154,17 @@ export function AiWeeklyPlanModal({
       <Dialog open={deleteConfirmId !== null} onOpenChange={(o) => { if (!o) setDeleteConfirmId(null); }}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle>Öneriyi Sil</DialogTitle>
+            <DialogTitle>{t("deleteTitle")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Bu kayıtlı öneriyi silmek istediğinizden emin misiniz?
+            {t("deleteConfirm")}
           </p>
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>
-              İptal
+              {t("cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDeleteSaved} disabled={deleteSaved.isPending}>
-              {deleteSaved.isPending ? "Siliniyor..." : "Sil"}
+              {deleteSaved.isPending ? t("deleting") : t("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

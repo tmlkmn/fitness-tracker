@@ -222,16 +222,14 @@ export function MealFormDialog({
           {/* In-dialog unsaved changes confirmation overlay */}
           {confirmOpen && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 rounded-lg p-6 text-center gap-4">
-              <p className="text-sm font-medium">Kaydedilmemiş değişiklikleriniz var</p>
-              <p className="text-xs text-muted-foreground">
-                Formu kapatırsanız girdiğiniz bilgiler kaybolacak.
-              </p>
+              <p className="text-sm font-medium">{t("unsavedTitle")}</p>
+              <p className="text-xs text-muted-foreground">{t("unsavedBody")}</p>
               <div className="flex gap-2 w-full">
                 <Button variant="outline" className="flex-1" onClick={onCancelClose}>
-                  Düzenlemeye Devam Et
+                  {t("unsavedKeep")}
                 </Button>
                 <Button variant="destructive" className="flex-1" onClick={onConfirmClose}>
-                  Kapat
+                  {t("unsavedClose")}
                 </Button>
               </div>
             </div>

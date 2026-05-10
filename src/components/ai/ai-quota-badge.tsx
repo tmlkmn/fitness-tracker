@@ -10,6 +10,7 @@ import {
   formatTimeUntilReset,
   getNextQuotaReset,
 } from "@/lib/quota-reset";
+import { useTranslations } from "next-intl";
 
 interface AiQuotaBadgeProps {
   feature: AIFeature;
@@ -18,6 +19,7 @@ interface AiQuotaBadgeProps {
 }
 
 export function AiQuotaBadge({ feature, inline, className }: AiQuotaBadgeProps) {
+  const t = useTranslations("assistant.quotaBadge");
   const { data, isLoading } = useAiQuota();
   const quota = getQuota(data, feature);
 
@@ -37,10 +39,12 @@ export function AiQuotaBadge({ feature, inline, className }: AiQuotaBadgeProps) 
   const variant = isEmpty ? "destructive" : isLow ? "secondary" : "outline";
   const resetAt = getNextQuotaReset();
   const countdown = formatTimeUntilReset(resetAt, now);
-  const label = isEmpty ? `${countdown} sonra` : `${remaining}/${limit}`;
+  const label = isEmpty
+    ? t("expiredLabel", { countdown })
+    : t("remainingLabel", { remaining, limit });
   const title = isEmpty
-    ? `Günlük AI limitine ulaştın — ${countdown} sonra yenilenir`
-    : `Bugün kalan: ${remaining}/${limit} · sıfırlanma: ${countdown} sonra`;
+    ? t("expiredTitle", { countdown })
+    : t("activeTitle", { remaining, limit, countdown });
 
   return (
     <Badge

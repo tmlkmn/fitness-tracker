@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { stripEmoji, getMealIcon, DynamicIcon } from "@/lib/icon-map";
+import { useTranslations } from "next-intl";
 
 interface MealAgendaProps {
   dailyPlanId: number;
 }
 
 export function MealAgenda({ dailyPlanId }: MealAgendaProps) {
+  const t = useTranslations("meals.agenda");
   const { data: meals, isLoading } = useMeals(dailyPlanId);
   const toggleMeal = useToggleMeal();
 
@@ -31,7 +33,7 @@ export function MealAgenda({ dailyPlanId }: MealAgendaProps) {
   if (!meals?.length) {
     return (
       <p className="text-center text-muted-foreground py-8 text-sm">
-        Öğün bulunamadı
+        {t("empty")}
       </p>
     );
   }

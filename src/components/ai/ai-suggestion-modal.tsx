@@ -31,14 +31,7 @@ import {
 import { useInvalidateAiQuota } from "@/hooks/use-ai-quota";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { formatAiError } from "@/lib/ai-errors";
-
-const INGREDIENT_TAGS = [
-  "Tavuk", "Kırmızı et", "Balık", "Yumurta", "Ton balığı",
-  "Pirinç", "Makarna", "Ekmek", "Yulaf", "Bulgur", "Kinoa",
-  "Brokoli", "Ispanak", "Domates", "Salatalık", "Biber",
-  "Süt", "Yoğurt", "Peynir", "Lor",
-  "Kuruyemiş", "Zeytin", "Zeytinyağı", "Bal", "Avokado",
-];
+import { useTranslations } from "next-intl";
 
 interface AiSuggestionModalProps {
   open: boolean;
@@ -67,6 +60,8 @@ export function AiSuggestionModal({
   carbsG,
   fatG,
 }: AiSuggestionModalProps) {
+  const t = useTranslations("meals.aiSuggestion");
+  const INGREDIENT_TAGS = t.raw("ingredients") as string[];
   const [suggestions, setSuggestions] = useState<MealVariationSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -92,7 +87,7 @@ export function AiSuggestionModal({
   const buildUserNote = (): string | undefined => {
     const parts: string[] = [];
     if (ingredientMode === "specific" && selectedIngredients.length > 0) {
-      parts.push(`Evde mevcut malzemeler: ${selectedIngredients.join(", ")}. Sadece bu malzemelerle yapılabilecek yemekler öner`);
+      parts.push(t("ingredientNote", { list: selectedIngredients.join(", ") }));
     }
     const note = userNote.trim();
     if (note) parts.push(note);
@@ -199,14 +194,14 @@ export function AiSuggestionModal({
               </button>
             )}
             <Sparkles className="h-4 w-4 text-primary" />
-            {view === "saved" ? "Kayıtlı Öğünler" : "AI Öğün Önerisi"}
+            {view === "saved" ? t("savedTitle") : t("modalTitle")}
           </SheetTitle>
         </SheetHeader>
         <div className="space-y-4">
           {/* Current meal info — always visible */}
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-xs text-muted-foreground mb-1">
-              Mevcut öğün:
+              {t("currentMeal")}
             </p>
             <p className="text-sm font-medium">{mealLabel}</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -228,7 +223,7 @@ export function AiSuggestionModal({
               {/* Ingredient selection */}
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Evdeki malzemeler:
+                  {t("homeIngredientsLabel")}
                 </p>
                 <div className="flex gap-2 mb-2">
                   <button
@@ -239,7 +234,7 @@ export function AiSuggestionModal({
                         : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    Her şey var
+                    {t("modeAll")}
                   </button>
                   <button
                     onClick={() => setIngredientMode("specific")}
@@ -249,7 +244,7 @@ export function AiSuggestionModal({
                         : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    Malzeme belirt
+                    {t("modeSpecific")}
                   </button>
                 </div>
                 {ingredientMode === "specific" && (
@@ -278,14 +273,14 @@ export function AiSuggestionModal({
               <div className="flex items-start gap-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground">
-                  Özel bir isteğin varsa yaz:
+                  {t("noteHint")}
                 </p>
               </div>
               <textarea
                 value={userNote}
                 onChange={(e) => setUserNote(e.target.value)}
                 rows={2}
-                placeholder="Örn: Daha hafif bir alternatif olsun, süt ürünleri olmasın..."
+                placeholder={t("notePlaceholder")}
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               />
 
@@ -297,7 +292,7 @@ export function AiSuggestionModal({
                   className="flex-1 gap-1.5"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Öneri Al
+                  {t("generate")}
                   <AiQuotaBadge feature="meal" />
                 </Button>
                 {savedMeals && savedMeals.length > 0 && (
@@ -307,7 +302,7 @@ export function AiSuggestionModal({
                     className="flex-1"
                   >
                     <Bookmark className="h-4 w-4 mr-2" />
-                    Kayıtlı ({savedMeals.length})
+                    {t("saved", { count: savedMeals.length })}
                   </Button>
                 )}
               </div>
@@ -318,7 +313,7 @@ export function AiSuggestionModal({
           {loading && (
             <div className="flex items-center justify-center py-8">
               <RefreshCw className="h-6 w-6 animate-spin text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">3 farklı öneri hazırlanıyor...</span>
+              <span className="ml-2 text-sm text-muted-foreground">{t("loading")}</span>
             </div>
           )}
 
@@ -338,7 +333,7 @@ export function AiSuggestionModal({
                   key={i}
                   className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2"
                 >
-                  <p className="text-xs text-primary font-medium">Öneri {i + 1}</p>
+                  <p className="text-xs text-primary font-medium">{t("suggestionN", { n: i + 1 })}</p>
                   <p className="text-sm leading-relaxed">{s.content}</p>
                   {s.calories && (
                     <div className="flex gap-1.5 flex-wrap">
@@ -360,7 +355,7 @@ export function AiSuggestionModal({
                       ) : (
                         <Check className="h-3.5 w-3.5 mr-1.5" />
                       )}
-                      Uygula
+                      {t("apply")}
                     </Button>
                     <Button
                       size="sm"
@@ -389,7 +384,7 @@ export function AiSuggestionModal({
                 ) : (
                   <Sparkles className="h-4 w-4 mr-2" />
                 )}
-                Yeni Öneriler
+                {t("newSuggestions")}
               </Button>
             </div>
           )}
@@ -404,7 +399,7 @@ export function AiSuggestionModal({
               )}
               {!savedLoading && (!savedMeals || savedMeals.length === 0) && (
                 <p className="text-sm text-muted-foreground text-center py-6">
-                  Henüz kayıtlı öğün yok
+                  {t("emptySaved")}
                 </p>
               )}
               {!savedLoading && savedMeals && savedMeals.length > 0 && (() => {
@@ -424,7 +419,7 @@ export function AiSuggestionModal({
                               : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
                           }`}
                         >
-                          Tümü ({savedMeals.length})
+                          {t("filterAll", { count: savedMeals.length })}
                         </button>
                         {labels.map((label) => (
                           <button
@@ -476,7 +471,7 @@ export function AiSuggestionModal({
                             ) : (
                               <Check className="h-3.5 w-3.5 mr-1.5" />
                             )}
-                            Uygula
+                            {t("apply")}
                           </Button>
                           <Button
                             size="sm"

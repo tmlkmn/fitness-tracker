@@ -10,8 +10,10 @@ import { toast } from "sonner";
 import { useUserProfile, useDefaultMacroTargets } from "@/hooks/use-user";
 import { updateMacroTargets } from "@/actions/user";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 
 export function MacroTargetsCard() {
+  const t = useTranslations("meals.macroTargets");
   const { data: profile } = useUserProfile();
   const qc = useQueryClient();
   const computeDefaults = useDefaultMacroTargets();
@@ -34,13 +36,13 @@ export function MacroTargetsCard() {
       const defaults = await computeDefaults.mutateAsync();
       if (!defaults) {
         const missing: string[] = [];
-        if (!profile?.height) missing.push("boy");
-        if (!profile?.weight || parseFloat(profile.weight) <= 0) missing.push("kilo");
-        if (!profile?.age) missing.push("yaş");
+        if (!profile?.height) missing.push(t("fieldHeight"));
+        if (!profile?.weight || parseFloat(profile.weight) <= 0) missing.push(t("fieldWeight"));
+        if (!profile?.age) missing.push(t("fieldAge"));
         const missingText = missing.length
-          ? `Eksik bilgi: ${missing.join(", ")}. `
+          ? t("missingPrefix", { fields: missing.join(", ") })
           : "";
-        toast.error(`${missingText}Profil sayfasından bilgilerini tamamla.`);
+        toast.error(`${missingText}${t("missingSuffix")}`);
         return;
       }
       setCalories(String(defaults.calories));
@@ -48,14 +50,14 @@ export function MacroTargetsCard() {
       setCarbs(String(defaults.carbs));
       setFat(String(defaults.fat));
     } catch {
-      toast.error("Hesaplanamadı");
+      toast.error(t("computeFailed"));
     }
   };
 
   const handleSave = async () => {
     const calorieVal = calories ? parseInt(calories) : null;
     if (calorieVal !== null && calorieVal < 1200) {
-      toast.error("Kalori hedefi en az 1200 kcal olmalıdır");
+      toast.error(t("minCalories"));
       return;
     }
     setSaving(true);
@@ -68,9 +70,9 @@ export function MacroTargetsCard() {
       });
       qc.invalidateQueries({ queryKey: ["user-profile"] });
       qc.invalidateQueries({ queryKey: ["macro.resolved"] });
-      toast.success("Makro hedefleri güncellendi");
+      toast.success(t("saved"));
     } catch {
-      toast.error("Kaydedilemedi");
+      toast.error(t("saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -81,17 +83,15 @@ export function MacroTargetsCard() {
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Target className="h-4 w-4" />
-          Makro Hedefleri
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-3">
-        <p className="text-xs text-muted-foreground">
-          Günlük öğün özetinde ilerleme barı için hedefleri belirle.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("subtitle")}</p>
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <Label htmlFor="targetCalories" className="text-xs text-muted-foreground">
-              Kalori
+              {t("calories")}
             </Label>
             <Input
               id="targetCalories"
@@ -105,7 +105,7 @@ export function MacroTargetsCard() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="targetProtein" className="text-xs text-muted-foreground">
-              Protein (g)
+              {t("protein")}
             </Label>
             <Input
               id="targetProtein"
@@ -120,7 +120,7 @@ export function MacroTargetsCard() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="targetCarbs" className="text-xs text-muted-foreground">
-              Karb (g)
+              {t("carbs")}
             </Label>
             <Input
               id="targetCarbs"
@@ -135,7 +135,7 @@ export function MacroTargetsCard() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="targetFat" className="text-xs text-muted-foreground">
-              Yağ (g)
+              {t("fat")}
             </Label>
             <Input
               id="targetFat"
@@ -158,7 +158,7 @@ export function MacroTargetsCard() {
             onClick={handleAuto}
           >
             <Calculator className="h-3.5 w-3.5" />
-            Otomatik Hesapla
+            {t("auto")}
           </Button>
           <Button
             type="button"
@@ -168,7 +168,7 @@ export function MacroTargetsCard() {
             disabled={saving}
           >
             <Save className="h-3.5 w-3.5" />
-            {saving ? "Kaydediliyor" : "Kaydet"}
+            {saving ? t("saving") : t("save")}
           </Button>
         </div>
       </CardContent>

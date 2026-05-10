@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import type { MissingField } from "@/hooks/use-profile-check";
+import { useTranslations } from "next-intl";
 
 interface ProfileMissingWarningProps {
   open: boolean;
@@ -22,6 +23,7 @@ export function ProfileMissingWarning({
   onOpenChange,
   missingFields,
 }: ProfileMissingWarningProps) {
+  const t = useTranslations("assistant.profileMissing");
   const router = useRouter();
 
   return (
@@ -30,15 +32,12 @@ export function ProfileMissingWarning({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            Profil Bilgileri Eksik
+            {t("title")}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            AI&apos;ın size en uygun programı oluşturabilmesi için aşağıdaki bilgilerin
-            doldurulması gerekiyor:
-          </p>
+          <p className="text-sm text-muted-foreground">{t("body")}</p>
 
           <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg space-y-1.5">
             {missingFields.map((field) => (
@@ -56,7 +55,7 @@ export function ProfileMissingWarning({
               router.push("/ayarlar");
             }}
           >
-            Ayarlara Git
+            {t("cta")}
           </Button>
         </div>
       </DialogContent>

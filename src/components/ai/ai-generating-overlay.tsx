@@ -3,6 +3,7 @@
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { Sparkles, Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export interface GeneratingStep {
   label: string;
@@ -17,9 +18,10 @@ interface AiGeneratingOverlayProps {
 
 export function AiGeneratingOverlay({
   open,
-  title = "AI programını hazırlıyor",
+  title,
   steps,
 }: AiGeneratingOverlayProps) {
+  const t = useTranslations("assistant.generating");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -52,10 +54,10 @@ export function AiGeneratingOverlay({
 
       {/* Text */}
       <h2 className="text-xl font-semibold text-foreground text-center mb-2">
-        {title}
+        {title ?? t("defaultTitle")}
       </h2>
       <p className="text-sm text-muted-foreground text-center mb-10">
-        Verilerini analiz ediyoruz, bu birkaç dakika sürebilir.
+        {t("subtitle")}
       </p>
 
       {/* Step list */}

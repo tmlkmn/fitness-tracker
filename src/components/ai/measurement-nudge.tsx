@@ -1,14 +1,16 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { LineChart } from "lucide-react";
 import { useProgressLogCount } from "@/hooks/use-progress";
+import { useTranslations } from "next-intl";
 
 interface MeasurementNudgeProps {
   compact?: boolean;
 }
 
 export function MeasurementNudge({ compact }: MeasurementNudgeProps) {
+  const t = useTranslations("assistant.measurementNudge");
   const { data: count, isLoading } = useProgressLogCount();
   if (isLoading || (count ?? 0) > 0) return null;
 
@@ -25,18 +27,17 @@ export function MeasurementNudge({ compact }: MeasurementNudgeProps) {
         <p
           className={`${compact ? "text-xs" : "text-sm"} font-medium text-primary`}
         >
-          Ölçüm eklemek önerileri geliştirir
+          {t("title")}
         </p>
         <p
           className={`${compact ? "text-[11px]" : "text-xs"} text-muted-foreground mt-0.5`}
         >
-          Kilo, yağ oranı ve bel ölçünüz AI&apos;ın size özel makro ve antrenman
-          hacmi belirlemesini sağlar.{" "}
+          {t("body")}{" "}
           <Link
             href="/ilerleme"
             className="text-primary underline underline-offset-2 hover:no-underline"
           >
-            Ölçüm ekle
+            {t("link")}
           </Link>
         </p>
       </div>
