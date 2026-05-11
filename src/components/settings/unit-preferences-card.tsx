@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Ruler, Save } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { useUserProfile } from "@/hooks/use-user";
 import { updateUnitPreferences } from "@/actions/user";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +44,7 @@ function SegmentedButton<T extends string>({
 export function UnitPreferencesCard() {
   const { data: profile } = useUserProfile();
   const qc = useQueryClient();
+  const t = useTranslations("settings.unitPreferences");
   const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg");
   const [energyUnit, setEnergyUnit] = useState<EnergyUnit>("kcal");
   const [saving, setSaving] = useState(false);
@@ -59,11 +61,11 @@ export function UnitPreferencesCard() {
     setSaving(true);
     try {
       await updateUnitPreferences({ weightUnit, energyUnit });
-      toast.success("Birim tercihleri kaydedildi");
+      toast.success(t("saved"));
       qc.invalidateQueries({ queryKey: ["user-profile"] });
       setDirty(false);
     } catch {
-      toast.error("Kaydedilemedi");
+      toast.error(t("saveError"));
     } finally {
       setSaving(false);
     }
@@ -74,12 +76,12 @@ export function UnitPreferencesCard() {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <Ruler className="h-4 w-4 text-muted-foreground" />
-          Birim Tercihleri
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-0">
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Ağırlık</Label>
+          <Label className="text-xs text-muted-foreground">{t("weight")}</Label>
           <div className="flex gap-1 p-1 bg-muted rounded-lg">
             <SegmentedButton<WeightUnit>
               value="kg"
@@ -89,7 +91,7 @@ export function UnitPreferencesCard() {
                 setDirty(true);
               }}
             >
-              Kilogram (kg)
+              {t("kg")}
             </SegmentedButton>
             <SegmentedButton<WeightUnit>
               value="lb"
@@ -99,13 +101,13 @@ export function UnitPreferencesCard() {
                 setDirty(true);
               }}
             >
-              Pound (lb)
+              {t("lb")}
             </SegmentedButton>
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Enerji</Label>
+          <Label className="text-xs text-muted-foreground">{t("energy")}</Label>
           <div className="flex gap-1 p-1 bg-muted rounded-lg">
             <SegmentedButton<EnergyUnit>
               value="kcal"
@@ -115,7 +117,7 @@ export function UnitPreferencesCard() {
                 setDirty(true);
               }}
             >
-              Kalori (kcal)
+              {t("kcal")}
             </SegmentedButton>
             <SegmentedButton<EnergyUnit>
               value="kj"
@@ -125,7 +127,7 @@ export function UnitPreferencesCard() {
                 setDirty(true);
               }}
             >
-              Kilojoule (kJ)
+              {t("kj")}
             </SegmentedButton>
           </div>
         </div>
@@ -137,7 +139,7 @@ export function UnitPreferencesCard() {
           className="w-full gap-1.5"
         >
           <Save className="h-3.5 w-3.5" />
-          Kaydet
+          {t("save")}
         </Button>
       </CardContent>
     </Card>

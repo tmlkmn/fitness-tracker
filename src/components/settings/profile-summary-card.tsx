@@ -5,31 +5,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useTranslations } from "next-intl";
 import { useUserProfile } from "@/hooks/use-user";
 import { useSession } from "@/lib/auth-client";
 import { computeProfileCompleteness } from "@/lib/profile-completeness";
 import { ProfileEditorDialog } from "./profile-editor-dialog";
 import { Pencil, User } from "lucide-react";
 
-const MEMBERSHIP_LABELS: Record<string, string> = {
-  unlimited: "Sınırsız",
-  "1-month": "1 Ay",
-  "3-month": "3 Ay",
-  "6-month": "6 Ay",
-  "1-year": "1 Yıl",
-  custom: "Özel",
-};
-
 export function ProfileSummaryCard() {
   const { data: session } = useSession();
   const { data: profile } = useUserProfile();
+  const t = useTranslations("settings.profileSummary");
+  const tTypes = useTranslations("settings.membershipTypes");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const user = session?.user;
   const completeness = computeProfileCompleteness(profile);
 
+  const knownTypes = ["unlimited", "1-month", "3-month", "6-month", "1-year", "custom"];
   const membershipLabel = profile?.membershipType
-    ? MEMBERSHIP_LABELS[profile.membershipType] ?? profile.membershipType
+    ? knownTypes.includes(profile.membershipType)
+      ? tTypes(profile.membershipType as "unlimited")
+      : profile.membershipType
     : null;
 
   const membershipEndTs = profile?.membershipEndDate
@@ -100,7 +97,7 @@ export function ProfileSummaryCard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">
-                {user?.name || user?.email || "Profilim"}
+                {user?.name || user?.email || t("fallbackName")}
               </p>
               {user?.email && user?.name && (
                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
@@ -109,14 +106,14 @@ export function ProfileSummaryCard() {
             {membershipLabel && (
               <Badge variant={membershipExpired ? "destructive" : "secondary"}>
                 {membershipLabel}
-                {membershipRemaining != null && ` · ${membershipRemaining}g`}
+                {membershipRemaining != null && ` · ${membershipRemaining}${t("remainingDaysSuffix")}`}
               </Badge>
             )}
           </div>
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Profil tamamlanması</span>
+              <span className="text-xs text-muted-foreground">{t("completion")}</span>
               <span className="text-xs font-medium tabular-nums">
                 %{completeness.percent}
               </span>
@@ -125,10 +122,10 @@ export function ProfileSummaryCard() {
           </div>
 
           <div className="flex gap-1.5">
-            {chip({ label: "Yaş", value: profile?.age != null ? String(profile.age) : null })}
-            {chip({ label: "Boy", value: profile?.height != null ? String(profile.height) : null, unit: "cm" })}
-            {chip({ label: "Kilo", value: profile?.weight || null, unit: "kg" })}
-            {chip({ label: "Hedef", value: profile?.targetWeight || null, unit: "kg", primary: true })}
+            {chip({ label: t("age"), value: profile?.age != null ? String(profile.age) : null })}
+            {chip({ label: t("height"), value: profile?.height != null ? String(profile.height) : null, unit: "cm" })}
+            {chip({ label: t("weight"), value: profile?.weight || null, unit: "kg" })}
+            {chip({ label: t("target"), value: profile?.targetWeight || null, unit: "kg", primary: true })}
           </div>
 
           <Button
@@ -138,7 +135,7 @@ export function ProfileSummaryCard() {
             onClick={() => setDialogOpen(true)}
           >
             <Pencil className="h-3.5 w-3.5" />
-            Profili Düzenle
+            {t("edit")}
           </Button>
         </CardContent>
       </Card>

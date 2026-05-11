@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShieldCheck, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { useUserProfile, useUpdateHealthProfile } from "@/hooks/use-user";
 import type { UpdateHealthProfileInput } from "@/actions/user";
 
@@ -18,24 +19,13 @@ type FlagKey =
   | "hasDiabetes"
   | "hasThyroidCondition";
 
-const GENDER_OPTIONS: { value: Gender; label: string }[] = [
-  { value: "female", label: "Kadın" },
-  { value: "male", label: "Erkek" },
-  { value: "prefer_not_to_say", label: "Belirtmek istemiyorum" },
-];
-
-const ACTIVITY_OPTIONS: { value: Activity; label: string; hint: string }[] = [
-  { value: "sedentary", label: "Çoğunlukla otururum", hint: "Masa başı, az hareket" },
-  { value: "light", label: "Hafif aktif", hint: "Ofis + günlük yürüyüş, hafif ev işleri" },
-  { value: "moderate", label: "Ayakta çalışırım", hint: "Öğretmen, garson, perakende" },
-  { value: "very_active", label: "Çok aktif", hint: "İnşaat, kurye, fiziksel iş" },
-];
-
-const FLAGS: { key: FlagKey; label: string }[] = [
-  { key: "hasEatingDisorderHistory", label: "Yeme bozukluğu öyküm var" },
-  { key: "isPregnantOrBreastfeeding", label: "Hamileyim veya emziriyorum" },
-  { key: "hasDiabetes", label: "Diyabetim var (Tip 1 veya insülin kullanılan Tip 2)" },
-  { key: "hasThyroidCondition", label: "Tedavi altında olmayan tiroid problemim var" },
+const GENDER_VALUES: Gender[] = ["female", "male", "prefer_not_to_say"];
+const ACTIVITY_VALUES: Activity[] = ["sedentary", "light", "moderate", "very_active"];
+const FLAG_KEYS: FlagKey[] = [
+  "hasEatingDisorderHistory",
+  "isPregnantOrBreastfeeding",
+  "hasDiabetes",
+  "hasThyroidCondition",
 ];
 
 interface InitialValues {
@@ -54,6 +44,7 @@ function isActivity(v: string | null): v is Activity {
 
 export function HealthProfileCard() {
   const { data: profile } = useUserProfile();
+  const t = useTranslations("settings.healthProfile");
 
   if (!profile) {
     return (
@@ -61,7 +52,7 @@ export function HealthProfileCard() {
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <ShieldCheck className="h-4 w-4" />
-            Yeni profil bilgileri
+            {t("title")}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 pt-2 space-y-3">
@@ -83,13 +74,11 @@ export function HealthProfileCard() {
     },
   };
 
-  // Inner form takes initial values as props and lazy-initializes its own
-  // local state. Splitting like this avoids a useEffect-based "sync state
-  // with profile" pattern that lints poorly.
   return <HealthProfileForm initial={initial} />;
 }
 
 function HealthProfileForm({ initial }: { initial: InitialValues }) {
+  const t = useTranslations("settings.healthProfile");
   const update = useUpdateHealthProfile();
   const [gender, setGender] = useState<Gender>(initial.gender);
   const [activity, setActivity] = useState<Activity>(initial.activity);
@@ -102,9 +91,9 @@ function HealthProfileForm({ initial }: { initial: InitialValues }) {
         dailyActivityLevel: activity,
         ...flags,
       });
-      toast.success("Sağlık profili güncellendi");
+      toast.success(t("saved"));
     } catch {
-      toast.error("Kaydedilemedi");
+      toast.error(t("saveError"));
     }
   };
 
@@ -113,52 +102,51 @@ function HealthProfileForm({ initial }: { initial: InitialValues }) {
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <ShieldCheck className="h-4 w-4" />
-          Yeni profil bilgileri
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-5">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Kalori hesaplamaları ve aralıklı açlık güvenliği için kullanılır.
-          Sağlık verileri KVKK kapsamında özel kategori olarak korunur.
+          {t("intro")}
         </p>
 
-        <FieldGroup title="Biyolojik cinsiyet">
-          {GENDER_OPTIONS.map((opt) => (
+        <FieldGroup title={t("genderTitle")}>
+          {GENDER_VALUES.map((value) => (
             <RadioCard
-              key={opt.value}
-              checked={gender === opt.value}
-              onClick={() => setGender(opt.value)}
-              label={opt.label}
+              key={value}
+              checked={gender === value}
+              onClick={() => setGender(value)}
+              label={t(`genders.${value}`)}
             />
           ))}
         </FieldGroup>
 
-        <FieldGroup title="Günlük aktivite (antrenman dışı)">
-          {ACTIVITY_OPTIONS.map((opt) => (
+        <FieldGroup title={t("activityTitle")}>
+          {ACTIVITY_VALUES.map((value) => (
             <RadioCard
-              key={opt.value}
-              checked={activity === opt.value}
-              onClick={() => setActivity(opt.value)}
-              label={opt.label}
-              hint={opt.hint}
+              key={value}
+              checked={activity === value}
+              onClick={() => setActivity(value)}
+              label={t(`activities.${value}.label`)}
+              hint={t(`activities.${value}.hint`)}
             />
           ))}
         </FieldGroup>
 
-        <FieldGroup title="Sağlık durumları">
-          {FLAGS.map((flag) => (
+        <FieldGroup title={t("flagsTitle")}>
+          {FLAG_KEYS.map((key) => (
             <label
-              key={flag.key}
+              key={key}
               className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/40 transition-colors"
             >
               <Checkbox
-                checked={flags[flag.key]}
+                checked={flags[key]}
                 onCheckedChange={() =>
-                  setFlags((prev) => ({ ...prev, [flag.key]: !prev[flag.key] }))
+                  setFlags((prev) => ({ ...prev, [key]: !prev[key] }))
                 }
                 className="mt-0.5"
               />
-              <span className="text-xs leading-relaxed flex-1">{flag.label}</span>
+              <span className="text-xs leading-relaxed flex-1">{t(`flags.${key}`)}</span>
             </label>
           ))}
         </FieldGroup>
@@ -175,7 +163,7 @@ function HealthProfileForm({ initial }: { initial: InitialValues }) {
           ) : (
             <Save className="h-3.5 w-3.5" />
           )}
-          Kaydet
+          {t("save")}
         </Button>
       </CardContent>
     </Card>

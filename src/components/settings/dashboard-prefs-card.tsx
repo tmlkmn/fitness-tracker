@@ -2,24 +2,26 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutDashboard } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { DASHBOARD_CARDS } from "@/lib/dashboard-prefs";
 import { useDashboardPrefs } from "@/hooks/use-dashboard-prefs";
 import { cn } from "@/lib/utils";
 
 export function DashboardPrefsCard() {
   const { toggle, isVisible, hydrated } = useDashboardPrefs();
+  const t = useTranslations("settings.dashboardPrefs");
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-          Dashboard Kartları
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-1 pt-0">
         <p className="text-xs text-muted-foreground pb-2">
-          Ana sayfada görmek istediğin kartları seç. Tercihler bu cihazda saklanır.
+          {t("description")}
         </p>
         {DASHBOARD_CARDS.map((card) => {
           const visible = hydrated ? isVisible(card.key) : true;
@@ -44,8 +46,8 @@ export function DashboardPrefsCard() {
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{card.label}</p>
-                <p className="text-xs text-muted-foreground">{card.description}</p>
+                <p className="text-sm font-medium">{t(`cards.${card.key}.label`)}</p>
+                <p className="text-xs text-muted-foreground">{t(`cards.${card.key}.description`)}</p>
               </div>
             </button>
           );

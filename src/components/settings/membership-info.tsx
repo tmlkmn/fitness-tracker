@@ -3,15 +3,8 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard } from "lucide-react";
-
-const MEMBERSHIP_LABELS: Record<string, string> = {
-  unlimited: "Sınırsız",
-  "1-month": "1 Ay",
-  "3-month": "3 Ay",
-  "6-month": "6 Ay",
-  "1-year": "1 Yıl",
-  custom: "Özel",
-};
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 interface MembershipInfoProps {
   profile: {
@@ -22,13 +15,21 @@ interface MembershipInfoProps {
 }
 
 export function MembershipInfo({ profile }: MembershipInfoProps) {
-  const label =
-    MEMBERSHIP_LABELS[profile.membershipType ?? ""] ?? profile.membershipType;
+  const t = useTranslations("settings.membershipInfo");
+  const tTypes = useTranslations("settings.membershipTypes");
+  const locale = useLocale() as Locale;
+  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
+
+  const type = profile.membershipType ?? "";
+  const knownType = ["unlimited", "1-month", "3-month", "6-month", "1-year", "custom"].includes(
+    type,
+  );
+  const label = knownType ? tTypes(type as "unlimited") : type || "";
   const startDate = profile.membershipStartDate
-    ? new Date(profile.membershipStartDate).toLocaleDateString("tr-TR")
+    ? new Date(profile.membershipStartDate).toLocaleDateString(dateLocale)
     : null;
   const endDate = profile.membershipEndDate
-    ? new Date(profile.membershipEndDate).toLocaleDateString("tr-TR")
+    ? new Date(profile.membershipEndDate).toLocaleDateString(dateLocale)
     : null;
 
   const [snapshot] = useState(() => {
@@ -49,19 +50,19 @@ export function MembershipInfo({ profile }: MembershipInfoProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CreditCard className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Üyelik</span>
+          <span className="text-sm text-muted-foreground">{t("title")}</span>
         </div>
         <Badge variant={isExpired ? "destructive" : "secondary"}>{label}</Badge>
       </div>
       {startDate && (
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground pl-6">Başlangıç</span>
+          <span className="text-sm text-muted-foreground pl-6">{t("start")}</span>
           <span className="text-sm font-medium">{startDate}</span>
         </div>
       )}
       {endDate && (
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground pl-6">Bitiş</span>
+          <span className="text-sm text-muted-foreground pl-6">{t("end")}</span>
           <span className={`text-sm font-medium ${isExpired ? "text-destructive" : ""}`}>
             {endDate}
           </span>
@@ -69,13 +70,15 @@ export function MembershipInfo({ profile }: MembershipInfoProps) {
       )}
       {remainingDays !== null && (
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground pl-6">Kalan Süre</span>
-          <span className="text-sm font-medium text-primary">{remainingDays} gün</span>
+          <span className="text-sm text-muted-foreground pl-6">{t("remaining")}</span>
+          <span className="text-sm font-medium text-primary">
+            {remainingDays} {t("daysSuffix")}
+          </span>
         </div>
       )}
       {profile.membershipType === "unlimited" && (
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground pl-6">Bitiş</span>
+          <span className="text-sm text-muted-foreground pl-6">{t("end")}</span>
           <span className="text-sm font-medium">—</span>
         </div>
       )}

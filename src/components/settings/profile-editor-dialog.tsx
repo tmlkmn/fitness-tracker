@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useTranslations } from "next-intl";
 import { ProfileEditor } from "./profile-editor";
 import { useUserProfile } from "@/hooks/use-user";
 
@@ -17,11 +18,12 @@ interface Props {
 }
 
 export function ProfileEditorDialog({ open, onOpenChange, profile, userEmail }: Props) {
+  const t = useTranslations("settings.profileEditorDialog");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader sticky>
-          <DialogTitle>Profili Düzenle</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
         <ProfileEditor
           profile={profile}

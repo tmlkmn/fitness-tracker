@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { updateSupplementSchedule } from "@/actions/user";
 import { useUserProfile } from "@/hooks/use-user";
 import {
@@ -15,15 +16,15 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 
 type SupplementItem = { period: string; supplements: string };
 
-const SUPPLEMENT_PERIOD_OPTIONS = [
-  { value: "Sabah", label: "Sabah (uyanınca)" },
-  { value: "Kahvaltı ile", label: "Kahvaltı ile" },
-  { value: "Öğle", label: "Öğle" },
-  { value: "Antrenman öncesi", label: "Antrenman öncesi" },
-  { value: "Antrenman sonrası", label: "Antrenman sonrası" },
-  { value: "Akşam yemeği ile", label: "Akşam yemeği ile" },
-  { value: "Yatmadan önce", label: "Yatmadan önce" },
-];
+const SUPPLEMENT_PERIODS = [
+  "Sabah",
+  "Kahvaltı ile",
+  "Öğle",
+  "Antrenman öncesi",
+  "Antrenman sonrası",
+  "Akşam yemeği ile",
+  "Yatmadan önce",
+] as const;
 
 interface Props {
   profile: ReturnType<typeof useUserProfile>["data"];
@@ -31,6 +32,7 @@ interface Props {
 
 export function SupplementScheduleEditor({ profile }: Props) {
   const queryClient = useQueryClient();
+  const t = useTranslations("settings.supplementSchedule");
   const [items, setItems] = useState<SupplementItem[]>([]);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -53,20 +55,25 @@ export function SupplementScheduleEditor({ profile }: Props) {
     }
   };
 
+  const periodLabel = (period: string) =>
+    SUPPLEMENT_PERIODS.includes(period as (typeof SUPPLEMENT_PERIODS)[number])
+      ? t(`periods.${period}`)
+      : period;
+
   if (!editing) {
     return (
       <div className="space-y-2">
         {items.length > 0 ? (
           items.map((item, i) => (
             <div key={i} className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{item.period}:</span>
+              <span className="text-muted-foreground">{periodLabel(item.period)}:</span>
               <span className="font-medium">{item.supplements}</span>
             </div>
           ))
         ) : (
           <div className="space-y-1.5">
             <p className="text-sm text-muted-foreground">
-              Henüz supplement takvimi eklenmemiş.
+              {t("empty")}
             </p>
             <div className="opacity-40 space-y-1">
               {[
@@ -75,7 +82,7 @@ export function SupplementScheduleEditor({ profile }: Props) {
                 { period: "Yatmadan önce", supplements: "Magnezyum, ZMA" },
               ].map((item, i) => (
                 <div key={i} className="flex justify-between text-xs">
-                  <span>{item.period}:</span>
+                  <span>{periodLabel(item.period)}:</span>
                   <span>{item.supplements}</span>
                 </div>
               ))}
@@ -86,7 +93,7 @@ export function SupplementScheduleEditor({ profile }: Props) {
           onClick={() => setEditing(true)}
           className="text-xs text-primary hover:underline mt-2"
         >
-          {items.length > 0 ? "Düzenle" : "Ekle"}
+          {items.length > 0 ? t("edit") : t("add")}
         </button>
       </div>
     );
@@ -102,7 +109,7 @@ export function SupplementScheduleEditor({ profile }: Props) {
           <div key={i} className="flex items-center gap-2">
             <Select
               value={
-                SUPPLEMENT_PERIOD_OPTIONS.some((o) => o.value === item.period)
+                SUPPLEMENT_PERIODS.includes(item.period as (typeof SUPPLEMENT_PERIODS)[number])
                   ? item.period
                   : ""
               }
@@ -113,17 +120,17 @@ export function SupplementScheduleEditor({ profile }: Props) {
               }}
             >
               <SelectTrigger className="h-8 w-40 text-xs shrink-0">
-                <SelectValue placeholder="Zaman seçin" />
+                <SelectValue placeholder={t("selectTime")} />
               </SelectTrigger>
               <SelectContent>
-                {SUPPLEMENT_PERIOD_OPTIONS.map((opt) => (
+                {SUPPLEMENT_PERIODS.map((period) => (
                   <SelectItem
-                    key={opt.value}
-                    value={opt.value}
-                    disabled={usedPeriods.includes(opt.value)}
+                    key={period}
+                    value={period}
+                    disabled={usedPeriods.includes(period)}
                     className="text-xs"
                   >
-                    {opt.label}
+                    {t(`periods.${period}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -135,7 +142,7 @@ export function SupplementScheduleEditor({ profile }: Props) {
                 copy[i] = { ...copy[i], supplements: e.target.value };
                 setItems(copy);
               }}
-              placeholder="ör. Omega-3, Kreatin"
+              placeholder={t("supplementsPlaceholder")}
               className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
             />
             <button
@@ -151,7 +158,7 @@ export function SupplementScheduleEditor({ profile }: Props) {
         onClick={() => setItems([...items, { period: "", supplements: "" }])}
         className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
       >
-        <Plus className="h-3 w-3" /> Satır Ekle
+        <Plus className="h-3 w-3" /> {t("addRow")}
       </button>
       <div className="flex gap-2 pt-1">
         <button
@@ -159,7 +166,7 @@ export function SupplementScheduleEditor({ profile }: Props) {
           disabled={saving}
           className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Kaydet"}
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : t("save")}
         </button>
         <button
           onClick={() => {
@@ -170,7 +177,7 @@ export function SupplementScheduleEditor({ profile }: Props) {
           }}
           className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-input text-xs font-medium hover:bg-accent"
         >
-          İptal
+          {t("cancel")}
         </button>
       </div>
     </div>

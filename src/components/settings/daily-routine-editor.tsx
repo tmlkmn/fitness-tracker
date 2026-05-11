@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { updateDailyRoutine, updateWeekendRoutine } from "@/actions/user";
 import { useUserProfile } from "@/hooks/use-user";
 import {
@@ -22,6 +23,7 @@ interface Props {
 
 export function DailyRoutineEditor({ profile }: Props) {
   const queryClient = useQueryClient();
+  const t = useTranslations("settings.dailyRoutine");
   const [weekdayItems, setWeekdayItems] = useState<RoutineItem[]>([]);
   const [weekendItems, setWeekendItems] = useState<RoutineItem[]>([]);
   const [editing, setEditing] = useState(false);
@@ -76,6 +78,11 @@ export function DailyRoutineEditor({ profile }: Props) {
     setEditing(true);
   };
 
+  const eventLabel = (event: string) => {
+    const known = ROUTINE_EVENTS.find((ev) => ev.value === event);
+    return known ? t(`events.${known.value}`) : event;
+  };
+
   const tabButton = (tab: "weekday" | "weekend", label: string) => (
     <button
       onClick={() => setActiveTab(tab)}
@@ -97,19 +104,19 @@ export function DailyRoutineEditor({ profile }: Props) {
           <>
             {hasWeekend && (
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                Hafta İçi
+                {t("weekday")}
               </p>
             )}
             {weekdayItems.map((item, i) => (
               <div key={i} className="flex justify-between text-sm">
                 <span className="text-muted-foreground font-mono">{item.time}</span>
-                <span>{item.event}</span>
+                <span>{eventLabel(item.event)}</span>
               </div>
             ))}
           </>
         ) : (
           <div className="space-y-1.5">
-            <p className="text-sm text-muted-foreground">Henüz günlük akış eklenmemiş.</p>
+            <p className="text-sm text-muted-foreground">{t("empty")}</p>
             <div className="opacity-40 space-y-1">
               {[
                 { time: "07:00", event: "Uyanış" },
@@ -121,7 +128,7 @@ export function DailyRoutineEditor({ profile }: Props) {
               ].map((item, i) => (
                 <div key={i} className="flex justify-between text-xs">
                   <span className="font-mono">{item.time}</span>
-                  <span>{item.event}</span>
+                  <span>{eventLabel(item.event)}</span>
                 </div>
               ))}
             </div>
@@ -131,12 +138,12 @@ export function DailyRoutineEditor({ profile }: Props) {
           <>
             <div className="border-t border-border/50 my-2" />
             <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-              Hafta Sonu
+              {t("weekend")}
             </p>
             {weekendItems.map((item, i) => (
               <div key={i} className="flex justify-between text-sm">
                 <span className="text-muted-foreground font-mono">{item.time}</span>
-                <span>{item.event}</span>
+                <span>{eventLabel(item.event)}</span>
               </div>
             ))}
           </>
@@ -149,7 +156,7 @@ export function DailyRoutineEditor({ profile }: Props) {
               className="flex items-center gap-2 text-xs text-yellow-500 hover:underline"
             >
               <AlertTriangle className="h-3 w-3" />
-              Hafta sonu programı eklenmemiş
+              {t("weekendMissing")}
             </button>
           </>
         )}
@@ -157,7 +164,7 @@ export function DailyRoutineEditor({ profile }: Props) {
           onClick={startEditing}
           className="text-xs text-primary hover:underline mt-2"
         >
-          {weekdayItems.length > 0 ? "Düzenle" : "Ekle"}
+          {weekdayItems.length > 0 ? t("edit") : t("add")}
         </button>
       </div>
     );
@@ -166,8 +173,8 @@ export function DailyRoutineEditor({ profile }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
-        {tabButton("weekday", "Hafta İçi")}
-        {tabButton("weekend", "Hafta Sonu")}
+        {tabButton("weekday", t("weekday"))}
+        {tabButton("weekend", t("weekend"))}
       </div>
 
       {items.map((item, i) => (
@@ -191,7 +198,7 @@ export function DailyRoutineEditor({ profile }: Props) {
             }}
           >
             <SelectTrigger className="h-8 flex-1 text-xs">
-              <SelectValue placeholder="Etkinlik seç" />
+              <SelectValue placeholder={t("selectEvent")} />
             </SelectTrigger>
             <SelectContent>
               {ROUTINE_EVENTS.map((ev) => {
@@ -200,7 +207,7 @@ export function DailyRoutineEditor({ profile }: Props) {
                 );
                 return (
                   <SelectItem key={ev.value} value={ev.value} disabled={usedByOther}>
-                    {ev.label}
+                    {t(`events.${ev.value}`)}
                   </SelectItem>
                 );
               })}
@@ -218,7 +225,7 @@ export function DailyRoutineEditor({ profile }: Props) {
         onClick={() => setItems([...items, { time: "", event: "" }])}
         className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
       >
-        <Plus className="h-3 w-3" /> Satır Ekle
+        <Plus className="h-3 w-3" /> {t("addRow")}
       </button>
       <div className="flex gap-2 pt-1">
         <button
@@ -226,7 +233,7 @@ export function DailyRoutineEditor({ profile }: Props) {
           disabled={saving}
           className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Kaydet"}
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : t("save")}
         </button>
         <button
           onClick={() => {
@@ -240,7 +247,7 @@ export function DailyRoutineEditor({ profile }: Props) {
           }}
           className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-input text-xs font-medium hover:bg-accent"
         >
-          İptal
+          {t("cancel")}
         </button>
       </div>
     </div>

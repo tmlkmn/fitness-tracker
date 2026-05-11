@@ -880,47 +880,6 @@
       "moveToTodayOrFuture": "Bugüne veya İleri Güne Taşı",
       "itemLabel": "öğün"
     },
-    "library": {
-      "title": "Öğün Kütüphanem",
-      "subtitle": "Kayıtlı öğünler ve günlük planlar",
-      "tabMeals": "Öğünler",
-      "tabPlans": "Günlük Planlar",
-      "loading": "Yükleniyor…",
-      "noSavedMealsTitle": "Henüz kayıtlı öğün yok",
-      "noSavedMealsHint": "Yeni öğün eklerken \"Favorilere kaydet\"i işaretle",
-      "search": "Ara...",
-      "all": "Tümü",
-      "noMatchingMeals": "Eşleşen öğün yok",
-      "mealDeleted": "Öğün silindi",
-      "noSavedPlansTitle": "Kayıtlı günlük plan yok",
-      "noSavedPlansHint": "Öğün listesinde \"AI ile Programı Değiştir\"den oluşturup kaydet",
-      "noMatchingPlans": "Eşleşen plan yok",
-      "planDeleted": "Plan silindi",
-      "mealCount": "{count} öğün",
-      "moreMeals": "+{count} öğün daha…",
-      "addToPlan": "Günün planına ekle",
-      "planSuffix": "{type} planı",
-      "today": "Bugün",
-      "yesterday": "Dün",
-      "daysAgo": "{n} gün önce",
-      "applyDialog": {
-        "title": "\"{label}\" Planını Uygula",
-        "description": "Plan {count} öğün içeriyor. Uygulanacak gün mevcut öğünlerin üzerine yazılır.",
-        "noEligibleDay": "Uygun gün bulunamadı",
-        "selectDay": "Bir gün seç",
-        "mealsAdded": "Öğünler eklendi",
-        "addFailed": "Eklenemedi",
-        "cancel": "İptal",
-        "applying": "Uygulanıyor…",
-        "apply": "Uygula"
-      },
-      "planTypes": {
-        "workout": "Antrenman",
-        "rest": "Dinlenme",
-        "swimming": "Yüzme",
-        "nutrition": "Beslenme"
-      }
-    },
     "aiModal": {
       "title": "AI ile Beslenme Programı",
       "overlayTitle": "AI Beslenme Planını Hazırlıyor",
@@ -950,6 +909,8 @@
       "empty": "Öğün bulunamadı"
     },
     "library": {
+      "title": "Öğün Kütüphanem",
+      "subtitle": "Kayıtlı öğünler ve günlük planlar",
       "tabMeals": "Öğünler",
       "tabPlans": "Günlük Planlar",
       "loading": "Yükleniyor…",
@@ -1128,26 +1089,6 @@
       "carbs": "Karb",
       "fat": "Yağ"
     },
-    "macroTargets": {
-      "title": "Makro Hedefleri",
-      "description": "Günlük öğün özetinde ilerleme barı için hedefleri belirle.",
-      "calories": "Kalori",
-      "proteinLabel": "Protein (g)",
-      "carbsLabel": "Karb (g)",
-      "fatLabel": "Yağ (g)",
-      "autoCalculate": "Otomatik Hesapla",
-      "save": "Kaydet",
-      "saving": "Kaydediliyor",
-      "missingPrefix": "Eksik bilgi: {fields}.",
-      "missingHeight": "boy",
-      "missingWeight": "kilo",
-      "missingAge": "yaş",
-      "missingSuffix": "Profil sayfasından bilgilerini tamamla.",
-      "calculateFailed": "Hesaplanamadı",
-      "minCaloriesError": "Kalori hedefi en az 1200 kcal olmalıdır",
-      "saved": "Makro hedefleri güncellendi",
-      "saveFailed": "Kaydedilemedi"
-    },
     "dailyRings": {
       "calorieLabel": "Kalori: {value} / {target} kcal",
       "proteinLabel": "Protein: {value} / {target} g",
@@ -1156,28 +1097,6 @@
       "calories": "Kalori",
       "protein": "Protein",
       "tasks": "Görevler"
-    },
-    "aiMacro": {
-      "title": "AI ile Makro Hesapla",
-      "description": "Vücudun hakkında bölge bölge bilgi ver — karın, kol, bacak nasıl? AI profilini ve son ölçümünü de baz alarak makrolarını hesaplar.",
-      "placeholder": "Örn: Karın bölgem dolgun ve sarkık, bacaklarım ince, kollarım da zayıf. Özellikle bel çevresini inceltmek istiyorum.",
-      "charLimit": "{count}/600",
-      "minChars": "En az 20 karakter gerekli",
-      "calculating": "Hesaplanıyor...",
-      "calculate": "AI ile Hesapla",
-      "calories": "Kalori",
-      "protein": "Protein",
-      "carbs": "Karb",
-      "fat": "Yağ",
-      "approve": "Onayla ve Kaydet",
-      "saving": "Kaydediliyor...",
-      "cancel": "İptal",
-      "calcFailed": "Hesaplanamadı",
-      "cooldown": "Lütfen {seconds} saniye bekle.",
-      "rateLimited": "Günlük AI limitine ulaştın. Yarın tekrar dene.",
-      "unavailable": "AI şu an kullanılamıyor. Daha sonra tekrar dene.",
-      "saved": "Makro hedefleri kaydedildi",
-      "saveFailed": "Kaydedilemedi"
     },
     "macroTrend": {
       "titleDefault": "7 Günlük {label}",
@@ -1715,7 +1634,17 @@
       "addRow": "Satır Ekle",
       "save": "Kaydet",
       "cancel": "İptal",
-      "selectEvent": "Etkinlik seç"
+      "selectEvent": "Etkinlik seç",
+      "events": {
+        "Uyanış": "Uyanış",
+        "Kahvaltı": "Kahvaltı",
+        "İşe Gidiş": "İşe Gidiş",
+        "Öğle Yemeği": "Öğle Yemeği",
+        "İşten Çıkış": "İşten Çıkış",
+        "Akşam Yemeği": "Akşam Yemeği",
+        "Antrenman": "Antrenman",
+        "Uyku": "Uyku"
+      }
     },
     "supplementSchedule": {
       "empty": "Henüz supplement takvimi eklenmemiş.",

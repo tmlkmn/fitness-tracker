@@ -879,47 +879,6 @@
       "moveToTodayOrFuture": "Move to Today or Future",
       "itemLabel": "meal"
     },
-    "library": {
-      "title": "My Meal Library",
-      "subtitle": "Saved meals and daily plans",
-      "tabMeals": "Meals",
-      "tabPlans": "Daily Plans",
-      "loading": "Loading…",
-      "noSavedMealsTitle": "No saved meals yet",
-      "noSavedMealsHint": "Check \"Save to favorites\" when adding a new meal",
-      "search": "Search...",
-      "all": "All",
-      "noMatchingMeals": "No matching meals",
-      "mealDeleted": "Meal deleted",
-      "noSavedPlansTitle": "No saved daily plans",
-      "noSavedPlansHint": "Generate one via \"Change with AI\" in the meal list and save it",
-      "noMatchingPlans": "No matching plans",
-      "planDeleted": "Plan deleted",
-      "mealCount": "{count} meals",
-      "moreMeals": "+{count} more meals…",
-      "addToPlan": "Add to a day",
-      "planSuffix": "{type} plan",
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "daysAgo": "{n} days ago",
-      "applyDialog": {
-        "title": "Apply \"{label}\" Plan",
-        "description": "Plan contains {count} meals. The selected day's existing meals will be overwritten.",
-        "noEligibleDay": "No eligible day found",
-        "selectDay": "Select a day",
-        "mealsAdded": "Meals added",
-        "addFailed": "Failed to add",
-        "cancel": "Cancel",
-        "applying": "Applying…",
-        "apply": "Apply"
-      },
-      "planTypes": {
-        "workout": "Workout",
-        "rest": "Rest",
-        "swimming": "Swimming",
-        "nutrition": "Nutrition"
-      }
-    },
     "aiModal": {
       "title": "AI Nutrition Plan",
       "overlayTitle": "AI is Preparing Your Nutrition Plan",
@@ -949,6 +908,8 @@
       "empty": "No meals found"
     },
     "library": {
+      "title": "My Meal Library",
+      "subtitle": "Saved meals and daily plans",
       "tabMeals": "Meals",
       "tabPlans": "Daily Plans",
       "loading": "Loading…",
@@ -1127,26 +1088,6 @@
       "carbs": "Carbs",
       "fat": "Fat"
     },
-    "macroTargets": {
-      "title": "Macro Targets",
-      "description": "Set targets for the daily summary progress bars.",
-      "calories": "Calories",
-      "proteinLabel": "Protein (g)",
-      "carbsLabel": "Carbs (g)",
-      "fatLabel": "Fat (g)",
-      "autoCalculate": "Auto Calculate",
-      "save": "Save",
-      "saving": "Saving",
-      "missingPrefix": "Missing info: {fields}.",
-      "missingHeight": "height",
-      "missingWeight": "weight",
-      "missingAge": "age",
-      "missingSuffix": "Complete your info on the profile page.",
-      "calculateFailed": "Could not calculate",
-      "minCaloriesError": "Calorie target must be at least 1200 kcal",
-      "saved": "Macro targets updated",
-      "saveFailed": "Could not save"
-    },
     "dailyRings": {
       "calorieLabel": "Calories: {value} / {target} kcal",
       "proteinLabel": "Protein: {value} / {target} g",
@@ -1155,28 +1096,6 @@
       "calories": "Calories",
       "protein": "Protein",
       "tasks": "Tasks"
-    },
-    "aiMacro": {
-      "title": "Calculate Macros with AI",
-      "description": "Tell us about your body region by region — how is your belly, arms, legs? AI will use your profile and latest measurement to compute your macros.",
-      "placeholder": "Ex: My belly is full and saggy, my legs are thin, my arms are weak. I especially want to slim my waist.",
-      "charLimit": "{count}/600",
-      "minChars": "At least 20 characters required",
-      "calculating": "Calculating...",
-      "calculate": "Calculate with AI",
-      "calories": "Calories",
-      "protein": "Protein",
-      "carbs": "Carbs",
-      "fat": "Fat",
-      "approve": "Approve & Save",
-      "saving": "Saving...",
-      "cancel": "Cancel",
-      "calcFailed": "Could not calculate",
-      "cooldown": "Please wait {seconds} seconds.",
-      "rateLimited": "You've hit the daily AI limit. Try again tomorrow.",
-      "unavailable": "AI is unavailable right now. Try again later.",
-      "saved": "Macro targets saved",
-      "saveFailed": "Could not save"
     },
     "macroTrend": {
       "titleDefault": "7-Day {label}",
@@ -1714,7 +1633,17 @@
       "addRow": "Add Row",
       "save": "Save",
       "cancel": "Cancel",
-      "selectEvent": "Select event"
+      "selectEvent": "Select event",
+      "events": {
+        "Uyanış": "Wake up",
+        "Kahvaltı": "Breakfast",
+        "İşe Gidiş": "Commute in",
+        "Öğle Yemeği": "Lunch",
+        "İşten Çıkış": "Commute out",
+        "Akşam Yemeği": "Dinner",
+        "Antrenman": "Workout",
+        "Uyku": "Sleep"
+      }
     },
     "supplementSchedule": {
       "empty": "No supplement schedule added yet.",
