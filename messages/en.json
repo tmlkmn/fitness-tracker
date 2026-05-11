@@ -821,7 +821,8 @@
     "tabs": {
       "nutrition": "Nutrition",
       "workout": "Workout",
-      "supplements": "Supplements"
+      "supplements": "Supplements",
+      "wellness": "Water & Sleep"
     },
     "planType": {
       "workout": "Workout Day",

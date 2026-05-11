@@ -821,7 +821,8 @@
     "tabs": {
       "nutrition": "Beslenme",
       "workout": "Antrenman",
-      "supplements": "Takviye"
+      "supplements": "Takviye",
+      "wellness": "Su & Uyku"
     },
     "planType": {
       "workout": "Antrenman Günü",

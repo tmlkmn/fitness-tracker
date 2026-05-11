@@ -7,7 +7,7 @@ import { MealList } from "@/components/meals/meal-list";
 import { WorkoutList } from "@/components/workout/workout-list";
 import { SupplementTimeline } from "@/components/supplements/supplement-timeline";
 import { notFound } from "next/navigation";
-import { Utensils, Dumbbell, Pill } from "lucide-react";
+import { Utensils, Dumbbell, Pill, HeartPulse } from "lucide-react";
 import { WaterTracker } from "@/components/water/water-tracker";
 import { SleepEntry } from "@/components/sleep/sleep-entry";
 import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
@@ -22,7 +22,7 @@ interface PageProps {
   searchParams: Promise<{ tab?: string; focus?: string }>;
 }
 
-const VALID_TABS = ["meals", "workout", "supplements"] as const;
+const VALID_TABS = ["meals", "workout", "supplements", "wellness"] as const;
 type ValidTab = (typeof VALID_TABS)[number];
 
 export default async function GunPage({ params, searchParams }: PageProps) {
@@ -37,7 +37,9 @@ export default async function GunPage({ params, searchParams }: PageProps) {
     tab ?? "",
   )
     ? (tab as ValidTab)
-    : "meals";
+    : focus === "sleep"
+      ? "wellness"
+      : "meals";
 
   if (!dailyPlan) notFound();
 
@@ -82,7 +84,7 @@ export default async function GunPage({ params, searchParams }: PageProps) {
       />
       <div className="p-4">
         <Tabs defaultValue={initialTab}>
-          <TabsList className="grid grid-cols-3 w-full mb-4">
+          <TabsList className="grid grid-cols-4 w-full mb-4">
             <TabsTrigger value="meals" className="gap-1.5">
               <Utensils className="h-4 w-4" />
               {t("tabs.nutrition")}
@@ -94,6 +96,10 @@ export default async function GunPage({ params, searchParams }: PageProps) {
             <TabsTrigger value="supplements" className="gap-1.5">
               <Pill className="h-4 w-4" />
               {t("tabs.supplements")}
+            </TabsTrigger>
+            <TabsTrigger value="wellness" className="gap-1.5">
+              <HeartPulse className="h-4 w-4" />
+              {t("tabs.wellness")}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="meals" className="space-y-3">
@@ -124,21 +130,21 @@ export default async function GunPage({ params, searchParams }: PageProps) {
               />
             )}
           </TabsContent>
+          <TabsContent value="wellness" className="space-y-3">
+            {dailyPlan.date && (
+              <>
+                <WaterTracker date={dailyPlan.date} readOnly={isPast} />
+                <div id="uyku" className="scroll-mt-20">
+                  <SleepEntry
+                    date={dailyPlan.date}
+                    readOnly={isPast}
+                    autoOpen={focus === "sleep"}
+                  />
+                </div>
+              </>
+            )}
+          </TabsContent>
         </Tabs>
-
-        {/* Su & Uyku Takibi */}
-        {dailyPlan.date && (
-          <div className="space-y-3 mt-4">
-            <WaterTracker date={dailyPlan.date} readOnly={isPast} />
-            <div id="uyku" className="scroll-mt-20">
-              <SleepEntry
-                date={dailyPlan.date}
-                readOnly={isPast}
-                autoOpen={focus === "sleep"}
-              />
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
