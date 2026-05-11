@@ -86,7 +86,7 @@ export function ExerciseAlternativeModal({
   onGenerate,
   onApply,
 }: ExerciseAlternativeModalProps) {
-  const t = useTranslations("exercises.alternativeModal");
+  const t = useTranslations("workout.alternativeModal");
   const tEquipment = useTranslations("workout.aiModal");
   const [userNote, setUserNote] = useState("");
   const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);

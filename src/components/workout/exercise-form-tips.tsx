@@ -25,7 +25,7 @@ interface ExerciseFormTipsProps {
 
 export function ExerciseFormTips({ name, notes, englishName, triggerClassName, triggerLabel }: ExerciseFormTipsProps) {
   const [open, setOpen] = useState(false);
-  const t = useTranslations("exercises.formTips");
+  const t = useTranslations("workout.formTips");
 
   const {
     data,

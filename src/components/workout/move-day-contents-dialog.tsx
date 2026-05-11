@@ -42,7 +42,7 @@ export function MoveDayContentsDialog({
   defaultIncludeWorkout = true,
   defaultIncludeMeals = false,
 }: MoveDayContentsDialogProps) {
-  const t = useTranslations("exercises.moveDialog");
+  const t = useTranslations("workout.moveDialog");
   const { data: source, isLoading: sourceLoading } = useDailyPlan(
     sourceDailyPlanId,
     open,

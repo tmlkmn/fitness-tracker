@@ -31,7 +31,7 @@ export function ExerciseLibraryPicker({
   onOpenChange,
   onSelect,
 }: ExerciseLibraryPickerProps) {
-  const t = useTranslations("exercises.libraryPicker");
+  const t = useTranslations("workout.libraryPicker");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const { data: results, isLoading } = useExerciseSearch(debouncedQuery);

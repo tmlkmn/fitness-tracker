@@ -33,7 +33,7 @@ const MUSCLE_KEYS = new Set([
 ]);
 
 export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: ExerciseDemoModalProps) {
-  const t = useTranslations("exercises.demoModal");
+  const t = useTranslations("workout.demoModal");
   const [open, setOpen] = useState(false);
 
   const getMuscleLabel = (muscle: string): string => {

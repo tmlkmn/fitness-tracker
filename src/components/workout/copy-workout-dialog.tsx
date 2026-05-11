@@ -26,7 +26,7 @@ export function CopyWorkoutDialog({
   onOpenChange,
   dailyPlanId,
 }: CopyWorkoutDialogProps) {
-  const t = useTranslations("exercises.copyDialog");
+  const t = useTranslations("workout.copyDialog");
   const tUnits = useTranslations("exercises");
   const { data: exercises, isLoading } = usePreviousWeekExercises(
     dailyPlanId,
