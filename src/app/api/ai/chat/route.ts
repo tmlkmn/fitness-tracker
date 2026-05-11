@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
-import { COACH_CHAT_PROMPT } from "@/lib/ai-prompts";
+import { getCoachChatPrompt } from "@/lib/ai-prompts";
+import { getUserLocale } from "@/lib/locale";
 import { db } from "@/db";
 import { chatMessages } from "@/db/schema";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -16,11 +17,17 @@ export async function POST(request: Request) {
   }
 
   const userId = session.user.id;
+  const locale = getUserLocale(session.user);
 
   try {
     await checkRateLimit(userId, "chat");
   } catch {
-    return new Response("Günlük sohbet limitine ulaştınız (max 15/gün).", { status: 429 });
+    return new Response(
+      locale === "en"
+        ? "Daily chat limit reached (max 15/day)."
+        : "Günlük sohbet limitine ulaştınız (max 15/gün).",
+      { status: 429 },
+    );
   }
 
   await logAiUsage(userId, "chat");
@@ -29,7 +36,7 @@ export async function POST(request: Request) {
   const rawMessages = body.messages;
 
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
-    return new Response("Mesaj gerekli.", { status: 400 });
+    return new Response(locale === "en" ? "Message required." : "Mesaj gerekli.", { status: 400 });
   }
 
   // Validate & sanitize messages
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
     }));
 
   if (userMessages.length === 0) {
-    return new Response("Mesaj gerekli.", { status: 400 });
+    return new Response(locale === "en" ? "Message required." : "Mesaj gerekli.", { status: 400 });
   }
 
   // Save user message to DB
@@ -63,7 +70,7 @@ export async function POST(request: Request) {
   }
 
   // Build context for first message
-  const userContext = await buildUserContext(userId, { forceRefresh: true });
+  const userContext = await buildUserContext(userId, { forceRefresh: true, locale });
 
   // Construct messages array with context — limit to last 12 messages (6 turns).
   // Context is always injected into the LAST user message (the current question)
@@ -75,7 +82,9 @@ export async function POST(request: Request) {
     const role = msg.role === "assistant" ? "assistant" : "user";
     const isCurrentQuestion = i === limited.length - 1 && role === "user";
     const content = isCurrentQuestion
-      ? `[Kullanıcı Bağlamı]\n${userContext}\n\n[Soru]\n${msg.content}`
+      ? (locale === "en"
+          ? `[User Context]\n${userContext}\n\n[Question]\n${msg.content}`
+          : `[Kullanıcı Bağlamı]\n${userContext}\n\n[Soru]\n${msg.content}`)
       : msg.content;
     messages.push({ role, content });
   }
@@ -87,7 +96,7 @@ export async function POST(request: Request) {
     system: [
       {
         type: "text",
-        text: COACH_CHAT_PROMPT,
+        text: getCoachChatPrompt(locale),
         cache_control: { type: "ephemeral" },
       },
     ],
@@ -111,7 +120,11 @@ export async function POST(request: Request) {
         }
         if (stopReason === "max_tokens") {
           controller.enqueue(
-            encoder.encode("\n\n_(Yanıt uzun geldi, devamı için tekrar sor.)_"),
+            encoder.encode(
+              locale === "en"
+                ? "\n\n_(Response got long — ask again for the rest.)_"
+                : "\n\n_(Yanıt uzun geldi, devamı için tekrar sor.)_",
+            ),
           );
         }
       } catch (err) {

@@ -12,7 +12,8 @@ import {
   discriminateAiError,
   PROMPT_VERSION,
 } from "@/lib/ai";
-import { MACRO_CALC_PROMPT } from "@/lib/ai-prompts";
+import { getMacroCalcPrompt } from "@/lib/ai-prompts";
+import { getUserLocale } from "@/lib/locale";
 import type { MacroTargets } from "@/lib/macro-targets";
 
 export interface AIMacroResult {
@@ -149,6 +150,7 @@ export async function generateAIMacroTargets(
 
   const user = await getAuthUser();
   await checkRateLimit(user.id, "macro-ai");
+  const locale = getUserLocale(user);
 
   const [profile] = await db
     .select({
@@ -231,7 +233,7 @@ export async function generateAIMacroTargets(
       system: [
         {
           type: "text",
-          text: MACRO_CALC_PROMPT,
+          text: getMacroCalcPrompt(locale),
           cache_control: { type: "ephemeral" },
         },
       ],

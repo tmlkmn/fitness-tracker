@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { sendNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
+import { normalizeLocale } from "@/lib/locale";
 
 export type MembershipType = "unlimited" | "1-month" | "3-month" | "6-month" | "1-year" | "custom";
 
@@ -49,7 +50,7 @@ export async function inviteUser(
     },
   });
 
-  await sendInviteEmail(email, tempPassword);
+  await sendInviteEmail(email, tempPassword, locale);
 
   // Send welcome in-app notification (skip email since invite email already sent)
   const [newUser] = await db
@@ -60,8 +61,10 @@ export async function inviteUser(
     await sendNotification({
       userId: newUser.id,
       type: "user_invited",
-      title: "FitMusc'a Hoş Geldiniz!",
-      body: "Hesabınız oluşturuldu. Giriş yaparak başlayabilirsiniz.",
+      title: locale === "en" ? "Welcome to FitMusc!" : "FitMusc'a Hoş Geldiniz!",
+      body: locale === "en"
+        ? "Your account has been created. Sign in to get started."
+        : "Hesabınız oluşturuldu. Giriş yaparak başlayabilirsiniz.",
       link: "/",
       skipEmail: true,
     });
@@ -151,7 +154,7 @@ export async function resendInvite(userId: string) {
     .set({ mustChangePassword: true, inviteExpiresAt, isApproved: false })
     .where(eq(users.id, userId));
 
-  await sendInviteEmail(user.email, tempPassword);
+  await sendInviteEmail(user.email, tempPassword, normalizeLocale(user.locale));
   logAudit({ adminId: admin.id, action: "user.resend_invite", entityType: "user", entityId: userId, details: { email: user.email } }).catch(() => {});
   revalidatePath("/admin");
   return { success: true };
@@ -283,18 +286,22 @@ export async function extendMembership(
 
   logAudit({ adminId: admin.id, action: "membership.extend", entityType: "user", entityId: userId, details: { newType, customEndDate, endDate: updateData.membershipEndDate } }).catch(() => {});
 
+  const userLocale = normalizeLocale(user.locale);
+  const isEn = userLocale === "en";
   const endDateFormatted = updateData.membershipEndDate
-    ? (updateData.membershipEndDate as Date).toLocaleDateString("tr-TR")
+    ? (updateData.membershipEndDate as Date).toLocaleDateString(isEn ? "en-US" : "tr-TR")
     : null;
 
   await sendNotification({
     userId,
     type: "membership_extended",
-    title: "Üyeliğiniz Yenilendi!",
+    title: isEn ? "Your Membership Was Renewed!" : "Üyeliğiniz Yenilendi!",
     body: newType === "unlimited"
-      ? "Üyeliğiniz sınırsız olarak güncellendi."
-      : `Üyeliğiniz yenilendi. Yeni bitiş tarihi: ${endDateFormatted}`,
-    link: "/ayarlar",
+      ? (isEn ? "Your membership has been updated to unlimited." : "Üyeliğiniz sınırsız olarak güncellendi.")
+      : (isEn
+          ? `Your membership has been renewed. New end date: ${endDateFormatted}`
+          : `Üyeliğiniz yenilendi. Yeni bitiş tarihi: ${endDateFormatted}`),
+    link: isEn ? "/en/settings" : "/tr/ayarlar",
   });
 
   revalidatePath("/admin");

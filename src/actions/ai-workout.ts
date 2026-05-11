@@ -25,10 +25,11 @@ import {
   verifyExerciseOwnership,
 } from "@/lib/ownership";
 import {
-  WORKOUT_REPLACE_PROMPT,
-  SECTION_REPLACE_PROMPT,
-  EXERCISE_VARIATION_PROMPT,
+  getWorkoutReplacePrompt,
+  getSectionReplacePrompt,
+  getExerciseVariationPrompt,
 } from "@/lib/ai-prompts";
+import { getUserLocale } from "@/lib/locale";
 import {
   validateDailyExerciseArray,
   dailyExercisesNeedRetry,
@@ -133,15 +134,18 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
   const user = await getAuthUser();
   await checkRateLimit(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
+  const locale = getUserLocale(user);
 
   const [userContext, { context: workoutContext, currentDayExercises, planType }] =
     await Promise.all([
-      buildUserContext(user.id),
+      buildUserContext(user.id, { locale }),
       buildWeeklyWorkoutContext(dailyPlanId),
     ]);
 
   const mode = currentDayExercises.length > 0 ? "Replacement" : "Generation";
-  let userMessage = `${userContext}\n\n${workoutContext}\n\nBugünün planType: "${planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\nMod: ${mode}\n\nBu günün antrenman programını ${mode === "Replacement" ? "yeniden oluştur ve" : "sıfırdan oluştur;"} önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
+  let userMessage = locale === "en"
+    ? `${userContext}\n\n${workoutContext}\n\nToday's planType: "${planType ?? "workout"}" — use only sections allowed for this planType.\nMode: ${mode}\n\n${mode === "Replacement" ? "Rebuild today's workout and apply" : "Build today's workout from scratch; apply"} progressive overload vs previous weeks: more volume, harder movements, or new variations. Target the same muscle groups but ensure progression.`
+    : `${userContext}\n\n${workoutContext}\n\nBugünün planType: "${planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\nMod: ${mode}\n\nBu günün antrenman programını ${mode === "Replacement" ? "yeniden oluştur ve" : "sıfırdan oluştur;"} önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
 
   if (userNote?.trim()) {
     userMessage += buildUserNotePriorityBlock(userNote);
@@ -163,7 +167,7 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
   const minExerciseCount = planType === "rest" ? 0 : 5;
 
   try {
-    const first = await callAI(WORKOUT_REPLACE_PROMPT, userMessage, 5000, true);
+    const first = await callAI(getWorkoutReplacePrompt(locale), userMessage, 5000, true);
     let text = first.text;
     inputTokens = first.inputTokens;
     outputTokens = first.outputTokens;
@@ -177,8 +181,10 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
     } catch {
       // JSON parse failure — single retry
       const retry = await callAI(
-        WORKOUT_REPLACE_PROMPT,
-        `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
+        getWorkoutReplacePrompt(locale),
+        `${userMessage}\n\n${locale === "en"
+          ? `PREVIOUS RESPONSE RETURNED INVALID JSON. Reply with valid JSON only: { "exercises": [...] }`
+          : `ÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`}`,
         5000,
         true,
       );
@@ -195,7 +201,7 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
     // dropped-empty-name exercises → ask AI to fix specific gaps.
     if (dailyExercisesNeedRetry(validation)) {
       const fixupRetry = await callAI(
-        WORKOUT_REPLACE_PROMPT,
+        getWorkoutReplacePrompt(locale),
         `${userMessage}${buildDailyExercisesRetryNudge(validation, minExerciseCount)}`,
         5000,
         true,
@@ -297,16 +303,19 @@ export async function generateSectionReplacement(
   const user = await getAuthUser();
   await checkRateLimit(user.id, "workout");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
+  const locale = getUserLocale(user);
 
   // Slim context — just today's other sections + same section from 1 prev week.
   // Full weekly context would waste ~60-70% of tokens for a section-level call.
   const [userContext, slim] = await Promise.all([
-    buildUserContext(user.id),
+    buildUserContext(user.id, { locale }),
     buildSectionContext(dailyPlanId, section),
   ]);
   const sectionExercises = slim.sectionExercises;
 
-  let userMessage = `${userContext}\n\n${slim.context}\n\nBugünün planType: "${slim.planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\n\nSadece "${sectionLabel}" bölümü için yeni egzersizler oluştur. TÜM egzersizler section="${section}", sectionLabel="${sectionLabel}" olmalı — başka section DÖNDÜRME. Önceki haftalara göre progresif yüklenme uygula.`;
+  let userMessage = locale === "en"
+    ? `${userContext}\n\n${slim.context}\n\nToday's planType: "${slim.planType ?? "workout"}" — use only sections allowed for this planType.\n\nBuild new exercises for the "${sectionLabel}" section only. ALL exercises must have section="${section}", sectionLabel="${sectionLabel}" — DO NOT return another section. Apply progressive overload vs previous weeks.`
+    : `${userContext}\n\n${slim.context}\n\nBugünün planType: "${slim.planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\n\nSadece "${sectionLabel}" bölümü için yeni egzersizler oluştur. TÜM egzersizler section="${section}", sectionLabel="${sectionLabel}" olmalı — başka section DÖNDÜRME. Önceki haftalara göre progresif yüklenme uygula.`;
 
   if (userNote?.trim()) {
     userMessage += buildUserNotePriorityBlock(userNote);
@@ -325,7 +334,7 @@ export async function generateSectionReplacement(
   };
 
   try {
-    const first = await callAI(SECTION_REPLACE_PROMPT, userMessage, 3000, true);
+    const first = await callAI(getSectionReplacePrompt(locale), userMessage, 3000, true);
     let text = first.text;
     inputTokens = first.inputTokens;
     outputTokens = first.outputTokens;
@@ -335,8 +344,10 @@ export async function generateSectionReplacement(
       validation = validateDailyExerciseArray(parseJSON(text), validatorOptions);
     } catch {
       const retry = await callAI(
-        SECTION_REPLACE_PROMPT,
-        `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`,
+        getSectionReplacePrompt(locale),
+        `${userMessage}\n\n${locale === "en"
+          ? `PREVIOUS RESPONSE RETURNED INVALID JSON. Reply with valid JSON only: { "exercises": [...] }`
+          : `ÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`}`,
         3000,
         true,
       );
@@ -350,7 +361,7 @@ export async function generateSectionReplacement(
     // dropped because the AI ignored the section constraint.
     if (dailyExercisesNeedRetry(validation)) {
       const fixupRetry = await callAI(
-        SECTION_REPLACE_PROMPT,
+        getSectionReplacePrompt(locale),
         `${userMessage}${buildDailyExercisesRetryNudge(validation, validatorOptions.minExerciseCount)}`,
         3000,
         true,
@@ -462,6 +473,7 @@ export async function generateExerciseVariation(
 ) {
   const user = await getAuthUser();
   await verifyExerciseOwnership(exerciseId, user.id);
+  const locale = getUserLocale(user);
 
   // Get the current exercise
   const [currentExercise] = await db
@@ -508,7 +520,7 @@ export async function generateExerciseVariation(
   // Slim context — just muscle group + today's siblings + staleness.
   // Full weekly context was ~3000 tokens for a single-exercise call.
   const [userContext, slimContext] = await Promise.all([
-    buildUserContext(user.id),
+    buildUserContext(user.id, { locale }),
     buildExerciseAlternativesContext(exerciseId, dailyPlanId),
   ]);
 
@@ -518,16 +530,18 @@ export async function generateExerciseVariation(
       ? `${currentExercise.sets}x${currentExercise.reps}`
       : null,
     currentExercise.durationMinutes
-      ? `${currentExercise.durationMinutes}dk`
+      ? `${currentExercise.durationMinutes}${locale === "en" ? "min" : "dk"}`
       : null,
     currentExercise.restSeconds
-      ? `${currentExercise.restSeconds}sn dinlenme`
+      ? `${currentExercise.restSeconds}${locale === "en" ? "s rest" : "sn dinlenme"}`
       : null,
   ]
     .filter(Boolean)
     .join(", ");
 
-  let userMessage = `${userContext}\n\n${slimContext}\n\n"${exerciseDetail}" egzersizi yerine 3 farklı alternatif egzersiz öner.`;
+  let userMessage = locale === "en"
+    ? `${userContext}\n\n${slimContext}\n\nSuggest 3 different alternatives for the "${exerciseDetail}" exercise.`
+    : `${userContext}\n\n${slimContext}\n\n"${exerciseDetail}" egzersizi yerine 3 farklı alternatif egzersiz öner.`;
   if (userNote?.trim()) {
     userMessage += buildUserNotePriorityBlock(userNote);
   }
@@ -539,7 +553,7 @@ export async function generateExerciseVariation(
   try {
     // H1: use smart model — alternative selection needs anatomical reasoning
     // and progressive overload sense that Haiku gets wrong often.
-    const first = await callAI(EXERCISE_VARIATION_PROMPT, userMessage, 1500, true);
+    const first = await callAI(getExerciseVariationPrompt(locale), userMessage, 1500, true);
     let text = first.text;
     inputTokens = first.inputTokens;
     outputTokens = first.outputTokens;
@@ -549,8 +563,10 @@ export async function generateExerciseVariation(
       alternatives = validateAlternativesArray(parseJSON(text));
     } catch {
       const retry = await callAI(
-        EXERCISE_VARIATION_PROMPT,
-        `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "alternatives": [...] }`,
+        getExerciseVariationPrompt(locale),
+        `${userMessage}\n\n${locale === "en"
+          ? `PREVIOUS RESPONSE RETURNED INVALID JSON. Reply with valid JSON only: { "alternatives": [...] }`
+          : `ÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "alternatives": [...] }`}`,
         1500,
         true,
       );
@@ -565,8 +581,10 @@ export async function generateExerciseVariation(
     if (alternatives.length < 3) {
       const missing = 3 - alternatives.length;
       const fixupRetry = await callAI(
-        EXERCISE_VARIATION_PROMPT,
-        `${userMessage}\n\nÖNCEKİ YANITTA ${alternatives.length} alternatif döndün, TAM 3 alternatif gerek. ${missing} alternatif EKLE.`,
+        getExerciseVariationPrompt(locale),
+        `${userMessage}\n\n${locale === "en"
+          ? `PREVIOUS RESPONSE RETURNED ${alternatives.length} alternatives but EXACTLY 3 are required. ADD ${missing} more alternative(s).`
+          : `ÖNCEKİ YANITTA ${alternatives.length} alternatif döndün, TAM 3 alternatif gerek. ${missing} alternatif EKLE.`}`,
         1500,
         true,
       );

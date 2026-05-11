@@ -12,7 +12,8 @@ import {
   PROMPT_VERSION,
 } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
-import { TARGET_WEIGHT_PROMPT } from "@/lib/ai-prompts";
+import { getTargetWeightPrompt } from "@/lib/ai-prompts";
+import { getUserLocale } from "@/lib/locale";
 
 export const maxDuration = 30;
 
@@ -23,6 +24,7 @@ export async function POST() {
   }
 
   const userId = session.user.id;
+  const locale = getUserLocale(session.user);
 
   try {
     await checkRateLimit(userId, "target-weight");
@@ -72,7 +74,7 @@ export async function POST() {
     );
   }
 
-  const userContext = await buildUserContext(userId);
+  const userContext = await buildUserContext(userId, { locale });
 
   // userContext (via buildUserContext) already includes fitness level / service
   // type / health notes in human-readable form. We only re-state the latest
@@ -121,7 +123,7 @@ Bu verilere göre gerçekçi bir hedef kilo öner.`;
       system: [
         {
           type: "text",
-          text: TARGET_WEIGHT_PROMPT,
+          text: getTargetWeightPrompt(locale),
           cache_control: { type: "ephemeral" },
         },
       ],

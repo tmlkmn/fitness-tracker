@@ -17,7 +17,8 @@ import {
   discriminateAiError,
   PROMPT_VERSION,
 } from "@/lib/ai";
-import { SHOPPING_LIST_PROMPT } from "@/lib/ai-prompts";
+import { getShoppingListPrompt } from "@/lib/ai-prompts";
+import { getUserLocale } from "@/lib/locale";
 import { parseAiJson, repairTruncatedJson } from "@/lib/ai-json-repair";
 
 export async function toggleShoppingItem(id: number, isPurchased: boolean) {
@@ -44,6 +45,7 @@ export async function generateShoppingList(weeklyPlanId: number) {
   const user = await getAuthUser();
   await verifyWeeklyPlanOwnership(weeklyPlanId, user.id);
   await checkRateLimit(user.id, "shopping");
+  const locale = getUserLocale(user);
 
   // Fetch all meals for this week
   const weekMeals = await db
@@ -81,14 +83,16 @@ export async function generateShoppingList(weeklyPlanId: number) {
       system: [
         {
           type: "text",
-          text: SHOPPING_LIST_PROMPT,
+          text: getShoppingListPrompt(locale),
           cache_control: { type: "ephemeral" },
         },
       ],
       messages: [
         {
           role: "user",
-          content: `İşte bu haftanın beslenme programı:\n\n${mealSummary}\n\nBu öğünler için haftalık alışveriş listesi oluştur. JSON formatında yanıt ver.`,
+          content: locale === "en"
+            ? `This week's nutrition plan:\n\n${mealSummary}\n\nBuild a weekly shopping list for these meals. Respond in JSON.`
+            : `İşte bu haftanın beslenme programı:\n\n${mealSummary}\n\nBu öğünler için haftalık alışveriş listesi oluştur. JSON formatında yanıt ver.`,
         },
       ],
     });

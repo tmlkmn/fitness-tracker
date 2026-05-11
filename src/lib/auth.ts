@@ -20,7 +20,8 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: true,
     sendResetPassword: async ({ user, url }) => {
-      await sendResetEmail(user.email, url);
+      const locale = (user as { locale?: string }).locale === "en" ? "en" : "tr";
+      await sendResetEmail(user.email, url, locale);
     },
   },
   user: {

@@ -15,7 +15,8 @@ import {
   PROMPT_VERSION,
 } from "@/lib/ai";
 import { verifyDailyPlanOwnership } from "@/lib/ownership";
-import { DAILY_MEALS_PROMPT, NUTRITION_ONLY_MEALS_PROMPT } from "@/lib/ai-prompts";
+import { getDailyMealsPrompt, getNutritionOnlyMealsPrompt } from "@/lib/ai-prompts";
+import { getUserLocale } from "@/lib/locale";
 import { buildMealContext } from "@/lib/ai-meal-context";
 import { resolveTargets } from "@/lib/macro-targets";
 import { coerceMealLabel } from "@/lib/meal-labels";
@@ -98,7 +99,10 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     .from(users)
     .where(eq(users.id, user.id));
   const isNutritionOnly = userRow?.serviceType === "nutrition";
-  const systemPrompt = isNutritionOnly ? NUTRITION_ONLY_MEALS_PROMPT : DAILY_MEALS_PROMPT;
+  const locale = getUserLocale(user);
+  const systemPrompt = isNutritionOnly
+    ? getNutritionOnlyMealsPrompt(locale)
+    : getDailyMealsPrompt(locale);
 
   const { context: mealContext } = await buildMealContext(dailyPlanId, user.id);
 
@@ -107,7 +111,14 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
   if (userRow) {
     const targets = await resolveTargets(userRow, user.id);
     if (targets) {
-      targetsBlock = `\n\n═══ HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ ═══
+      targetsBlock = locale === "en"
+        ? `\n\n═══ COMPUTED DAILY MACRO TARGETS ═══
+Calories: ${targets.calories} kcal
+Protein: ${targets.protein}g
+Carbs: ${targets.carbs}g
+Fat: ${targets.fat}g
+These targets are computed via Mifflin-St Jeor + LBM based on the user's gender, age, weight, height, activity level, and fitness goal. The plan must match within ±5%.`
+        : `\n\n═══ HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ ═══
 Kalori: ${targets.calories} kcal
 Protein: ${targets.protein}g
 Karbonhidrat: ${targets.carbs}g
@@ -116,9 +127,15 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     }
   }
 
-  let userMessage = isNutritionOnly
-    ? `${targetsBlock}\n\n${mealContext}\n\nBu gün için beslenme programı oluştur. Vücut kompozisyonunu, kilo trendini, yaşam tarzını ve önceki günlerin öğün düzenini dikkate al.`
-    : `${targetsBlock}\n\n${mealContext}\n\nBu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.`;
+  const taskLine = locale === "en"
+    ? (isNutritionOnly
+        ? "Build today's nutrition plan. Account for body composition, weight trend, lifestyle, and prior days' meal pattern."
+        : "Build today's nutrition plan. Account for training intensity, body composition, weight trend, and prior days' meal pattern.")
+    : (isNutritionOnly
+        ? "Bu gün için beslenme programı oluştur. Vücut kompozisyonunu, kilo trendini, yaşam tarzını ve önceki günlerin öğün düzenini dikkate al."
+        : "Bu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.");
+
+  let userMessage = `${targetsBlock}\n\n${mealContext}\n\n${taskLine}`;
 
   if (userNote?.trim()) {
     userMessage += buildUserNotePriorityBlock(userNote);
@@ -174,7 +191,9 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
         messages: [
           {
             role: "user",
-            content: `${userMessage}\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. İçerikleri KISA tut: content max 40 kelime, mekanik liste yerine tek cümle tarif. Sadece geçerli JSON yanıt ver: { "meals": [...] }`,
+            content: `${userMessage}\n\n${locale === "en"
+              ? `PREVIOUS RESPONSE RETURNED INVALID JSON. Keep contents SHORT: content max 40 words, single-sentence recipe instead of mechanical list. Reply with valid JSON only: { "meals": [...] }`
+              : `ÖNCEKİ YANIT HATALI JSON DÖNDÜ. İçerikleri KISA tut: content max 40 kelime, mekanik liste yerine tek cümle tarif. Sadece geçerli JSON yanıt ver: { "meals": [...] }`}`,
           },
         ],
       });

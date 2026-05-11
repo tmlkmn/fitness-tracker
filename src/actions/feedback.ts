@@ -54,20 +54,21 @@ export async function submitFeedback(data: {
     })
     .returning({ id: feedbacks.id });
 
-  // Notify all admin users
-  const admins = await db
-    .select({ id: users.id })
+  // Notify all admin users in their own locale
+  const adminRows = await db
+    .select({ id: users.id, locale: users.locale })
     .from(users)
     .where(eq(users.role, "admin"));
 
   const preview = data.message.slice(0, 100);
-  for (const admin of admins) {
+  for (const admin of adminRows) {
+    const isEn = admin.locale === "en";
     await sendNotification({
       userId: admin.id,
       type: "new_feedback",
-      title: "Yeni Geri Bildirim",
+      title: isEn ? "New Feedback" : "Yeni Geri Bildirim",
       body: `${user.name}: ${preview}`,
-      link: "/admin/geri-bildirim",
+      link: isEn ? "/en/admin/feedback" : "/tr/admin/geri-bildirim",
     });
   }
 
@@ -137,10 +138,15 @@ export async function respondToFeedback(feedbackId: number, response: string) {
     .where(eq(feedbacks.id, feedbackId));
 
   // Notify user via all 3 channels
+  const [recipient] = await db
+    .select({ locale: users.locale })
+    .from(users)
+    .where(eq(users.id, fb.userId));
+  const isEn = recipient?.locale === "en";
   await sendNotification({
     userId: fb.userId,
     type: "feedback_response",
-    title: "Geri Bildiriminize Yanıt",
+    title: isEn ? "Response to Your Feedback" : "Geri Bildiriminize Yanıt",
     body: response.slice(0, 200),
     skipEmail: false,
   });

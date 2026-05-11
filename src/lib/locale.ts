@@ -12,3 +12,12 @@ export function isLocale(value: unknown): value is Locale {
 export function normalizeLocale(value: string | null | undefined): Locale {
   return isLocale(value) ? value : DEFAULT_LOCALE;
 }
+
+/**
+ * Extracts the locale from a better-auth user object. better-auth attaches the
+ * additional `locale` field to the session user as an arbitrary string, so we
+ * normalize to a supported `Locale`.
+ */
+export function getUserLocale(user: { locale?: string | null } | null | undefined): Locale {
+  return normalizeLocale(user?.locale);
+}

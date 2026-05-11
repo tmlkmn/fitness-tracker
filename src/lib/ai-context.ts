@@ -8,16 +8,86 @@ import {
   renderUserProfileLines,
 } from "@/lib/ai-user-profile-block";
 import { loadRecentProgressLines } from "@/lib/ai-progress-block";
+import type { Locale } from "@/lib/locale";
 
-// 5-minute TTL memory cache for user context
+// 5-minute TTL memory cache for user context (keyed by userId + locale)
 const contextCache = new Map<string, { text: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 
-export async function buildUserContext(userId: string, options?: { forceRefresh?: boolean }): Promise<string> {
-  const cached = contextCache.get(userId);
+interface CtxLabels {
+  programLine: (week: number, phase: string, title: string, start: string) => string;
+  todayHeader: (date: string, day: string, planType: string, workoutTitle?: string | null) => string;
+  todayMeals: string;
+  todayWorkout: string;
+  noPlanToday: string;
+  weeklyNutrition: string;
+  weeklyWorkout: string;
+  rest: string;
+  planUndefined: string;
+  waterLine: (days: number, avg: string, target: number, liters: string) => string;
+  sleepLine: (days: number, parts: string) => string;
+  sleepAvg: (h: number, m: number) => string;
+  sleepQuality: (q: string) => string;
+  rsec: (s: number) => string;
+  dmin: (m: number) => string;
+}
+
+function labelsFor(locale: Locale): CtxLabels {
+  if (locale === "en") {
+    return {
+      programLine: (week, phase, title, start) =>
+        `Program: Week ${week}, ${phase} phase (${title}, start: ${start})`,
+      todayHeader: (date, day, planType, workoutTitle) =>
+        `═══ TODAY (${date} - ${day}, ${planType}${workoutTitle ? ` - ${workoutTitle}` : ""}) ═══`,
+      todayMeals: "Today's meals:",
+      todayWorkout: "Today's workout:",
+      noPlanToday: "Note: No meals or exercises planned for today.",
+      weeklyNutrition: "═══ WEEKLY NUTRITION PLAN ═══",
+      weeklyWorkout: "═══ WEEKLY WORKOUT PROGRAM ═══",
+      rest: "Rest",
+      planUndefined: "No program defined",
+      waterLine: (days, avg, target, liters) =>
+        `Water intake (last ${days} days): Avg ${avg} glasses/day (target: ${target}, ${liters}L/day)`,
+      sleepLine: (days, parts) => `Sleep (last ${days} days): ${parts}`,
+      sleepAvg: (h, m) => `Avg ${h}h ${m}min`,
+      sleepQuality: (q) => `quality: ${q}/5`,
+      rsec: (s) => `${s}s rest`,
+      dmin: (m) => `${m}min`,
+    };
+  }
+  return {
+    programLine: (week, phase, title, start) =>
+      `Program: Hafta ${week}, ${phase} fazı (${title}, başlangıç: ${start})`,
+    todayHeader: (date, day, planType, workoutTitle) =>
+      `═══ BUGÜN (${date} - ${day}, ${planType}${workoutTitle ? ` - ${workoutTitle}` : ""}) ═══`,
+    todayMeals: "Bugünün öğünleri:",
+    todayWorkout: "Bugünün antrenmanı:",
+    noPlanToday: "Not: Bugün için planlanmış öğün veya egzersiz yok.",
+    weeklyNutrition: "═══ HAFTALIK BESLENME PLANI ═══",
+    weeklyWorkout: "═══ HAFTALIK ANTRENMAN PROGRAMI ═══",
+    rest: "Dinlenme",
+    planUndefined: "Program tanımlı değil",
+    waterLine: (days, avg, target, liters) =>
+      `Su alımı (son ${days} gün): Ort. ${avg} bardak/gün (hedef: ${target}, ${liters}L/gün)`,
+    sleepLine: (days, parts) => `Uyku (son ${days} gün): ${parts}`,
+    sleepAvg: (h, m) => `Ort. ${h}sa ${m}dk`,
+    sleepQuality: (q) => `kalite: ${q}/5`,
+    rsec: (s) => `${s}sn dinlenme`,
+    dmin: (m) => `${m}dk`,
+  };
+}
+
+export async function buildUserContext(
+  userId: string,
+  options?: { forceRefresh?: boolean; locale?: Locale },
+): Promise<string> {
+  const locale: Locale = options?.locale ?? "tr";
+  const cacheKey = `${userId}:${locale}`;
+  const cached = contextCache.get(cacheKey);
   if (!options?.forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.text;
   }
+  const L = labelsFor(locale);
   const user = await loadUserProfileRow(userId);
 
   if (!user) return "";
@@ -27,10 +97,6 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
     compact: false,
   });
 
-  // Current week — week containing today (startDate <= today). Single source
-  // of truth for both phase + meal/workout listings; the previous version
-  // used gte() which incorrectly returned future weeks instead of the
-  // current one, so the assistant never saw the active program.
   const { getTurkeyTodayStr } = await import("@/lib/utils");
   const today = getTurkeyTodayStr();
   const [activeWeek] = await db
@@ -53,10 +119,14 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
 
   if (activeWeek) {
     lines.push(
-      `Program: Hafta ${activeWeek.weekNumber}, ${activeWeek.phase} fazı (${activeWeek.title}, başlangıç: ${activeWeek.startDate ?? "?"})`,
+      L.programLine(
+        activeWeek.weekNumber ?? 0,
+        activeWeek.phase ?? "",
+        activeWeek.title ?? "",
+        activeWeek.startDate ?? "?",
+      ),
     );
 
-    // Fetch all daily plans for this week
     const weekDays = await db
       .select({
         id: dailyPlans.id,
@@ -73,7 +143,6 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
     const todayDay = weekDays.find((d) => d.date === today) ?? null;
     const dayIds = weekDays.map((d) => d.id);
 
-    // Batch: meals and exercises for all days in this week
     const [allMeals, allExercises] = await Promise.all([
       dayIds.length
         ? db
@@ -129,25 +198,20 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
       exByDay.set(ex.dailyPlanId, arr);
     }
 
-    // ─── Today's plan — call it out prominently so chat answers
-    // questions like "what should I eat today?" / "what's my workout?"
-    // can rely on a clearly labeled BUGÜN block.
     if (todayDay) {
       lines.push("");
-      lines.push(
-        `═══ BUGÜN (${todayDay.date} - ${todayDay.dayName}, ${todayDay.planType}${todayDay.workoutTitle ? ` - ${todayDay.workoutTitle}` : ""}) ═══`,
-      );
+      lines.push(L.todayHeader(todayDay.date ?? "?", todayDay.dayName, todayDay.planType, todayDay.workoutTitle));
 
       const todayMeals = mealsByDay.get(todayDay.id) ?? [];
       if (todayMeals.length > 0) {
-        lines.push("Bugünün öğünleri:");
+        lines.push(L.todayMeals);
         for (const m of todayMeals) {
           const status = m.isCompleted ? " ✓" : "";
           const macros: string[] = [];
           if (m.calories) macros.push(`${m.calories}kcal`);
           if (m.proteinG) macros.push(`P:${m.proteinG}g`);
-          if (m.carbsG) macros.push(`K:${m.carbsG}g`);
-          if (m.fatG) macros.push(`Y:${m.fatG}g`);
+          if (m.carbsG) macros.push(`${locale === "en" ? "C" : "K"}:${m.carbsG}g`);
+          if (m.fatG) macros.push(`${locale === "en" ? "F" : "Y"}:${m.fatG}g`);
           const macroStr = macros.length ? ` [${macros.join(", ")}]` : "";
           lines.push(`  - ${m.mealTime} ${m.mealLabel}${status}: ${m.content}${macroStr}`);
         }
@@ -155,16 +219,16 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
 
       const todayExercises = exByDay.get(todayDay.id) ?? [];
       if (todayExercises.length > 0) {
-        lines.push("Bugünün antrenmanı:");
+        lines.push(L.todayWorkout);
         const bySection: Record<string, string[]> = {};
         for (const ex of todayExercises) {
           if (!bySection[ex.sectionLabel]) bySection[ex.sectionLabel] = [];
           const status = ex.isCompleted ? " ✓" : "";
           const detail =
             ex.sets && ex.reps
-              ? `${ex.name} ${ex.sets}x${ex.reps}${ex.restSeconds ? ` (${ex.restSeconds}sn dinlenme)` : ""}`
+              ? `${ex.name} ${ex.sets}x${ex.reps}${ex.restSeconds ? ` (${L.rsec(ex.restSeconds)})` : ""}`
               : ex.durationMinutes
-                ? `${ex.name} ${ex.durationMinutes}dk`
+                ? `${ex.name} ${L.dmin(ex.durationMinutes)}`
                 : ex.name;
           bySection[ex.sectionLabel].push(`${detail}${status}`);
         }
@@ -175,11 +239,10 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
       }
 
       if (todayMeals.length === 0 && todayExercises.length === 0) {
-        lines.push("Not: Bugün için planlanmış öğün veya egzersiz yok.");
+        lines.push(L.noPlanToday);
       }
     }
 
-    // ─── Full week meal plan
     const mealLines: string[] = [];
     for (const day of weekDays) {
       const dayMeals = mealsByDay.get(day.id) ?? [];
@@ -191,20 +254,19 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
     }
     if (mealLines.length > 0) {
       lines.push("");
-      lines.push("═══ HAFTALIK BESLENME PLANI ═══");
+      lines.push(L.weeklyNutrition);
       lines.push(...mealLines);
     }
 
-    // ─── Full week workout plan
     const workoutLines: string[] = [];
     for (const day of weekDays) {
       if (day.planType === "rest") {
-        workoutLines.push(`${day.dayName}: Dinlenme`);
+        workoutLines.push(`${day.dayName}: ${L.rest}`);
         continue;
       }
       const dayExs = exByDay.get(day.id) ?? [];
       if (dayExs.length === 0) {
-        workoutLines.push(`${day.dayName} (${day.workoutTitle ?? day.planType}): Program tanımlı değil`);
+        workoutLines.push(`${day.dayName} (${day.workoutTitle ?? day.planType}): ${L.planUndefined}`);
         continue;
       }
       const sections: Record<string, string[]> = {};
@@ -214,7 +276,7 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
           ex.sets && ex.reps
             ? `${ex.name} ${ex.sets}x${ex.reps}`
             : ex.durationMinutes
-              ? `${ex.name} ${ex.durationMinutes}dk`
+              ? `${ex.name} ${L.dmin(ex.durationMinutes)}`
               : ex.name;
         sections[ex.sectionLabel].push(detail);
       }
@@ -225,7 +287,7 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
     }
     if (workoutLines.length > 0) {
       lines.push("");
-      lines.push("═══ HAFTALIK ANTRENMAN PROGRAMI ═══");
+      lines.push(L.weeklyWorkout);
       lines.push(...workoutLines);
     }
   }
@@ -251,7 +313,7 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
     const avgGlasses = (recentWater.reduce((s, w) => s + w.glasses, 0) / recentWater.length).toFixed(1);
     const avgTarget = Math.round(recentWater.reduce((s, w) => s + w.targetGlasses, 0) / recentWater.length);
     const avgLiters = (parseFloat(avgGlasses) * 0.25).toFixed(1);
-    lines.push(`Su alımı (son ${recentWater.length} gün): Ort. ${avgGlasses} bardak/gün (hedef: ${avgTarget}, ${avgLiters}L/gün)`);
+    lines.push(L.waterLine(recentWater.length, avgGlasses, avgTarget, avgLiters));
   }
 
   // Sleep (last 7 days)
@@ -273,19 +335,19 @@ export async function buildUserContext(userId: string, options?: { forceRefresh?
       const avgMin = Math.round(validDurations.reduce((s, sl) => s + sl.durationMinutes!, 0) / validDurations.length);
       const h = Math.floor(avgMin / 60);
       const m = avgMin % 60;
-      parts.push(`Ort. ${h}sa ${m}dk`);
+      parts.push(L.sleepAvg(h, m));
     }
     if (validQualities.length > 0) {
       const avgQ = (validQualities.reduce((s, sl) => s + sl.quality!, 0) / validQualities.length).toFixed(1);
-      parts.push(`kalite: ${avgQ}/5`);
+      parts.push(L.sleepQuality(avgQ));
     }
     if (parts.length > 0) {
-      lines.push(`Uyku (son ${recentSleep.length} gün): ${parts.join(", ")}`);
+      lines.push(L.sleepLine(recentSleep.length, parts.join(", ")));
     }
   }
 
   const result = lines.join("\n");
-  contextCache.set(userId, { text: result, timestamp: Date.now() });
+  contextCache.set(cacheKey, { text: result, timestamp: Date.now() });
   return result;
 }
 
@@ -296,15 +358,11 @@ export interface MacroBudgetContext {
   text: string;
 }
 
-/**
- * Builds macro budget context for a specific day — targets from user profile,
- * consumed from existing meals on that day (optionally excluding a specific meal).
- * Returns a human-readable summary suitable for AI prompts.
- */
 export async function getMealMacroBudget(
   userId: string,
   dailyPlanId: number,
   excludeMealId?: number | null,
+  locale: Locale = "tr",
 ): Promise<MacroBudgetContext> {
   const [userRow] = await db
     .select({
@@ -357,18 +415,28 @@ export async function getMealMacroBudget(
       }
     : null;
 
+  const isEn = locale === "en";
+  const C = isEn ? "C" : "K";
+  const F = isEn ? "F" : "Y";
+
   const parts: string[] = [];
   if (targets) {
     parts.push(
-      `Günlük hedef: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}g karb, ${targets.fat}g yağ`,
+      isEn
+        ? `Daily target: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}g carbs, ${targets.fat}g fat`
+        : `Günlük hedef: ${targets.calories} kcal, ${targets.protein}g protein, ${targets.carbs}g karb, ${targets.fat}g yağ`,
     );
   }
   parts.push(
-    `Bugün tüketilen (diğer öğünler): ${consumed.calories} kcal, ${consumed.protein}g P, ${consumed.carbs}g K, ${consumed.fat}g Y`,
+    isEn
+      ? `Today consumed (other meals): ${consumed.calories} kcal, ${consumed.protein}g P, ${consumed.carbs}g ${C}, ${consumed.fat}g ${F}`
+      : `Bugün tüketilen (diğer öğünler): ${consumed.calories} kcal, ${consumed.protein}g P, ${consumed.carbs}g ${C}, ${consumed.fat}g ${F}`,
   );
   if (remaining) {
     parts.push(
-      `Bu öğün için kalan bütçe: ${remaining.calories} kcal, ${remaining.protein}g P, ${remaining.carbs}g K, ${remaining.fat}g Y`,
+      isEn
+        ? `Remaining budget for this meal: ${remaining.calories} kcal, ${remaining.protein}g P, ${remaining.carbs}g ${C}, ${remaining.fat}g ${F}`
+        : `Bu öğün için kalan bütçe: ${remaining.calories} kcal, ${remaining.protein}g P, ${remaining.carbs}g ${C}, ${remaining.fat}g ${F}`,
     );
   }
 

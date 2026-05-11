@@ -13,7 +13,8 @@ import {
   PROMPT_VERSION,
   buildUserNotePriorityBlock,
 } from "@/lib/ai";
-import { NUTRITION_ONLY_WEEKLY_PROMPT, WORKOUT_ONLY_WEEKLY_PROMPT } from "@/lib/ai-prompts";
+import { getNutritionOnlyWeeklyPrompt, getWorkoutOnlyWeeklyPrompt } from "@/lib/ai-prompts";
+import { getUserLocale } from "@/lib/locale";
 import { buildWeeklyPlanContext } from "@/actions/ai-weekly";
 import { saveAiSuggestion } from "@/actions/ai-suggestions";
 import {
@@ -369,6 +370,7 @@ export async function POST(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
   const userId = session.user.id;
+  const locale = getUserLocale(session.user);
 
   let parsedBody: z.infer<typeof RequestBodySchema>;
   try {
@@ -520,7 +522,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
           const nutritionUserMsg = `${targetsBlock}\n\n${weeklyContext}${trainingContextBlock}${nutritionDayModesBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.\n\n⚡ KISALTMA KURALI: content alanı MAX 15 kelime. Notlar 1 cümle.${noteBlockNutrition}`;
 
           nutritionCallPromise = runAiCall(client, {
-            systemPrompt: NUTRITION_ONLY_WEEKLY_PROMPT,
+            systemPrompt: getNutritionOnlyWeeklyPrompt(locale),
             userMessage: nutritionUserMsg,
             expectedDayModes: nutritionDayModes,
             effectivePastDows: pastDowsSet,
@@ -556,7 +558,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
             const workoutUserMsg = `${weeklyContext}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}`;
 
             workoutCallPromise = runAiCall(client, {
-              systemPrompt: WORKOUT_ONLY_WEEKLY_PROMPT,
+              systemPrompt: getWorkoutOnlyWeeklyPrompt(locale),
               userMessage: workoutUserMsg,
               expectedDayModes: workoutDayModesFiltered,
               effectivePastDows: workoutEffPastDows,
@@ -569,7 +571,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
             const workoutUserMsg = `${weeklyContext}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}`;
 
             workoutCallPromise = runAiCall(client, {
-              systemPrompt: WORKOUT_ONLY_WEEKLY_PROMPT,
+              systemPrompt: getWorkoutOnlyWeeklyPrompt(locale),
               userMessage: workoutUserMsg,
               expectedDayModes,
               effectivePastDows: pastDowsSet,

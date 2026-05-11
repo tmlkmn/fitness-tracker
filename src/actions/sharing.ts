@@ -59,12 +59,19 @@ export async function shareWeeklyPlan(
     .from(weeklyPlans)
     .where(eq(weeklyPlans.id, weeklyPlanId));
 
+  const [recipient] = await db
+    .select({ locale: users.locale })
+    .from(users)
+    .where(eq(users.id, sharedWithUserId));
+  const recipientLocale = recipient?.locale === "en" ? "en" : "tr";
   await sendNotification({
     userId: sharedWithUserId,
     type: "plan_shared",
-    title: "Yeni Plan Paylaşımı",
-    body: `${sharer.name} sizinle "${plan.title}" planını paylaştı.`,
-    link: "/paylasilan",
+    title: recipientLocale === "en" ? "New Plan Shared" : "Yeni Plan Paylaşımı",
+    body: recipientLocale === "en"
+      ? `${sharer.name} shared the "${plan.title}" plan with you.`
+      : `${sharer.name} sizinle "${plan.title}" planını paylaştı.`,
+    link: recipientLocale === "en" ? "/en/shared" : "/tr/paylasilan",
     metadata: { weeklyPlanId, sharedByUserId: user.id },
   });
 

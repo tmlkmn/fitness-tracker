@@ -5,7 +5,8 @@ import { progressLogs, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
-import { PROGRESS_ANALYSIS_PROMPT } from "@/lib/ai-prompts";
+import { getProgressAnalysisPrompt } from "@/lib/ai-prompts";
+import { getUserLocale } from "@/lib/locale";
 
 export const maxDuration = 60;
 
@@ -16,11 +17,17 @@ export async function POST() {
   }
 
   const userId = session.user.id;
+  const locale = getUserLocale(session.user);
 
   try {
     await checkRateLimit(userId, "analyze");
   } catch {
-    return new Response("Günlük analiz limitine ulaştınız (max 3/gün).", { status: 429 });
+    return new Response(
+      locale === "en"
+        ? "Daily analysis limit reached (max 3/day)."
+        : "Günlük analiz limitine ulaştınız (max 3/gün).",
+      { status: 429 },
+    );
   }
 
   await logAiUsage(userId, "analyze");
@@ -34,7 +41,10 @@ export async function POST() {
     .limit(10);
 
   if (logs.length === 0) {
-    return new Response("Henüz yeterli veri yok.", { status: 200 });
+    return new Response(
+      locale === "en" ? "Not enough data yet." : "Henüz yeterli veri yok.",
+      { status: 200 },
+    );
   }
 
   // Fetch user profile
@@ -43,10 +53,12 @@ export async function POST() {
     .from(users)
     .where(eq(users.id, userId));
 
-  const userContext = await buildUserContext(userId);
+  const userContext = await buildUserContext(userId, { locale });
 
   // Build compact data table
-  const header = "Tarih | Kilo | Yağ% | Sıvı% | BMI | Bel(cm)";
+  const header = locale === "en"
+    ? "Date | Weight | Fat% | Fluid% | BMI | Waist(cm)"
+    : "Tarih | Kilo | Yağ% | Sıvı% | BMI | Bel(cm)";
   const rows = logs
     .map((l) =>
       [
@@ -66,13 +78,26 @@ export async function POST() {
   const segmentRows = logs
     .filter((l) => l.leftArmMuscleKg || l.torsoFatPercent)
     .slice(0, 3)
-    .map(
-      (l) =>
-        `${l.logDate}: SolKol kas:${l.leftArmMuscleKg ?? "-"}kg SağKol kas:${l.rightArmMuscleKg ?? "-"}kg Gövde yağ:${l.torsoFatPercent ?? "-"}% SolBacak kas:${l.leftLegMuscleKg ?? "-"}kg SağBacak kas:${l.rightLegMuscleKg ?? "-"}kg`
+    .map((l) =>
+      locale === "en"
+        ? `${l.logDate}: L-arm muscle:${l.leftArmMuscleKg ?? "-"}kg R-arm muscle:${l.rightArmMuscleKg ?? "-"}kg Trunk fat:${l.torsoFatPercent ?? "-"}% L-leg muscle:${l.leftLegMuscleKg ?? "-"}kg R-leg muscle:${l.rightLegMuscleKg ?? "-"}kg`
+        : `${l.logDate}: SolKol kas:${l.leftArmMuscleKg ?? "-"}kg SağKol kas:${l.rightArmMuscleKg ?? "-"}kg Gövde yağ:${l.torsoFatPercent ?? "-"}% SolBacak kas:${l.leftLegMuscleKg ?? "-"}kg SağBacak kas:${l.rightLegMuscleKg ?? "-"}kg`,
     )
     .join("\n");
 
-  const fullPrompt = `${userContext}
+  const fullPrompt = locale === "en"
+    ? `${userContext}
+
+Profile: Height ${user?.height ?? "?"}cm, Start ${user?.weight ?? "?"}kg, Target ${user?.targetWeight ?? "?"}kg
+Service Type: ${user?.serviceType === "nutrition" ? "Nutrition Only" : "Full Program (Training + Nutrition)"}
+
+Body Composition Data:
+${dataTable}
+
+${segmentRows ? `\nSegment Details:\n${segmentRows}` : ""}
+
+Analyze this data and provide detailed feedback to the user.`
+    : `${userContext}
 
 Profil: Boy ${user?.height ?? "?"}cm, Başlangıç ${user?.weight ?? "?"}kg, Hedef ${user?.targetWeight ?? "?"}kg
 Hizmet Tipi: ${user?.serviceType === "nutrition" ? "Sadece Beslenme" : "Tam Program (Antrenman + Beslenme)"}
@@ -91,7 +116,7 @@ Bu verileri analiz et ve kullanıcıya detaylı geri bildirim ver.`;
     system: [
       {
         type: "text",
-        text: PROGRESS_ANALYSIS_PROMPT,
+        text: getProgressAnalysisPrompt(locale),
         cache_control: { type: "ephemeral" },
       },
     ],

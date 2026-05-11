@@ -1,4 +1,5 @@
 import Mailjet from "node-mailjet";
+import type { Locale } from "@/lib/locale";
 
 let client: ReturnType<typeof Mailjet.apiConnect> | null = null;
 
@@ -29,9 +30,14 @@ async function sendEmail(to: string, subject: string, html: string) {
   });
 }
 
-function emailLayout(content: string) {
+function emailLayout(content: string, locale: Locale = "tr") {
+  const lang = locale === "en" ? "en" : "tr";
+  const settingsPath = locale === "en" ? "/en/settings" : "/tr/ayarlar";
+  const footerText = locale === "en"
+    ? `This email was sent by FitMusc.<br>You can change your notification settings <a href="${appUrl}${settingsPath}" style="color:#22c55e;text-decoration:none;">here</a>.`
+    : `Bu e-posta FitMusc tarafından gönderildi.<br>Bildirim ayarlarınızı <a href="${appUrl}${settingsPath}" style="color:#22c55e;text-decoration:none;">buradan</a> değiştirebilirsiniz.`;
   return `<!DOCTYPE html>
-<html lang="tr">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,8 +73,7 @@ function emailLayout(content: string) {
           <tr>
             <td style="padding:24px 0 0 0;text-align:center;">
               <p style="color:#666;font-size:12px;line-height:18px;margin:0;">
-                Bu e-posta FitMusc tarafından gönderildi.<br>
-                Bildirim ayarlarınızı <a href="${appUrl}/ayarlar" style="color:#22c55e;text-decoration:none;">buradan</a> değiştirebilirsiniz.
+                ${footerText}
               </p>
             </td>
           </tr>
@@ -90,47 +95,86 @@ function emailButton(href: string, text: string) {
   </table>`;
 }
 
-export async function sendInviteEmail(to: string, tempPassword: string) {
+export async function sendInviteEmail(to: string, tempPassword: string, locale: Locale = "tr") {
+  const isEn = locale === "en";
+  const loginPath = isEn ? "/en/login" : "/tr/giris";
+  const t = isEn
+    ? {
+        title: "Welcome!",
+        intro: "Your FitMusc account has been created. You can sign in with the details below.",
+        emailLabel: "Email",
+        tempPasswordLabel: "Temporary Password",
+        afterLogin: "You will be asked to change your password after signing in.",
+        validity: "This password is valid for 24 hours.",
+        button: "Sign In →",
+        subject: "FitMusc — Your Account Is Ready",
+      }
+    : {
+        title: "Hoş Geldiniz!",
+        intro: "FitMusc hesabınız oluşturuldu. Aşağıdaki bilgilerle giriş yapabilirsiniz.",
+        emailLabel: "E-posta",
+        tempPasswordLabel: "Geçici Şifre",
+        afterLogin: "Giriş yaptıktan sonra şifrenizi değiştirmeniz istenecektir.",
+        validity: "Bu şifre 24 saat geçerlidir.",
+        button: "Giriş Yap →",
+        subject: "FitMusc — Hesabınız Oluşturuldu",
+      };
   const html = emailLayout(`
-    <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">Hoş Geldiniz!</h2>
+    <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">${t.title}</h2>
     <p style="color:#a3a3a3;font-size:14px;line-height:22px;margin:0 0 20px 0;">
-      FitMusc hesabınız oluşturuldu. Aşağıdaki bilgilerle giriş yapabilirsiniz.
+      ${t.intro}
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0b;border-radius:8px;border:1px solid #262626;margin:0 0 20px 0;">
       <tr>
         <td style="padding:16px;">
-          <p style="color:#a3a3a3;font-size:12px;margin:0 0 4px 0;">E-posta</p>
+          <p style="color:#a3a3a3;font-size:12px;margin:0 0 4px 0;">${t.emailLabel}</p>
           <p style="color:#ffffff;font-size:14px;font-weight:600;margin:0 0 12px 0;">${to}</p>
-          <p style="color:#a3a3a3;font-size:12px;margin:0 0 4px 0;">Geçici Şifre</p>
+          <p style="color:#a3a3a3;font-size:12px;margin:0 0 4px 0;">${t.tempPasswordLabel}</p>
           <p style="color:#22c55e;font-size:16px;font-weight:700;font-family:monospace;margin:0;letter-spacing:1px;">${tempPassword}</p>
         </td>
       </tr>
     </table>
     <p style="color:#a3a3a3;font-size:13px;line-height:20px;margin:0 0 4px 0;">
-      Giriş yaptıktan sonra şifrenizi değiştirmeniz istenecektir.
+      ${t.afterLogin}
     </p>
     <p style="color:#ef4444;font-size:13px;font-weight:600;margin:0;">
-      Bu şifre 24 saat geçerlidir.
+      ${t.validity}
     </p>
-    ${emailButton(`${appUrl}/giris`, "Giriş Yap →")}
-  `);
+    ${emailButton(`${appUrl}${loginPath}`, t.button)}
+  `, locale);
 
-  await sendEmail(to, "FitMusc — Hesabınız Oluşturuldu", html);
+  await sendEmail(to, t.subject, html);
 }
 
-export async function sendResetEmail(to: string, resetUrl: string) {
+export async function sendResetEmail(to: string, resetUrl: string, locale: Locale = "tr") {
+  const isEn = locale === "en";
+  const t = isEn
+    ? {
+        title: "Password Reset",
+        intro: 'Click the button below to reset your password. This link is valid for <strong style="color:#ffffff;">1 hour</strong>.',
+        button: "Reset Password →",
+        footer: "If you didn't request this, you can safely ignore this email.",
+        subject: "FitMusc — Password Reset",
+      }
+    : {
+        title: "Şifre Sıfırlama",
+        intro: 'Şifrenizi sıfırlamak için aşağıdaki butona tıklayın. Bu bağlantı <strong style="color:#ffffff;">1 saat</strong> geçerlidir.',
+        button: "Şifremi Sıfırla →",
+        footer: "Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.",
+        subject: "FitMusc — Şifre Sıfırlama",
+      };
   const html = emailLayout(`
-    <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">Şifre Sıfırlama</h2>
+    <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">${t.title}</h2>
     <p style="color:#a3a3a3;font-size:14px;line-height:22px;margin:0 0 20px 0;">
-      Şifrenizi sıfırlamak için aşağıdaki butona tıklayın. Bu bağlantı <strong style="color:#ffffff;">1 saat</strong> geçerlidir.
+      ${t.intro}
     </p>
-    ${emailButton(resetUrl, "Şifremi Sıfırla →")}
+    ${emailButton(resetUrl, t.button)}
     <p style="color:#666;font-size:12px;line-height:18px;margin:20px 0 0 0;">
-      Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.
+      ${t.footer}
     </p>
-  `);
+  `, locale);
 
-  await sendEmail(to, "FitMusc — Şifre Sıfırlama", html);
+  await sendEmail(to, t.subject, html);
 }
 
 export async function sendNotificationEmail(
@@ -138,15 +182,18 @@ export async function sendNotificationEmail(
   subject: string,
   title: string,
   body: string,
-  link?: string
+  link?: string,
+  locale: Locale = "tr",
 ) {
+  const isEn = locale === "en";
+  const detailsBtn = isEn ? "View Details →" : "Detayları Gör →";
   const html = emailLayout(`
     <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">${title}</h2>
     <p style="color:#d4d4d4;font-size:14px;line-height:22px;margin:0;">
       ${body}
     </p>
-    ${link ? emailButton(`${appUrl}${link}`, "Detayları Gör →") : ""}
-  `);
+    ${link ? emailButton(`${appUrl}${link}`, detailsBtn) : ""}
+  `, locale);
 
   await sendEmail(to, `FitMusc — ${subject}`, html);
 }
@@ -155,46 +202,76 @@ export async function sendMembershipExpiryEmail(
   to: string,
   userName: string,
   daysLeft: number,
-  endDateStr: string
+  endDateStr: string,
+  locale: Locale = "tr",
 ) {
+  const isEn = locale === "en";
   const isExpired = daysLeft <= 0;
   const borderColor = isExpired ? "#ef4444" : daysLeft <= 1 ? "#ef4444" : "#f59e0b";
   const countdownColor = isExpired ? "#ef4444" : daysLeft <= 1 ? "#ef4444" : "#f59e0b";
 
-  const subject = isExpired
-    ? "Üyelik Süreniz Doldu"
-    : `Üyeliğiniz ${daysLeft} Gün İçinde Doluyor`;
+  const settingsPath = isEn ? "/en/settings" : "/tr/ayarlar";
+
+  const subject = isEn
+    ? (isExpired ? "Your Membership Has Expired" : `Your Membership Expires in ${daysLeft} Days`)
+    : (isExpired ? "Üyelik Süreniz Doldu" : `Üyeliğiniz ${daysLeft} Gün İçinde Doluyor`);
+
+  const heading = isEn
+    ? (isExpired ? "Your Membership Has Expired" : "Membership Reminder")
+    : (isExpired ? "Üyelik Süreniz Doldu" : "Üyelik Hatırlatması");
+
+  const greeting = isEn ? `Hi ${userName},` : `Merhaba ${userName},`;
+
+  const counter = isEn
+    ? (isExpired ? "Expired" : `${daysLeft} ${daysLeft === 1 ? "Day" : "Days"}`)
+    : (isExpired ? "Süresi Doldu" : `${daysLeft} Gün`);
+
+  const counterSub = isEn
+    ? (isExpired ? `Your membership expired on ${endDateStr}` : `Your membership expires on ${endDateStr}`)
+    : (isExpired ? `Üyeliğiniz ${endDateStr} tarihinde sona erdi` : `Üyeliğiniz ${endDateStr} tarihinde sona erecek`);
+
+  const cta = isEn
+    ? (isExpired
+        ? "Your account requires a renewal to regain access."
+        : "Renew your membership to keep uninterrupted access!")
+    : (isExpired
+        ? "Hesabınıza erişim için üyeliğinizin yenilenmesi gerekmektedir."
+        : "Kesintisiz erişim için üyeliğinizi yenilemeyi unutmayın!");
+
+  const renewNote = isEn
+    ? "Contact your administrator to renew."
+    : "Yenilemek için yöneticinizle iletişime geçin.";
+
+  const button = isEn ? "Go to My Account →" : "Hesabıma Git →";
 
   const html = emailLayout(`
     <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">
-      ${isExpired ? "Üyelik Süreniz Doldu" : "Üyelik Hatırlatması"}
+      ${heading}
     </h2>
     <p style="color:#a3a3a3;font-size:14px;line-height:22px;margin:0 0 20px 0;">
-      Merhaba ${userName},
+      ${greeting}
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
            style="background-color:#0a0a0b;border-radius:8px;border:1px solid ${borderColor};margin:0 0 20px 0;">
       <tr>
         <td style="padding:16px;text-align:center;">
           <p style="color:${countdownColor};font-size:32px;font-weight:700;margin:0;">
-            ${isExpired ? "Süresi Doldu" : `${daysLeft} Gün`}
+            ${counter}
           </p>
           <p style="color:#a3a3a3;font-size:13px;margin:4px 0 0 0;">
-            ${isExpired ? `Üyeliğiniz ${endDateStr} tarihinde sona erdi` : `Üyeliğiniz ${endDateStr} tarihinde sona erecek`}
+            ${counterSub}
           </p>
         </td>
       </tr>
     </table>
     <p style="color:#d4d4d4;font-size:14px;line-height:22px;margin:0 0 8px 0;">
-      ${isExpired
-        ? "Hesabınıza erişim için üyeliğinizin yenilenmesi gerekmektedir."
-        : "Kesintisiz erişim için üyeliğinizi yenilemeyi unutmayın!"}
+      ${cta}
     </p>
     <p style="color:#a3a3a3;font-size:13px;line-height:20px;margin:0;">
-      Yenilemek için yöneticinizle iletişime geçin.
+      ${renewNote}
     </p>
-    ${emailButton(`${appUrl}/ayarlar`, "Hesabıma Git →")}
-  `);
+    ${emailButton(`${appUrl}${settingsPath}`, button)}
+  `, locale);
 
   await sendEmail(to, `FitMusc — ${subject}`, html);
 }

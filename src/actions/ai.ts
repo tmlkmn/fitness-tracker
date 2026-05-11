@@ -15,9 +15,10 @@ import {
 } from "@/lib/ai";
 import { buildUserContext, getMealMacroBudget } from "@/lib/ai-context";
 import {
-  MEAL_VARIATION_PROMPT,
-  EXERCISE_TIPS_PROMPT,
+  getMealVariationPrompt,
+  getExerciseTipsPrompt,
 } from "@/lib/ai-prompts";
+import { getUserLocale } from "@/lib/locale";
 
 const TIPS_TTL_DAYS = 30;
 
@@ -73,14 +74,15 @@ export async function generateMealVariation(
   } = options;
   const user = await getAuthUser();
   await checkRateLimit(user.id, "meal");
+  const locale = getUserLocale(user);
 
-  const userContext = await buildUserContext(user.id);
+  const userContext = await buildUserContext(user.id, { locale });
 
   const macroInfo = [
     calories ? `${calories} kcal` : null,
     proteinG ? `Protein: ${proteinG}g` : null,
-    carbsG ? `Karb: ${carbsG}g` : null,
-    fatG ? `Yağ: ${fatG}g` : null,
+    carbsG ? `${locale === "en" ? "Carbs" : "Karb"}: ${carbsG}g` : null,
+    fatG ? `${locale === "en" ? "Fat" : "Yağ"}: ${fatG}g` : null,
   ]
     .filter(Boolean)
     .join(", ");
@@ -108,7 +110,7 @@ export async function generateMealVariation(
   if (resolvedDailyPlanId) {
     try {
       try {
-        const budget = await getMealMacroBudget(user.id, resolvedDailyPlanId, mealId ?? null);
+        const budget = await getMealMacroBudget(user.id, resolvedDailyPlanId, mealId ?? null, locale);
         if (budget.text) {
           budgetContext = `\n\n${budget.text}`;
         }
@@ -122,13 +124,20 @@ export async function generateMealVariation(
         .where(eq(dailyPlans.id, resolvedDailyPlanId));
 
       if (currentDay?.planType) {
-        const planTypeLabels: Record<string, string> = {
-          workout: "Antrenman günü",
-          rest: "Dinlenme günü",
-          swimming: "Yüzme günü",
-          nutrition: "Beslenme günü",
-        };
-        planTypeContext = `\nGünün tipi: ${planTypeLabels[currentDay.planType] ?? currentDay.planType}`;
+        const planTypeLabels: Record<string, string> = locale === "en"
+          ? {
+              workout: "Training day",
+              rest: "Rest day",
+              swimming: "Swim day",
+              nutrition: "Nutrition day",
+            }
+          : {
+              workout: "Antrenman günü",
+              rest: "Dinlenme günü",
+              swimming: "Yüzme günü",
+              nutrition: "Beslenme günü",
+            };
+        planTypeContext = `\n${locale === "en" ? "Day type" : "Günün tipi"}: ${planTypeLabels[currentDay.planType] ?? currentDay.planType}`;
       }
 
       if (currentDay?.weeklyPlanId) {
@@ -158,7 +167,9 @@ export async function generateMealVariation(
           const sameLabelMeals = sameLabelRows.map(
             (r) => `${r.dayName}: ${r.content}`,
           );
-          weekContext = `\n\nBu hafta aynı öğün tipinde (${mealLabel}) zaten şunlar var, bunları TEKRARLAMA:\n${sameLabelMeals.join("\n")}`;
+          weekContext = locale === "en"
+            ? `\n\nThis week already has these meals of the same type (${mealLabel}); DO NOT repeat them:\n${sameLabelMeals.join("\n")}`
+            : `\n\nBu hafta aynı öğün tipinde (${mealLabel}) zaten şunlar var, bunları TEKRARLAMA:\n${sameLabelMeals.join("\n")}`;
         }
       }
     } catch {
@@ -170,12 +181,20 @@ export async function generateMealVariation(
   let prevContext = "";
   if (previousSuggestions && previousSuggestions.length > 0) {
     const recent = previousSuggestions.slice(-PREVIOUS_SUGGESTIONS_MAX);
-    prevContext = `\n\nDaha önce bu öğün için şu öneriler yapıldı, bunları TEKRARLAMA:\n${recent.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
+    prevContext = locale === "en"
+      ? `\n\nPrevious suggestions for this meal — DO NOT repeat:\n${recent.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
+      : `\n\nDaha önce bu öğün için şu öneriler yapıldı, bunları TEKRARLAMA:\n${recent.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
   }
 
   // Build user message — note priority block is appended at the end so it
   // sits closest to "this is what to do" instructions for stronger steering.
-  let userMessage = `${userContext}\n\nMevcut öğün: ${mealLabel} (öneriler AYNI öğün tipinde olmalı — kahvaltı için kahvaltılık, ana yemek için ana yemek)\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}${planTypeContext}${budgetContext}${weekContext}${prevContext}\n\nBu öğüne benzer makrolarla, "${mealLabel}" öğün tipine uygun, birbirinden FARKLI 3 alternatif öneri yap. Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı (kullanıcı isteği bunu override edebilir). Eğer kalan makro bütçesi verilmişse, önerilerini bu bütçeye uyumlu yap. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`;
+  const intro = locale === "en"
+    ? `Current meal: ${mealLabel} (suggestions must stay within the SAME meal type — breakfast suggestions for breakfast, main for main)\nContent: ${currentContent}${macroInfo ? `\nMacros: ${macroInfo}` : ""}`
+    : `Mevcut öğün: ${mealLabel} (öneriler AYNI öğün tipinde olmalı — kahvaltı için kahvaltılık, ana yemek için ana yemek)\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}`;
+  const taskLine = locale === "en"
+    ? `Suggest 3 DIFFERENT alternatives matching the "${mealLabel}" type with similar macros. Each should use a different protein source and cuisine style (user request can override). If a remaining macro budget is provided, fit suggestions to it. Reply with JSON: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`
+    : `Bu öğüne benzer makrolarla, "${mealLabel}" öğün tipine uygun, birbirinden FARKLI 3 alternatif öneri yap. Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı (kullanıcı isteği bunu override edebilir). Eğer kalan makro bütçesi verilmişse, önerilerini bu bütçeye uyumlu yap. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`;
+  let userMessage = `${userContext}\n\n${intro}${planTypeContext}${budgetContext}${weekContext}${prevContext}\n\n${taskLine}`;
   if (userNote?.trim()) {
     userMessage += buildUserNotePriorityBlock(userNote);
   }
@@ -192,7 +211,7 @@ export async function generateMealVariation(
       system: [
         {
           type: "text",
-          text: MEAL_VARIATION_PROMPT,
+          text: getMealVariationPrompt(locale),
           cache_control: { type: "ephemeral" },
         },
       ],
@@ -270,25 +289,31 @@ async function callAIForTips(
   englishName: string | null,
   exerciseNotes: string | null,
   userContext: string,
+  locale: import("@/lib/locale").Locale,
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const client = getAIClient();
+  const exLabel = locale === "en" ? "Exercise" : "Egzersiz";
+  const notesLabel = locale === "en" ? "Exercise notes" : "Egzersiz notları";
   const nameLine = englishName?.trim()
-    ? `Egzersiz: ${exerciseName} (${englishName.trim()})`
-    : `Egzersiz: ${exerciseName}`;
+    ? `${exLabel}: ${exerciseName} (${englishName.trim()})`
+    : `${exLabel}: ${exerciseName}`;
+  const task = locale === "en"
+    ? "Explain proper form cues, breathing technique, target muscle focus, and common mistakes for this exercise."
+    : "Bu egzersiz için doğru form ipuçları, nefes tekniği, hedef kas odağı ve yaygın hataları açıkla.";
   const message = await client.messages.create({
     model: AI_MODELS.fast,
     max_tokens: 1200,
     system: [
       {
         type: "text",
-        text: EXERCISE_TIPS_PROMPT,
+        text: getExerciseTipsPrompt(locale),
         cache_control: { type: "ephemeral" },
       },
     ],
     messages: [
       {
         role: "user",
-        content: `${userContext}\n\n${nameLine}${exerciseNotes ? `\nEgzersiz notları: ${exerciseNotes}` : ""}\n\nBu egzersiz için doğru form ipuçları, nefes tekniği, hedef kas odağı ve yaygın hataları açıkla.`,
+        content: `${userContext}\n\n${nameLine}${exerciseNotes ? `\n${notesLabel}: ${exerciseNotes}` : ""}\n\n${task}`,
       },
     ],
   });
@@ -357,8 +382,9 @@ export async function getExerciseFormTips(
   let outputTokens: number | undefined;
 
   try {
-    const userContext = await buildUserContext(user.id);
-    const result = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext);
+    const locale = getUserLocale(user);
+    const userContext = await buildUserContext(user.id, { locale });
+    const result = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext, locale);
     inputTokens = result.inputTokens;
     outputTokens = result.outputTokens;
 
@@ -406,8 +432,9 @@ export async function regenerateExerciseFormTips(
   let outputTokens: number | undefined;
 
   try {
-    const userContext = await buildUserContext(user.id);
-    const result = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext);
+    const locale = getUserLocale(user);
+    const userContext = await buildUserContext(user.id, { locale });
+    const result = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext, locale);
     inputTokens = result.inputTokens;
     outputTokens = result.outputTokens;
 

@@ -8,6 +8,7 @@ import {
 import { eq } from "drizzle-orm";
 import { sendNotificationEmail } from "@/lib/email";
 import { sendPushNotification } from "@/lib/web-push";
+import { normalizeLocale } from "@/lib/locale";
 
 function isInQuietHours(
   start: string | null | undefined,
@@ -72,12 +73,19 @@ export async function sendNotification(params: {
   // 2. Email notification (suppressed during quiet hours)
   if (emailEnabled && !skipEmail && !quiet) {
     const [user] = await db
-      .select({ email: users.email })
+      .select({ email: users.email, locale: users.locale })
       .from(users)
       .where(eq(users.id, userId));
     if (user?.email) {
       try {
-        await sendNotificationEmail(user.email, title, title, body, link);
+        await sendNotificationEmail(
+          user.email,
+          title,
+          title,
+          body,
+          link,
+          normalizeLocale(user.locale),
+        );
       } catch (err) {
         console.error("Notification email failed:", err);
       }
