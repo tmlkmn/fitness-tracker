@@ -117,7 +117,7 @@ export function ExerciseFormDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={guardedOpenChange}>
-      <DialogContent className="relative max-w-sm mx-4 max-h-[85vh] overflow-y-auto">
+      <DialogContent className="relative max-w-sm w-[calc(100vw-2rem)]">
         {confirmOpen && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 rounded-lg p-6 text-center gap-4">
             <p className="text-sm font-medium">{t("unsavedTitle")}</p>
