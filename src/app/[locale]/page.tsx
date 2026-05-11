@@ -83,11 +83,11 @@ export default function HomePage() {
 
   const [todayStr] = useState(() => getTurkeyTodayStr());
 
-  const { data: profile } = useUserProfile();
+  const { data: profile, isLoading: profileLoading } = useUserProfile();
   const { data: today, isLoading: todayLoading } = useTodayDashboard();
-  const { data: weekData } = useWeekPlansByDate(todayStr);
-  const { data: weeks } = useAllWeeks();
-  const { data: activityStats } = useActivityStats();
+  const { data: weekData, isLoading: weekLoading } = useWeekPlansByDate(todayStr);
+  const { data: weeks, isLoading: weeksLoading } = useAllWeeks();
+  const { data: activityStats, isLoading: activityLoading } = useActivityStats();
   const { isVisible } = useDashboardPrefs();
 
   // Onboarding carousel — auto-open on first login
@@ -192,14 +192,18 @@ export default function HomePage() {
               <div>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <p className="text-lg font-bold">{t("welcome", { name: (user as any).name?.split(" ")[0] ?? "" })}</p>
-                {(profile?.weight || profile?.targetWeight || profile?.height) && (
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {[
-                      profile.height ? `${profile.height} cm` : "",
-                      profile.weight ? `${profile.weight} kg` : "",
-                      profile.targetWeight ? t("weightTarget", { weight: profile.targetWeight }) : "",
-                    ].filter(Boolean).join(" · ")}
-                  </p>
+                {profileLoading ? (
+                  <Skeleton className="h-4 w-44 mt-1" />
+                ) : (
+                  (profile?.weight || profile?.targetWeight || profile?.height) && (
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {[
+                        profile.height ? `${profile.height} cm` : "",
+                        profile.weight ? `${profile.weight} kg` : "",
+                        profile.targetWeight ? t("weightTarget", { weight: profile.targetWeight }) : "",
+                      ].filter(Boolean).join(" · ")}
+                    </p>
+                  )
                 )}
                 {profile?.healthNotes && (
                   <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-1">
@@ -207,7 +211,9 @@ export default function HomePage() {
                   </p>
                 )}
               </div>
-              {profile?.membershipType && (
+              {profileLoading ? (
+                <Skeleton className="h-5 w-20 rounded-full shrink-0" />
+              ) : profile?.membershipType && (
                 <Badge
                   variant={membershipInfo?.expired ? "destructive" : "secondary"}
                   className="shrink-0"
@@ -312,7 +318,24 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        {weekData?.dailyPlans && weekData.dailyPlans.length > 0 && (
+        {weekLoading ? (
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">{t("thisWeek")}</h3>
+              </div>
+              <div className="flex justify-between gap-1">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1 py-2">
+                    <Skeleton className="h-3 w-6" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-2 w-8" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : weekData?.dailyPlans && weekData.dailyPlans.length > 0 && (
           <Card>
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center justify-between">
@@ -363,6 +386,18 @@ export default function HomePage() {
         )}
 
         {isVisible("stats") && (
+          profileLoading || weeksLoading || todayLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-3">
+                    <Skeleton className="h-3 w-16 mb-2" />
+                    <Skeleton className="h-6 w-12" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-list">
           <Card>
             <CardContent className="p-3">
@@ -427,6 +462,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
         </div>
+          )
         )}
 
         {isVisible("rings") && <DailyRingsCard />}
@@ -466,14 +502,43 @@ export default function HomePage() {
         </div>
         )}
 
-        {isVisible("streak") && activityStats && (
-          <>
-            <StreakCard
-              currentStreak={activityStats.currentStreak}
-              longestStreak={activityStats.longestStreak}
-            />
-            <AchievementBadges stats={activityStats} />
-          </>
+        {isVisible("streak") && (
+          activityLoading ? (
+            <>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-1.5 w-full rounded-full" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                  <div className="flex gap-1">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Skeleton key={i} className="h-9 w-9 rounded-md shrink-0" />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : activityStats && (
+            <>
+              <StreakCard
+                currentStreak={activityStats.currentStreak}
+                longestStreak={activityStats.longestStreak}
+              />
+              <AchievementBadges stats={activityStats} />
+            </>
+          )
         )}
 
         {isVisible("friends") && <FriendStreakCard />}

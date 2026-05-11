@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Moon, Plus } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useSleepByDate } from "@/hooks/use-sleep";
@@ -20,8 +21,8 @@ function formatDuration(minutes: number): string {
 export function SleepDashboardWidget() {
   const t = useTranslations("sleep");
   const [todayStr] = useState(() => getTurkeyTodayStr());
-  const { data: log } = useSleepByDate(todayStr);
-  const { data: today } = useTodayDashboard();
+  const { data: log, isLoading: logLoading } = useSleepByDate(todayStr);
+  const { data: today, isLoading: todayLoading } = useTodayDashboard();
 
   const duration = log?.durationMinutes;
   const quality = log?.quality;
@@ -29,6 +30,21 @@ export function SleepDashboardWidget() {
   const href = today?.dailyPlan
     ? `/gun/${today.dailyPlan.id}?focus=sleep#uyku`
     : "/takvim";
+
+  if (logLoading || todayLoading) {
+    return (
+      <Card className="h-full">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Moon className="h-4 w-4 text-indigo-400" />
+            <span className="text-xs text-muted-foreground">Uyku</span>
+          </div>
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="mt-1 h-3 w-16" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Link href={href} className="block h-full">

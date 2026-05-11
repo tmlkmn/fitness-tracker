@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTINE_EVENTS, normalizeEvent } from "@/lib/routine-constants";
 import { AlertTriangle, Loader2, Plus, Trash2 } from "lucide-react";
 
@@ -95,6 +96,18 @@ export function DailyRoutineEditor({ profile }: Props) {
       {label}
     </button>
   );
+
+  if (!profile) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-3 w-20" />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-5 w-full" />
+        ))}
+        <Skeleton className="h-8 w-full mt-2" />
+      </div>
+    );
+  }
 
   if (!editing) {
     const hasWeekend = weekendItems.length > 0;

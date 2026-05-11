@@ -2,7 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Share2, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Share2, X } from "lucide-react";
 import { useAllWeeks } from "@/hooks/use-plans";
 import { useMySharesForPlan, useRevokeShare } from "@/hooks/use-sharing";
 import { formatWeekRange, isWeekPast } from "@/lib/utils";
@@ -37,7 +38,10 @@ function PlanShareRow({
         />
       </div>
       {isLoading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="flex gap-1.5">
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="h-5 w-24 rounded-full" />
+        </div>
       ) : shares && shares.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
           {shares.map((share) => (
@@ -83,7 +87,20 @@ export function ShareManager() {
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-4">
         {isLoading ? (
-          <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+          <div className="space-y-4">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-1.5 min-w-0 flex-1">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                  <Skeleton className="h-8 w-20 rounded-md shrink-0" />
+                </div>
+                <Skeleton className="h-3 w-24" />
+              </div>
+            ))}
+          </div>
         ) : !activeWeeks?.length ? (
           <p className="text-sm text-muted-foreground">
             {t("noActivePlans")}

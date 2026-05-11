@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { BellOff, BellRing, CalendarDays, CheckCircle2, Loader2, Moon } from "lucide-react";
 import {
   useNotificationPreferences,
@@ -94,8 +95,19 @@ export function NotificationPreferencesCard() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-4 flex justify-center">
-          <Loader2 className="h-5 w-5 animate-spin" />
+        <CardHeader className="pb-3">
+          <Skeleton className="h-4 w-32" />
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between gap-3">
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+              <Skeleton className="h-6 w-10 rounded-full shrink-0" />
+            </div>
+          ))}
         </CardContent>
       </Card>
     );

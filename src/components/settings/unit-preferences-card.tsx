@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Ruler, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -42,7 +43,7 @@ function SegmentedButton<T extends string>({
 }
 
 export function UnitPreferencesCard() {
-  const { data: profile } = useUserProfile();
+  const { data: profile, isLoading: profileLoading } = useUserProfile();
   const qc = useQueryClient();
   const t = useTranslations("settings.unitPreferences");
   const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg");
@@ -70,6 +71,28 @@ export function UnitPreferencesCard() {
       setSaving(false);
     }
   };
+
+  if (profileLoading) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Ruler className="h-4 w-4 text-muted-foreground" />
+            {t("title")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-0">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-11 w-full rounded-lg" />
+            </div>
+          ))}
+          <Skeleton className="h-8 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

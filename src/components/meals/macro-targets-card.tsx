@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Calculator, Save, Target } from "lucide-react";
 import { toast } from "sonner";
 import { useUserProfile, useDefaultMacroTargets } from "@/hooks/use-user";
@@ -14,7 +15,7 @@ import { useTranslations } from "next-intl";
 
 export function MacroTargetsCard() {
   const t = useTranslations("meals.macroTargets");
-  const { data: profile } = useUserProfile();
+  const { data: profile, isLoading: profileLoading } = useUserProfile();
   const qc = useQueryClient();
   const computeDefaults = useDefaultMacroTargets();
   const [calories, setCalories] = useState("");
@@ -77,6 +78,34 @@ export function MacroTargetsCard() {
       setSaving(false);
     }
   };
+
+  if (profileLoading) {
+    return (
+      <Card>
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            {t("title")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-2 space-y-3">
+          <Skeleton className="h-3 w-48" />
+          <div className="grid grid-cols-2 gap-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-1">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-8 flex-1" />
+            <Skeleton className="h-8 flex-1" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

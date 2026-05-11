@@ -36,7 +36,7 @@ import { useState, useEffect, Suspense } from "react";
 
 function AyarlarContent() {
   const { data: session } = useSession();
-  const { data: profile } = useUserProfile();
+  const { data: profile, isLoading: profileLoading } = useUserProfile();
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("settings");
@@ -61,20 +61,22 @@ useEffect(() => {
     router.refresh();
   };
 
-  const routineMissing =
+  const routineMissing = !profileLoading && (
     !profile?.dailyRoutine ||
     !Array.isArray(profile.dailyRoutine) ||
     (profile.dailyRoutine as unknown[]).length === 0 ||
     !profile?.weekendRoutine ||
     !Array.isArray(profile.weekendRoutine) ||
-    (profile.weekendRoutine as unknown[]).length === 0;
+    (profile.weekendRoutine as unknown[]).length === 0
+  );
 
-  const supplementMissing =
+  const supplementMissing = !profileLoading && (
     !profile?.supplementSchedule ||
     !Array.isArray(profile.supplementSchedule) ||
-    (profile.supplementSchedule as unknown[]).length === 0;
+    (profile.supplementSchedule as unknown[]).length === 0
+  );
 
-  const healthProfileMissing = profile != null && profile.gender == null;
+  const healthProfileMissing = !profileLoading && profile != null && profile.gender == null;
 
   return (
     <div className="animate-fade-in">

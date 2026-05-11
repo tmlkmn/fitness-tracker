@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Droplets, Plus, Minus } from "lucide-react";
 import {
   useTodayWater,
@@ -14,13 +15,34 @@ import { useTranslations } from "next-intl";
 export function WaterDashboardWidget() {
   const t = useTranslations("water");
   const [todayStr] = useState(() => getTurkeyTodayStr());
-  const { data: log } = useTodayWater();
-  const { data: personalizedTarget } = useDailyWaterTarget(todayStr);
+  const { data: log, isLoading: logLoading } = useTodayWater();
+  const { data: personalizedTarget, isLoading: targetLoading } =
+    useDailyWaterTarget(todayStr);
   const increment = useIncrementWater();
 
+  const isLoading = logLoading || targetLoading;
   const glasses = log?.glasses ?? 0;
   const target = log?.targetGlasses ?? personalizedTarget ?? 8;
   const pct = target > 0 ? Math.min(100, Math.round((glasses / target) * 100)) : 0;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Droplets className="h-4 w-4 text-blue-400" />
+            <span className="text-xs text-muted-foreground">{t("shortLabel")}</span>
+          </div>
+          <div className="flex items-center justify-between gap-1">
+            <Skeleton className="h-7 w-7 rounded-full" />
+            <Skeleton className="h-5 w-12" />
+            <Skeleton className="h-7 w-7 rounded-full" />
+          </div>
+          <Skeleton className="mt-1.5 h-1.5 w-full rounded-full" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleIncrement = (delta: number) => {
     if (increment.isPending) return;

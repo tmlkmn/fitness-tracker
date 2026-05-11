@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from "next-intl";
 import { useUserProfile } from "@/hooks/use-user";
 import { useSession } from "@/lib/auth-client";
@@ -13,8 +14,8 @@ import { ProfileEditorDialog } from "./profile-editor-dialog";
 import { Pencil, User } from "lucide-react";
 
 export function ProfileSummaryCard() {
-  const { data: session } = useSession();
-  const { data: profile } = useUserProfile();
+  const { data: session, isPending: sessionPending } = useSession();
+  const { data: profile, isLoading: profileLoading } = useUserProfile();
   const t = useTranslations("settings.profileSummary");
   const tTypes = useTranslations("settings.membershipTypes");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -86,6 +87,36 @@ export function ProfileSummaryCard() {
       </div>
     );
   };
+
+  if (sessionPending || profileLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+            <Skeleton className="h-5 w-20 rounded-full shrink-0" />
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3 w-8" />
+            </div>
+            <Skeleton className="h-2 w-full rounded-full" />
+          </div>
+          <div className="flex gap-1.5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 flex-1 rounded-lg" />
+            ))}
+          </div>
+          <Skeleton className="h-8 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>

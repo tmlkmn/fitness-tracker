@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Droplets } from "lucide-react";
 import { useWaterLogs } from "@/hooks/use-water";
 import {
@@ -31,7 +32,22 @@ const WATER_GRADIENT_ID = chartGradientId("water-bar");
 export function WaterChart() {
   const t = useTranslations("water");
   const locale = useLocale() as Locale;
-  const { data: logs } = useWaterLogs();
+  const { data: logs, isLoading } = useWaterLogs();
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Droplets className="h-4 w-4 text-blue-400" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-16 ml-auto" />
+          </div>
+          <Skeleton className="h-45 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!logs || logs.length < 2) return null;
 

@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
 type SupplementItem = { period: string; supplements: string };
@@ -59,6 +60,20 @@ export function SupplementScheduleEditor({ profile }: Props) {
     SUPPLEMENT_PERIODS.includes(period as (typeof SUPPLEMENT_PERIODS)[number])
       ? t(`periods.${period}`)
       : period;
+
+  if (!profile) {
+    return (
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex justify-between gap-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        ))}
+        <Skeleton className="h-8 w-full mt-2" />
+      </div>
+    );
+  }
 
   if (!editing) {
     return (

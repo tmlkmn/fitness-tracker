@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Moon } from "lucide-react";
 import { useSleepLogs } from "@/hooks/use-sleep";
 import {
@@ -34,7 +35,22 @@ export function SleepChart() {
   const t = useTranslations("sleep");
   const tChart = useTranslations("sleep.chart");
   const locale = useLocale() as Locale;
-  const { data: logs } = useSleepLogs();
+  const { data: logs, isLoading } = useSleepLogs();
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Moon className="h-4 w-4 text-indigo-400" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-16 ml-auto" />
+          </div>
+          <Skeleton className="h-45 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!logs || logs.length < 2) return null;
 

@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Clock, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Clock } from "lucide-react";
 import { useReminders, useCreateReminder, useDeleteReminder, useToggleReminder, useCreateFromTemplate } from "@/hooks/use-reminders";
 import {
   useNotificationPreferences,
@@ -54,8 +55,19 @@ export function ReminderSettingsCard() {
   if (remindersLoading) {
     return (
       <Card>
-        <CardContent className="p-4 flex justify-center">
-          <Loader2 className="h-5 w-5 animate-spin" />
+        <CardHeader className="pb-3">
+          <Skeleton className="h-4 w-32" />
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between gap-3">
+              <div className="space-y-1.5 flex-1">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="h-6 w-10 rounded-full shrink-0" />
+            </div>
+          ))}
         </CardContent>
       </Card>
     );

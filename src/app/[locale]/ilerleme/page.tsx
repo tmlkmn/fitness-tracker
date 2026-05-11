@@ -13,6 +13,7 @@ import { useUserProfile } from "@/hooks/use-user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Collapsible,
   CollapsibleContent,
@@ -76,8 +77,8 @@ function LogDetailSection({ title, icon: Icon, items }: { title: string; icon: a
 }
 
 export default function IlerlemePage() {
-  const { data: logs } = useProgressLogs();
-  const { data: profile } = useUserProfile();
+  const { data: logs, isLoading: logsLoading } = useProgressLogs();
+  const { data: profile, isLoading: profileLoading } = useUserProfile();
   const deleteProgress = useDeleteProgress();
   const { data: activityStats } = useActivityStats();
   const t = useTranslations("progress");
@@ -130,6 +131,18 @@ export default function IlerlemePage() {
       />
       <div className="p-4 space-y-4">
         {/* Summary cards */}
+        {logsLoading || profileLoading ? (
+          <div className="grid grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-3 text-center space-y-1">
+                  <Skeleton className="h-6 w-12 mx-auto" />
+                  <Skeleton className="h-3 w-14 mx-auto" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-3 gap-3">
           <Card>
             <CardContent className="p-3 text-center">
@@ -170,6 +183,7 @@ export default function IlerlemePage() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Activity Heatmap */}
         {false && activityStats && (
@@ -177,7 +191,19 @@ export default function IlerlemePage() {
         )}
 
         {/* Dynamic chart */}
-        <ChartSelector data={logs ?? []} />
+        {logsLoading ? (
+          <Card>
+            <CardHeader className="p-3 pb-0 flex-row items-center justify-between">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-35 rounded-md" />
+            </CardHeader>
+            <CardContent className="p-3 pt-2">
+              <Skeleton className="h-40 w-full" />
+            </CardContent>
+          </Card>
+        ) : (
+          <ChartSelector data={logs ?? []} />
+        )}
 
         {/* AI Analysis — only show with 2+ measurements */}
         {logs && logs.length >= 2 && <ProgressAiAnalysis />}
@@ -193,7 +219,18 @@ export default function IlerlemePage() {
         </Button>
 
         {/* History */}
-        {logs && logs.length > 0 && (
+        {logsLoading ? (
+          <Card>
+            <CardHeader className="p-3 pb-0">
+              <Skeleton className="h-4 w-24" />
+            </CardHeader>
+            <CardContent className="p-3 pt-2 space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-9 w-full" />
+              ))}
+            </CardContent>
+          </Card>
+        ) : logs && logs.length > 0 && (
           <Card>
             <CardHeader className="p-3 pb-0">
               <CardTitle className="text-sm">{t("pastRecords")}</CardTitle>
