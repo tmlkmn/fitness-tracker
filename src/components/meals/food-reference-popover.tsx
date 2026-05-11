@@ -10,11 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Plus, Minus, Check, Trash2, X } from "lucide-react";
-import { TURKISH_FOODS, CATEGORY_LABELS, type TurkishFood } from "@/data/turkish-foods";
+import {
+  getFoodsByLocale,
+  FOOD_CATEGORY_KEYS,
+  type FoodCategory,
+} from "@/data/foods";
 import { useUserFoods, useCreateUserFood, useDeleteUserFood } from "@/hooks/use-user-foods";
 import type { FoodLike } from "@/lib/food-math";
 import { cn } from "@/lib/utils";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 interface FoodReferencePopoverProps {
   onAdd: (food: FoodLike, multiplier: number) => void;
@@ -241,8 +246,10 @@ function NewUserFoodForm({ onCancel }: { onCancel: () => void }) {
 
 export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
   const t = useTranslations("meals.foodReference");
+  const tCat = useTranslations("foods.categories");
+  const locale = useLocale() as Locale;
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<TurkishFood["category"] | null>(null);
+  const [category, setCategory] = useState<FoodCategory | null>(null);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("preset");
   const [showNewForm, setShowNewForm] = useState(false);
@@ -250,13 +257,15 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
   const { data: userFoodList } = useUserFoods();
   const deleteFood = useDeleteUserFood();
 
+  const localizedFoods = useMemo(() => getFoodsByLocale(locale), [locale]);
+
   const filteredPreset = useMemo(() => {
-    return TURKISH_FOODS.filter((f) => {
+    return localizedFoods.filter((f) => {
       if (category && f.category !== category) return false;
       if (search) return f.name.toLowerCase().includes(search.toLowerCase());
       return true;
     });
-  }, [search, category]);
+  }, [search, category, localizedFoods]);
 
   const filteredUser = useMemo(() => {
     if (!userFoodList) return [];
@@ -275,7 +284,6 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
       }));
   }, [userFoodList, search]);
 
-  const categories = Object.entries(CATEGORY_LABELS) as [TurkishFood["category"], string][];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -330,7 +338,7 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
               >
                 {t("categoryAll")}
               </Button>
-              {categories.map(([key, label]) => (
+              {FOOD_CATEGORY_KEYS.map((key) => (
                 <Button
                   key={key}
                   variant={category === key ? "default" : "outline"}
@@ -339,7 +347,7 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
                   type="button"
                   onClick={() => setCategory(key)}
                 >
-                  {label}
+                  {tCat(key)}
                 </Button>
               ))}
             </div>

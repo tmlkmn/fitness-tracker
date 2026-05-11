@@ -1,4 +1,4 @@
-import type { TurkishFood } from "@/data/turkish-foods";
+import type { Food } from "@/data/foods";
 
 export interface UserFoodLite {
   name: string;
@@ -9,7 +9,7 @@ export interface UserFoodLite {
   fat: number;
 }
 
-export type FoodLike = TurkishFood | UserFoodLite;
+export type FoodLike = Food | UserFoodLite;
 
 export interface ScaledFood {
   name: string;

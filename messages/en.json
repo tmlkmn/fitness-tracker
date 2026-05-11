@@ -1827,6 +1827,15 @@
       "weekStartSunday": "Sunday"
     }
   },
+  "foods": {
+    "categories": {
+      "protein": "Protein",
+      "karbonhidrat": "Carbs",
+      "yag": "Fats",
+      "sebze_meyve": "Produce",
+      "sut_urunleri": "Dairy"
+    }
+  },
   "gamification": {
     "streak": {
       "noStreak": "No streak",
