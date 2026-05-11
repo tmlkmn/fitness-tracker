@@ -225,6 +225,31 @@ a:focus:not(:focus-visible) {
   }
 }
 
+/* Modal (Radix Dialog) animations — Tailwind v4 has no animate-in plugin,
+   so we drive overlay + content motion with plain CSS keyframes scoped to
+   data-state on the elements that opt in via .modal-overlay / .modal-content. */
+@keyframes modal-overlay-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-overlay-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes modal-content-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes modal-content-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to   { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+}
+.modal-overlay[data-state="open"]   { animation: modal-overlay-in 180ms ease-out both; }
+.modal-overlay[data-state="closed"] { animation: modal-overlay-out 140ms ease-in both; }
+.modal-content[data-state="open"]   { animation: modal-content-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.modal-content[data-state="closed"] { animation: modal-content-out 140ms ease-in both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay[data-state],
+  .modal-content[data-state] {
+    animation: none !important;
+  }
+}
+
 /* View Transitions API — page-level crossfade for route navigation */
 ::view-transition-old(.page-fade) {
   animation: 140ms ease-in both vt-fade-out;

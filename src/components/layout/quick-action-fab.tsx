@@ -12,6 +12,7 @@ import {
   CalendarDays,
   Bell,
   User,
+  HeartPulse,
   type LucideIcon,
 } from "lucide-react";
 import { useTodayDashboard } from "@/hooks/use-plans";
@@ -103,6 +104,12 @@ function QuickActionFabInner({ pathname }: { pathname: string }) {
       icon: Utensils,
       href: `${todayHref}?tab=meals`,
       color: "bg-emerald-500/15 text-emerald-400",
+    },
+    {
+      label: t("wellness"),
+      icon: HeartPulse,
+      href: `${todayHref}?tab=wellness`,
+      color: "bg-cyan-500/15 text-cyan-400",
     },
     {
       label: t("calendar"),
