@@ -34,6 +34,7 @@ import { MeasurementNudge } from "@/components/ai/measurement-nudge";
 import { useTranslations, useLocale } from "next-intl";
 import { getLocalizedMealLabel, isMealLabel } from "@/lib/meal-labels";
 import type { Locale } from "@/lib/locale";
+import { formatDate } from "@/lib/date-format";
 
 type Tab = "suggest" | "saved";
 
@@ -141,10 +142,7 @@ function SavedSuggestionRow({
 
   const totalCal = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
   const dateStr = createdAt
-    ? new Date(createdAt).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
-        day: "numeric",
-        month: "short",
-      })
+    ? formatDate(createdAt, locale, { day: "numeric", month: "short" })
     : "";
 
   const handleApply = async () => {

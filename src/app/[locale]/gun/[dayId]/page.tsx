@@ -12,6 +12,8 @@ import { WaterTracker } from "@/components/water/water-tracker";
 import { SleepEntry } from "@/components/sleep/sleep-entry";
 import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
 import { getTranslations } from "next-intl/server";
+import { normalizeLocale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
 export const dynamic = "force-dynamic";
 
@@ -45,15 +47,12 @@ export default async function GunPage({ params, searchParams }: PageProps) {
   const isPast = dailyPlan.date ? dailyPlan.date < todayStr : false;
 
   const dateLabel = dailyPlan.date
-    ? new Date(dailyPlan.date + "T00:00:00").toLocaleDateString(
-        locale === "en" ? "en-US" : "tr-TR",
-        {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-          weekday: "long",
-        },
-      )
+    ? formatDate(parseDateOnly(dailyPlan.date), normalizeLocale(locale), {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        weekday: "long",
+      })
     : null;
 
   const planTypeKey = (["workout", "swimming", "rest"] as const).includes(

@@ -13,6 +13,7 @@ import { eq, and, isNotNull } from "drizzle-orm";
 import { sendNotification } from "@/lib/notifications";
 import { sendMembershipExpiryEmail } from "@/lib/email";
 import { normalizeLocale } from "@/lib/locale";
+import { formatDate } from "@/lib/date-format";
 
 function getCurrentTimeInTz(timezone: string): { hhmm: string; dayOfWeek: number; dateStr: string } {
   const now = new Date();
@@ -421,7 +422,7 @@ async function checkMembershipExpiry(): Promise<number> {
     });
 
     // Custom email template
-    const endDateStr = endDate.toLocaleDateString(isEn ? "en-US" : "tr-TR");
+    const endDateStr = formatDate(endDate, userLocale);
     try {
       await sendMembershipExpiryEmail(
         user.email,

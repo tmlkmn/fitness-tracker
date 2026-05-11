@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 import {
   Bar,
   BarChart,
@@ -54,7 +56,7 @@ function StatCard({
 
 export default function AiWarningsPage() {
   const router = useRouter();
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const t = useTranslations("admin.aiWarningsPage");
   const tFeatures = useTranslations("admin.aiWarningsPage.featureLabels");
   const [data, setData] = useState<AiWarningsAnalytics | null>(null);
@@ -68,13 +70,8 @@ export default function AiWarningsPage() {
     return feature;
   };
 
-  const formatShortDate = (iso: string): string => {
-    const d = new Date(iso + "T00:00:00");
-    return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
-      day: "numeric",
-      month: "short",
-    });
-  };
+  const formatShortDate = (iso: string): string =>
+    formatDate(parseDateOnly(iso), locale, { day: "numeric", month: "short" });
 
   useEffect(() => {
     let cancelled = false;
@@ -269,15 +266,12 @@ export default function AiWarningsPage() {
                           >
                             {featureLabel(s.feature)}
                             <span className="text-muted-foreground/60">·</span>
-                            {new Date(s.createdAt).toLocaleDateString(
-                              locale === "en" ? "en-US" : "tr-TR",
-                              {
-                                day: "numeric",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
+                            {formatDate(s.createdAt, locale, {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </span>
                         ))}
                       </div>

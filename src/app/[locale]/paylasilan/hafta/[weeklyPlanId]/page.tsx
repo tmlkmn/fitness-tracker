@@ -13,6 +13,8 @@ import {
 } from "@/hooks/use-shared-plans";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
 interface PageProps {
   params: Promise<{ weeklyPlanId: string }>;
@@ -25,7 +27,7 @@ export default function PaylasilanHaftaPage({ params }: PageProps) {
   const { data: days, isLoading: loadingDays } =
     useSharedDailyPlansByWeek(id);
   const t = useTranslations("sharing");
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
 
   const planTypeLabel = (planType: string): string => {
     if ((["workout", "swimming", "rest"] as const).includes(planType as "workout")) {
@@ -72,14 +74,11 @@ export default function PaylasilanHaftaPage({ params }: PageProps) {
           <div className="space-y-2">
             {days.map((day) => {
               const dateLabel = day.date
-                ? new Date(day.date + "T00:00:00").toLocaleDateString(
-                    locale === "en" ? "en-US" : "tr-TR",
-                    {
-                      day: "numeric",
-                      month: "short",
-                      weekday: "short",
-                    },
-                  )
+                ? formatDate(parseDateOnly(day.date), locale, {
+                    day: "numeric",
+                    month: "short",
+                    weekday: "short",
+                  })
                 : null;
 
               return (

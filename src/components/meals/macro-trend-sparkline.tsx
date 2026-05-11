@@ -22,6 +22,7 @@ import {
 } from "@/lib/chart-theme";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
 type Metric = "calories" | "protein" | "carbs" | "fat";
 
@@ -39,11 +40,7 @@ const METRIC_UNITS: Record<Metric, string> = {
 };
 
 function formatShortDate(iso: string, locale: Locale): string {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
-    weekday: "short",
-    day: "numeric",
-  });
+  return formatDate(parseDateOnly(iso), locale, { weekday: "short", day: "numeric" });
 }
 
 export function MacroTrendSparkline({

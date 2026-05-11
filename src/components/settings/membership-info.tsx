@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { CreditCard } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate } from "@/lib/date-format";
 
 interface MembershipInfoProps {
   profile: {
@@ -18,7 +19,6 @@ export function MembershipInfo({ profile }: MembershipInfoProps) {
   const t = useTranslations("settings.membershipInfo");
   const tTypes = useTranslations("settings.membershipTypes");
   const locale = useLocale() as Locale;
-  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
 
   const type = profile.membershipType ?? "";
   const knownType = ["unlimited", "1-month", "3-month", "6-month", "1-year", "custom"].includes(
@@ -26,10 +26,10 @@ export function MembershipInfo({ profile }: MembershipInfoProps) {
   );
   const label = knownType ? tTypes(type as "unlimited") : type || "";
   const startDate = profile.membershipStartDate
-    ? new Date(profile.membershipStartDate).toLocaleDateString(dateLocale)
+    ? formatDate(profile.membershipStartDate, locale)
     : null;
   const endDate = profile.membershipEndDate
-    ? new Date(profile.membershipEndDate).toLocaleDateString(dateLocale)
+    ? formatDate(profile.membershipEndDate, locale)
     : null;
 
   const [snapshot] = useState(() => {

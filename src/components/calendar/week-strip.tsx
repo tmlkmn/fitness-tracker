@@ -5,6 +5,7 @@ import { cn, formatDateStr } from "@/lib/utils";
 import { getWeekDayLabels, type WeekStart } from "@/lib/week";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate } from "@/lib/date-format";
 
 interface WeekStripProps {
   weekStartDate: Date;
@@ -19,9 +20,8 @@ interface WeekStripProps {
 function formatMonthRange(start: Date, locale: Locale): string {
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
-  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
-  const startMonth = start.toLocaleDateString(dateLocale, { month: "short" });
-  const endMonth = end.toLocaleDateString(dateLocale, { month: "short" });
+  const startMonth = formatDate(start, locale, { month: "short" });
+  const endMonth = formatDate(end, locale, { month: "short" });
   if (startMonth === endMonth) {
     return `${start.getDate()} - ${end.getDate()} ${startMonth} ${end.getFullYear()}`;
   }

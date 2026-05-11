@@ -44,10 +44,11 @@ import { ensureDailyPlan } from "@/actions/ensure-plan";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
-function formatLocaleDate(dateStr: string, locale: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+function formatLocaleDate(dateStr: string, locale: Locale): string {
+  return formatDate(parseDateOnly(dateStr), locale, {
     day: "numeric",
     month: "long",
     weekday: "long",
@@ -56,7 +57,7 @@ function formatLocaleDate(dateStr: string, locale: string): string {
 
 export default function TakvimPage() {
   const t = useTranslations("calendar");
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const { data: prefs } = useNotificationPreferences();
   const weekStartsOn: WeekStart = (prefs?.weekStartsOn as WeekStart) ?? "monday";
   const getWeekStart = useCallback(
@@ -409,8 +410,7 @@ export default function TakvimPage() {
             </p>
             <div className="space-y-1">
               {emptyWeeks.map((monday) => {
-                const d = new Date(monday + "T00:00:00");
-                const label = d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+                const label = formatDate(parseDateOnly(monday), locale, {
                   day: "numeric",
                   month: "long",
                   year: "numeric",

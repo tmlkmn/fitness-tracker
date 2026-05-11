@@ -23,17 +23,18 @@ import { ShoppingCart, CheckCircle, Sparkles, RefreshCw, AlertCircle } from "luc
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { formatAiError } from "@/lib/ai-errors";
+import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
-function formatWeekLabel(startDate: string | null, weekNumber: number, locale: string, t: (key: string, values?: Record<string, string | number>) => string): string {
+function formatWeekLabel(startDate: string | null, weekNumber: number, locale: Locale, t: (key: string, values?: Record<string, string | number>) => string): string {
   if (!startDate) return t("weekShort", { week: weekNumber });
-  const start = new Date(startDate + "T00:00:00");
+  const start = parseDateOnly(startDate);
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
   const startDay = start.getDate();
   const endDay = end.getDate();
-  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
-  const startMonth = start.toLocaleDateString(dateLocale, { month: "short" });
-  const endMonth = end.toLocaleDateString(dateLocale, { month: "short" });
+  const startMonth = formatDate(start, locale, { month: "short" });
+  const endMonth = formatDate(end, locale, { month: "short" });
   if (startMonth === endMonth) {
     return `${startDay}-${endDay} ${startMonth}`;
   }
@@ -60,7 +61,7 @@ function AlisverisContent() {
   const weekParam = searchParams.get("week");
   const { data: weeks, isLoading: weeksLoading } = useAllWeeks();
   const t = useTranslations("shopping");
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
 
   const defaultWeekId = useMemo(() => {
     if (weekParam) return Number(weekParam);

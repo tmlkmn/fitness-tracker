@@ -24,6 +24,7 @@ import {
 } from "@/lib/chart-theme";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
 const SLEEP_HOURS_GRADIENT = chartGradientId("sleep-hours");
 const SLEEP_HOURS_COLOR = "hsl(240, 75%, 70%)";
@@ -37,14 +38,10 @@ export function SleepChart() {
 
   if (!logs || logs.length < 2) return null;
 
-  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
   const chartData = [...logs]
     .reverse()
     .map((l) => ({
-      date: new Date(l.logDate + "T00:00:00").toLocaleDateString(dateLocale, {
-        day: "numeric",
-        month: "short",
-      }),
+      date: formatDate(parseDateOnly(l.logDate), locale, { day: "numeric", month: "short" }),
       hours: l.durationMinutes ? +(l.durationMinutes / 60).toFixed(1) : null,
       quality: l.quality,
     }));

@@ -11,6 +11,7 @@ import { headers } from "next/headers";
 import { sendNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { normalizeLocale } from "@/lib/locale";
+import { formatDate } from "@/lib/date-format";
 
 export type MembershipType = "unlimited" | "1-month" | "3-month" | "6-month" | "1-year" | "custom";
 
@@ -289,7 +290,7 @@ export async function extendMembership(
   const userLocale = normalizeLocale(user.locale);
   const isEn = userLocale === "en";
   const endDateFormatted = updateData.membershipEndDate
-    ? (updateData.membershipEndDate as Date).toLocaleDateString(isEn ? "en-US" : "tr-TR")
+    ? formatDate(updateData.membershipEndDate as Date, userLocale)
     : null;
 
   await sendNotification({

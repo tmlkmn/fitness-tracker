@@ -57,7 +57,7 @@ export async function generateMetadata({
       template: `%s | FitMusc`,
     },
     description,
-    manifest: "/manifest.json",
+    manifest: "/manifest.webmanifest",
     metadataBase: new URL(BASE_URL),
     openGraph: {
       title,

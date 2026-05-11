@@ -24,6 +24,7 @@ import {
 } from "@/lib/chart-theme";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
 const WATER_GRADIENT_ID = chartGradientId("water-bar");
 
@@ -37,10 +38,7 @@ export function WaterChart() {
   const chartData = [...logs]
     .reverse()
     .map((l) => ({
-      date: new Date(l.logDate + "T00:00:00").toLocaleDateString(
-        locale === "en" ? "en-US" : "tr-TR",
-        { day: "numeric", month: "short" },
-      ),
+      date: formatDate(parseDateOnly(l.logDate), locale, { day: "numeric", month: "short" }),
       glasses: l.glasses,
       target: l.targetGlasses,
     }));

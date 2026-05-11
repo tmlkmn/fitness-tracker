@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate } from "@/lib/date-format";
 
 export interface SelectedMeal {
   mealLabel: string;
@@ -107,10 +108,7 @@ function DailyPlanCard({
   const locale = useLocale() as Locale;
   const totalCals = plan.meals.reduce((s, m) => s + (m.calories ?? 0), 0);
   const dateLabel = plan.createdAt
-    ? new Date(plan.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
-        day: "numeric",
-        month: "short",
-      })
+    ? formatDate(plan.createdAt, locale, { day: "numeric", month: "short" })
     : "";
   const planTypeKey = plan.planType in { workout: 1, rest: 1, swimming: 1, nutrition: 1 }
     ? plan.planType as "workout" | "rest" | "swimming" | "nutrition"

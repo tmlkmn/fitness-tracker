@@ -54,6 +54,7 @@ import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
 
 function SteppedProgress({
@@ -410,11 +411,7 @@ function useFormatTimeAgo() {
 }
 
 function formatWeekLabel(mondayStr: string, locale: Locale): string {
-  const d = new Date(mondayStr + "T00:00:00");
-  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
-    day: "numeric",
-    month: "long",
-  });
+  return formatDate(parseDateOnly(mondayStr), locale, { day: "numeric", month: "long" });
 }
 
 // ─── Main Modal ─────────────────────────────────────────────────────────────

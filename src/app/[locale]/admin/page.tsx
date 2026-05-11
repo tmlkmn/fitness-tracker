@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { formatDate } from "@/lib/date-format";
 import {
   listAllUsers,
   resendInvite,
@@ -123,12 +125,12 @@ function StatCard({ label, value, sub }: { label: string; value: number; sub?: s
 }
 
 function MembershipBadge({ user }: { user: UserWithStatus }) {
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const membershipLabel = useMembershipLabel();
   if (!user.membershipType || user.status === "Admin") return null;
   const label = membershipLabel(user.membershipType);
   const endDate = user.membershipEndDate
-    ? new Date(user.membershipEndDate).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR")
+    ? formatDate(user.membershipEndDate, locale)
     : null;
   return (
     <span className="text-xs text-muted-foreground">
@@ -326,7 +328,7 @@ function ExtendDialog({
 
 export default function AdminPage() {
   const router = useRouter();
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const t = useTranslations("admin");
   const tFreeze = useTranslations("admin.freeze");
   const formatTimeAgo = useTimeAgo();
@@ -580,7 +582,7 @@ export default function AdminPage() {
                       {user.isFrozen && user.frozenAt && (
                         <p className="text-xs text-blue-400 mt-0.5">
                           {tFreeze("frozenAt", {
-                            date: new Date(user.frozenAt).toLocaleDateString(locale === "en" ? "en-US" : "tr-TR"),
+                            date: formatDate(user.frozenAt, locale),
                             days: Math.floor(daysSinceFrozen(user)),
                           })}
                         </p>

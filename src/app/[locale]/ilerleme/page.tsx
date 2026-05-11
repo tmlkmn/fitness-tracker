@@ -42,10 +42,11 @@ import { ActivityHeatmap } from "@/components/gamification/activity-heatmap";
 import { WaterChart } from "@/components/water/water-chart";
 import { SleepChart } from "@/components/sleep/sleep-chart";
 import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
-function formatLocaleDate(dateStr: string, locale: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+function formatLocaleDate(dateStr: string, locale: Locale): string {
+  return formatDate(parseDateOnly(dateStr), locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -80,7 +81,7 @@ export default function IlerlemePage() {
   const deleteProgress = useDeleteProgress();
   const { data: activityStats } = useActivityStats();
   const t = useTranslations("progress");
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
 
   const [modalOpen, setModalOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

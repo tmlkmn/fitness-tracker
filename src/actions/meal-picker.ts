@@ -10,6 +10,8 @@ import {
 } from "@/db/schema";
 import { and, desc, eq, gte, like, or, sql } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
+import { getUserLocale } from "@/lib/locale";
+import { formatDate as formatDateLocalized, parseDateOnly } from "@/lib/date-format";
 import type { AIMeal } from "./ai-meals";
 
 export interface MealCandidate {
@@ -45,6 +47,7 @@ export async function getMealPickerData(
   excludeDailyPlanId?: number,
 ): Promise<MealPickerData> {
   const user = await getAuthUser();
+  const locale = getUserLocale(user);
   const q = query?.trim().toLowerCase() ?? "";
   const like_ = q ? `%${q}%` : null;
 
@@ -124,8 +127,7 @@ export async function getMealPickerData(
 
   const formatDate = (d: string | null) => {
     if (!d) return "";
-    const dt = new Date(d + "T00:00:00");
-    return dt.toLocaleDateString("tr-TR", {
+    return formatDateLocalized(parseDateOnly(d), locale, {
       day: "numeric",
       month: "short",
     });

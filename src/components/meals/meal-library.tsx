@@ -30,11 +30,11 @@ import type { AIMeal } from "@/actions/ai-meals";
 import { computeMealMacros } from "@/lib/meal-macros";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
 function useFormatRelativeDate() {
   const t = useTranslations("meals.library");
   const locale = useLocale() as Locale;
-  const dateLocale = locale === "en" ? "en-US" : "tr-TR";
   return (input: Date | string | null | undefined): string => {
     if (!input) return "";
     const date = typeof input === "string" ? new Date(input) : input;
@@ -43,11 +43,11 @@ function useFormatRelativeDate() {
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0)
-      return date.toLocaleDateString(dateLocale, { day: "numeric", month: "long" });
+      return formatDate(date, locale, { day: "numeric", month: "long" });
     if (diffDays === 0) return t("today");
     if (diffDays === 1) return t("yesterday");
     if (diffDays < 7) return t("daysAgo", { count: diffDays });
-    return date.toLocaleDateString(dateLocale, {
+    return formatDate(date, locale, {
       day: "numeric",
       month: "long",
       year: now.getFullYear() === date.getFullYear() ? undefined : "numeric",
@@ -261,10 +261,7 @@ function ApplyPlanDialog({
                   <span className="font-medium">{p.dayName}</span>
                   {p.date && (
                     <span className="text-muted-foreground">
-                      {new Date(p.date + "T00:00:00").toLocaleDateString(
-                        locale === "en" ? "en-US" : "tr-TR",
-                        { day: "numeric", month: "short" },
-                      )}
+                      {formatDate(parseDateOnly(p.date), locale, { day: "numeric", month: "short" })}
                     </span>
                   )}
                 </div>

@@ -3,6 +3,20 @@
     "title": "FitMusc — Personal Fitness Tracker",
     "description": "AI-powered personal fitness training and nutrition tracker. Weekly training and nutrition plans, progress tracking, smart suggestions."
   },
+  "manifest": {
+    "name": "FitMusc",
+    "shortName": "FitMusc",
+    "description": "Personal fitness training and nutrition tracker",
+    "todayName": "Today",
+    "todayShortName": "Today",
+    "todayDescription": "Today's training and nutrition plan",
+    "assistantName": "AI Assistant",
+    "assistantShortName": "AI",
+    "assistantDescription": "Chat with your AI fitness coach",
+    "progressName": "Progress",
+    "progressShortName": "Progress",
+    "progressDescription": "Weight and measurements tracking"
+  },
   "layout": {
     "networkStatus": {
       "reconnected": "Connection restored",

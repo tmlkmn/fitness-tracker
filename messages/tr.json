@@ -3,6 +3,20 @@
     "title": "FitMusc — Kişisel Fitness Takip",
     "description": "AI destekli kişisel fitness antrenman ve beslenme takip uygulaması. Haftalık antrenman ve beslenme planları, ilerleme takibi, akıllı öneriler."
   },
+  "manifest": {
+    "name": "FitMusc",
+    "shortName": "FitMusc",
+    "description": "Kişisel fitness antrenman ve beslenme takip uygulaması",
+    "todayName": "Bugün",
+    "todayShortName": "Bugün",
+    "todayDescription": "Bugünkü antrenman ve beslenme planı",
+    "assistantName": "AI Asistan",
+    "assistantShortName": "AI",
+    "assistantDescription": "AI fitness koçuyla sohbet et",
+    "progressName": "İlerleme",
+    "progressShortName": "İlerleme",
+    "progressDescription": "Kilo ve ölçüm takibi"
+  },
   "layout": {
     "networkStatus": {
       "reconnected": "Bağlantı yeniden sağlandı",

@@ -13,6 +13,7 @@ import { useMemo, useRef } from "react";
 import type { ActivityStats } from "@/actions/activity-stats";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
 interface ActivityHeatmapProps {
   completionMap: ActivityStats["completionMap"];
@@ -59,13 +60,8 @@ export function ActivityHeatmap({ completionMap }: ActivityHeatmapProps) {
     }
   };
 
-  const formatDateLocalized = (dateStr: string): string => {
-    const d = new Date(dateStr + "T00:00:00");
-    return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
-      day: "numeric",
-      month: "long",
-    });
-  };
+  const formatDateLocalized = (dateStr: string): string =>
+    formatDate(parseDateOnly(dateStr), locale, { day: "numeric", month: "long" });
 
   const { cells, monthMarkers, totalWeeks, fullCount, partialCount } = useMemo(() => {
     const today = new Date();

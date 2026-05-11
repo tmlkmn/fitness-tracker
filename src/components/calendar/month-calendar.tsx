@@ -5,6 +5,7 @@ import { cn, formatDateStr } from "@/lib/utils";
 import { getWeekDayLabels, type WeekStart } from "@/lib/week";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { formatDate } from "@/lib/date-format";
 
 interface MonthCalendarProps {
   selectedDate: string;
@@ -18,10 +19,7 @@ interface MonthCalendarProps {
 
 function getMonthLabel(year: number, month: number, locale: Locale): string {
   const d = new Date(year, month - 1, 1);
-  return d.toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
-    month: "long",
-    year: "numeric",
-  });
+  return formatDate(d, locale, { month: "long", year: "numeric" });
 }
 
 function getCalendarDays(year: number, month: number, startsOn: WeekStart) {

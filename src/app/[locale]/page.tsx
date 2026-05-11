@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { formatDate } from "@/lib/date-format";
 import { useSession } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
 import { useTodayDashboard, useWeekPlansByDate, useAllWeeks } from "@/hooks/use-plans";
@@ -70,7 +72,7 @@ function ProgressBar({ completed, total, color }: { completed: number; total: nu
 export default function HomePage() {
   const { data: session, isPending: sessionPending } = useSession();
   const router = useRouter();
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const t = useTranslations("dashboard");
   const user = session?.user;
 
@@ -98,7 +100,7 @@ export default function HomePage() {
     needsHealthProfile && !onboardingOpen && !healthWizardDismissed;
 
   const [currentDay] = useState(() =>
-    new Date().toLocaleDateString(locale === "en" ? "en-US" : "tr-TR", {
+    formatDate(new Date(), locale, {
       weekday: "long",
       day: "numeric",
       month: "long",

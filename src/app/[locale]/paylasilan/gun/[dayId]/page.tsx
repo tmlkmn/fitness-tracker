@@ -11,6 +11,8 @@ import { MealCard } from "@/components/meals/meal-card";
 import { ExerciseCard } from "@/components/workout/exercise-card";
 import { Separator } from "@/components/ui/separator";
 import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { formatDate, parseDateOnly } from "@/lib/date-format";
 
 interface PageProps {
   params: Promise<{ dayId: string }>;
@@ -24,20 +26,17 @@ export default function PaylasilanGunPage({ params }: PageProps) {
   const { data: exercises, isLoading: loadingExercises } = useSharedExercisesByDay(id);
   const t = useTranslations("sharing");
   const tDay = useTranslations("day");
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
 
   const isLoading = loadingPlan || loadingMeals || loadingExercises;
 
   const dateLabel = dailyPlan?.date
-    ? new Date(dailyPlan.date + "T00:00:00").toLocaleDateString(
-        locale === "en" ? "en-US" : "tr-TR",
-        {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-          weekday: "long",
-        },
-      )
+    ? formatDate(parseDateOnly(dailyPlan.date), locale, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        weekday: "long",
+      })
     : null;
 
   const planTypeDayLabel = (planType: string | undefined): string => {
