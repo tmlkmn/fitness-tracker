@@ -1045,8 +1045,10 @@
     },
     "bulkDelete": {
       "title": "Delete All Meals",
-      "warning": "<strong>All {count} meals for this day</strong> will be deleted. This action cannot be undone.",
-      "warningDanger": "All meal data, calories, and macro information will be permanently deleted.",
+      "warningPrefix": "All ",
+      "warningSuffix": " for this day will be deleted. This action cannot be undone.",
+      "warningCountStrong": "{count} meals",
+      "extraWarning": "All meal data, calories, and macro information will be permanently deleted.",
       "cancel": "Cancel",
       "deleting": "Deleting...",
       "deleteAll": "Delete All"

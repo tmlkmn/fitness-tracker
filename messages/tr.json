@@ -1046,8 +1046,10 @@
     },
     "bulkDelete": {
       "title": "Tüm Öğünleri Sil",
-      "warning": "Bu güne ait <strong>{count} öğünün tamamı</strong> silinecektir. Bu işlem geri alınamaz.",
-      "warningDanger": "Tüm öğün verileri, kalori ve makro bilgileri kalıcı olarak silinecektir.",
+      "warningPrefix": "Bu güne ait ",
+      "warningSuffix": " silinecektir. Bu işlem geri alınamaz.",
+      "warningCountStrong": "{count} öğünün tamamı",
+      "extraWarning": "Tüm öğün verileri, kalori ve makro bilgileri kalıcı olarak silinecektir.",
       "cancel": "Vazgeç",
       "deleting": "Siliniyor...",
       "deleteAll": "Tümünü Sil"

@@ -336,7 +336,7 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
                 type="button"
                 onClick={() => setCategory(null)}
               >
-                {t("categoryAll")}
+                {t("all")}
               </Button>
               {FOOD_CATEGORY_KEYS.map((key) => (
                 <Button
@@ -379,13 +379,13 @@ export function FoodReferencePopover({ onAdd }: FoodReferencePopoverProps) {
                   onClick={() => setShowNewForm(true)}
                 >
                   <Plus className="h-3 w-3" />
-                  {t("addNewFood")}
+                  {t("addNew")}
                 </Button>
               )}
               <div className="max-h-[200px] overflow-y-auto space-y-1">
                 {filteredUser.length === 0 && !showNewForm && (
                   <p className="text-xs text-muted-foreground text-center py-4">
-                    {t("emptyUser")}
+                    {t("empty")}
                   </p>
                 )}
                 {filteredUser.map((food) => (
