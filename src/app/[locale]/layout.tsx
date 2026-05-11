@@ -30,6 +30,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CookieConsent } from "@/components/cookie-consent";
 import { GlobalSearchProvider } from "@/components/layout/global-search-provider";
+import { LocaleSync } from "@/components/layout/locale-sync";
 import { routing } from "@/i18n/routing";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://fitmusc.com";
@@ -162,6 +163,7 @@ export default async function LocaleLayout({
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         <NextIntlClientProvider locale={locale}>
           <QueryProvider>
+            <LocaleSync />
             <ThemeProvider>
               <GlobalSearchProvider>
                 <NetworkStatus />
