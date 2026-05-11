@@ -14,6 +14,7 @@ import { sendNotification } from "@/lib/notifications";
 import { sendMembershipExpiryEmail } from "@/lib/email";
 import { normalizeLocale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
+import { getReminderTemplateText, isReminderTemplateKey } from "@/lib/reminder-templates";
 
 function getCurrentTimeInTz(timezone: string): { hhmm: string; dayOfWeek: number; dateStr: string } {
   const now = new Date();
@@ -113,6 +114,7 @@ export async function GET(request: NextRequest) {
       type: reminders.type,
       title: reminders.title,
       body: reminders.body,
+      templateKey: reminders.templateKey,
       time: reminders.time,
       minutesBefore: reminders.minutesBefore,
       recurrence: reminders.recurrence,
@@ -235,14 +237,29 @@ async function fireReminder(reminder: {
   type: string;
   title: string;
   body: string | null;
+  templateKey: string | null;
+  userLocale: string | null;
   skipEmail: boolean | null;
   recurrence: string;
 }) {
+  // Re-render template-based reminders in the recipient's current locale so
+  // a TR-created reminder shows up in EN after the user switches language.
+  let title = reminder.title;
+  let body = reminder.body ?? reminder.title;
+  if (reminder.templateKey && isReminderTemplateKey(reminder.templateKey)) {
+    const text = getReminderTemplateText(
+      reminder.templateKey,
+      normalizeLocale(reminder.userLocale),
+    );
+    title = text.title;
+    body = text.body;
+  }
+
   await sendNotification({
     userId: reminder.userId,
     type: `reminder_${reminder.type}`,
-    title: reminder.title,
-    body: reminder.body ?? reminder.title,
+    title,
+    body,
     link: "/ayarlar",
     skipEmail: reminder.skipEmail ?? true,
   });

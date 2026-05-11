@@ -5,7 +5,8 @@ import { reminders } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
-import { REMINDER_TEMPLATES } from "@/lib/reminder-templates";
+import { REMINDER_TEMPLATES, getReminderTemplateText } from "@/lib/reminder-templates";
+import { getUserLocale } from "@/lib/locale";
 
 export async function getReminders() {
   const user = await getAuthUser();
@@ -76,11 +77,12 @@ export async function createReminderFromTemplate(templateKey: string) {
       .set({ isEnabled: true })
       .where(eq(reminders.id, existing[0].id));
   } else {
+    const text = getReminderTemplateText(template.key, getUserLocale(user));
     await db.insert(reminders).values({
       userId: user.id,
       type: "custom",
-      title: template.title,
-      body: template.body,
+      title: text.title,
+      body: text.body,
       templateKey: template.key,
       time: template.defaultTime ?? null,
       recurrence: template.defaultRecurrence,

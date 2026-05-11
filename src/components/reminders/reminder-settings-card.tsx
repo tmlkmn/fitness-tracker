@@ -19,13 +19,15 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from "@/hooks/use-notification-preferences";
-import { REMINDER_TEMPLATES } from "@/lib/reminder-templates";
+import { REMINDER_TEMPLATES, getReminderTemplateText } from "@/lib/reminder-templates";
 import { ReminderItem } from "./reminder-item";
 import { AddReminderDialog } from "./add-reminder-dialog";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 export function ReminderSettingsCard() {
   const t = useTranslations("settings.remindersCard");
+  const locale = useLocale() as Locale;
   const { data: allReminders, isLoading: remindersLoading } = useReminders();
   const { data: prefs } = useNotificationPreferences();
   const updatePrefs = useUpdateNotificationPreferences();
@@ -243,13 +245,14 @@ export function ReminderSettingsCard() {
             const existingReminder = templateReminders.find(
               (r) => r.templateKey === tpl.key
             );
+            const text = getReminderTemplateText(tpl.key, locale);
             return (
               <div key={tpl.key} className="space-y-1">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm">{tpl.title}</span>
+                    <span className="text-sm">{text.title}</span>
                     <p className="text-xs text-muted-foreground truncate">
-                      {tpl.body}
+                      {text.body}
                     </p>
                   </div>
                   <Switch

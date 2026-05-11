@@ -21,14 +21,16 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useCreateReminder } from "@/hooks/use-reminders";
-import { REMINDER_TEMPLATES, type ReminderTemplate } from "@/lib/reminder-templates";
+import { REMINDER_TEMPLATES, getReminderTemplateText, type ReminderTemplate } from "@/lib/reminder-templates";
 import { DynamicIcon } from "@/lib/icon-map";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 const DAY_VALUES = [1, 2, 3, 4, 5, 6, 0] as const;
 
 export function AddReminderDialog() {
   const t = useTranslations("settings.reminderDialog");
+  const locale = useLocale() as Locale;
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -75,8 +77,9 @@ export function AddReminderDialog() {
   };
 
   const applyTemplate = (tpl: ReminderTemplate) => {
-    setTitle(tpl.title);
-    setBody(tpl.body);
+    const text = getReminderTemplateText(tpl.key, locale);
+    setTitle(text.title);
+    setBody(text.body);
     setRecurrence(tpl.defaultRecurrence);
     if (tpl.defaultTime) setTime(tpl.defaultTime);
     if (tpl.defaultRecurrence === "interval") {
@@ -108,17 +111,20 @@ export function AddReminderDialog() {
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">{t("quickTemplates")}</Label>
             <div className="flex flex-wrap gap-1.5">
-              {REMINDER_TEMPLATES.map((tpl) => (
-                <button
-                  key={tpl.key}
-                  type="button"
-                  onClick={() => applyTemplate(tpl)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 hover:bg-muted px-2.5 py-1 text-xs transition-colors"
-                >
-                  <DynamicIcon icon={tpl.icon} className="h-3.5 w-3.5" />
-                  {tpl.title}
-                </button>
-              ))}
+              {REMINDER_TEMPLATES.map((tpl) => {
+                const text = getReminderTemplateText(tpl.key, locale);
+                return (
+                  <button
+                    key={tpl.key}
+                    type="button"
+                    onClick={() => applyTemplate(tpl)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 hover:bg-muted px-2.5 py-1 text-xs transition-colors"
+                  >
+                    <DynamicIcon icon={tpl.icon} className="h-3.5 w-3.5" />
+                    {text.title}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

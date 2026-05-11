@@ -37,11 +37,11 @@ export function DayDetailPanel({ dailyPlan, readOnly }: DayDetailPanelProps) {
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="meals" className="gap-1.5 text-xs">
               <UtensilsCrossed className="h-3.5 w-3.5" />
-              {t("tabMeals")}
+              {t("tabs.nutrition")}
             </TabsTrigger>
             <TabsTrigger value="workout" className="gap-1.5 text-xs">
               <Dumbbell className="h-3.5 w-3.5" />
-              {t("tabWorkout")}
+              {t("tabs.workout")}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="meals">
