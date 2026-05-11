@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -64,13 +65,7 @@ function NumericField({
   );
 }
 
-const BODY_PARTS = [
-  { key: "leftArm", label: "Sol Kol" },
-  { key: "rightArm", label: "Sağ Kol" },
-  { key: "torso", label: "Gövde" },
-  { key: "leftLeg", label: "Sol Bacak" },
-  { key: "rightLeg", label: "Sağ Bacak" },
-] as const;
+const BODY_PARTS = ["leftArm", "rightArm", "torso", "leftLeg", "rightLeg"] as const;
 
 interface ProgressModalProps {
   open: boolean;
@@ -79,6 +74,7 @@ interface ProgressModalProps {
 }
 
 export function ProgressModal({ open, onOpenChange, initialData }: ProgressModalProps) {
+  const t = useTranslations("progress.modal");
   const [fields, setFields] = useState<Record<string, string>>({});
   const [logDate, setLogDate] = useState(() => formatDateStr(new Date()));
   const [quickMode, setQuickMode] = useState(false);
@@ -115,7 +111,6 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
   const set = useCallback((key: string, value: string) =>
     setFields((prev) => ({ ...prev, [key]: value })), []);
 
-  // (m) Auto-calculate BMI when weight changes
   useEffect(() => {
     if (manualBmi) return;
     const weight = parseFloat(fields.weight ?? "");
@@ -131,7 +126,6 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
     set("bmi", v);
   };
 
-  // (l) Copy previous measurement
   const handleCopyPrevious = () => {
     if (!latestLog) return;
     const mapped: Record<string, string> = {};
@@ -142,8 +136,8 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
       }
     }
     setFields(mapped);
-    setManualBmi(true); // Don't auto-overwrite copied BMI
-    toast.success("Önceki ölçüm değerleri kopyalandı");
+    setManualBmi(true);
+    toast.success(t("previousCopied"));
   };
 
   const isPending = addProgress.isPending || updateProgress.isPending;
@@ -158,11 +152,11 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
     if (isEdit) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await updateProgress.mutateAsync({ id: initialData.id, data: data as any });
-      toast.success("Ölçüm güncellendi");
+      toast.success(t("logUpdated"));
     } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await addProgress.mutateAsync(data as any);
-      toast.success("Ölçüm kaydedildi");
+      toast.success(t("logSaved"));
     }
     onOpenChange(false);
   };
@@ -175,11 +169,10 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
       >
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>{isEdit ? "Ölçümü Düzenle" : "Yeni Ölçüm Ekle"}</DialogTitle>
-            {/* (n) Quick mode toggle */}
+            <DialogTitle>{isEdit ? t("editTitle") : t("newTitle")}</DialogTitle>
             <div className="flex items-center gap-2">
               <Label htmlFor="quick-mode" className="text-xs text-muted-foreground">
-                Hızlı Giriş
+                {t("quickMode")}
               </Label>
               <Switch
                 id="quick-mode"
@@ -191,7 +184,6 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* (l) Copy previous button */}
           {!isEdit && (
             <Button
               type="button"
@@ -206,13 +198,12 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
-              Önceki Ölçümü Baz Al
+              {t("copyPrevious")}
             </Button>
           )}
 
-          {/* Tarih */}
           <div className="space-y-1">
-            <Label htmlFor="logDate" className="text-xs">Tarih</Label>
+            <Label htmlFor="logDate" className="text-xs">{t("date")}</Label>
             <Input
               id="logDate"
               type="date"
@@ -221,13 +212,12 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
             />
           </div>
 
-          {/* Ana Bilgiler — (o) reordered: weight → bmi → fat → fluid */}
           <div>
-            <h3 className="text-sm font-semibold mb-3">Ana Bilgiler</h3>
+            <h3 className="text-sm font-semibold mb-3">{t("mainInfo")}</h3>
             <div className="grid grid-cols-2 gap-3">
               <NumericField
                 id="m-weight"
-                label="Kilo"
+                label={t("weight")}
                 unit="kg"
                 value={get("weight")}
                 onChange={(v) => set("weight", v)}
@@ -235,17 +225,17 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
               />
               <NumericField
                 id="m-bmi"
-                label="BMI"
+                label={t("bmi")}
                 value={get("bmi")}
                 onChange={handleBmiChange}
                 placeholder="24.0"
-                suffix={!manualBmi && get("weight") ? "(otomatik)" : undefined}
+                suffix={!manualBmi && get("weight") ? t("auto") : undefined}
               >
                 <RangeIndicator value={get("bmi")} type="bmi" />
               </NumericField>
               <NumericField
                 id="m-fatPercent"
-                label="Yağ Oranı"
+                label={t("fatPercent")}
                 unit="%"
                 value={get("fatPercent")}
                 onChange={(v) => set("fatPercent", v)}
@@ -256,7 +246,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
               {!quickMode && (
                 <NumericField
                   id="m-fatKg"
-                  label="Yağ"
+                  label={t("fat")}
                   unit="kg"
                   value={get("fatKg")}
                   onChange={(v) => set("fatKg", v)}
@@ -266,7 +256,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
               {!quickMode && (
                 <NumericField
                   id="m-fluidPercent"
-                  label="Sıvı Oranı"
+                  label={t("fluidPercent")}
                   unit="%"
                   value={get("fluidPercent")}
                   onChange={(v) => set("fluidPercent", v)}
@@ -278,7 +268,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
               {!quickMode && (
                 <NumericField
                   id="m-fluidKg"
-                  label="Sıvı"
+                  label={t("fluid")}
                   unit="kg"
                   value={get("fluidKg")}
                   onChange={(v) => set("fluidKg", v)}
@@ -287,12 +277,11 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
               )}
             </div>
 
-            {/* Quick mode: waistCm inline */}
             {quickMode && (
               <div className="grid grid-cols-2 gap-3 mt-3">
                 <NumericField
                   id="m-waistCm-q"
-                  label="Bel"
+                  label={t("waist")}
                   unit="cm"
                   step="0.5"
                   value={get("waistCm")}
@@ -303,56 +292,54 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
             )}
 
             <div className="mt-3 space-y-1">
-              <Label htmlFor="m-notes" className="text-xs">Notlar</Label>
+              <Label htmlFor="m-notes" className="text-xs">{t("notes")}</Label>
               <Input
                 id="m-notes"
-                placeholder="Bugün nasıl hissettim..."
+                placeholder={t("notesPlaceholder")}
                 value={get("notes")}
                 onChange={(e) => set("notes", e.target.value)}
               />
             </div>
           </div>
 
-          {/* Full mode sections */}
           {!quickMode && (
             <>
               <Separator />
 
-              {/* Vücut Bölgeleri */}
               <div>
-                <h3 className="text-sm font-semibold mb-3">Vücut Bölgeleri</h3>
+                <h3 className="text-sm font-semibold mb-3">{t("bodyParts")}</h3>
                 <div className="space-y-4">
                   {BODY_PARTS.map((part) => (
-                    <div key={part.key}>
-                      <p className="text-xs font-semibold mb-2">{part.label}</p>
+                    <div key={part}>
+                      <p className="text-xs font-semibold mb-2">{t(part)}</p>
                       <div className="grid grid-cols-2 gap-3">
                         <NumericField
-                          id={`m-${part.key}FatPercent`}
-                          label="Yağ"
+                          id={`m-${part}FatPercent`}
+                          label={t("fatField")}
                           unit="%"
-                          value={get(`${part.key}FatPercent`)}
-                          onChange={(v) => set(`${part.key}FatPercent`, v)}
+                          value={get(`${part}FatPercent`)}
+                          onChange={(v) => set(`${part}FatPercent`, v)}
                         />
                         <NumericField
-                          id={`m-${part.key}FatKg`}
-                          label="Yağ"
+                          id={`m-${part}FatKg`}
+                          label={t("fatField")}
                           unit="kg"
-                          value={get(`${part.key}FatKg`)}
-                          onChange={(v) => set(`${part.key}FatKg`, v)}
+                          value={get(`${part}FatKg`)}
+                          onChange={(v) => set(`${part}FatKg`, v)}
                         />
                         <NumericField
-                          id={`m-${part.key}MusclePercent`}
-                          label="Kas"
+                          id={`m-${part}MusclePercent`}
+                          label={t("muscleField")}
                           unit="%"
-                          value={get(`${part.key}MusclePercent`)}
-                          onChange={(v) => set(`${part.key}MusclePercent`, v)}
+                          value={get(`${part}MusclePercent`)}
+                          onChange={(v) => set(`${part}MusclePercent`, v)}
                         />
                         <NumericField
-                          id={`m-${part.key}MuscleKg`}
-                          label="Kas"
+                          id={`m-${part}MuscleKg`}
+                          label={t("muscleField")}
                           unit="kg"
-                          value={get(`${part.key}MuscleKg`)}
-                          onChange={(v) => set(`${part.key}MuscleKg`, v)}
+                          value={get(`${part}MuscleKg`)}
+                          onChange={(v) => set(`${part}MuscleKg`, v)}
                         />
                       </div>
                     </div>
@@ -362,13 +349,12 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
 
               <Separator />
 
-              {/* Ölçüler */}
               <div>
-                <h3 className="text-sm font-semibold mb-3">Ölçüler</h3>
+                <h3 className="text-sm font-semibold mb-3">{t("measurements")}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <NumericField
                     id="m-waistCm"
-                    label="Bel"
+                    label={t("waist")}
                     unit="cm"
                     step="0.5"
                     value={get("waistCm")}
@@ -377,7 +363,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
                   />
                   <NumericField
                     id="m-rightArmCm"
-                    label="Sağ Kol"
+                    label={t("rightArm")}
                     unit="cm"
                     step="0.5"
                     value={get("rightArmCm")}
@@ -385,7 +371,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
                   />
                   <NumericField
                     id="m-leftArmCm"
-                    label="Sol Kol"
+                    label={t("leftArm")}
                     unit="cm"
                     step="0.5"
                     value={get("leftArmCm")}
@@ -393,7 +379,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
                   />
                   <NumericField
                     id="m-rightLegCm"
-                    label="Sağ Bacak"
+                    label={t("rightLeg")}
                     unit="cm"
                     step="0.5"
                     value={get("rightLegCm")}
@@ -401,7 +387,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
                   />
                   <NumericField
                     id="m-leftLegCm"
-                    label="Sol Bacak"
+                    label={t("leftLeg")}
                     unit="cm"
                     step="0.5"
                     value={get("leftLegCm")}
@@ -413,7 +399,7 @@ export function ProgressModal({ open, onOpenChange, initialData }: ProgressModal
           )}
 
           <Button type="submit" disabled={isPending} className="w-full">
-            {isPending ? "Kaydediliyor..." : isEdit ? "Güncelle" : "Kaydet"}
+            {isPending ? t("saving") : isEdit ? t("update") : t("save")}
           </Button>
         </form>
       </DialogContent>

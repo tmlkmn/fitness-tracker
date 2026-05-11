@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -11,19 +12,19 @@ import {
 } from "@/components/ui/select";
 import { MetricChart } from "@/components/progress/metric-chart";
 
-const METRIC_OPTIONS = [
-  { value: "weight", label: "Kilo", unit: "kg" },
-  { value: "fatPercent", label: "Yağ Oranı", unit: "%" },
-  { value: "fatKg", label: "Yağ (kg)", unit: "kg" },
-  { value: "fluidPercent", label: "Sıvı Oranı", unit: "%" },
-  { value: "fluidKg", label: "Sıvı (kg)", unit: "kg" },
-  { value: "bmi", label: "BMI", unit: "" },
-  { value: "waistCm", label: "Bel", unit: "cm" },
-  { value: "rightArmCm", label: "Sağ Kol", unit: "cm" },
-  { value: "leftArmCm", label: "Sol Kol", unit: "cm" },
-  { value: "rightLegCm", label: "Sağ Bacak", unit: "cm" },
-  { value: "leftLegCm", label: "Sol Bacak", unit: "cm" },
-];
+const METRIC_KEYS = [
+  { value: "weight", unit: "kg" },
+  { value: "fatPercent", unit: "%" },
+  { value: "fatKg", unit: "kg" },
+  { value: "fluidPercent", unit: "%" },
+  { value: "fluidKg", unit: "kg" },
+  { value: "bmi", unit: "" },
+  { value: "waistCm", unit: "cm" },
+  { value: "rightArmCm", unit: "cm" },
+  { value: "leftArmCm", unit: "cm" },
+  { value: "rightLegCm", unit: "cm" },
+  { value: "leftLegCm", unit: "cm" },
+] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LogEntry = Record<string, any>;
@@ -33,21 +34,23 @@ interface ChartSelectorProps {
 }
 
 export function ChartSelector({ data }: ChartSelectorProps) {
-  const [selected, setSelected] = useState("weight");
-  const option = METRIC_OPTIONS.find((o) => o.value === selected)!;
+  const t = useTranslations("progress.chart");
+  const [selected, setSelected] = useState<(typeof METRIC_KEYS)[number]["value"]>("weight");
+  const option = METRIC_KEYS.find((o) => o.value === selected)!;
+  const label = t(`metrics.${option.value}`);
 
   return (
     <Card>
       <CardHeader className="p-3 pb-0 flex-row items-center justify-between">
-        <CardTitle className="text-sm">Grafik</CardTitle>
-        <Select value={selected} onValueChange={setSelected}>
+        <CardTitle className="text-sm">{t("title")}</CardTitle>
+        <Select value={selected} onValueChange={(v) => setSelected(v as typeof selected)}>
           <SelectTrigger className="w-[140px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {METRIC_OPTIONS.map((opt) => (
+            {METRIC_KEYS.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
+                {t(`metrics.${opt.value}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -57,7 +60,7 @@ export function ChartSelector({ data }: ChartSelectorProps) {
         <MetricChart
           data={data}
           metric={option.value}
-          label={option.label}
+          label={label}
           unit={option.unit}
         />
       </CardContent>

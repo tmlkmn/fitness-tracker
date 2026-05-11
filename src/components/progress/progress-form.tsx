@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,15 +53,10 @@ function NumericField({
   );
 }
 
-const BODY_PARTS = [
-  { key: "leftArm", label: "Sol Kol" },
-  { key: "rightArm", label: "Sağ Kol" },
-  { key: "torso", label: "Gövde" },
-  { key: "leftLeg", label: "Sol Bacak" },
-  { key: "rightLeg", label: "Sağ Bacak" },
-] as const;
+const BODY_PARTS = ["leftArm", "rightArm", "torso", "leftLeg", "rightLeg"] as const;
 
 export function ProgressForm() {
+  const t = useTranslations("progress.form");
   const [fields, setFields] = useState<Record<string, string>>({});
   const addProgress = useAddProgress();
 
@@ -78,35 +74,34 @@ export function ProgressForm() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await addProgress.mutateAsync(data as any);
     setFields({});
-    toast.success("İlerleme kaydedildi");
+    toast.success(t("saved"));
   };
 
   return (
     <Card>
       <CardHeader className="p-4 pb-2">
-        <CardTitle className="text-base">Yeni Ölçüm Ekle</CardTitle>
+        <CardTitle className="text-base">{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-2">
         <form onSubmit={handleSubmit} className="space-y-3">
           <Tabs defaultValue="ana">
             <TabsList className="w-full grid grid-cols-3">
               <TabsTrigger value="ana" className="text-xs">
-                Ana Bilgiler
+                {t("tabMain")}
               </TabsTrigger>
               <TabsTrigger value="bolge" className="text-xs">
-                Vücut
+                {t("tabBody")}
               </TabsTrigger>
               <TabsTrigger value="olcu" className="text-xs">
-                Ölçüler
+                {t("tabMeasurements")}
               </TabsTrigger>
             </TabsList>
 
-            {/* Ana Bilgiler */}
             <TabsContent value="ana" className="space-y-3 mt-3">
               <div className="grid grid-cols-2 gap-3">
                 <NumericField
                   id="weight"
-                  label="Kilo"
+                  label={t("weight")}
                   unit="kg"
                   value={get("weight")}
                   onChange={(v) => set("weight", v)}
@@ -114,7 +109,7 @@ export function ProgressForm() {
                 />
                 <NumericField
                   id="fluidPercent"
-                  label="Sıvı Oranı"
+                  label={t("fluidPercent")}
                   unit="%"
                   value={get("fluidPercent")}
                   onChange={(v) => set("fluidPercent", v)}
@@ -124,7 +119,7 @@ export function ProgressForm() {
                 </NumericField>
                 <NumericField
                   id="fluidKg"
-                  label="Sıvı"
+                  label={t("fluid")}
                   unit="kg"
                   value={get("fluidKg")}
                   onChange={(v) => set("fluidKg", v)}
@@ -132,7 +127,7 @@ export function ProgressForm() {
                 />
                 <NumericField
                   id="fatPercent"
-                  label="Yağ Oranı"
+                  label={t("fatPercent")}
                   unit="%"
                   value={get("fatPercent")}
                   onChange={(v) => set("fatPercent", v)}
@@ -142,7 +137,7 @@ export function ProgressForm() {
                 </NumericField>
                 <NumericField
                   id="fatKg"
-                  label="Yağ"
+                  label={t("fat")}
                   unit="kg"
                   value={get("fatKg")}
                   onChange={(v) => set("fatKg", v)}
@@ -150,7 +145,7 @@ export function ProgressForm() {
                 />
                 <NumericField
                   id="bmi"
-                  label="BMI"
+                  label={t("bmi")}
                   value={get("bmi")}
                   onChange={(v) => set("bmi", v)}
                   placeholder="24.0"
@@ -160,50 +155,49 @@ export function ProgressForm() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="notes" className="text-xs">
-                  Notlar
+                  {t("notes")}
                 </Label>
                 <Input
                   id="notes"
-                  placeholder="Bugün nasıl hissettim..."
+                  placeholder={t("notesPlaceholder")}
                   value={get("notes")}
                   onChange={(e) => set("notes", e.target.value)}
                 />
               </div>
             </TabsContent>
 
-            {/* Vücut Bölgeleri */}
             <TabsContent value="bolge" className="space-y-3 mt-3">
               {BODY_PARTS.map((part, idx) => (
-                <div key={part.key}>
-                  <p className="text-xs font-semibold mb-2">{part.label}</p>
+                <div key={part}>
+                  <p className="text-xs font-semibold mb-2">{t(part)}</p>
                   <div className="grid grid-cols-2 gap-3">
                     <NumericField
-                      id={`${part.key}FatPercent`}
-                      label="Yağ"
+                      id={`${part}FatPercent`}
+                      label={t("fat")}
                       unit="%"
-                      value={get(`${part.key}FatPercent`)}
-                      onChange={(v) => set(`${part.key}FatPercent`, v)}
+                      value={get(`${part}FatPercent`)}
+                      onChange={(v) => set(`${part}FatPercent`, v)}
                     />
                     <NumericField
-                      id={`${part.key}FatKg`}
-                      label="Yağ"
+                      id={`${part}FatKg`}
+                      label={t("fat")}
                       unit="kg"
-                      value={get(`${part.key}FatKg`)}
-                      onChange={(v) => set(`${part.key}FatKg`, v)}
+                      value={get(`${part}FatKg`)}
+                      onChange={(v) => set(`${part}FatKg`, v)}
                     />
                     <NumericField
-                      id={`${part.key}MusclePercent`}
-                      label="Kas"
+                      id={`${part}MusclePercent`}
+                      label={t("muscle")}
                       unit="%"
-                      value={get(`${part.key}MusclePercent`)}
-                      onChange={(v) => set(`${part.key}MusclePercent`, v)}
+                      value={get(`${part}MusclePercent`)}
+                      onChange={(v) => set(`${part}MusclePercent`, v)}
                     />
                     <NumericField
-                      id={`${part.key}MuscleKg`}
-                      label="Kas"
+                      id={`${part}MuscleKg`}
+                      label={t("muscle")}
                       unit="kg"
-                      value={get(`${part.key}MuscleKg`)}
-                      onChange={(v) => set(`${part.key}MuscleKg`, v)}
+                      value={get(`${part}MuscleKg`)}
+                      onChange={(v) => set(`${part}MuscleKg`, v)}
                     />
                   </div>
                   {idx < BODY_PARTS.length - 1 && (
@@ -213,12 +207,11 @@ export function ProgressForm() {
               ))}
             </TabsContent>
 
-            {/* Ölçüler */}
             <TabsContent value="olcu" className="space-y-3 mt-3">
               <div className="grid grid-cols-2 gap-3">
                 <NumericField
                   id="waistCm"
-                  label="Bel"
+                  label={t("waist")}
                   unit="cm"
                   step="0.5"
                   value={get("waistCm")}
@@ -227,7 +220,7 @@ export function ProgressForm() {
                 />
                 <NumericField
                   id="rightArmCm"
-                  label="Sağ Kol"
+                  label={t("rightArm")}
                   unit="cm"
                   step="0.5"
                   value={get("rightArmCm")}
@@ -235,7 +228,7 @@ export function ProgressForm() {
                 />
                 <NumericField
                   id="leftArmCm"
-                  label="Sol Kol"
+                  label={t("leftArm")}
                   unit="cm"
                   step="0.5"
                   value={get("leftArmCm")}
@@ -243,7 +236,7 @@ export function ProgressForm() {
                 />
                 <NumericField
                   id="rightLegCm"
-                  label="Sağ Bacak"
+                  label={t("rightLeg")}
                   unit="cm"
                   step="0.5"
                   value={get("rightLegCm")}
@@ -251,7 +244,7 @@ export function ProgressForm() {
                 />
                 <NumericField
                   id="leftLegCm"
-                  label="Sol Bacak"
+                  label={t("leftLeg")}
                   unit="cm"
                   step="0.5"
                   value={get("leftLegCm")}
@@ -266,7 +259,7 @@ export function ProgressForm() {
             disabled={addProgress.isPending}
             className="w-full"
           >
-            {addProgress.isPending ? "Kaydediliyor..." : "Kaydet"}
+            {addProgress.isPending ? t("saving") : t("save")}
           </Button>
         </form>
       </CardContent>

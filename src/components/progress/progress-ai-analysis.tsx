@@ -1,22 +1,28 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
 
-function timeAgo(date: Date): string {
-  const s = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (s < 60) return "az önce";
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m} dk önce`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} saat önce`;
-  return `${Math.floor(h / 24)} gün önce`;
+function useTimeAgo() {
+  const t = useTranslations("progress.aiAnalysis");
+  return (date: Date): string => {
+    const s = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (s < 60) return t("justNow");
+    const m = Math.floor(s / 60);
+    if (m < 60) return t("minutesAgo", { m });
+    const h = Math.floor(m / 60);
+    if (h < 24) return t("hoursAgo", { h });
+    return t("daysAgo", { d: Math.floor(h / 24) });
+  };
 }
 
 export function ProgressAiAnalysis() {
+  const t = useTranslations("progress.aiAnalysis");
+  const timeAgo = useTimeAgo();
   const [analysis, setAnalysis] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,18 +42,18 @@ export function ProgressAiAnalysis() {
       const res = await fetch("/api/ai/analyze", { method: "POST" });
 
       if (res.status === 429) {
-        setError("Günlük analiz limitine ulaştınız (max 3/gün).");
+        setError(t("dailyLimit"));
         return;
       }
 
       if (!res.ok && res.status !== 200) {
-        setError("AI analizi şu anda kullanılamıyor.");
+        setError(t("unavailable"));
         return;
       }
 
       const reader = res.body?.getReader();
       if (!reader) {
-        setError("Bağlantı hatası.");
+        setError(t("connectionError"));
         return;
       }
 
@@ -65,11 +71,17 @@ export function ProgressAiAnalysis() {
       forceUpdate((n) => n + 1);
       invalidateQuota();
     } catch {
-      setError("Bir hata oluştu. Daha sonra tekrar deneyin.");
+      setError(t("genericError"));
     } finally {
       setLoading(false);
     }
   };
+
+  const analyzeLabel = loading
+    ? t("analyzing")
+    : analyzeQuota?.remaining === 0
+      ? t("limitReached")
+      : `${t("analyze")}${analyzeQuota ? ` (${analyzeQuota.remaining}/${analyzeQuota.limit})` : ""}`;
 
   return (
     <Card>
@@ -77,7 +89,7 @@ export function ProgressAiAnalysis() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">AI Analiz</span>
+            <span className="text-sm font-medium">{t("title")}</span>
             {lastFetchedAt.current && !loading && (
               <span className="text-xs text-muted-foreground">
                 · {timeAgo(lastFetchedAt.current)}
@@ -97,11 +109,7 @@ export function ProgressAiAnalysis() {
               ) : (
                 <Sparkles className="h-3 w-3" />
               )}
-              {loading
-                ? "Analiz ediliyor..."
-                : analyzeQuota?.remaining === 0
-                  ? "Limit doldu"
-                  : `Analiz Et${analyzeQuota ? ` (${analyzeQuota.remaining}/${analyzeQuota.limit})` : ""}`}
+              {analyzeLabel}
             </Button>
           ) : (
             <Button
@@ -111,7 +119,7 @@ export function ProgressAiAnalysis() {
               className="gap-1 text-xs text-muted-foreground"
             >
               <RefreshCw className="h-3 w-3" />
-              Yenile
+              {t("refresh")}
             </Button>
           )}
         </div>

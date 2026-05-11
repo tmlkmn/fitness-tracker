@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -30,10 +31,11 @@ interface MetricChartProps {
 }
 
 export function MetricChart({ data, metric, label, unit }: MetricChartProps) {
+  const t = useTranslations("progress.chart");
   if (!data.length) {
     return (
       <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-        Henüz veri yok. İlk ölçümünüzü ekleyin!
+        {t("empty")}
       </div>
     );
   }
@@ -49,7 +51,7 @@ export function MetricChart({ data, metric, label, unit }: MetricChartProps) {
   if (chartData.length === 0) {
     return (
       <div className="p-4 text-center text-sm text-muted-foreground">
-        Henüz {label.toLowerCase()} verisi yok.
+        {t("noMetric", { label: label.toLowerCase() })}
       </div>
     );
   }
@@ -57,8 +59,7 @@ export function MetricChart({ data, metric, label, unit }: MetricChartProps) {
   if (chartData.length === 1) {
     return (
       <div className="p-4 text-center text-sm text-muted-foreground">
-        Son ölçüm: {chartData[0].value} {unit} — Grafik için en az 2 kayıt
-        gerekli
+        {t("lastMeasurement", { value: chartData[0].value, unit })}
       </div>
     );
   }

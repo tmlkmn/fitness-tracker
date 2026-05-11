@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ export function WeightTargetEditor({
   currentWeight,
   currentTarget,
 }: WeightTargetEditorProps) {
+  const t = useTranslations("progress.weightTarget");
   const [open, setOpen] = useState(false);
   const [startWeight, setStartWeight] = useState(currentWeight ?? "");
   const [targetWeight, setTargetWeight] = useState(currentTarget ?? "");
@@ -56,7 +58,7 @@ export function WeightTargetEditor({
       weight: startWeight || undefined,
       targetWeight: targetWeight || undefined,
     });
-    toast.success("Hedefler güncellendi");
+    toast.success(t("saved"));
     setOpen(false);
   };
 
@@ -67,12 +69,12 @@ export function WeightTargetEditor({
       const res = await fetch("/api/ai/target-weight", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? "Bir hata oluştu.");
+        toast.error(data.error ?? t("error"));
         return;
       }
       setAiSuggestion(data);
     } catch {
-      toast.error("AI servisi şu anda kullanılamıyor.");
+      toast.error(t("unavailable"));
     } finally {
       setAiLoading(false);
     }
@@ -94,12 +96,12 @@ export function WeightTargetEditor({
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Kilo Hedefleri</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="start-weight" className="text-xs">
-              Başlangıç Kilo (kg)
+              {t("startWeight")}
             </Label>
             <Input
               id="start-weight"
@@ -111,7 +113,7 @@ export function WeightTargetEditor({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="target-weight" className="text-xs">
-              Hedef Kilo (kg)
+              {t("targetWeight")}
             </Label>
             <Input
               id="target-weight"
@@ -122,7 +124,6 @@ export function WeightTargetEditor({
             />
           </div>
 
-          {/* AI Target Weight Suggestion */}
           {hasProgress && !aiSuggestion && (
             <Button
               variant="outline"
@@ -136,7 +137,7 @@ export function WeightTargetEditor({
               ) : (
                 <Sparkles className="h-3.5 w-3.5" />
               )}
-              {aiLoading ? "Hesaplanıyor..." : "AI Hedef Önerisi"}
+              {aiLoading ? t("calculating") : t("aiSuggest")}
             </Button>
           )}
 
@@ -145,7 +146,7 @@ export function WeightTargetEditor({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-xs font-semibold">AI Önerisi</span>
+                  <span className="text-xs font-semibold">{t("aiSuggestion")}</span>
                 </div>
                 <button
                   onClick={() => setAiSuggestion(null)}
@@ -159,7 +160,7 @@ export function WeightTargetEditor({
                   {aiSuggestion.targetWeight} kg
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  ~{aiSuggestion.timelineWeeks} hafta
+                  {t("weeks", { n: aiSuggestion.timelineWeeks })}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
@@ -172,7 +173,7 @@ export function WeightTargetEditor({
                 className="w-full gap-1.5 text-xs"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Kabul Et
+                {t("accept")}
               </Button>
             </div>
           )}
@@ -182,7 +183,7 @@ export function WeightTargetEditor({
             disabled={mutation.isPending}
             className="w-full"
           >
-            {mutation.isPending ? "Kaydediliyor..." : "Kaydet"}
+            {mutation.isPending ? t("saving") : t("save")}
           </Button>
         </div>
       </DialogContent>

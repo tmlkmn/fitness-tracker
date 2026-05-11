@@ -1,17 +1,20 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 interface RangeIndicatorProps {
   value: string;
   type: "fluid" | "fat" | "bmi";
 }
 
 const RANGES = {
-  fluid: { green: [55, 66], yellow: [50, 70], label: "Sıvı Oranı" },
-  fat: { green: [14, 23], yellow: [10, 28], label: "Yağ Oranı" },
-  bmi: { green: [20, 25], yellow: [18.5, 30], label: "BMI" },
+  fluid: { green: [55, 66], yellow: [50, 70] },
+  fat: { green: [14, 23], yellow: [10, 28] },
+  bmi: { green: [20, 25], yellow: [18.5, 30] },
 } as const;
 
 export function RangeIndicator({ value, type }: RangeIndicatorProps) {
+  const t = useTranslations("progress.range");
   if (!value) return null;
   const num = parseFloat(value);
   if (isNaN(num)) return null;
@@ -25,13 +28,13 @@ export function RangeIndicator({ value, type }: RangeIndicatorProps) {
 
   if (num >= greenMin && num <= greenMax) {
     color = "bg-green-500";
-    label = "Normal";
+    label = t("normal");
   } else if (num >= yellowMin && num <= yellowMax) {
     color = "bg-yellow-500";
-    label = "Sınırda";
+    label = t("borderline");
   } else {
     color = "bg-red-500";
-    label = "Dikkat";
+    label = t("alert");
   }
 
   return (
