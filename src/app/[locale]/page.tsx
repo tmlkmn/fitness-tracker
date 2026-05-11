@@ -192,18 +192,29 @@ export default function HomePage() {
           <CardContent className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                {greetingLoading && !greeting ? (
-                  <div className="space-y-1.5">
-                    <Skeleton className="h-4 w-full max-w-65" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                ) : (
-                  <p className="text-base font-semibold leading-snug">
-                    {greeting?.message ??
-                      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-                      t("welcome", { name: (user as any).name?.split(" ")[0] ?? "" })}
-                  </p>
-                )}
+                {(() => {
+                  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                  const sessionFirstName = ((user as any).name?.split(" ")[0] ?? "") as string;
+                  const displayName = greeting?.firstName || sessionFirstName;
+                  const helloWord = locale === "en" ? "Hello" : "Merhaba";
+                  return (
+                    <>
+                      <p className="text-lg font-bold leading-tight tracking-tight">
+                        {displayName ? `${helloWord}, ${displayName}` : helloWord}
+                      </p>
+                      {greetingLoading && !greeting ? (
+                        <div className="mt-1.5 space-y-1.5">
+                          <Skeleton className="h-3.5 w-full max-w-65" />
+                          <Skeleton className="h-3.5 w-3/4" />
+                        </div>
+                      ) : greeting?.message ? (
+                        <p className="text-sm text-muted-foreground leading-relaxed mt-1">
+                          {greeting.message}
+                        </p>
+                      ) : null}
+                    </>
+                  );
+                })()}
                 {profileLoading ? (
                   <Skeleton className="h-4 w-44 mt-2" />
                 ) : (
