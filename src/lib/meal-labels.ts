@@ -30,11 +30,17 @@ export function isMealLabel(value: unknown): value is MealLabel {
 
 /**
  * Coerce arbitrary input to a valid MealLabel. Used by server actions to
- * defend against UI bypass (direct API calls). Returns the value if valid,
- * else "Ara Öğün" as the safe default.
+ * defend against UI bypass (direct API calls). Accepts canonical labels and
+ * any locale-specific display string (e.g. "Breakfast" → "Kahvaltı"). Falls
+ * back to "Ara Öğün" if the value cannot be matched.
  */
 export function coerceMealLabel(value: unknown): MealLabel {
-  return isMealLabel(value) ? value : "Ara Öğün";
+  if (isMealLabel(value)) return value;
+  if (typeof value === "string") {
+    const normalized = normalizeMealLabel(value);
+    if (normalized) return normalized;
+  }
+  return "Ara Öğün";
 }
 
 const MEAL_LABEL_DISPLAY: Record<MealLabel, Record<Locale, string>> = {

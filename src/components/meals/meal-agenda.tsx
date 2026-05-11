@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { stripEmoji, getMealIcon, DynamicIcon } from "@/lib/icon-map";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
 
 interface MealAgendaProps {
   dailyPlanId: number;
@@ -14,6 +16,7 @@ interface MealAgendaProps {
 
 export function MealAgenda({ dailyPlanId }: MealAgendaProps) {
   const t = useTranslations("meals.agenda");
+  const locale = useLocale() as Locale;
   const { data: meals, isLoading } = useMeals(dailyPlanId);
   const toggleMeal = useToggleMeal();
 
@@ -89,7 +92,10 @@ export function MealAgenda({ dailyPlanId }: MealAgendaProps) {
                     isCompleted && "line-through"
                   )}
                 >
-                  {stripEmoji(meal.mealLabel)}
+                  {(() => {
+                    const stripped = stripEmoji(meal.mealLabel);
+                    return isMealLabel(stripped) ? getLocalizedMealLabel(stripped, locale) : stripped;
+                  })()}
                 </span>
                 {meal.calories ? (
                   <Badge

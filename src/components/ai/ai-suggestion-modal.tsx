@@ -31,7 +31,9 @@ import {
 import { useInvalidateAiQuota } from "@/hooks/use-ai-quota";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { formatAiError } from "@/lib/ai-errors";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
 
 interface AiSuggestionModalProps {
   open: boolean;
@@ -61,6 +63,7 @@ export function AiSuggestionModal({
   fatG,
 }: AiSuggestionModalProps) {
   const t = useTranslations("meals.aiSuggestion");
+  const locale = useLocale() as Locale;
   const INGREDIENT_TAGS = t.raw("ingredients") as string[];
   const [suggestions, setSuggestions] = useState<MealVariationSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -431,7 +434,7 @@ export function AiSuggestionModal({
                                 : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
                             }`}
                           >
-                            {label} ({savedMeals.filter((s) => s.mealLabel === label).length})
+                            {isMealLabel(label) ? getLocalizedMealLabel(label, locale) : label} ({savedMeals.filter((s) => s.mealLabel === label).length})
                           </button>
                         ))}
                       </div>
@@ -442,15 +445,15 @@ export function AiSuggestionModal({
                         className="p-3 bg-muted/50 border border-border rounded-lg space-y-2"
                       >
                         <div className="flex items-center gap-1.5">
-                          <Badge variant="outline" className="text-[10px]">{s.mealLabel}</Badge>
+                          <Badge variant="outline" className="text-[10px]">{isMealLabel(s.mealLabel) ? getLocalizedMealLabel(s.mealLabel, locale) : s.mealLabel}</Badge>
                         </div>
                         <p className="text-sm leading-relaxed">{s.content}</p>
                         {s.calories && (
                           <div className="flex gap-1.5 flex-wrap">
                             <Badge variant="secondary" className="text-[10px]">{s.calories} kcal</Badge>
                             {s.proteinG && <Badge variant="outline" className="text-[10px]">P: {s.proteinG}g</Badge>}
-                            {s.carbsG && <Badge variant="outline" className="text-[10px]">K: {s.carbsG}g</Badge>}
-                            {s.fatG && <Badge variant="outline" className="text-[10px]">Y: {s.fatG}g</Badge>}
+                            {s.carbsG && <Badge variant="outline" className="text-[10px]">{locale === "en" ? "C" : "K"}: {s.carbsG}g</Badge>}
+                            {s.fatG && <Badge variant="outline" className="text-[10px]">{locale === "en" ? "F" : "Y"}: {s.fatG}g</Badge>}
                           </div>
                         )}
                         <div className="flex gap-2 pt-1">

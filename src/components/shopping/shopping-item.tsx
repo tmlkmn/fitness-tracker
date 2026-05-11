@@ -11,7 +11,9 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { getMealsByIds } from "@/actions/shopping";
 import { Utensils } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
 
 interface ShoppingItemProps {
   id: number;
@@ -35,6 +37,7 @@ export function ShoppingItem({
   readOnly,
 }: ShoppingItemProps) {
   const t = useTranslations("shopping");
+  const locale = useLocale() as Locale;
   const [open, setOpen] = useState(false);
   const hasMealRefs = Array.isArray(mealIds) && mealIds.length > 0;
 
@@ -87,7 +90,7 @@ export function ShoppingItem({
                 {linkedMeals.map((m) => (
                   <li key={m.id} className="text-xs">
                     <span className="font-medium">
-                      {m.dayName} · {m.mealLabel}
+                      {m.dayName} · {isMealLabel(m.mealLabel) ? getLocalizedMealLabel(m.mealLabel, locale) : m.mealLabel}
                     </span>
                   </li>
                 ))}

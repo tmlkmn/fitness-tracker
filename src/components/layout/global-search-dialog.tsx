@@ -3,7 +3,9 @@
 import { useState, useDeferredValue } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import type { Locale } from "@/lib/locale";
+import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +41,7 @@ interface GlobalSearchDialogProps {
 
 export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogProps) {
   const t = useTranslations("globalSearch");
+  const locale = useLocale() as Locale;
   const NAV_ITEMS: NavItem[] = [
     { label: t("navHome"), href: "/", icon: Home, keywords: ["dashboard", "anasayfa", "home"] },
     { label: t("navCalendar"), href: "/takvim", icon: Calendar, keywords: ["calendar", "hafta", "takvim"] },
@@ -143,7 +146,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
                 <Row key={m.id} onClick={() => m.dailyPlanId && go(`/gun/${m.dailyPlanId}`)}>
                   <UtensilsCrossed className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="flex-1 truncate">
-                    <span className="text-muted-foreground">{m.mealLabel}: </span>
+                    <span className="text-muted-foreground">{isMealLabel(m.mealLabel) ? getLocalizedMealLabel(m.mealLabel, locale) : m.mealLabel}: </span>
                     {m.content}
                   </span>
                   {m.date && (

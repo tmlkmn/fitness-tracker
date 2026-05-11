@@ -54,6 +54,7 @@ import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
+import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
 
 function SteppedProgress({
   loading,
@@ -238,6 +239,7 @@ const planTypeIcons = {
 
 function DaySummary({ day }: { day: AIWeeklyDay }) {
   const t = useTranslations("calendar.aiWeekly");
+  const locale = useLocale() as Locale;
   const planTypeLabels: Record<string, string> = {
     workout: t("planTypeWorkout"),
     swimming: t("planTypeSwimming"),
@@ -313,7 +315,9 @@ function DaySummary({ day }: { day: AIWeeklyDay }) {
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium">{m.mealLabel}</span>
+                        <span className="text-xs font-medium">
+                          {isMealLabel(m.mealLabel) ? getLocalizedMealLabel(m.mealLabel, locale) : m.mealLabel}
+                        </span>
                         {m.calories ? (
                           <span className="text-[10px] text-muted-foreground">{m.calories} kcal</span>
                         ) : null}
