@@ -2095,6 +2095,187 @@
       "close": "Kapat"
     }
   },
+  "landing": {
+    "nav": {
+      "ariaLabel": "Ana navigasyon",
+      "signIn": "Giriş Yap"
+    },
+    "hero": {
+      "pill": "AI Destekli Kişisel Fitness Platformu",
+      "headline1": "Hedefine Giden Yolda",
+      "headline2": "Akıllı Rehberin",
+      "subhead": "FitMusc, dünyanın en güçlü AI modelleriyle çalışan kişisel fitness koçunuz. Beslenme planı, antrenman takibi ve ilerleme analizi — hepsi bir arada, tamamen Türkçe.",
+      "ctaStart": "Hemen Başla",
+      "inviteNote": "Invite-only · Davet gerektirir"
+    },
+    "mock": {
+      "todaysPlan": "Bugünün Planı",
+      "todaysPlanSub": "Üst Vücut · Antrenman",
+      "inProgress": "Devam Ediyor",
+      "calories": "Kalori",
+      "protein": "Protein",
+      "carbs": "Karbonhidrat",
+      "meals": "Öğünler",
+      "exercises": "Egzersizler",
+      "aiBubble": "Protein hedefiniz %94'te, harika gidiyorsunuz! 💪",
+      "streakTitle": "12 Günlük Seri!",
+      "streakSub": "Kişisel rekor 🔥"
+    },
+    "stats": {
+      "aiIntegrations": "AI Entegrasyonu",
+      "aiAccess": "AI Koç Erişimi",
+      "experience": "Türkçe Deneyim",
+      "pwa": "Mobil Uygulama Gibi"
+    },
+    "features": {
+      "tag": "Özellikler",
+      "heading": "İhtiyacınız Olan Her Şey, Bir Arada",
+      "subhead": "Fitness yolculuğunuzun her adımı için akıllı araçlar.",
+      "items": {
+        "ai": {
+          "title": "AI Fitness Koçu",
+          "desc": "Claude 4 ile güçlendirilmiş kişisel antrenörünüz 7/24 yanınızda. Egzersiz tekniğinden beslenme planına kadar her konuda uzman tavsiye."
+        },
+        "nutrition": {
+          "title": "Akıllı Beslenme Takibi",
+          "desc": "Kişiselleştirilmiş makro hedefler, öğün planlama ve otomatik alışveriş listesi. Sağlıklı beslenme hiç bu kadar kolay olmamıştı."
+        },
+        "progress": {
+          "title": "İlerleme Analizi",
+          "desc": "Kilo, vücut ölçüleri ve performans verilerinizi görselleştirin. AI destekli trend analizi ile hedeflerinize giden yolda hiç şaşırmayın."
+        },
+        "weekly": {
+          "title": "Haftalık Program",
+          "desc": "Antrenman ve beslenme planlarınızı tek bir takvimde görün. Gün detayına inin, planı kişiselleştirin, antrenörünüzle paylaşın."
+        },
+        "streak": {
+          "title": "Seri & Başarılar",
+          "desc": "Günlük aktivite serilerinizi takip edin, rozetler kazanın. Gamification sistemi sizi her gün motive eder."
+        },
+        "reminders": {
+          "title": "Akıllı Hatırlatıcılar",
+          "desc": "Su içme, öğün saatleri ve antrenman için kişiselleştirilmiş bildirimler. Hiçbir şeyi kaçırmayın."
+        }
+      }
+    },
+    "aiSpotlight": {
+      "tag": "AI Güçlü",
+      "heading1": "Dünyanın En İleri AI'ı",
+      "heading2": "Sizin İçin Çalışıyor",
+      "bodyA": "Anthropic'in Claude modelleriyle güçlendirilmiş FitMusc, yalnızca bilgi vermez — ",
+      "bodyStrong": "sizin için düşünür",
+      "bodyB": ". Makro bütçenizi gerçek zamanlı takip eder, kalan hedeflerinize göre öğün önerir, egzersiz formunuzu analiz eder.",
+      "bullets": [
+        "Öğün varyasyon önerileri — makro bütçe farkında",
+        "Egzersiz form ipuçları ve teknik analiz",
+        "İlerleme trendi analizi ve yorumu",
+        "Haftalık beslenme + antrenman planı üretimi",
+        "7/24 chat koçu — 12 mesaj hafızası",
+        "Günlük tam öğün planı yenileme"
+      ],
+      "chatTitle": "AI Fitness Koçu",
+      "chatModel": "Claude Sonnet 4.6",
+      "online": "Çevrimiçi",
+      "userMsg1": "Akşam antrenmanı için en iyi öğün ne olur?",
+      "aiMsg1A": "Bugünkü makro durumunuza göre antrenman öncesi ",
+      "aiMsg1Strong": "1.5–2 saat",
+      "aiMsg1B": " kala kompleks karbonhidrat + orta protein önerilir. Kalan 62g proteininiz var, bunu tamamlamanın tam zamanı.",
+      "userMsg2": "Pilates mi yoksa HIIT mi yapayım?",
+      "aiMsg2A": "12 günlük seriniz ve bu haftanın yük analizi göz önünde bulundurulduğunda ",
+      "aiMsg2Strong": "Pilates",
+      "aiMsg2B": " daha uygun. Toparlanma kalitesini korumak uzun vadede çok daha önemli.",
+      "inputPlaceholder": "Bir soru sorun...",
+      "send": "Gönder"
+    },
+    "progress": {
+      "tag": "İlerleme",
+      "heading1": "Verilerle Desteklenen",
+      "heading2": "Gerçek Dönüşüm",
+      "body": "Kilo grafiği, vücut ölçüleri, 7 günlük makro trendi ve aktivite serileri ile ilerlemenizi her açıdan görün. AI, trendlerinizi analiz ederek neyi iyi yaptığınızı ve neyi iyileştirebileceğinizi söyler.",
+      "bullets": [
+        "Haftalık & aylık kilo grafiği",
+        "Vücut ölçüm takibi — bel, kalça, omuz ve daha fazlası",
+        "7 günlük kalori & makro trendi",
+        "AI destekli ilerleme raporu",
+        "Apple Fitness tarzı günlük aktivite halkaları"
+      ],
+      "summaryTitle": "İlerleme Özeti",
+      "summarySub": "Son 30 gün",
+      "dateStart": "1 Mar",
+      "dateMid": "15 Mar",
+      "dateEnd": "30 Mar",
+      "startLabel": "Başlangıç",
+      "nowLabel": "Şu An",
+      "targetLabel": "Hedef",
+      "distance": "Hedefe uzaklık",
+      "distanceValue": "5 kg kaldı",
+      "complete": "%55 tamamlandı"
+    },
+    "gamification": {
+      "tag": "Gamification",
+      "heading": "Her Gün Daha Güçlü",
+      "subhead": "Seri takibi ve başarı rozetleri sizi hedeflerinize bağlı tutar. Motivation sıfırlandığında sisteminiz devreye girer.",
+      "items": {
+        "streak": { "title": "Aktivite Serisi", "desc": "Günlük çizgini kırmayın" },
+        "badges": { "title": "Başarı Rozetleri", "desc": "Milestoneları tamamlayın" },
+        "rings": { "title": "Aktivite Halkaları", "desc": "Apple Fitness tarzı" },
+        "friends": { "title": "Arkadaş Serileri", "desc": "Rekabet edin" }
+      }
+    },
+    "wellness": {
+      "heading": "Sağlığınızın Tüm Boyutları",
+      "subhead": "Sadece antrenman değil — bütüncül bir yaşam yaklaşımı.",
+      "items": {
+        "water": { "title": "Su Takibi", "desc": "Günlük su hedefi" },
+        "sleep": { "title": "Uyku Takibi", "desc": "Uyku kalitesi & süresi" },
+        "meals": { "title": "Öğün Takibi", "desc": "Makro & kalori" },
+        "shopping": { "title": "Alışveriş", "desc": "Otomatik haftalık liste" }
+      }
+    },
+    "how": {
+      "tag": "Nasıl Çalışır",
+      "heading": "3 Adımda Başlayın",
+      "steps": {
+        "invite": { "title": "Davet Alın", "desc": "FitMusc invite-only bir platformdur. Antrenörünüzden veya ekibimizden davet bekleyin." },
+        "profile": { "title": "Profilinizi Oluşturun", "desc": "Boy, kilo, hedef ve sağlık bilgilerinizi girin. AI kişiselleştirme anında devreye girer." },
+        "go": { "title": "Hedefinize Koşun", "desc": "Günlük plan, AI koç ve ilerleme takibi ile sonuçlar kaçınılmaz olur." }
+      }
+    },
+    "miniFeatures": {
+      "heading": "Ve Çok Daha Fazlası",
+      "subhead": "Düşündüğünüz her özellik zaten burada.",
+      "items": [
+        "Kalori & makro takibi",
+        "Özel yiyecek kütüphanesi",
+        "Egzersiz form ipuçları",
+        "Su & uyku takibi",
+        "Haftalık alışveriş listesi",
+        "Plan paylaşımı",
+        "Push bildirimleri",
+        "PWA — mobil uygulama gibi yükle",
+        "Admin & davet yönetimi",
+        "Üyelik yönetimi"
+      ]
+    },
+    "testimonial": {
+      "quote": "FitMusc, antrenman programımı takip etmeyi ve beslenme planıma sadık kalmayı çok kolaylaştırdı. AI koç özelliği gerçekten fark yaratıyor — sanki her zaman bir uzman yanımda.",
+      "author": "Ahmet Y.",
+      "authorMeta": "FitMusc Kullanıcısı · 4 aydır"
+    },
+    "finalCta": {
+      "heading": "Dönüşüm Şimdi Başlıyor",
+      "body": "Davetiniz hazır. FitMusc'a giriş yapın ve fitness hedeflerinize giden yolculuğunuza bugün başlayın.",
+      "signIn": "Giriş Yap",
+      "access": "Davet ile erişim · Güvenli giriş"
+    },
+    "footer": {
+      "tagline": "· Kişisel Fitness Platformu",
+      "privacy": "Gizlilik",
+      "terms": "Kullanım Şartları",
+      "kvkk": "KVKK",
+      "signIn": "Giriş Yap"
+    }
+  },
   "shareManager": {
     "title": "Plan Paylaşımı",
     "shareButton": "Paylaş",

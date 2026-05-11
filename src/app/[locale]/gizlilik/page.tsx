@@ -1,31 +1,38 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 
-export const metadata: Metadata = {
-  title: "Gizlilik Politikasi",
-  robots: { index: true, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title: locale === "en" ? "Privacy Policy" : "Gizlilik Politikasi",
+    robots: { index: true, follow: true },
+  };
+}
 
-export default function GizlilikPage() {
+export default async function GizlilikPage() {
+  const locale = await getLocale();
+  const isEn = locale === "en";
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
       <Link
         href="/"
         className="text-sm text-muted-foreground hover:text-primary transition-colors"
       >
-        &larr; Ana Sayfa
+        &larr; {isEn ? "Home" : "Ana Sayfa"}
       </Link>
 
       <header>
         <h1 className="text-3xl font-bold tracking-tight">
-          Gizlilik Politikasi / Privacy Policy
+          {isEn ? "Privacy Policy" : "Gizlilik Politikasi"}
         </h1>
         <p className="text-sm text-muted-foreground mt-2">
-          Son guncelleme / Last updated: 20 Nisan 2026 / April 20, 2026
+          {isEn ? "Last updated" : "Son guncelleme"}: {isEn ? "April 20, 2026" : "20 Nisan 2026"}
         </p>
       </header>
 
-      {/* ============ TURKCE ============ */}
+      {!isEn && (
       <section className="space-y-6 text-sm leading-relaxed text-muted-foreground">
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
@@ -240,9 +247,9 @@ export default function GizlilikPage() {
         </div>
       </section>
 
-      <hr className="border-border" />
+      )}
 
-      {/* ============ ENGLISH ============ */}
+      {isEn && (
       <section className="space-y-6 text-sm leading-relaxed text-muted-foreground">
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
@@ -442,6 +449,7 @@ export default function GizlilikPage() {
           </p>
         </div>
       </section>
+      )}
     </div>
   );
 }

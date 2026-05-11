@@ -2094,6 +2094,187 @@
       "close": "Close"
     }
   },
+  "landing": {
+    "nav": {
+      "ariaLabel": "Main navigation",
+      "signIn": "Sign In"
+    },
+    "hero": {
+      "pill": "AI-Powered Personal Fitness Platform",
+      "headline1": "Your Smart Guide",
+      "headline2": "On the Way to Your Goal",
+      "subhead": "FitMusc is your personal fitness coach powered by the world's most capable AI models. Nutrition planning, workout tracking, and progress analysis — all in one place.",
+      "ctaStart": "Get Started",
+      "inviteNote": "Invite-only · Requires an invitation"
+    },
+    "mock": {
+      "todaysPlan": "Today's Plan",
+      "todaysPlanSub": "Upper Body · Workout",
+      "inProgress": "In Progress",
+      "calories": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "meals": "Meals",
+      "exercises": "Exercises",
+      "aiBubble": "You're at 94% of your protein goal — great pace! 💪",
+      "streakTitle": "12-Day Streak!",
+      "streakSub": "Personal record 🔥"
+    },
+    "stats": {
+      "aiIntegrations": "AI Integrations",
+      "aiAccess": "AI Coach Access",
+      "experience": "Full Experience",
+      "pwa": "Mobile-App Feel"
+    },
+    "features": {
+      "tag": "Features",
+      "heading": "Everything You Need, In One Place",
+      "subhead": "Smart tools for every step of your fitness journey.",
+      "items": {
+        "ai": {
+          "title": "AI Fitness Coach",
+          "desc": "Your personal trainer powered by Claude 4, available 24/7. Expert guidance on everything from exercise form to nutrition plans."
+        },
+        "nutrition": {
+          "title": "Smart Nutrition Tracking",
+          "desc": "Personalized macro targets, meal planning, and automatic shopping lists. Eating well has never been this easy."
+        },
+        "progress": {
+          "title": "Progress Analysis",
+          "desc": "Visualize weight, body measurements, and performance data. AI-powered trend analysis keeps you on track toward your goals."
+        },
+        "weekly": {
+          "title": "Weekly Program",
+          "desc": "View your workout and nutrition plans on a single calendar. Drill into the day, personalize the plan, share with your coach."
+        },
+        "streak": {
+          "title": "Streaks & Achievements",
+          "desc": "Track daily activity streaks and earn badges. The gamification system keeps you motivated every day."
+        },
+        "reminders": {
+          "title": "Smart Reminders",
+          "desc": "Personalized notifications for water, meal times, and workouts. Never miss a thing."
+        }
+      }
+    },
+    "aiSpotlight": {
+      "tag": "AI-Powered",
+      "heading1": "The World's Most Advanced AI",
+      "heading2": "Working For You",
+      "bodyA": "Powered by Anthropic's Claude models, FitMusc doesn't just inform — ",
+      "bodyStrong": "it thinks for you",
+      "bodyB": ". It tracks your macro budget in real time, suggests meals based on remaining goals, and analyzes your exercise form.",
+      "bullets": [
+        "Meal variation suggestions — macro-budget aware",
+        "Exercise form tips and technique analysis",
+        "Progress trend analysis and commentary",
+        "Weekly nutrition + workout plan generation",
+        "24/7 chat coach — 12-message memory",
+        "Full daily meal plan regeneration"
+      ],
+      "chatTitle": "AI Fitness Coach",
+      "chatModel": "Claude Sonnet 4.6",
+      "online": "Online",
+      "userMsg1": "What's the best meal for an evening workout?",
+      "aiMsg1A": "Based on your macro status today, ",
+      "aiMsg1Strong": "1.5–2 hours",
+      "aiMsg1B": " before training I'd recommend complex carbs + moderate protein. You have 62g of protein left — perfect time to complete it.",
+      "userMsg2": "Should I do Pilates or HIIT?",
+      "aiMsg2A": "Given your 12-day streak and this week's load analysis, ",
+      "aiMsg2Strong": "Pilates",
+      "aiMsg2B": " is the better fit. Preserving recovery quality matters far more long-term.",
+      "inputPlaceholder": "Ask a question...",
+      "send": "Send"
+    },
+    "progress": {
+      "tag": "Progress",
+      "heading1": "Data-Driven",
+      "heading2": "Real Transformation",
+      "body": "See your progress from every angle with weight charts, body measurements, 7-day macro trends, and activity streaks. AI analyzes your trends and tells you what you're doing well and what to improve.",
+      "bullets": [
+        "Weekly & monthly weight chart",
+        "Body measurement tracking — waist, hips, shoulder, and more",
+        "7-day calorie & macro trend",
+        "AI-powered progress report",
+        "Apple Fitness-style daily activity rings"
+      ],
+      "summaryTitle": "Progress Summary",
+      "summarySub": "Last 30 days",
+      "dateStart": "Mar 1",
+      "dateMid": "Mar 15",
+      "dateEnd": "Mar 30",
+      "startLabel": "Start",
+      "nowLabel": "Now",
+      "targetLabel": "Target",
+      "distance": "Distance to goal",
+      "distanceValue": "5 kg to go",
+      "complete": "55% complete"
+    },
+    "gamification": {
+      "tag": "Gamification",
+      "heading": "Stronger Every Day",
+      "subhead": "Streak tracking and achievement badges keep you tied to your goals. When motivation runs out, your system kicks in.",
+      "items": {
+        "streak": { "title": "Activity Streak", "desc": "Don't break the line" },
+        "badges": { "title": "Achievement Badges", "desc": "Complete milestones" },
+        "rings": { "title": "Activity Rings", "desc": "Apple Fitness style" },
+        "friends": { "title": "Friend Streaks", "desc": "Compete with friends" }
+      }
+    },
+    "wellness": {
+      "heading": "All Dimensions of Your Health",
+      "subhead": "Not just workouts — a holistic approach to life.",
+      "items": {
+        "water": { "title": "Water Tracking", "desc": "Daily water goal" },
+        "sleep": { "title": "Sleep Tracking", "desc": "Sleep quality & duration" },
+        "meals": { "title": "Meal Tracking", "desc": "Macros & calories" },
+        "shopping": { "title": "Shopping", "desc": "Automatic weekly list" }
+      }
+    },
+    "how": {
+      "tag": "How It Works",
+      "heading": "Get Started in 3 Steps",
+      "steps": {
+        "invite": { "title": "Get an Invite", "desc": "FitMusc is invite-only. Wait for an invitation from your trainer or our team." },
+        "profile": { "title": "Build Your Profile", "desc": "Enter your height, weight, goals, and health info. AI personalization kicks in immediately." },
+        "go": { "title": "Run Toward Your Goal", "desc": "With a daily plan, an AI coach, and progress tracking, results become inevitable." }
+      }
+    },
+    "miniFeatures": {
+      "heading": "And So Much More",
+      "subhead": "Every feature you can think of is already here.",
+      "items": [
+        "Calorie & macro tracking",
+        "Custom food library",
+        "Exercise form tips",
+        "Water & sleep tracking",
+        "Weekly shopping list",
+        "Plan sharing",
+        "Push notifications",
+        "PWA — install like a mobile app",
+        "Admin & invite management",
+        "Membership management"
+      ]
+    },
+    "testimonial": {
+      "quote": "FitMusc made it so easy to follow my training program and stick to my nutrition plan. The AI coach feature really makes a difference — like having an expert by my side at all times.",
+      "author": "Ahmet Y.",
+      "authorMeta": "FitMusc user · 4 months"
+    },
+    "finalCta": {
+      "heading": "Transformation Starts Now",
+      "body": "Your invite is ready. Sign in to FitMusc and start your fitness journey today.",
+      "signIn": "Sign In",
+      "access": "Invite-based access · Secure sign-in"
+    },
+    "footer": {
+      "tagline": "· Personal Fitness Platform",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "kvkk": "KVKK",
+      "signIn": "Sign In"
+    }
+  },
   "shareManager": {
     "title": "Plan Sharing",
     "shareButton": "Share",
