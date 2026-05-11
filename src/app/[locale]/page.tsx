@@ -44,6 +44,7 @@ import { DailyRingsCard } from "@/components/meals/daily-rings-card";
 import { useDashboardPrefs } from "@/hooks/use-dashboard-prefs";
 import { SetupCompleteBanner } from "@/components/onboarding/setup-complete-banner";
 import { NotificationPromptCard } from "@/components/notifications/notification-prompt-card";
+import { useDailyGreeting } from "@/hooks/use-greeting";
 
 const PLAN_TYPE_ICONS: Record<string, { icon: typeof Dumbbell; color: string }> = {
   workout: { icon: Dumbbell, color: "text-green-400 bg-green-400/10" },
@@ -88,6 +89,7 @@ export default function HomePage() {
   const { data: weekData, isLoading: weekLoading } = useWeekPlansByDate(todayStr);
   const { data: weeks, isLoading: weeksLoading } = useAllWeeks();
   const { data: activityStats, isLoading: activityLoading } = useActivityStats();
+  const { data: greeting, isLoading: greetingLoading } = useDailyGreeting();
   const { isVisible } = useDashboardPrefs();
 
   // Onboarding carousel — auto-open on first login
@@ -188,15 +190,25 @@ export default function HomePage() {
         <NotificationPromptCard />
         <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-transparent overflow-hidden">
           <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <p className="text-lg font-bold">{t("welcome", { name: (user as any).name?.split(" ")[0] ?? "" })}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                {greetingLoading && !greeting ? (
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-full max-w-65" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                ) : (
+                  <p className="text-base font-semibold leading-snug">
+                    {greeting?.message ??
+                      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                      t("welcome", { name: (user as any).name?.split(" ")[0] ?? "" })}
+                  </p>
+                )}
                 {profileLoading ? (
-                  <Skeleton className="h-4 w-44 mt-1" />
+                  <Skeleton className="h-4 w-44 mt-2" />
                 ) : (
                   (profile?.weight || profile?.targetWeight || profile?.height) && (
-                    <p className="text-sm text-muted-foreground mt-0.5">
+                    <p className="text-sm text-muted-foreground mt-2">
                       {[
                         profile.height ? `${profile.height} cm` : "",
                         profile.weight ? `${profile.weight} kg` : "",

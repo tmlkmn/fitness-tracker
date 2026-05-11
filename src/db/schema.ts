@@ -10,6 +10,7 @@ import {
   jsonb,
   uniqueIndex,
   check,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -609,6 +610,28 @@ export const auditLogs = pgTable("audit_logs", {
   details: jsonb("details"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ── Daily AI Greetings ──
+
+export const dailyGreetings = pgTable(
+  "daily_greetings",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    locale: text("locale").notNull(),
+    message: text("message").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.date, t.locale] }),
+    check(
+      "daily_greetings_locale_check",
+      sql`${t.locale} IN ('tr', 'en')`,
+    ),
+  ],
+);
 
 // ── Cookie Consents ──
 

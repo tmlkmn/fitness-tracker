@@ -89,7 +89,7 @@ export const AI_MODELS = {
 } as const;
 
 // Feature-based daily rate limits
-export type AIFeature = "meal" | "exercise" | "analyze" | "chat" | "workout" | "daily-meal" | "weekly" | "exercise-demo" | "shopping" | "target-weight" | "macro-ai";
+export type AIFeature = "meal" | "exercise" | "analyze" | "chat" | "workout" | "daily-meal" | "weekly" | "exercise-demo" | "shopping" | "target-weight" | "macro-ai" | "greeting";
 
 const DAILY_LIMITS: Record<AIFeature, number> = {
   meal: 10,
@@ -103,6 +103,7 @@ const DAILY_LIMITS: Record<AIFeature, number> = {
   shopping: 5,
   "target-weight": 2,
   "macro-ai": 5,
+  greeting: 2,
 } as const;
 
 // Cooldown (seconds) — prevents rapid-fire expensive requests
