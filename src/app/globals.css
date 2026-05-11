@@ -225,22 +225,21 @@ a:focus:not(:focus-visible) {
   }
 }
 
-/* Modal (Radix Dialog) animations — Tailwind v4 has no animate-in plugin,
-   so we drive overlay + content motion with plain CSS keyframes scoped to
-   data-state on the elements that opt in via .modal-overlay / .modal-content.
-   Centering uses transform: translate(-50%, -50%) and is kept inside the
-   keyframes (and on the base class) so Tailwind's standalone `translate:`
-   utility classes can't double-offset the dialog. */
-.modal-content { transform: translate(-50%, -50%); }
+/* Modal (Radix Dialog) animations — Tailwind v4 has no animate-in plugin.
+   Centering uses the standalone `translate:` CSS property (fixed once on
+   .modal-content) and the open/close animation only touches `opacity` and
+   the standalone `scale:` property — so the three sub-transforms compose
+   cleanly and the dialog stays pinned to viewport center at every frame. */
+.modal-content { translate: -50% -50%; }
 @keyframes modal-overlay-in  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-overlay-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes modal-content-in {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
-  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  from { opacity: 0; scale: 0.96; }
+  to   { opacity: 1; scale: 1; }
 }
 @keyframes modal-content-out {
-  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  to   { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  from { opacity: 1; scale: 1; }
+  to   { opacity: 0; scale: 0.96; }
 }
 .modal-overlay[data-state="open"]   { animation: modal-overlay-in 180ms ease-out both; }
 .modal-overlay[data-state="closed"] { animation: modal-overlay-out 140ms ease-in both; }
