@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { UserPlus, Loader2, CheckCircle, Copy, Check } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
+import type { Locale } from "@/lib/locale";
 
 const MEMBERSHIP_KEYS: { value: MembershipType; tKey: string }[] = [
   { value: "1-month", tKey: "1-month" },
@@ -47,6 +48,7 @@ export default function DavetPage() {
   const [email, setEmail] = useState("");
   const [membershipType, setMembershipType] = useState<MembershipType>("1-month");
   const [customEndDate, setCustomEndDate] = useState("");
+  const [userLocale, setUserLocale] = useState<Locale>("tr");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -69,10 +71,15 @@ export default function DavetPage() {
     setLoading(true);
 
     try {
-      const result = await inviteUser(email, name, {
-        type: membershipType,
-        ...(membershipType === "custom" ? { customEndDate } : {}),
-      });
+      const result = await inviteUser(
+        email,
+        name,
+        {
+          type: membershipType,
+          ...(membershipType === "custom" ? { customEndDate } : {}),
+        },
+        userLocale,
+      );
       setInvitedEmail(email);
       setTempPassword(result.tempPassword);
       setSuccess(true);
@@ -126,6 +133,7 @@ export default function DavetPage() {
                   setEmail("");
                   setMembershipType("1-month");
                   setCustomEndDate("");
+                  setUserLocale("tr");
                   setInvitedEmail("");
                   setTempPassword("");
                 }}
@@ -236,6 +244,24 @@ export default function DavetPage() {
                 />
               </div>
             )}
+
+            <div className="space-y-2">
+              <label htmlFor="userLocale" className="text-sm font-medium leading-none">
+                {tInvite("userLanguageLabel")}
+              </label>
+              <select
+                id="userLocale"
+                value={userLocale}
+                onChange={(e) => setUserLocale(e.target.value as Locale)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="tr">Türkçe</option>
+                <option value="en">English</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                {tInvite("userLanguageHint")}
+              </p>
+            </div>
 
             {error && (
               <p className="text-sm text-destructive text-center">{error}</p>

@@ -178,6 +178,9 @@
     "adminPanel": "Admin Panel",
     "lightTheme": "Light Theme",
     "darkTheme": "Dark Theme",
+    "languageLabel": "Language",
+    "languageTurkish": "Türkçe",
+    "languageEnglish": "English",
     "signOut": "Sign Out",
     "workout": "Workout"
   },

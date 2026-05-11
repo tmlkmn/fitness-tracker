@@ -178,6 +178,9 @@
     "adminPanel": "Admin Paneli",
     "lightTheme": "Açık Tema",
     "darkTheme": "Koyu Tema",
+    "languageLabel": "Dil",
+    "languageTurkish": "Türkçe",
+    "languageEnglish": "English",
     "signOut": "Çıkış Yap",
     "workout": "Antrenman"
   },
