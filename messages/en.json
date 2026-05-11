@@ -2003,6 +2003,97 @@
       }
     }
   },
+  "onboarding": {
+    "trigger": {
+      "ariaLabel": "App guide"
+    },
+    "carousel": {
+      "back": "Back",
+      "skip": "Skip",
+      "next": "Next",
+      "start": "Start",
+      "slides": {
+        "welcome": {
+          "title": "Welcome to FitMusc!",
+          "description": "Your personal fitness and nutrition assistant. Track your training program, plan your nutrition, and see your progress."
+        },
+        "weekly": {
+          "title": "Weekly Plan",
+          "description": "Build a weekly training and nutrition plan with AI. Get a fresh, personalized program every week."
+        },
+        "daily": {
+          "title": "Daily Tracking",
+          "description": "Check off meals and exercises as you complete them. See your daily progress instantly."
+        },
+        "ai": {
+          "title": "AI Assistant",
+          "description": "Ask your fitness coach anything. Get nutrition tips, exercise alternatives, and motivation."
+        },
+        "progress": {
+          "title": "Progress Tracking",
+          "description": "Track your evolution with weight, measurements, and charts. Use AI analysis to evaluate your progress."
+        }
+      }
+    },
+    "healthWizard": {
+      "header": "Health Profile",
+      "back": "Back",
+      "next": "Next",
+      "save": "Save",
+      "saved": "Health profile saved",
+      "saveError": "Could not save, try again",
+      "gender": {
+        "title": "Biological sex",
+        "intro": "We ask for your biological sex so we can compute calorie and macro targets accurately. This info is not shown on your profile.",
+        "options": {
+          "female": "Female",
+          "male": "Male",
+          "prefer_not_to_say": "Prefer not to say"
+        }
+      },
+      "activity": {
+        "title": "Daily activity level",
+        "intro": "On a typical day, how active are you OUTSIDE of training?",
+        "options": {
+          "sedentary": { "label": "Mostly sitting", "hint": "Desk work, little movement" },
+          "light": { "label": "Lightly active", "hint": "Office + daily walks, light housework" },
+          "moderate": { "label": "On my feet", "hint": "Teacher, server, retail" },
+          "very_active": { "label": "Very active", "hint": "Construction, courier, physical job" }
+        }
+      },
+      "flags": {
+        "title": "Health safety",
+        "intro": "Do any of the following apply to you? We use this info only to keep your program SAFE; it is protected as special-category health data under privacy regulations.",
+        "noneOfThese": "None of these apply",
+        "whyAriaLabel": "Why do we ask?",
+        "whyTitle": "Why do we ask?",
+        "items": {
+          "hasEatingDisorderHistory": {
+            "label": "I have a history of eating disorders (anorexia, bulimia, orthorexia)",
+            "rationale": "Intermittent fasting is not recommended; calorie tracking is kept gentle"
+          },
+          "isPregnantOrBreastfeeding": {
+            "label": "I am pregnant or breastfeeding",
+            "rationale": "Calorie deficits are not recommended; IF is never applied"
+          },
+          "hasDiabetes": {
+            "label": "I have diabetes (Type 1 or insulin-treated Type 2)",
+            "rationale": "Insulin-compatible meal timing; IF is never applied"
+          },
+          "hasThyroidCondition": {
+            "label": "I have an untreated thyroid condition",
+            "rationale": "More conservative calorie targets; cortisol protection"
+          }
+        }
+      }
+    },
+    "setupBanner": {
+      "title": "Your profile is ready! 🎉",
+      "description": "You can now build your weekly training and nutrition program.",
+      "goToCalendar": "Go to Calendar",
+      "close": "Close"
+    }
+  },
   "shareManager": {
     "title": "Plan Sharing",
     "shareButton": "Share",

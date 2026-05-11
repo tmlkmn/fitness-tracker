@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,43 +19,8 @@ import type { UpdateHealthProfileInput } from "@/actions/user";
 type Gender = UpdateHealthProfileInput["gender"];
 type Activity = UpdateHealthProfileInput["dailyActivityLevel"];
 
-interface GenderOption {
-  value: Gender;
-  label: string;
-}
-const GENDER_OPTIONS: GenderOption[] = [
-  { value: "female", label: "Kadın" },
-  { value: "male", label: "Erkek" },
-  { value: "prefer_not_to_say", label: "Belirtmek istemiyorum" },
-];
-
-interface ActivityOption {
-  value: Activity;
-  label: string;
-  hint: string;
-}
-const ACTIVITY_OPTIONS: ActivityOption[] = [
-  {
-    value: "sedentary",
-    label: "Çoğunlukla otururum",
-    hint: "Masa başı, az hareket",
-  },
-  {
-    value: "light",
-    label: "Hafif aktif",
-    hint: "Ofis + günlük yürüyüş, hafif ev işleri",
-  },
-  {
-    value: "moderate",
-    label: "Ayakta çalışırım",
-    hint: "Öğretmen, garson, perakende",
-  },
-  {
-    value: "very_active",
-    label: "Çok aktif",
-    hint: "İnşaat, kurye, fiziksel iş",
-  },
-];
+const GENDER_VALUES: Gender[] = ["female", "male", "prefer_not_to_say"];
+const ACTIVITY_VALUES: Activity[] = ["sedentary", "light", "moderate", "very_active"];
 
 type HealthFlagKey =
   | "hasEatingDisorderHistory"
@@ -62,32 +28,11 @@ type HealthFlagKey =
   | "hasDiabetes"
   | "hasThyroidCondition";
 
-interface HealthFlag {
-  key: HealthFlagKey;
-  label: string;
-  rationale: string;
-}
-const HEALTH_FLAGS: HealthFlag[] = [
-  {
-    key: "hasEatingDisorderHistory",
-    label: "Yeme bozukluğu (anoreksiya, bulimia, ortoreksiya) öyküm var",
-    rationale: "Aralıklı açlık önerilmez, kalori takibi yumuşak yapılır",
-  },
-  {
-    key: "isPregnantOrBreastfeeding",
-    label: "Hamileyim veya emziriyorum",
-    rationale: "Kalori açığı önerilmez, IF asla uygulanmaz",
-  },
-  {
-    key: "hasDiabetes",
-    label: "Diyabetim var (Tip 1 veya insülin kullanılan Tip 2)",
-    rationale: "İnsülin uyumlu öğün zamanlaması, IF asla uygulanmaz",
-  },
-  {
-    key: "hasThyroidCondition",
-    label: "Tedavi altında olmayan tiroid problemim var",
-    rationale: "Daha muhafazakar kalori hedefleri, kortizol koruması",
-  },
+const HEALTH_FLAG_KEYS: HealthFlagKey[] = [
+  "hasEatingDisorderHistory",
+  "isPregnantOrBreastfeeding",
+  "hasDiabetes",
+  "hasThyroidCondition",
 ];
 
 interface HealthProfileWizardProps {
@@ -99,6 +44,7 @@ export function HealthProfileWizard({
   open,
   onOpenChange,
 }: HealthProfileWizardProps) {
+  const t = useTranslations("onboarding.healthWizard");
   const [step, setStep] = useState(0);
   const [gender, setGender] = useState<Gender>("prefer_not_to_say");
   const [activity, setActivity] = useState<Activity>("light");
@@ -119,11 +65,11 @@ export function HealthProfileWizard({
         dailyActivityLevel: activity,
         ...flags,
       });
-      toast.success("Sağlık profilin kaydedildi");
+      toast.success(t("saved"));
       onOpenChange(false);
       setStep(0);
     } catch {
-      toast.error("Kaydedilemedi, tekrar dene");
+      toast.error(t("saveError"));
     }
   };
 
@@ -150,9 +96,6 @@ export function HealthProfileWizard({
     <Dialog
       open={open}
       onOpenChange={(val) => {
-        // Disallow closing without completing — this is a one-time mandatory
-        // setup. Users can pick "prefer_not_to_say" / "no flags" but must
-        // actually submit so the column flips off-null.
         if (val) onOpenChange(true);
       }}
     >
@@ -165,7 +108,7 @@ export function HealthProfileWizard({
           <div className="flex items-center gap-2 mb-4 text-primary">
             <ShieldCheck className="h-5 w-5" />
             <span className="text-xs font-semibold uppercase tracking-wider">
-              Sağlık Profili
+              {t("header")}
             </span>
           </div>
 
@@ -195,7 +138,7 @@ export function HealthProfileWizard({
           {step > 0 ? (
             <Button variant="ghost" size="sm" onClick={prev} disabled={update.isPending}>
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Geri
+              {t("back")}
             </Button>
           ) : (
             <span />
@@ -206,7 +149,7 @@ export function HealthProfileWizard({
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                {isLast ? "Kaydet" : "İleri"}
+                {isLast ? t("save") : t("next")}
                 {!isLast && <ChevronRight className="h-4 w-4 ml-1" />}
               </>
             )}
@@ -217,8 +160,6 @@ export function HealthProfileWizard({
   );
 }
 
-// ─── Steps ───────────────────────────────────────────────────────────────────
-
 function GenderStep({
   value,
   onChange,
@@ -226,22 +167,22 @@ function GenderStep({
   value: Gender;
   onChange: (g: Gender) => void;
 }) {
+  const t = useTranslations("onboarding.healthWizard.gender");
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h2 className="text-lg font-bold">Biyolojik cinsiyet</h2>
+        <h2 className="text-lg font-bold">{t("title")}</h2>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Kalori ve makro hedeflerini doğru hesaplayabilmemiz için biyolojik
-          cinsiyetinizi soruyoruz. Bu bilgi profilinizde görüntülenmez.
+          {t("intro")}
         </p>
       </div>
       <div role="radiogroup" className="space-y-2">
-        {GENDER_OPTIONS.map((opt) => (
+        {GENDER_VALUES.map((opt) => (
           <RadioCard
-            key={opt.value}
-            checked={value === opt.value}
-            onClick={() => onChange(opt.value)}
-            label={opt.label}
+            key={opt}
+            checked={value === opt}
+            onClick={() => onChange(opt)}
+            label={t(`options.${opt}`)}
           />
         ))}
       </div>
@@ -256,22 +197,23 @@ function ActivityStep({
   value: Activity;
   onChange: (a: Activity) => void;
 }) {
+  const t = useTranslations("onboarding.healthWizard.activity");
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h2 className="text-lg font-bold">Günlük aktivite seviyesi</h2>
+        <h2 className="text-lg font-bold">{t("title")}</h2>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Tipik bir gününüzde ANTRENMANLAR DIŞINDA ne kadar aktifsiniz?
+          {t("intro")}
         </p>
       </div>
       <div role="radiogroup" className="space-y-2">
-        {ACTIVITY_OPTIONS.map((opt) => (
+        {ACTIVITY_VALUES.map((opt) => (
           <RadioCard
-            key={opt.value}
-            checked={value === opt.value}
-            onClick={() => onChange(opt.value)}
-            label={opt.label}
-            hint={opt.hint}
+            key={opt}
+            checked={value === opt}
+            onClick={() => onChange(opt)}
+            label={t(`options.${opt}.label`)}
+            hint={t(`options.${opt}.hint`)}
           />
         ))}
       </div>
@@ -288,6 +230,7 @@ function FlagsStep({
   onChange: (next: Record<HealthFlagKey, boolean>) => void;
   onClear: () => void;
 }) {
+  const t = useTranslations("onboarding.healthWizard.flags");
   const toggle = (key: HealthFlagKey) => {
     onChange({ ...value, [key]: !value[key] });
   };
@@ -296,42 +239,40 @@ function FlagsStep({
     <TooltipProvider delayDuration={150}>
       <div className="space-y-4">
         <div className="space-y-1">
-          <h2 className="text-lg font-bold">Sağlık güvenliği</h2>
+          <h2 className="text-lg font-bold">{t("title")}</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Aşağıdaki durumlardan biri sizi etkiliyor mu? Bu bilgiyi sadece
-            programınızı GÜVENLİ hale getirmek için kullanıyoruz; KVKK
-            kapsamında özel kategori sağlık verisi olarak korunur.
+            {t("intro")}
           </p>
         </div>
 
         <div className="space-y-2">
-          {HEALTH_FLAGS.map((flag) => (
+          {HEALTH_FLAG_KEYS.map((key) => (
             <label
-              key={flag.key}
+              key={key}
               className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/40 transition-colors"
             >
               <Checkbox
-                checked={value[flag.key]}
-                onCheckedChange={() => toggle(flag.key)}
+                checked={value[key]}
+                onCheckedChange={() => toggle(key)}
                 className="mt-0.5"
               />
               <span className="text-xs leading-relaxed flex-1">
-                {flag.label}
+                {t(`items.${key}.label`)}
               </span>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     onClick={(e) => e.preventDefault()}
-                    aria-label="Niye soruyoruz?"
+                    aria-label={t("whyAriaLabel")}
                     className="shrink-0 text-muted-foreground hover:text-foreground"
                   >
                     <Info className="h-4 w-4" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="max-w-[220px] text-xs">
-                  <p className="font-semibold mb-1">Niye soruyoruz?</p>
-                  <p>{flag.rationale}</p>
+                  <p className="font-semibold mb-1">{t("whyTitle")}</p>
+                  <p>{t(`items.${key}.rationale`)}</p>
                 </TooltipContent>
               </Tooltip>
             </label>
@@ -345,14 +286,12 @@ function FlagsStep({
           onClick={onClear}
           type="button"
         >
-          Bunlardan hiçbiri yok
+          {t("noneOfThese")}
         </Button>
       </div>
     </TooltipProvider>
   );
 }
-
-// ─── Bits ────────────────────────────────────────────────────────────────────
 
 function RadioCard({
   checked,

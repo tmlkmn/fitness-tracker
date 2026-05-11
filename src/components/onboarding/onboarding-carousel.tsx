@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -18,55 +19,36 @@ import {
 } from "lucide-react";
 import { useMarkOnboardingSeen } from "@/hooks/use-user";
 
-interface Slide {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  color: string;
-}
+const SLIDE_KEYS = ["welcome", "weekly", "daily", "ai", "progress"] as const;
+type SlideKey = (typeof SLIDE_KEYS)[number];
 
-const slides: Slide[] = [
-  {
+const SLIDE_VISUALS: Record<SlideKey, { icon: React.ReactNode; color: string }> = {
+  welcome: {
     icon: <Rocket className="h-12 w-12" />,
-    title: "FitMusc'a Hoş Geldiniz!",
-    description:
-      "Kişisel fitness ve beslenme asistanınız. Antrenman programınızı takip edin, beslenmenizi planlayın ve ilerlemenizi görün.",
     color: "text-primary bg-primary/10",
   },
-  {
+  weekly: {
     icon: <Calendar className="h-12 w-12" />,
-    title: "Haftalık Plan",
-    description:
-      "AI ile haftalık antrenman ve beslenme planı oluşturun. Her hafta size özel program hazırlansın.",
     color: "text-blue-400 bg-blue-400/10",
   },
-  {
+  daily: {
     icon: (
       <div className="flex gap-2">
         <Utensils className="h-10 w-10" />
         <Dumbbell className="h-10 w-10" />
       </div>
     ),
-    title: "Günlük Takip",
-    description:
-      "Öğünlerinizi ve egzersizlerinizi tamamlandıkça işaretleyin. Günlük ilerlemenizi anlık görün.",
     color: "text-green-400 bg-green-400/10",
   },
-  {
+  ai: {
     icon: <Bot className="h-12 w-12" />,
-    title: "AI Asistan",
-    description:
-      "Fitness koçunuza sorularınızı sorun. Beslenme önerileri, egzersiz alternatifleri ve motivasyon desteği alın.",
     color: "text-purple-400 bg-purple-400/10",
   },
-  {
+  progress: {
     icon: <TrendingUp className="h-12 w-12" />,
-    title: "İlerleme Takibi",
-    description:
-      "Kilo, ölçüm ve grafiklerle gelişiminizi takip edin. AI analizi ile ilerlemenizi değerlendirin.",
     color: "text-yellow-400 bg-yellow-400/10",
   },
-];
+};
 
 interface OnboardingCarouselProps {
   open: boolean;
@@ -79,11 +61,12 @@ export function OnboardingCarousel({
   onOpenChange,
   isFirstTime,
 }: OnboardingCarouselProps) {
+  const t = useTranslations("onboarding.carousel");
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef(0);
   const markSeen = useMarkOnboardingSeen();
 
-  const isLast = current === slides.length - 1;
+  const isLast = current === SLIDE_KEYS.length - 1;
 
   const handleComplete = useCallback(() => {
     if (isFirstTime) {
@@ -125,7 +108,8 @@ export function OnboardingCarousel({
     }
   };
 
-  const slide = slides[current];
+  const slideKey = SLIDE_KEYS[current];
+  const visual = SLIDE_VISUALS[slideKey];
 
   return (
     <Dialog
@@ -140,22 +124,20 @@ export function OnboardingCarousel({
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Slide content */}
           <div className="text-center space-y-4">
             <div
-              className={`h-20 w-20 rounded-2xl ${slide.color} flex items-center justify-center mx-auto transition-all duration-300`}
+              className={`h-20 w-20 rounded-2xl ${visual.color} flex items-center justify-center mx-auto transition-all duration-300`}
             >
-              {slide.icon}
+              {visual.icon}
             </div>
-            <h2 className="text-xl font-bold">{slide.title}</h2>
+            <h2 className="text-xl font-bold">{t(`slides.${slideKey}.title`)}</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {slide.description}
+              {t(`slides.${slideKey}.description`)}
             </p>
           </div>
 
-          {/* Dot indicators */}
           <div className="flex justify-center gap-1.5 mt-6">
-            {slides.map((_, i) => (
+            {SLIDE_KEYS.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
@@ -169,21 +151,20 @@ export function OnboardingCarousel({
           </div>
         </div>
 
-        {/* Navigation */}
         <div className="px-6 pb-6 flex items-center justify-between gap-2">
           {current > 0 ? (
             <Button variant="ghost" size="sm" onClick={prev}>
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Geri
+              {t("back")}
             </Button>
           ) : (
             <Button variant="ghost" size="sm" onClick={handleSkip}>
-              Atla
+              {t("skip")}
             </Button>
           )}
 
           <Button size="sm" onClick={next}>
-            {isLast ? "Başla" : "İleri"}
+            {isLast ? t("start") : t("next")}
             {!isLast && <ChevronRight className="h-4 w-4 ml-1" />}
           </Button>
         </div>

@@ -2004,6 +2004,97 @@
       }
     }
   },
+  "onboarding": {
+    "trigger": {
+      "ariaLabel": "Uygulama rehberi"
+    },
+    "carousel": {
+      "back": "Geri",
+      "skip": "Atla",
+      "next": "İleri",
+      "start": "Başla",
+      "slides": {
+        "welcome": {
+          "title": "FitMusc'a Hoş Geldiniz!",
+          "description": "Kişisel fitness ve beslenme asistanınız. Antrenman programınızı takip edin, beslenmenizi planlayın ve ilerlemenizi görün."
+        },
+        "weekly": {
+          "title": "Haftalık Plan",
+          "description": "AI ile haftalık antrenman ve beslenme planı oluşturun. Her hafta size özel program hazırlansın."
+        },
+        "daily": {
+          "title": "Günlük Takip",
+          "description": "Öğünlerinizi ve egzersizlerinizi tamamlandıkça işaretleyin. Günlük ilerlemenizi anlık görün."
+        },
+        "ai": {
+          "title": "AI Asistan",
+          "description": "Fitness koçunuza sorularınızı sorun. Beslenme önerileri, egzersiz alternatifleri ve motivasyon desteği alın."
+        },
+        "progress": {
+          "title": "İlerleme Takibi",
+          "description": "Kilo, ölçüm ve grafiklerle gelişiminizi takip edin. AI analizi ile ilerlemenizi değerlendirin."
+        }
+      }
+    },
+    "healthWizard": {
+      "header": "Sağlık Profili",
+      "back": "Geri",
+      "next": "İleri",
+      "save": "Kaydet",
+      "saved": "Sağlık profilin kaydedildi",
+      "saveError": "Kaydedilemedi, tekrar dene",
+      "gender": {
+        "title": "Biyolojik cinsiyet",
+        "intro": "Kalori ve makro hedeflerini doğru hesaplayabilmemiz için biyolojik cinsiyetinizi soruyoruz. Bu bilgi profilinizde görüntülenmez.",
+        "options": {
+          "female": "Kadın",
+          "male": "Erkek",
+          "prefer_not_to_say": "Belirtmek istemiyorum"
+        }
+      },
+      "activity": {
+        "title": "Günlük aktivite seviyesi",
+        "intro": "Tipik bir gününüzde ANTRENMANLAR DIŞINDA ne kadar aktifsiniz?",
+        "options": {
+          "sedentary": { "label": "Çoğunlukla otururum", "hint": "Masa başı, az hareket" },
+          "light": { "label": "Hafif aktif", "hint": "Ofis + günlük yürüyüş, hafif ev işleri" },
+          "moderate": { "label": "Ayakta çalışırım", "hint": "Öğretmen, garson, perakende" },
+          "very_active": { "label": "Çok aktif", "hint": "İnşaat, kurye, fiziksel iş" }
+        }
+      },
+      "flags": {
+        "title": "Sağlık güvenliği",
+        "intro": "Aşağıdaki durumlardan biri sizi etkiliyor mu? Bu bilgiyi sadece programınızı GÜVENLİ hale getirmek için kullanıyoruz; KVKK kapsamında özel kategori sağlık verisi olarak korunur.",
+        "noneOfThese": "Bunlardan hiçbiri yok",
+        "whyAriaLabel": "Niye soruyoruz?",
+        "whyTitle": "Niye soruyoruz?",
+        "items": {
+          "hasEatingDisorderHistory": {
+            "label": "Yeme bozukluğu (anoreksiya, bulimia, ortoreksiya) öyküm var",
+            "rationale": "Aralıklı açlık önerilmez, kalori takibi yumuşak yapılır"
+          },
+          "isPregnantOrBreastfeeding": {
+            "label": "Hamileyim veya emziriyorum",
+            "rationale": "Kalori açığı önerilmez, IF asla uygulanmaz"
+          },
+          "hasDiabetes": {
+            "label": "Diyabetim var (Tip 1 veya insülin kullanılan Tip 2)",
+            "rationale": "İnsülin uyumlu öğün zamanlaması, IF asla uygulanmaz"
+          },
+          "hasThyroidCondition": {
+            "label": "Tedavi altında olmayan tiroid problemim var",
+            "rationale": "Daha muhafazakar kalori hedefleri, kortizol koruması"
+          }
+        }
+      }
+    },
+    "setupBanner": {
+      "title": "Profilin hazır! 🎉",
+      "description": "Artık haftalık antrenman ve beslenme programını oluşturabilirsin.",
+      "goToCalendar": "Takvime Git",
+      "close": "Kapat"
+    }
+  },
   "shareManager": {
     "title": "Plan Paylaşımı",
     "shareButton": "Paylaş",

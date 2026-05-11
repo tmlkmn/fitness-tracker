@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { X, CalendarDays, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function BannerInner() {
+  const t = useTranslations("onboarding.setupBanner");
   const searchParams = useSearchParams();
   const justSetup = searchParams.get("setup") === "done";
   const [dismissed, setDismissed] = useState(false);
@@ -20,21 +22,21 @@ function BannerInner() {
           <Sparkles className="h-4 w-4 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold">Profilin hazır! 🎉</p>
+          <p className="text-sm font-semibold">{t("title")}</p>
           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-            Artık haftalık antrenman ve beslenme programını oluşturabilirsin.
+            {t("description")}
           </p>
           <Button asChild size="sm" className="mt-3 gap-1.5 h-8">
             <Link href="/takvim">
               <CalendarDays className="h-3.5 w-3.5" />
-              Takvime Git
+              {t("goToCalendar")}
             </Link>
           </Button>
         </div>
         <button
           type="button"
           onClick={() => setDismissed(true)}
-          aria-label="Kapat"
+          aria-label={t("close")}
           className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
         >
           <X className="h-4 w-4" />
@@ -43,8 +45,6 @@ function BannerInner() {
     </div>
   );
 }
-
-import { Suspense } from "react";
 
 export function SetupCompleteBanner() {
   return (
