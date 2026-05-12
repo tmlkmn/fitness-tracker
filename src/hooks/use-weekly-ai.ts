@@ -181,6 +181,7 @@ export function useSavedSuggestionDetail(id: number | null) {
     queryKey: ["ai-suggestion", id],
     queryFn: () => getSavedSuggestionById(id!),
     enabled: id !== null,
+    staleTime: 5 * 60_000,
   });
 }
 

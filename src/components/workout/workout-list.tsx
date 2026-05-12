@@ -19,7 +19,7 @@ import {
   useGenerateWorkoutReplacement,
   useApplyWorkoutReplacement,
 } from "@/hooks/use-workout-ai";
-import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
+import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
@@ -47,14 +47,14 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
   const generate = useGenerateWorkoutReplacement();
   const apply = useApplyWorkoutReplacement();
   const { data: quotaData } = useAiQuota();
-  const invalidateQuota = useInvalidateAiQuota();
   const workoutQuota = getQuota(quotaData, "workout");
   const monthGate = useMonthGate();
   const isMonthBlocked = planDate ? monthGate.isBlockedForDate(planDate) : false;
 
   const handleGenerate = (userNote?: string) => {
     generate.mutate({ dailyPlanId, userNote });
-    invalidateQuota();
+    // Quota invalidation happens in the mutation's onSettled callback after
+    // usage_log is written — invalidating here would refresh stale quota.
   };
 
   const handleApply = () => {

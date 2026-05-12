@@ -19,7 +19,12 @@ import {
   type AIWeeklyPlan,
 } from "@/lib/ai-weekly-types";
 import { getMondayStr, addDaysStr } from "@/lib/utils";
-import { insertMealsForDay, insertExercisesForDay } from "@/lib/ai-persistence";
+import {
+  insertMealsForDay,
+  insertExercisesForDay,
+  mealsToInsertValues,
+  exercisesToInsertValues,
+} from "@/lib/ai-persistence";
 
 export type { AIWeeklyPlan, AIWeeklyDay } from "@/lib/ai-weekly-types";
 
@@ -274,47 +279,36 @@ export async function applyWeeklyPlan(
       .where(eq(weeklyPlans.id, weeklyPlanId));
 
     const existingDays = await db
-      .select({ id: dailyPlans.id })
+      .select({ id: dailyPlans.id, dayOfWeek: dailyPlans.dayOfWeek })
       .from(dailyPlans)
       .where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
 
+    // Single map lookup avoids per-day SELECTs in the selective branches below.
+    const existingDayIdByDow = new Map<number, number>();
+    for (const d of existingDays) existingDayIdByDow.set(d.dayOfWeek, d.id);
+
+    const existingDayIds = existingDays.map((d) => d.id);
+    if (existingDayIds.length > 0) {
+      // Bulk delete: single `inArray` query per table replaces N per-day deletes.
+      if (mode === "both" || mode === "nutrition") {
+        await db.delete(meals).where(inArray(meals.dailyPlanId, existingDayIds));
+      }
+      if (mode === "both" || mode === "workout") {
+        await db.delete(exercises).where(inArray(exercises.dailyPlanId, existingDayIds));
+      }
+    }
     if (mode === "both") {
-      // Delete all existing data
-      for (const day of existingDays) {
-        await db.delete(meals).where(eq(meals.dailyPlanId, day.id));
-        await db.delete(exercises).where(eq(exercises.dailyPlanId, day.id));
-      }
       await db.delete(dailyPlans).where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
-    } else if (mode === "nutrition") {
-      // Only delete meals, keep exercises
-      for (const day of existingDays) {
-        await db.delete(meals).where(eq(meals.dailyPlanId, day.id));
-      }
-    } else if (mode === "workout") {
-      // Only delete exercises, keep meals
-      for (const day of existingDays) {
-        await db.delete(exercises).where(eq(exercises.dailyPlanId, day.id));
-      }
     }
 
     // For selective modes, update existing daily plans or create missing ones
     if (mode !== "both") {
       for (const day of plan.days) {
-        const dayDate = addDaysStr(monday, day.dayOfWeek);
-        // Find existing daily plan for this day
-        const [existingDay] = await db
-          .select({ id: dailyPlans.id })
-          .from(dailyPlans)
-          .where(
-            and(
-              eq(dailyPlans.weeklyPlanId, weeklyPlanId),
-              eq(dailyPlans.dayOfWeek, day.dayOfWeek),
-            ),
-          );
+        const existingId = existingDayIdByDow.get(day.dayOfWeek);
 
         let dayId: number;
-        if (existingDay) {
-          dayId = existingDay.id;
+        if (existingId != null) {
+          dayId = existingId;
           // Update planType and workoutTitle if workout mode
           if (mode === "workout") {
             await db
@@ -326,6 +320,7 @@ export async function applyWeeklyPlan(
               .where(eq(dailyPlans.id, dayId));
           }
         } else {
+          const dayDate = addDaysStr(monday, day.dayOfWeek);
           const [newDay] = await db
             .insert(dailyPlans)
             .values({
@@ -378,30 +373,41 @@ export async function applyWeeklyPlan(
     weeklyPlanId = newWeek.id;
   }
 
-  // Create daily plans with meals and exercises (full mode or new week)
-  for (const day of plan.days) {
-    const dayDate = addDaysStr(monday, day.dayOfWeek);
+  // ─── Bulk insert path: one INSERT each for dailyPlans / meals / exercises.
+  // Replaces N×3 round-trips with 3 fixed round-trips regardless of day count.
+  const dayInsertValues = plan.days.map((day) => ({
+    weeklyPlanId,
+    dayOfWeek: day.dayOfWeek,
+    dayName: day.dayName,
+    planType: day.planType,
+    workoutTitle: day.workoutTitle,
+    date: addDaysStr(monday, day.dayOfWeek),
+  }));
 
-    const [newDay] = await db
+  if (dayInsertValues.length > 0) {
+    const insertedDays = await db
       .insert(dailyPlans)
-      .values({
-        weeklyPlanId,
-        dayOfWeek: day.dayOfWeek,
-        dayName: day.dayName,
-        planType: day.planType,
-        workoutTitle: day.workoutTitle,
-        date: dayDate,
-      })
-      .returning({ id: dailyPlans.id });
+      .values(dayInsertValues)
+      .returning({ id: dailyPlans.id, dayOfWeek: dailyPlans.dayOfWeek });
+    const dayIdByDow = new Map<number, number>();
+    for (const d of insertedDays) dayIdByDow.set(d.dayOfWeek, d.id);
 
-    // Insert meals (skip for workout-only mode on new week)
     if (mode !== "workout") {
-      await insertMealsForDay(newDay.id, day.meals);
+      const allMealRows = plan.days.flatMap((day) => {
+        const dayId = dayIdByDow.get(day.dayOfWeek);
+        if (dayId == null || day.meals.length === 0) return [];
+        return mealsToInsertValues(dayId, day.meals);
+      });
+      if (allMealRows.length > 0) await db.insert(meals).values(allMealRows);
     }
 
-    // Insert exercises (skip for nutrition-only mode on new week)
     if (mode !== "nutrition") {
-      await insertExercisesForDay(newDay.id, day.exercises);
+      const allExerciseRows = plan.days.flatMap((day) => {
+        const dayId = dayIdByDow.get(day.dayOfWeek);
+        if (dayId == null || day.exercises.length === 0) return [];
+        return exercisesToInsertValues(dayId, day.exercises);
+      });
+      if (allExerciseRows.length > 0) await db.insert(exercises).values(allExerciseRows);
     }
   }
 
@@ -425,9 +431,10 @@ export async function deleteWeeklyPlan(weeklyPlanId: number) {
     .from(dailyPlans)
     .where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
 
-  for (const day of days) {
-    await db.delete(meals).where(eq(meals.dailyPlanId, day.id));
-    await db.delete(exercises).where(eq(exercises.dailyPlanId, day.id));
+  if (days.length > 0) {
+    const dayIds = days.map((d) => d.id);
+    await db.delete(meals).where(inArray(meals.dailyPlanId, dayIds));
+    await db.delete(exercises).where(inArray(exercises.dailyPlanId, dayIds));
   }
 
   await db

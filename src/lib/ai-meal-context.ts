@@ -18,12 +18,28 @@ import {
   type FitnessGoal,
 } from "@/lib/meal-timing";
 
+// Short-lived in-process cache keyed by `${userId}:${dailyPlanId}`. Repeated
+// generate attempts (parse-fail retry, content-quality retry, or the user
+// hitting the button twice) reuse the same context — avoiding ~10 DB queries
+// on the second invocation within the TTL window.
+const MEAL_CONTEXT_TTL_MS = 60_000;
+const mealContextCache = new Map<string, { value: { context: string }; expires: number }>();
+
 /**
  * Builds comprehensive AI context for daily meal generation.
  * Includes: user profile, body composition trend, today's workout,
  * current week's meals, and previous same-weekday meal patterns.
  */
 export async function buildMealContext(dailyPlanId: number, userId: string) {
+  const cacheKey = `${userId}:${dailyPlanId}`;
+  const cached = mealContextCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) return cached.value;
+  const value = await buildMealContextInternal(dailyPlanId, userId);
+  mealContextCache.set(cacheKey, { value, expires: Date.now() + MEAL_CONTEXT_TTL_MS });
+  return value;
+}
+
+async function buildMealContextInternal(dailyPlanId: number, userId: string) {
   const [currentDay] = await db
     .select({
       id: dailyPlans.id,
@@ -41,13 +57,116 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
     return { context: "" };
   }
 
+  // ─── Parallel fetch of all independent context inputs ─────────────────
+  // Every query below either depends only on userId/dailyPlanId or on
+  // currentDay fields already loaded. Running them concurrently cuts the
+  // critical-path latency vs. the previous sequential awaits.
+  const [
+    user,
+    progressLines,
+    week,
+    weekDays,
+    previousSameDayPlans,
+    todayExercises,
+  ] = await Promise.all([
+    loadUserProfileRow(userId),
+    loadRecentProgressLines(userId, { limit: 5 }),
+    currentDay.weeklyPlanId
+      ? db
+          .select({
+            weekNumber: weeklyPlans.weekNumber,
+            title: weeklyPlans.title,
+          })
+          .from(weeklyPlans)
+          .where(eq(weeklyPlans.id, currentDay.weeklyPlanId))
+          .then((r) => r[0] ?? null)
+      : Promise.resolve(null),
+    currentDay.weeklyPlanId
+      ? db
+          .select({
+            id: dailyPlans.id,
+            dayName: dailyPlans.dayName,
+            planType: dailyPlans.planType,
+          })
+          .from(dailyPlans)
+          .where(eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId))
+          .orderBy(asc(dailyPlans.dayOfWeek))
+      : Promise.resolve([] as Array<{ id: number; dayName: string; planType: string }>),
+    currentDay.date
+      ? db
+          .select({
+            id: dailyPlans.id,
+            date: dailyPlans.date,
+            dayName: dailyPlans.dayName,
+            planType: dailyPlans.planType,
+          })
+          .from(dailyPlans)
+          .innerJoin(weeklyPlans, eq(dailyPlans.weeklyPlanId, weeklyPlans.id))
+          .where(
+            and(
+              eq(dailyPlans.dayOfWeek, currentDay.dayOfWeek),
+              ne(dailyPlans.id, currentDay.id),
+              isNotNull(dailyPlans.date),
+            ),
+          )
+          .orderBy(desc(dailyPlans.date))
+          .limit(2)
+      : Promise.resolve([] as Array<{ id: number; date: string | null; dayName: string; planType: string }>),
+    db
+      .select({
+        name: exercises.name,
+        section: exercises.section,
+        sectionLabel: exercises.sectionLabel,
+        sets: exercises.sets,
+        reps: exercises.reps,
+        durationMinutes: exercises.durationMinutes,
+      })
+      .from(exercises)
+      .where(eq(exercises.dailyPlanId, currentDay.id))
+      .orderBy(asc(exercises.sortOrder)),
+  ]);
+
+  // ─── Second wave: batched meals lookups depend on the day-id lists above
+  const otherDayIds = weekDays.filter((d) => d.id !== currentDay.id).map((d) => d.id);
+  const prevDayIds = previousSameDayPlans.map((d) => d.id);
+  const [allWeekMeals, allPrevMeals] = await Promise.all([
+    otherDayIds.length
+      ? db
+          .select({
+            dailyPlanId: meals.dailyPlanId,
+            mealTime: meals.mealTime,
+            mealLabel: meals.mealLabel,
+            content: meals.content,
+            calories: meals.calories,
+          })
+          .from(meals)
+          .where(inArray(meals.dailyPlanId, otherDayIds))
+          .orderBy(asc(meals.sortOrder))
+      : Promise.resolve([] as Array<{ dailyPlanId: number | null; mealTime: string; mealLabel: string; content: string; calories: number | null }>),
+    prevDayIds.length
+      ? db
+          .select({
+            dailyPlanId: meals.dailyPlanId,
+            mealTime: meals.mealTime,
+            mealLabel: meals.mealLabel,
+            content: meals.content,
+            calories: meals.calories,
+            proteinG: meals.proteinG,
+            carbsG: meals.carbsG,
+            fatG: meals.fatG,
+          })
+          .from(meals)
+          .where(inArray(meals.dailyPlanId, prevDayIds))
+          .orderBy(asc(meals.sortOrder))
+      : Promise.resolve([] as Array<{ dailyPlanId: number | null; mealTime: string; mealLabel: string; content: string; calories: number | null; proteinG: string | null; carbsG: string | null; fatG: string | null }>),
+  ]);
+
   const lines: string[] = [];
 
   // ─── 1. User profile & body composition ─────────────────────────────
   // Use the shared profile-block helper so allergens, manual macro targets,
   // routine, supplements, and fitness level all render in one consistent
   // format across meal-context / weekly-context / user-context.
-  const user = await loadUserProfileRow(userId);
 
   if (user) {
     lines.push(
@@ -103,7 +222,6 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
     lines.push(policy.summary);
   }
 
-  const progressLines = await loadRecentProgressLines(userId, { limit: 5 });
   if (progressLines.length > 0) {
     lines.push("");
     lines.push(...progressLines);
@@ -143,19 +261,6 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
       lines.push(`Antrenman: ${currentDay.workoutTitle}`);
     }
 
-    const todayExercises = await db
-      .select({
-        name: exercises.name,
-        section: exercises.section,
-        sectionLabel: exercises.sectionLabel,
-        sets: exercises.sets,
-        reps: exercises.reps,
-        durationMinutes: exercises.durationMinutes,
-      })
-      .from(exercises)
-      .where(eq(exercises.dailyPlanId, currentDay.id))
-      .orderBy(asc(exercises.sortOrder));
-
     if (todayExercises.length > 0) {
       // Group by section
       const sections: Record<string, string[]> = {};
@@ -192,47 +297,12 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
   // ─── 4. This week's other days' meal programs ─────────────────────
 
   if (currentDay.weeklyPlanId) {
-    const [week] = await db
-      .select({
-        weekNumber: weeklyPlans.weekNumber,
-        title: weeklyPlans.title,
-      })
-      .from(weeklyPlans)
-      .where(eq(weeklyPlans.id, currentDay.weeklyPlanId));
-
     lines.push("");
     lines.push(
       `═══ BU HAFTA BESLENME (${week ? `Hafta ${week.weekNumber} - ${week.title}` : ""}) ═══`,
     );
     lines.push("(Çeşitlilik sağla, aynı yemekleri tekrar etme)");
 
-    const weekDays = await db
-      .select({
-        id: dailyPlans.id,
-        dayName: dailyPlans.dayName,
-        planType: dailyPlans.planType,
-      })
-      .from(dailyPlans)
-      .where(eq(dailyPlans.weeklyPlanId, currentDay.weeklyPlanId))
-      .orderBy(asc(dailyPlans.dayOfWeek));
-
-    // Batch: all meals for non-current days in a single query
-    const otherDayIds = weekDays
-      .filter((d) => d.id !== currentDay.id)
-      .map((d) => d.id);
-    const allWeekMeals = otherDayIds.length
-      ? await db
-          .select({
-            dailyPlanId: meals.dailyPlanId,
-            mealTime: meals.mealTime,
-            mealLabel: meals.mealLabel,
-            content: meals.content,
-            calories: meals.calories,
-          })
-          .from(meals)
-          .where(inArray(meals.dailyPlanId, otherDayIds))
-          .orderBy(asc(meals.sortOrder))
-      : [];
     const weekMealsByDay = new Map<number, typeof allWeekMeals>();
     for (const m of allWeekMeals) {
       if (m.dailyPlanId == null) continue;
@@ -265,79 +335,42 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
 
   // ─── 5. Previous same-weekday meal patterns ───────────────────────
 
-  if (currentDay.date) {
-    const previousSameDayPlans = await db
-      .select({
-        id: dailyPlans.id,
-        date: dailyPlans.date,
-        dayName: dailyPlans.dayName,
-        planType: dailyPlans.planType,
-      })
-      .from(dailyPlans)
-      .innerJoin(weeklyPlans, eq(dailyPlans.weeklyPlanId, weeklyPlans.id))
-      .where(
-        and(
-          eq(dailyPlans.dayOfWeek, currentDay.dayOfWeek),
-          ne(dailyPlans.id, currentDay.id),
-          isNotNull(dailyPlans.date),
-        ),
-      )
-      .orderBy(desc(dailyPlans.date))
-      .limit(2);
+  if (currentDay.date && previousSameDayPlans.length > 0) {
+    lines.push("");
+    lines.push(
+      `═══ ÖNCEKİ ${currentDay.dayName.toUpperCase()} GÜNLERİ BESLENME ═══`,
+    );
+    lines.push(
+      "(Öğün saatleri ve düzenini referans al, ama yemek çeşitliliği sağla)",
+    );
 
-    if (previousSameDayPlans.length > 0) {
-      lines.push("");
-      lines.push(
-        `═══ ÖNCEKİ ${currentDay.dayName.toUpperCase()} GÜNLERİ BESLENME ═══`,
-      );
-      lines.push(
-        "(Öğün saatleri ve düzenini referans al, ama yemek çeşitliliği sağla)",
-      );
+    const prevMealsByDay = new Map<number, typeof allPrevMeals>();
+    for (const m of allPrevMeals) {
+      if (m.dailyPlanId == null) continue;
+      const arr = prevMealsByDay.get(m.dailyPlanId) ?? [];
+      arr.push(m);
+      prevMealsByDay.set(m.dailyPlanId, arr);
+    }
 
-      // Batch: all prev-same-day meals in a single query
-      const prevDayIds = previousSameDayPlans.map((d) => d.id);
-      const allPrevMeals = await db
-        .select({
-          dailyPlanId: meals.dailyPlanId,
-          mealTime: meals.mealTime,
-          mealLabel: meals.mealLabel,
-          content: meals.content,
-          calories: meals.calories,
-          proteinG: meals.proteinG,
-          carbsG: meals.carbsG,
-          fatG: meals.fatG,
-        })
-        .from(meals)
-        .where(inArray(meals.dailyPlanId, prevDayIds))
-        .orderBy(asc(meals.sortOrder));
-      const prevMealsByDay = new Map<number, typeof allPrevMeals>();
-      for (const m of allPrevMeals) {
-        if (m.dailyPlanId == null) continue;
-        const arr = prevMealsByDay.get(m.dailyPlanId) ?? [];
-        arr.push(m);
-        prevMealsByDay.set(m.dailyPlanId, arr);
-      }
+    for (const prevDay of previousSameDayPlans) {
+      const prevMeals = prevMealsByDay.get(prevDay.id) ?? [];
 
-      for (const prevDay of previousSameDayPlans) {
-        const prevMeals = prevMealsByDay.get(prevDay.id) ?? [];
-
-        if (prevMeals.length > 0) {
-          const totalCal = prevMeals.reduce(
-            (sum, m) => sum + (m.calories ?? 0),
-            0,
-          );
-          const totalProt = prevMeals.reduce(
-            (sum, m) => sum + parseFloat(String(m.proteinG ?? "0")),
-            0,
-          );
+      if (prevMeals.length > 0) {
+        const totalCal = prevMeals.reduce(
+          (sum, m) => sum + (m.calories ?? 0),
+          0,
+        );
+        const totalProt = prevMeals.reduce(
+          (sum, m) => sum + parseFloat(String(m.proteinG ?? "0")),
+          0,
+        );
+        lines.push(
+          `${prevDay.date} [${prevDay.planType}] — Toplam: ${totalCal} kcal, ${Math.round(totalProt)}g protein:`,
+        );
+        for (const m of prevMeals) {
           lines.push(
-            `${prevDay.date} [${prevDay.planType}] — Toplam: ${totalCal} kcal, ${Math.round(totalProt)}g protein:`,
+            `  ${m.mealTime} ${m.mealLabel}: ${m.content} (${m.calories ?? "?"} kcal, P:${m.proteinG ?? "?"}g K:${m.carbsG ?? "?"}g Y:${m.fatG ?? "?"}g)`,
           );
-          for (const m of prevMeals) {
-            lines.push(
-              `  ${m.mealTime} ${m.mealLabel}: ${m.content} (${m.calories ?? "?"} kcal, P:${m.proteinG ?? "?"}g K:${m.carbsG ?? "?"}g Y:${m.fatG ?? "?"}g)`,
-            );
-          }
         }
       }
     }

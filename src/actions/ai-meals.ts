@@ -13,7 +13,7 @@ import {
   PROMPT_VERSION,
 } from "@/lib/ai";
 import { callAIText, executeAIWithRetries, buildExecMetadata } from "@/lib/ai-runtime";
-import { AI_MAX_TOKENS } from "@/lib/ai-config";
+import { AI_MAX_TOKENS, AI_RETRY_TIMEOUT_MS } from "@/lib/ai-config";
 import { buildDailyMealPrompt } from "@/lib/ai-prompt-builders";
 import { replaceMealsForDay } from "@/lib/ai-persistence";
 import { verifyDailyPlanOwnership } from "@/lib/ownership";
@@ -129,10 +129,14 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     const exec = await executeAIWithRetries({
       userMessage,
       initial: () => callAIText({ ...callOpts, userMessage }),
-      retry: (msg) => callAIText({ ...callOpts, userMessage: msg }),
+      retry: (msg, step) => callAIText({ ...callOpts, userMessage: msg, timeoutMs: step.timeoutMs }),
       consume: (raw) => validateDailyMealArray(parseAiJson(raw.text), { minMealsExpected }),
       onParseFailure: async () => {
-        const raw = await callAIText({ ...callOpts, userMessage: `${userMessage}${parseFailureAddendum}` });
+        const raw = await callAIText({
+          ...callOpts,
+          userMessage: `${userMessage}${parseFailureAddendum}`,
+          timeoutMs: AI_RETRY_TIMEOUT_MS.dailyMeal,
+        });
         return { raw, result: validateDailyMealArray(parseAiJson(raw.text), { minMealsExpected }) };
       },
       retries: [
@@ -143,6 +147,7 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
               : null,
           shouldKeep: (prev, candidate) =>
             scoreMealValidationGaps(candidate) < scoreMealValidationGaps(prev),
+          timeoutMs: AI_RETRY_TIMEOUT_MS.dailyMeal,
         },
       ],
     });

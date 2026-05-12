@@ -15,6 +15,7 @@ import {
 import { callAIText, executeAIWithRetries, buildExecMetadata } from "@/lib/ai-runtime";
 import {
   AI_MAX_TOKENS,
+  AI_RETRY_TIMEOUT_MS,
   EXERCISE_ALTERNATIVES_TTL_DAYS,
 } from "@/lib/ai-config";
 import {
@@ -160,10 +161,14 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
     const exec = await executeAIWithRetries({
       userMessage,
       initial: () => callAIText({ ...callOpts, userMessage }),
-      retry: (msg) => callAIText({ ...callOpts, userMessage: msg }),
+      retry: (msg, step) => callAIText({ ...callOpts, userMessage: msg, timeoutMs: step.timeoutMs }),
       consume: (raw) => validateDailyExerciseArray(parseAiJson(raw.text), validatorOpts),
       onParseFailure: async () => {
-        const raw = await callAIText({ ...callOpts, userMessage: `${userMessage}${parseFailureAddendum}` });
+        const raw = await callAIText({
+          ...callOpts,
+          userMessage: `${userMessage}${parseFailureAddendum}`,
+          timeoutMs: AI_RETRY_TIMEOUT_MS.workoutReplace,
+        });
         return { raw, result: validateDailyExerciseArray(parseAiJson(raw.text), validatorOpts) };
       },
       retries: [
@@ -174,6 +179,7 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
               : null,
           shouldKeep: (prev, candidate) =>
             scoreExerciseValidationGaps(candidate) < scoreExerciseValidationGaps(prev),
+          timeoutMs: AI_RETRY_TIMEOUT_MS.workoutReplace,
         },
       ],
     });
@@ -278,10 +284,14 @@ export async function generateSectionReplacement(
     const exec = await executeAIWithRetries({
       userMessage,
       initial: () => callAIText({ ...callOpts, userMessage }),
-      retry: (msg) => callAIText({ ...callOpts, userMessage: msg }),
+      retry: (msg, step) => callAIText({ ...callOpts, userMessage: msg, timeoutMs: step.timeoutMs }),
       consume: (raw) => validateDailyExerciseArray(parseAiJson(raw.text), validatorOptions),
       onParseFailure: async () => {
-        const raw = await callAIText({ ...callOpts, userMessage: `${userMessage}${parseFailureAddendum}` });
+        const raw = await callAIText({
+          ...callOpts,
+          userMessage: `${userMessage}${parseFailureAddendum}`,
+          timeoutMs: AI_RETRY_TIMEOUT_MS.workoutSection,
+        });
         return { raw, result: validateDailyExerciseArray(parseAiJson(raw.text), validatorOptions) };
       },
       retries: [
@@ -292,6 +302,7 @@ export async function generateSectionReplacement(
               : null,
           shouldKeep: (prev, candidate) =>
             scoreExerciseValidationGaps(candidate) < scoreExerciseValidationGaps(prev),
+          timeoutMs: AI_RETRY_TIMEOUT_MS.workoutSection,
         },
       ],
     });
@@ -449,10 +460,14 @@ export async function generateExerciseVariation(
     const exec = await executeAIWithRetries({
       userMessage,
       initial: () => callAIText({ ...callOpts, userMessage }),
-      retry: (msg) => callAIText({ ...callOpts, userMessage: msg }),
+      retry: (msg, step) => callAIText({ ...callOpts, userMessage: msg, timeoutMs: step.timeoutMs }),
       consume: (raw) => validateAlternativesArray(parseAiJson(raw.text)),
       onParseFailure: async () => {
-        const raw = await callAIText({ ...callOpts, userMessage: `${userMessage}${parseFailureAddendum}` });
+        const raw = await callAIText({
+          ...callOpts,
+          userMessage: `${userMessage}${parseFailureAddendum}`,
+          timeoutMs: AI_RETRY_TIMEOUT_MS.workoutVariation,
+        });
         return { raw, result: validateAlternativesArray(parseAiJson(raw.text)) };
       },
       retries: [
@@ -465,6 +480,7 @@ export async function generateExerciseVariation(
               : `\n\nÖNCEKİ YANITTA ${current.length} alternatif döndün, TAM 3 alternatif gerek. ${missing} alternatif EKLE.`;
           },
           shouldKeep: (prev, candidate) => candidate.length > prev.length,
+          timeoutMs: AI_RETRY_TIMEOUT_MS.workoutVariation,
         },
       ],
     });

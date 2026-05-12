@@ -17,6 +17,17 @@ export const AI_TIMEOUTS = {
   weeklyRetry: 180_000,
 } as const;
 
+/**
+ * Per-feature retry timeout. Initial calls use SDK default; retries cap the
+ * abort window so a stuck retry doesn't tie up the request for ~10 minutes.
+ */
+export const AI_RETRY_TIMEOUT_MS = {
+  dailyMeal: 60_000,
+  workoutReplace: 60_000,
+  workoutSection: 45_000,
+  workoutVariation: 30_000,
+} as const;
+
 /** Days before cached exercise alternatives are considered stale. */
 export const EXERCISE_ALTERNATIVES_TTL_DAYS = 30;
 

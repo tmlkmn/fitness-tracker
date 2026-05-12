@@ -18,9 +18,10 @@ import { getSectionSortOffset } from "@/lib/ai-config";
 
 /**
  * Maps an AIMeal array to the DB insert shape for a given dailyPlanId.
- * Pure transformation — no DB calls.
+ * Pure transformation — no DB calls. Exported so callers that own their own
+ * transaction can build value rows for `tx.insert(meals).values(...)`.
  */
-function mealsToInsertValues(dailyPlanId: number, list: AIMeal[]) {
+export function mealsToInsertValues(dailyPlanId: number, list: AIMeal[]) {
   return list.map((m, i) => ({
     dailyPlanId,
     mealTime: m.mealTime,
@@ -39,8 +40,9 @@ function mealsToInsertValues(dailyPlanId: number, list: AIMeal[]) {
  * Maps an AIExercise array to the DB insert shape. When `sortOffset` is
  * provided (section replacement), it's added to each row's `sortOrder` so
  * inserted items stack after their predecessors in the section ordering.
+ * Exported so transactional callers can build value rows directly.
  */
-function exercisesToInsertValues(
+export function exercisesToInsertValues(
   dailyPlanId: number,
   list: AIExercise[],
   sortOffset: number = 0,

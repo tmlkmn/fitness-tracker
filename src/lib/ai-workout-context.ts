@@ -10,6 +10,11 @@ export interface WorkoutContextResult {
   planType: string | null;
 }
 
+// Short-lived in-process cache keyed by dailyPlanId. Repeated generate
+// attempts within the TTL reuse the same heavy 4-week context build.
+const WORKOUT_CONTEXT_TTL_MS = 60_000;
+const workoutContextCache = new Map<number, { value: WorkoutContextResult; expires: number }>();
+
 /**
  * Builds comprehensive workout context including:
  * - Current week's full program
@@ -17,6 +22,16 @@ export interface WorkoutContextResult {
  * - Program history summary for periodization awareness
  */
 export async function buildWeeklyWorkoutContext(
+  dailyPlanId: number,
+): Promise<WorkoutContextResult> {
+  const cached = workoutContextCache.get(dailyPlanId);
+  if (cached && cached.expires > Date.now()) return cached.value;
+  const value = await buildWeeklyWorkoutContextInternal(dailyPlanId);
+  workoutContextCache.set(dailyPlanId, { value, expires: Date.now() + WORKOUT_CONTEXT_TTL_MS });
+  return value;
+}
+
+async function buildWeeklyWorkoutContextInternal(
   dailyPlanId: number,
 ): Promise<WorkoutContextResult> {
   // Get the daily plan with its weekly plan info

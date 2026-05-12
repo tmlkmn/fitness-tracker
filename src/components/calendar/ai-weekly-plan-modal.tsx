@@ -43,7 +43,7 @@ import { ChevronDown } from "lucide-react";
 import type { AIWeeklyPlan, AIWeeklyDay } from "@/actions/ai-weekly";
 import { MeasurementNudge } from "@/components/ai/measurement-nudge";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
+import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import {
   useSavedSuggestions,
   useSavedSuggestionDetail,
@@ -476,7 +476,6 @@ export function AiWeeklyPlanModal({
   const [generateMode, setGenerateMode] = useState<"both" | "nutrition" | "workout">("both");
 
   const { data: quotaData } = useAiQuota();
-  const invalidateQuota = useInvalidateAiQuota();
   const weeklyQuota = getQuota(quotaData, "weekly");
 
   // Saved suggestions state
@@ -601,7 +600,8 @@ export function AiWeeklyPlanModal({
       effectiveDayModes,
       Array.from(pastDows),
     );
-    invalidateQuota();
+    // Quota invalidation happens in the mutation's onSettled callback after
+    // usage_log is written — invalidating here would refresh stale quota.
   };
 
   const handleOpenChange = (open: boolean) => {
