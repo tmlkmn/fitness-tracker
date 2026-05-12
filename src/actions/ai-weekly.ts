@@ -18,8 +18,8 @@ import {
 import {
   type AIWeeklyPlan,
 } from "@/lib/ai-weekly-types";
-import { coerceMealLabel } from "@/lib/meal-labels";
 import { getMondayStr, addDaysStr } from "@/lib/utils";
+import { insertMealsForDay, insertExercisesForDay } from "@/lib/ai-persistence";
 
 export type { AIWeeklyPlan, AIWeeklyDay } from "@/lib/ai-weekly-types";
 
@@ -341,39 +341,11 @@ export async function applyWeeklyPlan(
         }
 
         // Insert only the selected type
-        if (mode === "nutrition" && day.meals.length > 0) {
-          await db.insert(meals).values(
-            day.meals.map((m, i) => ({
-              dailyPlanId: dayId,
-              mealTime: m.mealTime,
-              mealLabel: coerceMealLabel(m.mealLabel),
-              content: m.content,
-              calories: m.calories,
-              proteinG: m.proteinG,
-              carbsG: m.carbsG,
-              fatG: m.fatG,
-              isCompleted: false,
-              sortOrder: i,
-            })),
-          );
+        if (mode === "nutrition") {
+          await insertMealsForDay(dayId, day.meals);
         }
-        if (mode === "workout" && day.exercises.length > 0) {
-          await db.insert(exercises).values(
-            day.exercises.map((ex, i) => ({
-              dailyPlanId: dayId,
-              section: ex.section,
-              sectionLabel: ex.sectionLabel,
-              name: ex.name,
-              englishName: ex.englishName,
-              sets: ex.sets,
-              reps: ex.reps,
-              restSeconds: ex.restSeconds,
-              durationMinutes: ex.durationMinutes,
-              notes: ex.notes,
-              isCompleted: false,
-              sortOrder: i,
-            })),
-          );
+        if (mode === "workout") {
+          await insertExercisesForDay(dayId, day.exercises);
         }
       }
 
@@ -423,41 +395,13 @@ export async function applyWeeklyPlan(
       .returning({ id: dailyPlans.id });
 
     // Insert meals (skip for workout-only mode on new week)
-    if (day.meals.length > 0 && mode !== "workout") {
-      await db.insert(meals).values(
-        day.meals.map((m, i) => ({
-          dailyPlanId: newDay.id,
-          mealTime: m.mealTime,
-          mealLabel: coerceMealLabel(m.mealLabel),
-          content: m.content,
-          calories: m.calories,
-          proteinG: m.proteinG,
-          carbsG: m.carbsG,
-          fatG: m.fatG,
-          isCompleted: false,
-          sortOrder: i,
-        })),
-      );
+    if (mode !== "workout") {
+      await insertMealsForDay(newDay.id, day.meals);
     }
 
     // Insert exercises (skip for nutrition-only mode on new week)
-    if (day.exercises.length > 0 && mode !== "nutrition") {
-      await db.insert(exercises).values(
-        day.exercises.map((ex, i) => ({
-          dailyPlanId: newDay.id,
-          section: ex.section,
-          sectionLabel: ex.sectionLabel,
-          name: ex.name,
-          englishName: ex.englishName,
-          sets: ex.sets,
-          reps: ex.reps,
-          restSeconds: ex.restSeconds,
-          durationMinutes: ex.durationMinutes,
-          notes: ex.notes,
-          isCompleted: false,
-          sortOrder: i,
-        })),
-      );
+    if (mode !== "nutrition") {
+      await insertExercisesForDay(newDay.id, day.exercises);
     }
   }
 

@@ -63,6 +63,24 @@ export function safeNumber(raw: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Like `safeNumber` but rounds to an integer. */
+export function safeInteger(raw: unknown): number | null {
+  const n = safeNumber(raw);
+  return n == null ? null : Math.round(n);
+}
+
+/**
+ * Coerces unknown AI-output to a non-empty trimmed string, or null when
+ * the value is missing or whitespace-only. Use for optional text fields
+ * (englishName, notes, reps) where empty should become null.
+ */
+export function safeNullableText(raw: unknown): string | null {
+  if (raw == null) return null;
+  const s = typeof raw === "string" ? raw : String(raw);
+  const trimmed = s.trim();
+  return trimmed === "" ? null : s;
+}
+
 export function sanitizeMealLabel(
   raw: unknown,
   ctx: string,

@@ -9,11 +9,23 @@ import {
   AI_MODELS,
   checkRateLimit,
   logAiUsage,
-  buildUserNotePriorityBlock,
   discriminateAiError,
   PROMPT_VERSION,
 } from "@/lib/ai";
-import { callAIText, executeAIWithRetries } from "@/lib/ai-runtime";
+import { callAIText, executeAIWithRetries, buildExecMetadata } from "@/lib/ai-runtime";
+import {
+  AI_MAX_TOKENS,
+  EXERCISE_ALTERNATIVES_TTL_DAYS,
+} from "@/lib/ai-config";
+import {
+  buildWorkoutReplacementPrompt,
+  buildSectionReplacementPrompt,
+  buildExerciseVariationPrompt,
+} from "@/lib/ai-prompt-builders";
+import {
+  replaceExercisesForDay,
+  replaceSectionExercises,
+} from "@/lib/ai-persistence";
 import { buildUserContext } from "@/lib/ai-context";
 import { buildWeeklyWorkoutContext } from "@/lib/ai-workout-context";
 import {
@@ -40,6 +52,9 @@ import {
 import {
   sanitizeRestSeconds,
   sanitizeDurationMinutes,
+  safeInteger,
+  safeNullableText,
+  safeString,
 } from "@/lib/ai-shape-validators";
 import { parseAiJson } from "@/lib/ai-json-repair";
 
@@ -77,13 +92,13 @@ function validateAlternativesArray(data: unknown): AIExerciseVariation[] {
   }
   const warnings: string[] = [];
   const result: AIExerciseVariation[] = (obj.alternatives as Record<string, unknown>[]).map((ex, i) => ({
-    name: String(ex.name ?? ""),
-    englishName: ex.englishName != null && String(ex.englishName).trim() !== "" ? String(ex.englishName) : null,
-    sets: ex.sets != null ? Number(ex.sets) : null,
-    reps: ex.reps != null ? String(ex.reps) : null,
+    name: safeString(ex.name),
+    englishName: safeNullableText(ex.englishName),
+    sets: safeInteger(ex.sets),
+    reps: safeNullableText(ex.reps),
     restSeconds: sanitizeRestSeconds(ex.restSeconds, `alternatives[${i}]`, warnings),
     durationMinutes: sanitizeDurationMinutes(ex.durationMinutes, `alternatives[${i}]`, warnings),
-    notes: ex.notes != null ? String(ex.notes) : null,
+    notes: safeNullableText(ex.notes),
   }));
   if (warnings.length > 0) {
     console.warn(`[validateAlternativesArray] ${warnings.length} warning(s):`, warnings);
@@ -106,14 +121,15 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
       buildWeeklyWorkoutContext(dailyPlanId),
     ]);
 
-  const mode = currentDayExercises.length > 0 ? "Replacement" : "Generation";
-  let userMessage = locale === "en"
-    ? `${userContext}\n\n${workoutContext}\n\nToday's planType: "${planType ?? "workout"}" — use only sections allowed for this planType.\nMode: ${mode}\n\n${mode === "Replacement" ? "Rebuild today's workout and apply" : "Build today's workout from scratch; apply"} progressive overload vs previous weeks: more volume, harder movements, or new variations. Target the same muscle groups but ensure progression.`
-    : `${userContext}\n\n${workoutContext}\n\nBugünün planType: "${planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\nMod: ${mode}\n\nBu günün antrenman programını ${mode === "Replacement" ? "yeniden oluştur ve" : "sıfırdan oluştur;"} önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
-
-  if (userNote?.trim()) {
-    userMessage += buildUserNotePriorityBlock(userNote);
-  }
+  const mode: "Replacement" | "Generation" = currentDayExercises.length > 0 ? "Replacement" : "Generation";
+  const userMessage = buildWorkoutReplacementPrompt({
+    locale,
+    userContext,
+    workoutContext,
+    planType,
+    mode,
+    userNote: userNote ?? null,
+  });
 
   const startTime = Date.now();
   let inputTokens: number | undefined;
@@ -133,7 +149,7 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
   try {
     const callOpts = {
       systemPrompt: getWorkoutReplacePrompt(locale),
-      maxTokens: 5000,
+      maxTokens: AI_MAX_TOKENS.workoutReplace,
       model: "smart" as const,
     };
     const parseFailureAddendum = locale === "en"
@@ -171,9 +187,7 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
 
     await logAiUsage(user.id, "workout", {
       status: hasWarnings ? "success_with_warnings" : "success",
-      errorMessage: hasWarnings
-        ? JSON.stringify({ warnings: validation.warnings }).slice(0, 500)
-        : undefined,
+      errorMessage: buildExecMetadata(exec, validation.warnings),
       inputTokens,
       outputTokens,
       durationMs: Date.now() - startTime,
@@ -204,30 +218,7 @@ export async function applyWorkoutReplacement(
 ) {
   const user = await getAuthUser();
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
-
-  // Delete all existing exercises for this day
-  await db.delete(exercises).where(eq(exercises.dailyPlanId, dailyPlanId));
-
-  // Insert new exercises
-  if (newExercises.length > 0) {
-    await db.insert(exercises).values(
-      newExercises.map((ex, i) => ({
-        dailyPlanId,
-        section: ex.section,
-        sectionLabel: ex.sectionLabel,
-        name: ex.name,
-        englishName: ex.englishName,
-        sets: ex.sets,
-        reps: ex.reps,
-        restSeconds: ex.restSeconds,
-        durationMinutes: ex.durationMinutes,
-        notes: ex.notes,
-        isCompleted: false,
-        sortOrder: i,
-      })),
-    );
-  }
-
+  await replaceExercisesForDay(dailyPlanId, newExercises);
   revalidatePath("/");
 }
 
@@ -252,13 +243,15 @@ export async function generateSectionReplacement(
   ]);
   const sectionExercises = slim.exercises;
 
-  let userMessage = locale === "en"
-    ? `${userContext}\n\n${slim.context}\n\nToday's planType: "${slim.planType ?? "workout"}" — use only sections allowed for this planType.\n\nBuild new exercises for the "${sectionLabel}" section only. ALL exercises must have section="${section}", sectionLabel="${sectionLabel}" — DO NOT return another section. Apply progressive overload vs previous weeks.`
-    : `${userContext}\n\n${slim.context}\n\nBugünün planType: "${slim.planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\n\nSadece "${sectionLabel}" bölümü için yeni egzersizler oluştur. TÜM egzersizler section="${section}", sectionLabel="${sectionLabel}" olmalı — başka section DÖNDÜRME. Önceki haftalara göre progresif yüklenme uygula.`;
-
-  if (userNote?.trim()) {
-    userMessage += buildUserNotePriorityBlock(userNote);
-  }
+  const userMessage = buildSectionReplacementPrompt({
+    locale,
+    userContext,
+    slimContext: slim.context,
+    planType: slim.planType,
+    section,
+    sectionLabel,
+    userNote: userNote ?? null,
+  });
 
   const startTime = Date.now();
   let inputTokens: number | undefined;
@@ -275,7 +268,7 @@ export async function generateSectionReplacement(
   try {
     const callOpts = {
       systemPrompt: getSectionReplacePrompt(locale),
-      maxTokens: 3000,
+      maxTokens: AI_MAX_TOKENS.workoutSection,
       model: "smart" as const,
     };
     const parseFailureAddendum = locale === "en"
@@ -312,9 +305,7 @@ export async function generateSectionReplacement(
 
     await logAiUsage(user.id, "workout", {
       status: hasWarnings ? "success_with_warnings" : "success",
-      errorMessage: hasWarnings
-        ? JSON.stringify({ warnings: validation.warnings }).slice(0, 500)
-        : undefined,
+      errorMessage: buildExecMetadata(exec, validation.warnings),
       inputTokens,
       outputTokens,
       durationMs: Date.now() - startTime,
@@ -349,46 +340,13 @@ export async function applySectionReplacement(
 
   // Defensive filter: only insert exercises matching the requested section.
   // Mirrors the guard in generateSectionReplacement; protects direct callers.
-  newExercises = newExercises.filter((ex) => ex.section === section);
-
-  // Delete existing exercises for this section
-  await db
-    .delete(exercises)
-    .where(
-      and(eq(exercises.dailyPlanId, dailyPlanId), eq(exercises.section, section)),
-    );
-
-  // Determine sort order offset based on section position
-  const sectionOrder = ["warmup", "main", "cooldown", "sauna", "swimming"];
-  const sectionIndex = sectionOrder.indexOf(section);
-  const sortOffset = (sectionIndex >= 0 ? sectionIndex : 5) * 100;
-
-  // Insert new exercises
-  if (newExercises.length > 0) {
-    await db.insert(exercises).values(
-      newExercises.map((ex, i) => ({
-        dailyPlanId,
-        section: ex.section,
-        sectionLabel: ex.sectionLabel,
-        name: ex.name,
-        englishName: ex.englishName,
-        sets: ex.sets,
-        reps: ex.reps,
-        restSeconds: ex.restSeconds,
-        durationMinutes: ex.durationMinutes,
-        notes: ex.notes,
-        isCompleted: false,
-        sortOrder: sortOffset + i,
-      })),
-    );
-  }
-
+  const filtered = newExercises.filter((ex) => ex.section === section);
+  await replaceSectionExercises(dailyPlanId, section, filtered);
   revalidatePath("/");
 }
 
-// ─── Feature 3: Single Exercise Variation (3 alternatives, cached) ───────────
 
-const ALTERNATIVES_TTL_DAYS = 30;
+// ─── Feature 3: Single Exercise Variation (3 alternatives, cached) ───────────
 
 export async function generateExerciseVariation(
   exerciseId: number,
@@ -417,7 +375,7 @@ export async function generateExerciseVariation(
   // are request-specific and must not be cached). Also skip on forceRefresh.
   if (!forceRefresh && !hasUserNote) {
     const ttlCutoff = new Date(
-      Date.now() - ALTERNATIVES_TTL_DAYS * 24 * 60 * 60 * 1000,
+      Date.now() - EXERCISE_ALTERNATIVES_TTL_DAYS * 24 * 60 * 60 * 1000,
     );
     const [cached] = await db
       .select({ suggestions: exerciseAlternatives.suggestions })
@@ -464,12 +422,13 @@ export async function generateExerciseVariation(
     .filter(Boolean)
     .join(", ");
 
-  let userMessage = locale === "en"
-    ? `${userContext}\n\n${slimContext}\n\nSuggest 3 different alternatives for the "${exerciseDetail}" exercise.`
-    : `${userContext}\n\n${slimContext}\n\n"${exerciseDetail}" egzersizi yerine 3 farklı alternatif egzersiz öner.`;
-  if (userNote?.trim()) {
-    userMessage += buildUserNotePriorityBlock(userNote);
-  }
+  const userMessage = buildExerciseVariationPrompt({
+    locale,
+    userContext,
+    alternativesContext: slimContext,
+    exerciseDetail,
+    userNote: userNote ?? null,
+  });
 
   const startTime = Date.now();
   let inputTokens: number | undefined;
@@ -480,7 +439,7 @@ export async function generateExerciseVariation(
     // and progressive overload sense that Haiku gets wrong often.
     const callOpts = {
       systemPrompt: getExerciseVariationPrompt(locale),
-      maxTokens: 1500,
+      maxTokens: AI_MAX_TOKENS.workoutVariation,
       model: "smart" as const,
     };
     const parseFailureAddendum = locale === "en"
@@ -532,6 +491,7 @@ export async function generateExerciseVariation(
 
     await logAiUsage(user.id, "workout", {
       status: "success",
+      errorMessage: buildExecMetadata(exec),
       inputTokens,
       outputTokens,
       durationMs: Date.now() - startTime,

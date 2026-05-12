@@ -9,17 +9,18 @@ import {
   AI_MODELS,
   checkRateLimit,
   logAiUsage,
-  buildUserNotePriorityBlock,
   discriminateAiError,
   PROMPT_VERSION,
 } from "@/lib/ai";
-import { callAIText, executeAIWithRetries } from "@/lib/ai-runtime";
+import { callAIText, executeAIWithRetries, buildExecMetadata } from "@/lib/ai-runtime";
+import { AI_MAX_TOKENS } from "@/lib/ai-config";
+import { buildDailyMealPrompt } from "@/lib/ai-prompt-builders";
+import { replaceMealsForDay } from "@/lib/ai-persistence";
 import { verifyDailyPlanOwnership } from "@/lib/ownership";
 import { getDailyMealsPrompt, getNutritionOnlyMealsPrompt } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
 import { buildMealContext } from "@/lib/ai-meal-context";
 import { resolveTargets } from "@/lib/macro-targets";
-import { coerceMealLabel } from "@/lib/meal-labels";
 import {
   validateDailyMealArray,
   dailyMealsNeedRetry,
@@ -97,40 +98,15 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
 
   const { context: mealContext } = await buildMealContext(dailyPlanId, user.id);
 
-  // Compute resolved macro targets and inject as a separate block
-  let targetsBlock = "";
-  if (userRow) {
-    const targets = await resolveTargets(userRow, user.id);
-    if (targets) {
-      targetsBlock = locale === "en"
-        ? `\n\n═══ COMPUTED DAILY MACRO TARGETS ═══
-Calories: ${targets.calories} kcal
-Protein: ${targets.protein}g
-Carbs: ${targets.carbs}g
-Fat: ${targets.fat}g
-These targets are computed via Mifflin-St Jeor + LBM based on the user's gender, age, weight, height, activity level, and fitness goal. The plan must match within ±5%.`
-        : `\n\n═══ HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ ═══
-Kalori: ${targets.calories} kcal
-Protein: ${targets.protein}g
-Karbonhidrat: ${targets.carbs}g
-Yağ: ${targets.fat}g
-Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitness hedefine göre Mifflin-St Jeor + LBM bazlı hesaplanmıştır. Beslenme programı bu hedeflere ±%5 toleransla uymalı.`;
-    }
-  }
+  const targets = userRow ? await resolveTargets(userRow, user.id) : null;
 
-  const taskLine = locale === "en"
-    ? (isNutritionOnly
-        ? "Build today's nutrition plan. Account for body composition, weight trend, lifestyle, and prior days' meal pattern."
-        : "Build today's nutrition plan. Account for training intensity, body composition, weight trend, and prior days' meal pattern.")
-    : (isNutritionOnly
-        ? "Bu gün için beslenme programı oluştur. Vücut kompozisyonunu, kilo trendini, yaşam tarzını ve önceki günlerin öğün düzenini dikkate al."
-        : "Bu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.");
-
-  let userMessage = `${targetsBlock}\n\n${mealContext}\n\n${taskLine}`;
-
-  if (userNote?.trim()) {
-    userMessage += buildUserNotePriorityBlock(userNote);
-  }
+  const userMessage = buildDailyMealPrompt({
+    locale,
+    mealContext,
+    targets,
+    isNutritionOnly,
+    userNote: userNote ?? null,
+  });
 
   const startTime = Date.now();
   let inputTokens: number | undefined;
@@ -143,7 +119,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
   try {
     const callOpts = {
       systemPrompt,
-      maxTokens: 5000,
+      maxTokens: AI_MAX_TOKENS.dailyMeal,
       model: "smart" as const,
     };
     const parseFailureAddendum = locale === "en"
@@ -180,9 +156,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
 
     await logAiUsage(user.id, "daily-meal", {
       status: hasWarnings ? "success_with_warnings" : "success",
-      errorMessage: hasWarnings
-        ? JSON.stringify({ warnings: validation.warnings }).slice(0, 500)
-        : undefined,
+      errorMessage: buildExecMetadata(exec, validation.warnings),
       inputTokens,
       outputTokens,
       durationMs: Date.now() - startTime,
@@ -214,28 +188,7 @@ export async function applyDailyMeals(
 ) {
   const user = await getAuthUser();
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
-
-  // Delete existing meals for this day
-  await db.delete(meals).where(eq(meals.dailyPlanId, dailyPlanId));
-
-  // Insert new meals
-  if (newMeals.length > 0) {
-    await db.insert(meals).values(
-      newMeals.map((m, i) => ({
-        dailyPlanId,
-        mealTime: m.mealTime,
-        mealLabel: coerceMealLabel(m.mealLabel),
-        content: m.content,
-        calories: m.calories,
-        proteinG: m.proteinG,
-        carbsG: m.carbsG,
-        fatG: m.fatG,
-        isCompleted: false,
-        sortOrder: i,
-      })),
-    );
-  }
-
+  await replaceMealsForDay(dailyPlanId, newMeals);
   revalidatePath("/");
 }
 

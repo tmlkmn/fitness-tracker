@@ -5,6 +5,11 @@ export function invalidateWorkoutQueries(qc: QueryClient) {
   qc.refetchQueries({ queryKey: ["today-dashboard"] });
 }
 
+export function invalidateMealQueries(qc: QueryClient) {
+  qc.refetchQueries({ queryKey: ["meals.byDay"] });
+  qc.refetchQueries({ queryKey: ["today-dashboard"] });
+}
+
 export function invalidateWeeklyPlanQueries(qc: QueryClient) {
   qc.refetchQueries({ queryKey: ["plans"] });
   qc.refetchQueries({ queryKey: ["meals.byDay"] });

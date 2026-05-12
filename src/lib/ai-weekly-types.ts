@@ -74,6 +74,10 @@ import {
   sanitizeCalories,
   sanitizeMacroGram,
   reconcileMacros,
+  safeInteger,
+  safeNullableText,
+  safeNumber,
+  safeString,
   isStrictMacroValidationEnabled as defaultStrictMacroEnabled,
 } from "@/lib/ai-shape-validators";
 
@@ -146,9 +150,9 @@ export function validateWeeklyPlan(
     }
     return {
       plan: {
-        weekTitle: String(obj.weekTitle ?? "Haftalık Plan"),
-        phase: String(obj.phase ?? "custom"),
-        notes: obj.notes != null ? String(obj.notes) : null,
+        weekTitle: safeString(obj.weekTitle, "Haftalık Plan"),
+        phase: safeString(obj.phase, "custom"),
+        notes: safeNullableText(obj.notes),
         days: filledDays,
       },
       warnings,
@@ -159,16 +163,16 @@ export function validateWeeklyPlan(
   }
 
   const rawDays: AIWeeklyDay[] = (obj.days as Record<string, unknown>[]).map((day, index) => {
-    const dayName = String(day.dayName ?? "");
+    const dayName = safeString(day.dayName);
     const dayCtx = `day[${index}] (${dayName || "?"})`;
 
     const meals: AIMealItem[] = Array.isArray(day.meals)
       ? (day.meals as Record<string, unknown>[]).map((m, mi) => {
           const mealCtx = `${dayCtx}.meal[${mi}]`;
           const sanitized: AIMealItem = {
-            mealTime: String(m.mealTime ?? "08:00"),
+            mealTime: safeString(m.mealTime, "08:00"),
             mealLabel: sanitizeMealLabel(m.mealLabel, mealCtx, warnings),
-            content: String(m.content ?? ""),
+            content: safeString(m.content),
             calories: sanitizeCalories(m.calories, mealCtx, warnings),
             proteinG: sanitizeMacroGram("protein", m.proteinG, mealCtx, warnings),
             carbsG: sanitizeMacroGram("carbs", m.carbsG, mealCtx, warnings),
@@ -181,21 +185,18 @@ export function validateWeeklyPlan(
     const exercises: AIExerciseItem[] = Array.isArray(day.exercises)
       ? (day.exercises as Record<string, unknown>[]).map((ex, ei) => ({
           section: sanitizeSection(ex.section, `${dayCtx}.exercise[${ei}]`, warnings),
-          sectionLabel: String(ex.sectionLabel ?? "Ana Antrenman"),
-          name: String(ex.name ?? ""),
-          englishName:
-            ex.englishName != null && String(ex.englishName).trim() !== ""
-              ? String(ex.englishName)
-              : null,
-          sets: ex.sets != null ? Number(ex.sets) : null,
-          reps: ex.reps != null ? String(ex.reps) : null,
-          restSeconds: ex.restSeconds != null ? Number(ex.restSeconds) : null,
-          durationMinutes: ex.durationMinutes != null ? Number(ex.durationMinutes) : null,
-          notes: ex.notes != null ? String(ex.notes) : null,
+          sectionLabel: safeString(ex.sectionLabel, "Ana Antrenman"),
+          name: safeString(ex.name),
+          englishName: safeNullableText(ex.englishName),
+          sets: safeInteger(ex.sets),
+          reps: safeNullableText(ex.reps),
+          restSeconds: safeNumber(ex.restSeconds),
+          durationMinutes: safeNumber(ex.durationMinutes),
+          notes: safeNullableText(ex.notes),
         }))
       : [];
 
-    const resolvedDow = resolveDayOfWeek(dayName, Number(day.dayOfWeek ?? index), index);
+    const resolvedDow = resolveDayOfWeek(dayName, safeNumber(day.dayOfWeek) ?? index, index);
     let planType = sanitizePlanType(day.planType, dayCtx, warnings);
 
     // Coerce planType to user's selection if it disagrees. Auto-fix because

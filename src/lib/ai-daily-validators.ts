@@ -7,6 +7,9 @@
 import {
   isStrictMacroValidationEnabled as defaultStrictMacroEnabled,
   reconcileMacros,
+  safeInteger,
+  safeNullableText,
+  safeString,
   sanitizeCalories,
   sanitizeDurationMinutes,
   sanitizeMacroGram,
@@ -46,10 +49,20 @@ export interface ValidateDailyMealsResult {
   belowExpectedCount: boolean;
 }
 
-export function validateDailyMealArray(
+interface SanitizedDailyMeals {
+  meals: DailyMealItem[];
+  warnings: string[];
+  emptyContentMeals: number[];
+}
+
+/**
+ * Pure sanitize pass — coerces shapes, applies macro reconciliation, and
+ * records any empty-content meals. Throws on parse-format failure.
+ */
+export function sanitizeDailyMeals(
   data: unknown,
-  options: ValidateDailyMealsOptions = {},
-): ValidateDailyMealsResult {
+  options: Pick<ValidateDailyMealsOptions, "strictMacroValidation"> = {},
+): SanitizedDailyMeals {
   const obj = data as Record<string, unknown>;
   if (!obj || typeof obj !== "object" || !Array.isArray(obj.meals)) {
     throw new Error("Invalid response format: expected { meals: [...] }");
@@ -62,13 +75,13 @@ export function validateDailyMealArray(
   const meals: DailyMealItem[] = (obj.meals as Record<string, unknown>[]).map(
     (m, i) => {
       const ctx = `meal[${i}]`;
-      const content = String(m.content ?? "").trim();
+      const content = safeString(m.content).trim();
       if (content === "") {
         emptyContentMeals.push(i);
         warnings.push(`${ctx}: empty content`);
       }
       const sanitized: DailyMealItem = {
-        mealTime: String(m.mealTime ?? "08:00"),
+        mealTime: safeString(m.mealTime, "08:00"),
         mealLabel: sanitizeMealLabel(m.mealLabel, ctx, warnings),
         content,
         calories: sanitizeCalories(m.calories, ctx, warnings),
@@ -80,20 +93,47 @@ export function validateDailyMealArray(
     },
   );
 
+  return { meals, warnings, emptyContentMeals };
+}
+
+interface MealGapAnalysis {
+  warnings: string[];
+  belowExpectedCount: boolean;
+}
+
+/** Detects count/quality gaps in a sanitized meal array. */
+export function detectMealGaps(
+  sanitized: Pick<SanitizedDailyMeals, "meals">,
+  options: Pick<ValidateDailyMealsOptions, "minMealsExpected">,
+): MealGapAnalysis {
+  const warnings: string[] = [];
   const belowExpectedCount =
     options.minMealsExpected != null &&
-    meals.length < options.minMealsExpected;
+    sanitized.meals.length < options.minMealsExpected;
   if (belowExpectedCount) {
     warnings.push(
-      `meal count ${meals.length} below expected minimum ${options.minMealsExpected}`,
+      `meal count ${sanitized.meals.length} below expected minimum ${options.minMealsExpected}`,
     );
   }
+  return { warnings, belowExpectedCount };
+}
 
+export function validateDailyMealArray(
+  data: unknown,
+  options: ValidateDailyMealsOptions = {},
+): ValidateDailyMealsResult {
+  const sanitized = sanitizeDailyMeals(data, options);
+  const gaps = detectMealGaps(sanitized, options);
+  const warnings = [...sanitized.warnings, ...gaps.warnings];
   if (warnings.length > 0) {
     console.warn(`[validateDailyMealArray] ${warnings.length} warning(s):`, warnings);
   }
-
-  return { meals, warnings, emptyContentMeals, belowExpectedCount };
+  return {
+    meals: sanitized.meals,
+    warnings,
+    emptyContentMeals: sanitized.emptyContentMeals,
+    belowExpectedCount: gaps.belowExpectedCount,
+  };
 }
 
 export function dailyMealsNeedRetry(result: ValidateDailyMealsResult): boolean {
@@ -167,10 +207,22 @@ export interface ValidateDailyExercisesResult {
   missingEnglishName: number[];
 }
 
-export function validateDailyExerciseArray(
+interface SanitizedDailyExercises {
+  exercises: DailyExerciseItem[];
+  warnings: string[];
+  droppedForEmptyName: number;
+  missingEnglishName: number[];
+}
+
+/**
+ * Pure sanitize pass for daily exercise array. Drops empty-name and
+ * forced-section mismatches, records missing-englishName warnings.
+ * Throws on parse-format failure.
+ */
+export function sanitizeDailyExercises(
   data: unknown,
-  options: ValidateDailyExercisesOptions = {},
-): ValidateDailyExercisesResult {
+  options: Pick<ValidateDailyExercisesOptions, "forcedSection" | "forcedSectionLabel"> = {},
+): SanitizedDailyExercises {
   const obj = data as Record<string, unknown>;
   if (!obj || typeof obj !== "object" || !Array.isArray(obj.exercises)) {
     throw new Error("Invalid response format: expected { exercises: [...] }");
@@ -183,15 +235,14 @@ export function validateDailyExerciseArray(
   const exercises: DailyExerciseItem[] = (obj.exercises as Record<string, unknown>[])
     .map((ex, i): DailyExerciseItem | null => {
       const ctx = `exercise[${i}]`;
-      const name = String(ex.name ?? "").trim();
+      const name = safeString(ex.name).trim();
       if (name === "") {
         warnings.push(`${ctx}: empty name → dropped`);
         droppedForEmptyName += 1;
         return null;
       }
 
-      const englishNameRaw = ex.englishName != null ? String(ex.englishName).trim() : "";
-      const englishName = englishNameRaw !== "" ? englishNameRaw : null;
+      const englishName = safeNullableText(ex.englishName);
       if (englishName == null) {
         // Standard moves should always have englishName per O3 rule. We
         // can't tell if this is a custom user move from server-side, so we
@@ -201,7 +252,7 @@ export function validateDailyExerciseArray(
       }
 
       let section = sanitizeSection(ex.section, ctx, warnings);
-      let sectionLabel = String(ex.sectionLabel ?? "Ana Antrenman");
+      let sectionLabel = safeString(ex.sectionLabel, "Ana Antrenman");
 
       if (options.forcedSection && section !== options.forcedSection) {
         warnings.push(
@@ -219,17 +270,31 @@ export function validateDailyExerciseArray(
         sectionLabel,
         name,
         englishName,
-        sets: ex.sets != null ? Number(ex.sets) : null,
-        reps: ex.reps != null ? String(ex.reps) : null,
+        sets: safeInteger(ex.sets),
+        reps: safeNullableText(ex.reps),
         restSeconds: sanitizeRestSeconds(ex.restSeconds, ctx, warnings),
         durationMinutes: sanitizeDurationMinutes(ex.durationMinutes, ctx, warnings),
-        notes: ex.notes != null ? String(ex.notes) : null,
+        notes: safeNullableText(ex.notes),
       };
     })
     .filter((ex): ex is DailyExerciseItem => ex !== null);
 
-  // Check required sections coverage
-  const presentSections = new Set(exercises.map((e) => e.section));
+  return { exercises, warnings, droppedForEmptyName, missingEnglishName };
+}
+
+interface ExerciseGapAnalysis {
+  warnings: string[];
+  missingSections: string[];
+  belowExpectedCount: boolean;
+}
+
+/** Detects section/count gaps in a sanitized exercise array. */
+export function detectExerciseGaps(
+  sanitized: Pick<SanitizedDailyExercises, "exercises">,
+  options: Pick<ValidateDailyExercisesOptions, "requiredSections" | "minExerciseCount">,
+): ExerciseGapAnalysis {
+  const warnings: string[] = [];
+  const presentSections = new Set(sanitized.exercises.map((e) => e.section));
   const missingSections: string[] = [];
   for (const req of options.requiredSections ?? []) {
     if (!presentSections.has(req)) {
@@ -240,24 +305,32 @@ export function validateDailyExerciseArray(
 
   const belowExpectedCount =
     options.minExerciseCount != null &&
-    exercises.length < options.minExerciseCount;
+    sanitized.exercises.length < options.minExerciseCount;
   if (belowExpectedCount) {
     warnings.push(
-      `exercise count ${exercises.length} below expected minimum ${options.minExerciseCount}`,
+      `exercise count ${sanitized.exercises.length} below expected minimum ${options.minExerciseCount}`,
     );
   }
+  return { warnings, missingSections, belowExpectedCount };
+}
 
+export function validateDailyExerciseArray(
+  data: unknown,
+  options: ValidateDailyExercisesOptions = {},
+): ValidateDailyExercisesResult {
+  const sanitized = sanitizeDailyExercises(data, options);
+  const gaps = detectExerciseGaps(sanitized, options);
+  const warnings = [...sanitized.warnings, ...gaps.warnings];
   if (warnings.length > 0) {
     console.warn(`[validateDailyExerciseArray] ${warnings.length} warning(s):`, warnings);
   }
-
   return {
-    exercises,
+    exercises: sanitized.exercises,
     warnings,
-    missingSections,
-    belowExpectedCount,
-    droppedForEmptyName,
-    missingEnglishName,
+    missingSections: gaps.missingSections,
+    belowExpectedCount: gaps.belowExpectedCount,
+    droppedForEmptyName: sanitized.droppedForEmptyName,
+    missingEnglishName: sanitized.missingEnglishName,
   };
 }
 

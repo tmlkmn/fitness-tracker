@@ -28,10 +28,46 @@ import {
   buildTrainingDayContextBlock,
   TURKISH_DAY_NAMES,
 } from "@/lib/ai-weekly-prompt-blocks";
+import { AI_MAX_TOKENS, AI_TIMEOUTS } from "@/lib/ai-config";
 import type { Locale } from "@/lib/locale";
 
-const CALL_TIMEOUT = 240_000;
-const RETRY_TIMEOUT = 180_000;
+const CALL_TIMEOUT = AI_TIMEOUTS.weeklyCall;
+const RETRY_TIMEOUT = AI_TIMEOUTS.weeklyRetry;
+
+/**
+ * Determines the expected 7-day mode map for a weekly generation request.
+ * Pure fn — same input always yields same output.
+ *
+ * Priority:
+ *   1. If the caller supplied dayModes, use them as the base.
+ *   2. Otherwise pick a default 7-day shape: nutrition-only for nutrition
+ *      paths, workout/rest split for hybrid paths.
+ *   3. Always run the nutrition override: nutrition-only paths force every
+ *      day to "nutrition" — even when the caller's dayModes said otherwise.
+ *      Mirrors the original two-step procedural logic exactly.
+ */
+function resolveExpectedDayModes(input: {
+  userDayModes: Partial<Record<number, DayModeChoice>> | undefined;
+  generateMode: "both" | "nutrition" | "workout" | undefined;
+  isNutritionOnly: boolean;
+}): Partial<Record<number, DayModeChoice>> {
+  const wantsNutrition = input.generateMode === "nutrition"
+    || (input.isNutritionOnly && input.generateMode !== "workout");
+
+  let modes: Partial<Record<number, DayModeChoice>>;
+  if (input.userDayModes) {
+    modes = { ...input.userDayModes };
+  } else if (wantsNutrition) {
+    modes = { 0: "nutrition", 1: "nutrition", 2: "nutrition", 3: "nutrition", 4: "nutrition", 5: "nutrition", 6: "nutrition" };
+  } else {
+    modes = { 0: "workout", 1: "workout", 2: "workout", 3: "workout", 4: "workout", 5: "rest", 6: "rest" };
+  }
+
+  if (wantsNutrition) {
+    for (let i = 0; i < 7; i++) modes[i] = "nutrition";
+  }
+  return modes;
+}
 
 // ─── Tool Use schema ────────────────────────────────────────────────────────
 
@@ -326,18 +362,11 @@ export async function resolveWeeklyGenerationRequest(
     nextWeekNumber = (maxRow?.max ?? 0) + 1;
   }
 
-  // Resolve per-day modes
-  let expectedDayModes: Partial<Record<number, DayModeChoice>>;
-  if (dayModesInput) {
-    expectedDayModes = dayModesInput;
-  } else if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
-    expectedDayModes = { 0: "nutrition", 1: "nutrition", 2: "nutrition", 3: "nutrition", 4: "nutrition", 5: "nutrition", 6: "nutrition" };
-  } else {
-    expectedDayModes = { 0: "workout", 1: "workout", 2: "workout", 3: "workout", 4: "workout", 5: "rest", 6: "rest" };
-  }
-  if (generateMode === "nutrition" || (isNutritionOnly && generateMode !== "workout")) {
-    for (let i = 0; i < 7; i++) expectedDayModes[i] = "nutrition";
-  }
+  const expectedDayModes = resolveExpectedDayModes({
+    userDayModes: dayModesInput,
+    generateMode,
+    isNutritionOnly,
+  });
 
   const doNutrition = generateMode !== "workout";
   const doWorkout = generateMode !== "nutrition" && !isNutritionOnly;
@@ -424,7 +453,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       userMessage: nutritionUserMsg,
       expectedDayModes: nutritionDayModes,
       effectivePastDows: pastDowsSet,
-      maxTokens: 6000,
+      maxTokens: AI_MAX_TOKENS.weeklyNutrition,
       label: "nutrition",
       expectedTargets,
     };
@@ -456,7 +485,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
         userMessage: workoutUserMsg,
         expectedDayModes: workoutDayModesFiltered,
         effectivePastDows: workoutEffPastDows,
-        maxTokens: 8000,
+        maxTokens: AI_MAX_TOKENS.weeklyWorkout,
         label: "workout",
       };
     } else {
@@ -469,7 +498,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
         userMessage: workoutUserMsg,
         expectedDayModes,
         effectivePastDows: pastDowsSet,
-        maxTokens: 8000,
+        maxTokens: AI_MAX_TOKENS.weeklyWorkout,
         label: "workout",
       };
     }

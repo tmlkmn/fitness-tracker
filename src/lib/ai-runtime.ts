@@ -172,6 +172,14 @@ export interface ExecuteResult<TResult> {
   result: TResult;
   inputTokens: number;
   outputTokens: number;
+  /** Total call count including the initial call and any retries. */
+  attempts: number;
+  /** Number of retries whose result was parse-failure (silently dropped). */
+  retryParseFailures: number;
+  /** Number of retries whose result was accepted (replaced current). */
+  keptRetryCount: number;
+  /** Retry steps whose buildRetryMessage returned null (no AI call). */
+  skippedRetryCount: number;
 }
 
 interface CallResultWithUsage {
@@ -196,16 +204,22 @@ export async function executeAIWithRetries<TCallResult extends CallResultWithUsa
 ): Promise<ExecuteResult<TResult>> {
   let inputTokens = 0;
   let outputTokens = 0;
+  let attempts = 0;
+  let retryParseFailures = 0;
+  let keptRetryCount = 0;
+  let skippedRetryCount = 0;
 
   let currentResult: TResult;
   try {
     const raw = await opts.initial();
+    attempts += 1;
     inputTokens += raw.inputTokens;
     outputTokens += raw.outputTokens;
     currentResult = opts.consume(raw);
   } catch (err) {
     if (!opts.onParseFailure) throw err;
     const recovered = await opts.onParseFailure();
+    attempts += 2;
     inputTokens += recovered.raw.inputTokens;
     outputTokens += recovered.raw.outputTokens;
     currentResult = recovered.result;
@@ -214,20 +228,57 @@ export async function executeAIWithRetries<TCallResult extends CallResultWithUsa
   for (let i = 0; i < opts.retries.length; i++) {
     const step = opts.retries[i];
     const addendum = step.buildRetryMessage(currentResult, i + 1);
-    if (addendum == null) continue;
+    if (addendum == null) {
+      skippedRetryCount += 1;
+      continue;
+    }
 
     try {
       const raw = await opts.retry(`${opts.userMessage}${addendum}`, step);
+      attempts += 1;
       inputTokens += raw.inputTokens;
       outputTokens += raw.outputTokens;
       const candidate = opts.consume(raw);
       if (!step.shouldKeep || step.shouldKeep(currentResult, candidate)) {
         currentResult = candidate;
+        keptRetryCount += 1;
       }
-    } catch {
-      // Parse failure on retry — keep current.
+    } catch (err) {
+      retryParseFailures += 1;
+      console.warn(`[AI Runtime] Retry step ${i + 1} parse failure:`, err);
     }
   }
 
-  return { result: currentResult, inputTokens, outputTokens };
+  return {
+    result: currentResult,
+    inputTokens,
+    outputTokens,
+    attempts,
+    retryParseFailures,
+    keptRetryCount,
+    skippedRetryCount,
+  };
+}
+
+/**
+ * Build a JSON-serialized telemetry payload for `logAiUsage.errorMessage`.
+ * Returns undefined when there is nothing meaningful to log (no warnings and
+ * no retry activity), so successful single-shot calls don't pollute logs.
+ */
+export function buildExecMetadata<T>(
+  exec: ExecuteResult<T>,
+  warnings: string[] = [],
+): string | undefined {
+  const hasWarnings = warnings.length > 0;
+  const hasRetryActivity = exec.attempts > 1 || exec.retryParseFailures > 0;
+  if (!hasWarnings && !hasRetryActivity) return undefined;
+
+  const payload: Record<string, unknown> = {};
+  if (hasWarnings) payload.warnings = warnings;
+  if (hasRetryActivity) {
+    payload.attempts = exec.attempts;
+    if (exec.retryParseFailures > 0) payload.retryParseFailures = exec.retryParseFailures;
+    if (exec.keptRetryCount > 0) payload.keptRetryCount = exec.keptRetryCount;
+  }
+  return JSON.stringify(payload).slice(0, 500);
 }

@@ -7,6 +7,7 @@ import {
   deleteSavedDailyMealSuggestion,
   type AIMeal,
 } from "@/actions/ai-meals";
+import { invalidateMealQueries } from "@/hooks/ai-invalidation";
 
 export function useGenerateDailyMeals() {
   const qc = useQueryClient();
@@ -35,8 +36,7 @@ export function useApplyDailyMeals() {
       newMeals: AIMeal[];
     }) => applyDailyMeals(dailyPlanId, newMeals),
     onSuccess: () => {
-      qc.refetchQueries({ queryKey: ["meals.byDay"] });
-      qc.refetchQueries({ queryKey: ["today-dashboard"] });
+      invalidateMealQueries(qc);
     },
   });
 }
