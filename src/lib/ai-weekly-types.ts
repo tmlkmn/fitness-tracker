@@ -47,6 +47,14 @@ export interface ValidateWeeklyPlanResult {
   planTypeMismatches: number[];
   /** Days where meals.length === 0 — every day MUST have meals per spec. */
   emptyMealDays: number[];
+  /** Days where AI returned a rest day with exercises (hard-cleared, reported for telemetry). */
+  restDaysWithClearedExercises: number[];
+  /** Workout/swimming days that are missing one or more required sections. */
+  daysWithMissingSections: { dow: number; missing: string[] }[];
+  /** Days where weekly-average kcal drift exceeds tolerance (single flag, kept for D's quality retry). */
+  weeklyKcalDrift: boolean;
+  /** Per-day allergen substring hits across the week. */
+  allergenHits: { dow: number; mealIndex: number; allergens: string[] }[];
 }
 
 export interface ExpectedTargets {
@@ -65,6 +73,11 @@ export interface ValidateWeeklyPlanOptions {
    * planTypeMismatches so the route can retry with explicit instructions.
    */
   expectedDayModes?: Partial<Record<number, DayModeChoice>>;
+  /**
+   * User's allergen list. Substring matches in any meal.content emit
+   * warnings and surface via `allergenHits` so D's quality retry can nudge.
+   */
+  userAllergens?: string[];
 }
 
 import {
@@ -80,6 +93,7 @@ import {
   safeString,
   isStrictMacroValidationEnabled as defaultStrictMacroEnabled,
 } from "@/lib/ai-shape-validators";
+import { detectAllergens } from "@/lib/allergen-detect";
 
 // Weekly-average vs expected target tolerance.
 const TARGET_AVG_TOLERANCE = 0.15;
@@ -115,6 +129,80 @@ const TURKISH_DAY_NAMES_ORDERED = [
 function isStrictMacroValidationEnabled(opts?: ValidateWeeklyPlanOptions): boolean {
   if (opts?.strictMacroValidation != null) return opts.strictMacroValidation;
   return defaultStrictMacroEnabled();
+}
+
+const REQUIRED_SECTIONS_BY_TYPE: Record<string, string[]> = {
+  workout: ["warmup", "main", "cooldown"],
+  swimming: ["warmup", "swimming", "cooldown"],
+};
+
+/**
+ * Mutates rawDays: clears exercises on rest days. AI sometimes returns
+ * "active recovery" exercises that violate the rest-day contract.
+ */
+function clearRestDayExercises(rawDays: AIWeeklyDay[], warnings: string[]): number[] {
+  const cleared: number[] = [];
+  for (const d of rawDays) {
+    if (d.planType !== "rest" || d.exercises.length === 0) continue;
+    const n = d.exercises.length;
+    d.exercises = [];
+    cleared.push(d.dayOfWeek);
+    warnings.push(
+      `day ${d.dayOfWeek} (${d.dayName || TURKISH_DAY_NAMES_ORDERED[d.dayOfWeek]}): rest day had ${n} exercise(s) — hard-cleared`,
+    );
+  }
+  return cleared;
+}
+
+/**
+ * Scans every meal's content across the week for substring matches against
+ * the user's allergen list. Warnings only; the meal stays in the plan so
+ * the user is not silently dropped to fewer meals — D's quality retry is
+ * the layer that asks the AI to swap the ingredient.
+ */
+function detectWeeklyAllergenHits(
+  rawDays: AIWeeklyDay[],
+  userAllergens: string[] | undefined,
+  warnings: string[],
+): { dow: number; mealIndex: number; allergens: string[] }[] {
+  if (!userAllergens || userAllergens.length === 0) return [];
+  const hits: { dow: number; mealIndex: number; allergens: string[] }[] = [];
+  for (const d of rawDays) {
+    d.meals.forEach((m, i) => {
+      const found = detectAllergens(m.content, userAllergens);
+      if (found.length === 0) return;
+      hits.push({ dow: d.dayOfWeek, mealIndex: i, allergens: found });
+      warnings.push(
+        `day ${d.dayOfWeek} meal[${i}]: allergen match — ${found.join(", ")}`,
+      );
+    });
+  }
+  return hits;
+}
+
+/**
+ * Reports workout/swimming days that are missing required sections. Daily
+ * flow requires warmup/main/cooldown (or swimming) on every training day.
+ * Weekly used to accept whatever the AI returned; we now report so D's
+ * quality retry can nudge the model.
+ */
+function detectMissingSections(
+  rawDays: AIWeeklyDay[],
+  warnings: string[],
+): { dow: number; missing: string[] }[] {
+  const result: { dow: number; missing: string[] }[] = [];
+  for (const d of rawDays) {
+    const required = REQUIRED_SECTIONS_BY_TYPE[d.planType];
+    if (!required) continue;
+    const present = new Set(d.exercises.map((ex) => ex.section));
+    const missing = required.filter((sec) => !present.has(sec));
+    if (missing.length === 0) continue;
+    result.push({ dow: d.dayOfWeek, missing });
+    warnings.push(
+      `day ${d.dayOfWeek} (${d.dayName || TURKISH_DAY_NAMES_ORDERED[d.dayOfWeek]}): ${d.planType} day missing section(s) — ${missing.join(", ")}`,
+    );
+  }
+  return result;
 }
 
 export function validateWeeklyPlan(
@@ -159,6 +247,10 @@ export function validateWeeklyPlan(
       missingDays: [0, 1, 2, 3, 4, 5, 6],
       planTypeMismatches: [],
       emptyMealDays: [0, 1, 2, 3, 4, 5, 6],
+      restDaysWithClearedExercises: [],
+      daysWithMissingSections: [],
+      weeklyKcalDrift: false,
+      allergenHits: [],
     };
   }
 
@@ -252,6 +344,10 @@ export function validateWeeklyPlan(
   // Sort by dow so output is always Mon→Sun
   rawDays.sort((a, b) => a.dayOfWeek - b.dayOfWeek);
 
+  const restDaysWithClearedExercises = clearRestDayExercises(rawDays, warnings);
+  const daysWithMissingSections = detectMissingSections(rawDays, warnings);
+  const allergenHits = detectWeeklyAllergenHits(rawDays, options?.userAllergens, warnings);
+
   // ─── Detect days with empty meals ────────────────────────────────────
   // Every day must have at least one meal regardless of training status.
   for (const d of rawDays) {
@@ -264,6 +360,7 @@ export function validateWeeklyPlan(
   }
 
   // ─── Weekly average vs expected calorie target ────────────────────────
+  let weeklyKcalDrift = false;
   if (expectedTargets?.calories) {
     const dailyTotals = rawDays
       .map((d) => d.meals.reduce((sum, m) => sum + (m.calories ?? 0), 0))
@@ -272,6 +369,7 @@ export function validateWeeklyPlan(
       const avg = dailyTotals.reduce((s, t) => s + t, 0) / dailyTotals.length;
       const drift = Math.abs(avg - expectedTargets.calories) / expectedTargets.calories;
       if (drift > TARGET_AVG_TOLERANCE) {
+        weeklyKcalDrift = true;
         warnings.push(
           `weekly-average kcal ${Math.round(avg)} drifts ${(drift * 100).toFixed(0)}% from target ${expectedTargets.calories} (tolerance ±${TARGET_AVG_TOLERANCE * 100}%)`,
         );
@@ -294,5 +392,9 @@ export function validateWeeklyPlan(
     missingDays,
     planTypeMismatches,
     emptyMealDays,
+    restDaysWithClearedExercises,
+    daysWithMissingSections,
+    weeklyKcalDrift,
+    allergenHits,
   };
 }

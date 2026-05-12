@@ -185,7 +185,8 @@ export function renderUserProfileLines(
     goalSource = "derived";
   }
   if (resolvedGoal) {
-    lines.push(renderGoalStrategyBlock(resolvedGoal, goalSource));
+    const userWeight = user.weight ? parseFloat(user.weight) : null;
+    lines.push(renderGoalStrategyBlock(resolvedGoal, goalSource, userWeight));
   }
 
   if (user.sportHistory) {

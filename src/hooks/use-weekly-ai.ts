@@ -136,11 +136,13 @@ export function useApplyWeeklyPlan() {
       dateStr,
       plan,
       applyMode,
+      pastDows,
     }: {
       dateStr: string;
       plan: AIWeeklyPlan;
       applyMode?: "both" | "nutrition" | "workout";
-    }) => applyWeeklyPlan(dateStr, plan, applyMode),
+      pastDows?: number[];
+    }) => applyWeeklyPlan(dateStr, plan, applyMode, pastDows),
     onSuccess: () => {
       invalidateWeeklyPlanQueries(qc);
     },

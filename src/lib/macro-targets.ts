@@ -6,7 +6,7 @@ import {
   isFitnessGoal,
   type FitnessGoal,
 } from "@/lib/meal-timing";
-import { GOAL_STRATEGIES } from "@/lib/strategy/goal-strategy";
+import { GOAL_STRATEGIES, computeCalorieDelta } from "@/lib/strategy/goal-strategy";
 
 export interface MacroTargets {
   calories: number;
@@ -150,7 +150,7 @@ export async function computeDefaultTargets(
   const tdee = bmr * activity;
   const calories = Math.max(
     MIN_DAILY_CALORIES,
-    Math.round(tdee + strategy.calorieDelta),
+    Math.round(tdee + computeCalorieDelta(strategy, w)),
   );
 
   // LBM: prefer measured fatPercent, else gender-based fallback

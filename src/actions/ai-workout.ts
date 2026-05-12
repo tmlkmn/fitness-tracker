@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { exercises, exerciseAlternatives } from "@/db/schema";
+import { exercises, exerciseAlternatives, dailyPlans } from "@/db/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
@@ -224,7 +224,18 @@ export async function applyWorkoutReplacement(
 ) {
   const user = await getAuthUser();
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
-  await replaceExercisesForDay(dailyPlanId, newExercises);
+
+  // Rest-day contract: if the day is a rest day, exercises MUST be empty.
+  // The generator already enforces this via requiredSections=[], but the
+  // apply path defends against any caller passing non-empty exercises.
+  const [dayRow] = await db
+    .select({ planType: dailyPlans.planType })
+    .from(dailyPlans)
+    .where(eq(dailyPlans.id, dailyPlanId));
+  const effectiveExercises =
+    dayRow?.planType === "rest" ? [] : newExercises;
+
+  await replaceExercisesForDay(dailyPlanId, effectiveExercises);
   revalidatePath("/");
 }
 
@@ -379,7 +390,11 @@ export async function generateExerciseVariation(
     throw new Error("Exercise not found");
   }
 
-  const nameNorm = currentExercise.name.toLowerCase().trim();
+  // Cache key now includes section so the same exercise name returns
+  // section-appropriate alternatives (e.g. bench press in main vs warmup
+  // should get different suggestions). Equipment is not on the schema yet;
+  // section is the strongest discriminator we have today.
+  const nameNorm = `${currentExercise.name.toLowerCase().trim()}:${currentExercise.section}`;
   const hasUserNote = Boolean(userNote?.trim());
 
   // Cache lookup — skip when user provided a note (note-driven alternatives
@@ -485,7 +500,20 @@ export async function generateExerciseVariation(
       ],
     });
 
-    const alternatives = exec.result;
+    // Exact-3 normalization: AI sometimes returns 4-5 alternatives despite
+    // the "exactly 3" instruction. Truncate (don't retry — fewer than 3 is
+    // also acceptable to ship; UI tolerates ≤3 placeholders).
+    let alternatives = exec.result;
+    if (alternatives.length > 3) {
+      console.warn(
+        `[generateExerciseVariation] AI returned ${alternatives.length} alternatives, truncating to 3`,
+      );
+      alternatives = alternatives.slice(0, 3);
+    } else if (alternatives.length < 3) {
+      console.warn(
+        `[generateExerciseVariation] AI returned only ${alternatives.length} alternative(s); UI will pad with placeholders`,
+      );
+    }
     inputTokens = exec.inputTokens;
     outputTokens = exec.outputTokens;
 

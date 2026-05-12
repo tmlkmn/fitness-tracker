@@ -23,14 +23,21 @@ import {
 // hitting the button twice) reuse the same context — avoiding ~10 DB queries
 // on the second invocation within the TTL window.
 const MEAL_CONTEXT_TTL_MS = 60_000;
-const mealContextCache = new Map<string, { value: { context: string }; expires: number }>();
+
+export interface MealContextResult {
+  context: string;
+  /** Policy-derived target meal count for today; null when policy can't be computed (no user row). */
+  totalMealsTarget: number | null;
+}
+
+const mealContextCache = new Map<string, { value: MealContextResult; expires: number }>();
 
 /**
  * Builds comprehensive AI context for daily meal generation.
  * Includes: user profile, body composition trend, today's workout,
  * current week's meals, and previous same-weekday meal patterns.
  */
-export async function buildMealContext(dailyPlanId: number, userId: string) {
+export async function buildMealContext(dailyPlanId: number, userId: string): Promise<MealContextResult> {
   const cacheKey = `${userId}:${dailyPlanId}`;
   const cached = mealContextCache.get(cacheKey);
   if (cached && cached.expires > Date.now()) return cached.value;
@@ -39,7 +46,7 @@ export async function buildMealContext(dailyPlanId: number, userId: string) {
   return value;
 }
 
-async function buildMealContextInternal(dailyPlanId: number, userId: string) {
+async function buildMealContextInternal(dailyPlanId: number, userId: string): Promise<MealContextResult> {
   const [currentDay] = await db
     .select({
       id: dailyPlans.id,
@@ -54,8 +61,10 @@ async function buildMealContextInternal(dailyPlanId: number, userId: string) {
     .where(eq(dailyPlans.id, dailyPlanId));
 
   if (!currentDay) {
-    return { context: "" };
+    return { context: "", totalMealsTarget: null };
   }
+
+  let totalMealsTarget: number | null = null;
 
   // ─── Parallel fetch of all independent context inputs ─────────────────
   // Every query below either depends only on userId/dailyPlanId or on
@@ -220,6 +229,10 @@ async function buildMealContextInternal(dailyPlanId: number, userId: string) {
     lines.push("");
     lines.push("═══ ÖĞÜN ZAMANLAMA POLİTİKASI ═══");
     lines.push(policy.summary);
+    // policy.totalMealsTarget is a humanized range like "5-7 öğün/gün".
+    // Extract the lower bound as the minimum-meal-count expectation.
+    const m = /(\d+)/.exec(policy.totalMealsTarget);
+    if (m) totalMealsTarget = Number.parseInt(m[1], 10);
   }
 
   if (progressLines.length > 0) {
@@ -376,5 +389,5 @@ async function buildMealContextInternal(dailyPlanId: number, userId: string) {
     }
   }
 
-  return { context: lines.join("\n") };
+  return { context: lines.join("\n"), totalMealsTarget };
 }

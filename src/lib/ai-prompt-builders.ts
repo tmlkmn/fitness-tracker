@@ -18,16 +18,41 @@ function appendUserNote(base: string, userNote: string | null | undefined): stri
 
 // ─── Daily meal prompt ──────────────────────────────────────────────────────
 
+export interface CurrentMealForPrompt {
+  mealTime: string;
+  mealLabel: string;
+  content: string;
+}
+
 export interface DailyMealPromptInput {
   locale: Locale;
   mealContext: string;
   targets: MacroTargets | null;
   isNutritionOnly: boolean;
   userNote: string | null;
+  /**
+   * Current meals for this day (if any). When provided, an "improve this
+   * layout" reference block is added so the AI preserves the user's familiar
+   * meal times/labels while upgrading content + macros toward the target.
+   */
+  currentMeals?: CurrentMealForPrompt[];
+}
+
+function buildCurrentMealsBlock(
+  locale: Locale,
+  currentMeals: CurrentMealForPrompt[] | undefined,
+): string {
+  if (!currentMeals || currentMeals.length === 0) return "";
+  const items = currentMeals
+    .map((m) => `  ${m.mealTime} ${m.mealLabel}: ${m.content.slice(0, 80)}`)
+    .join("\n");
+  return locale === "en"
+    ? `\n\n═══ CURRENT MEAL LAYOUT (reference) ═══\n${items}\nYou don't have to replace this layout entirely — keep the meal times and labels the user is accustomed to, and upgrade content + macros toward the target.\n══════════════════════════════════════\n`
+    : `\n\n═══ MEVCUT ÖĞÜN DÜZENİ (referans) ═══\n${items}\nBu düzeni TAMAMEN değiştirme zorunluluğun yok — kullanıcının alıştığı saatleri ve öğün etiketlerini koru; içeriği ve makroyu hedefe göre iyileştir.\n═══════════════════════════════════\n`;
 }
 
 export function buildDailyMealPrompt(input: DailyMealPromptInput): string {
-  const { locale, mealContext, targets, isNutritionOnly, userNote } = input;
+  const { locale, mealContext, targets, isNutritionOnly, userNote, currentMeals } = input;
 
   let targetsBlock = "";
   if (targets) {
@@ -54,7 +79,9 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
         ? "Bu gün için beslenme programı oluştur. Vücut kompozisyonunu, kilo trendini, yaşam tarzını ve önceki günlerin öğün düzenini dikkate al."
         : "Bu gün için beslenme programı oluştur. Antrenman yoğunluğunu, vücut kompozisyonunu, kilo trendini ve önceki günlerin öğün düzenini dikkate al.");
 
-  const base = `${targetsBlock}\n\n${mealContext}\n\n${taskLine}`;
+  const currentMealsBlock = buildCurrentMealsBlock(locale, currentMeals);
+
+  const base = `${targetsBlock}${currentMealsBlock}\n\n${mealContext}\n\n${taskLine}`;
   return appendUserNote(base, userNote);
 }
 

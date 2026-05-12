@@ -98,8 +98,10 @@ export async function POST(request: Request) {
         }).catch(() => {});
 
         try {
+          const flagsAny = Object.values(outcome.retryFlags).some(Boolean);
           await logAiUsage(userId, "weekly", {
-            status: "success",
+            status: flagsAny ? "success_with_warnings" : "success",
+            errorMessage: flagsAny ? JSON.stringify({ retryFlags: outcome.retryFlags }) : undefined,
             inputTokens: totalInputTokens,
             outputTokens: totalOutputTokens,
             durationMs: Date.now() - startTime,

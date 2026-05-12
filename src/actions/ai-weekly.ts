@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { weeklyPlans, dailyPlans, meals, exercises, supplements, shoppingLists, waterLogs, sleepLogs } from "@/db/schema";
-import { eq, and, sql, desc, asc, inArray } from "drizzle-orm";
+import { eq, and, sql, desc, asc, inArray, notInArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
@@ -250,10 +250,17 @@ export async function applyWeeklyPlan(
   dateStr: string,
   plan: AIWeeklyPlan,
   applyMode?: "both" | "nutrition" | "workout",
+  pastDows?: number[],
 ) {
   const user = await getAuthUser();
   const monday = getMondayStr(dateStr);
   const mode = applyMode ?? "both";
+  // Past days (e.g. Mon–Wed when re-applying on Thu) are PRESERVED: never
+  // delete, update, or overwrite. The merged plan may still contain rest
+  // entries for those days; we filter them out of every apply branch.
+  const pastSet = new Set(pastDows ?? []);
+  const isPast = (dow: number) => pastSet.has(dow);
+  const futureDays = plan.days.filter((d) => !isPast(d.dayOfWeek));
 
   // Check if weeklyPlan exists for this week
   const existingWeek = await db
@@ -287,23 +294,39 @@ export async function applyWeeklyPlan(
     const existingDayIdByDow = new Map<number, number>();
     for (const d of existingDays) existingDayIdByDow.set(d.dayOfWeek, d.id);
 
-    const existingDayIds = existingDays.map((d) => d.id);
-    if (existingDayIds.length > 0) {
+    // Past-day rows must NOT be deleted — filter them out of every bulk op.
+    const targetDayIds = existingDays
+      .filter((d) => !isPast(d.dayOfWeek))
+      .map((d) => d.id);
+    if (targetDayIds.length > 0) {
       // Bulk delete: single `inArray` query per table replaces N per-day deletes.
       if (mode === "both" || mode === "nutrition") {
-        await db.delete(meals).where(inArray(meals.dailyPlanId, existingDayIds));
+        await db.delete(meals).where(inArray(meals.dailyPlanId, targetDayIds));
       }
       if (mode === "both" || mode === "workout") {
-        await db.delete(exercises).where(inArray(exercises.dailyPlanId, existingDayIds));
+        await db.delete(exercises).where(inArray(exercises.dailyPlanId, targetDayIds));
       }
     }
     if (mode === "both") {
-      await db.delete(dailyPlans).where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
+      // Drop only non-past dailyPlans; preserve any past-day rows verbatim.
+      if (pastSet.size > 0) {
+        await db
+          .delete(dailyPlans)
+          .where(
+            and(
+              eq(dailyPlans.weeklyPlanId, weeklyPlanId),
+              notInArray(dailyPlans.dayOfWeek, [...pastSet]),
+            ),
+          );
+      } else {
+        await db.delete(dailyPlans).where(eq(dailyPlans.weeklyPlanId, weeklyPlanId));
+      }
     }
 
     // For selective modes, update existing daily plans or create missing ones
     if (mode !== "both") {
       for (const day of plan.days) {
+        if (isPast(day.dayOfWeek)) continue;
         const existingId = existingDayIdByDow.get(day.dayOfWeek);
 
         let dayId: number;
@@ -375,7 +398,8 @@ export async function applyWeeklyPlan(
 
   // ─── Bulk insert path: one INSERT each for dailyPlans / meals / exercises.
   // Replaces N×3 round-trips with 3 fixed round-trips regardless of day count.
-  const dayInsertValues = plan.days.map((day) => ({
+  // futureDays already excludes pastDows — pure skip preservation strategy.
+  const dayInsertValues = futureDays.map((day) => ({
     weeklyPlanId,
     dayOfWeek: day.dayOfWeek,
     dayName: day.dayName,
@@ -393,7 +417,7 @@ export async function applyWeeklyPlan(
     for (const d of insertedDays) dayIdByDow.set(d.dayOfWeek, d.id);
 
     if (mode !== "workout") {
-      const allMealRows = plan.days.flatMap((day) => {
+      const allMealRows = futureDays.flatMap((day) => {
         const dayId = dayIdByDow.get(day.dayOfWeek);
         if (dayId == null || day.meals.length === 0) return [];
         return mealsToInsertValues(dayId, day.meals);
@@ -402,7 +426,7 @@ export async function applyWeeklyPlan(
     }
 
     if (mode !== "nutrition") {
-      const allExerciseRows = plan.days.flatMap((day) => {
+      const allExerciseRows = futureDays.flatMap((day) => {
         const dayId = dayIdByDow.get(day.dayOfWeek);
         if (dayId == null || day.exercises.length === 0) return [];
         return exercisesToInsertValues(dayId, day.exercises);

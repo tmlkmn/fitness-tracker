@@ -28,6 +28,7 @@ import {
   scoreMealValidationGaps,
 } from "@/lib/ai-daily-validators";
 import { parseAiJson } from "@/lib/ai-json-repair";
+import { parseUserAllergens } from "@/lib/allergen-detect";
 
 export interface AIMeal {
   mealTime: string;
@@ -40,15 +41,6 @@ export interface AIMeal {
 }
 
 const MAX_SAVED_DAILY_MEAL_SUGGESTIONS = 10;
-
-// Estimate the minimum meal count this user should receive based on
-// service type — nutrition-only/loss tend toward intermittent (3-4),
-// muscle-gain toward frequent (5-7). Default conservative floor of 3.
-function estimateMinMealsExpected(serviceType: string | null | undefined, fitnessGoal: string | null | undefined): number {
-  if (fitnessGoal === "muscle_gain" || fitnessGoal === "weight_gain") return 5;
-  if (serviceType === "nutrition" && (fitnessGoal === "loss" || fitnessGoal === "maintain")) return 3;
-  return 4;
-}
 
 export async function generateDailyMeals(dailyPlanId: number, userNote?: string) {
   const user = await getAuthUser();
@@ -72,7 +64,8 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     fatG: m.fatG ?? null,
   }));
 
-  // Get user profile (service type for prompt + macro fields for targets)
+  // Get user profile (service type for prompt + macro fields for targets +
+  // foodAllergens for post-gen guard)
   const [userRow] = await db
     .select({
       serviceType: users.serviceType,
@@ -87,6 +80,7 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
       targetProteinG: users.targetProteinG,
       targetCarbsG: users.targetCarbsG,
       targetFatG: users.targetFatG,
+      foodAllergens: users.foodAllergens,
     })
     .from(users)
     .where(eq(users.id, user.id));
@@ -96,7 +90,7 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     ? getNutritionOnlyMealsPrompt(locale)
     : getDailyMealsPrompt(locale);
 
-  const { context: mealContext } = await buildMealContext(dailyPlanId, user.id);
+  const { context: mealContext, totalMealsTarget } = await buildMealContext(dailyPlanId, user.id);
 
   const targets = userRow ? await resolveTargets(userRow, user.id) : null;
 
@@ -106,15 +100,32 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     targets,
     isNutritionOnly,
     userNote: userNote ?? null,
+    currentMeals: currentMeals.length > 0
+      ? currentMeals.map((m) => ({
+          mealTime: m.mealTime,
+          mealLabel: m.mealLabel,
+          content: m.content,
+        }))
+      : undefined,
   });
 
   const startTime = Date.now();
   let inputTokens: number | undefined;
   let outputTokens: number | undefined;
-  const minMealsExpected = estimateMinMealsExpected(
-    userRow?.serviceType,
-    userRow?.fitnessGoal,
-  );
+  // Use the meal-timing policy's totalMealsTarget when available — it already
+  // factors serviceType, goal, age, and health flags. Fallback floor of 3 when
+  // no user row / policy could be derived.
+  const minMealsExpected = totalMealsTarget ?? 3;
+  const userAllergens = parseUserAllergens(userRow?.foodAllergens);
+  const expectedTargets = targets
+    ? {
+        calories: targets.calories,
+        protein: targets.protein,
+        carbs: targets.carbs,
+        fat: targets.fat,
+      }
+    : undefined;
+  const validatorOpts = { minMealsExpected, userAllergens, expectedTargets };
 
   try {
     const callOpts = {
@@ -130,20 +141,20 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
       userMessage,
       initial: () => callAIText({ ...callOpts, userMessage }),
       retry: (msg, step) => callAIText({ ...callOpts, userMessage: msg, timeoutMs: step.timeoutMs }),
-      consume: (raw) => validateDailyMealArray(parseAiJson(raw.text), { minMealsExpected }),
+      consume: (raw) => validateDailyMealArray(parseAiJson(raw.text), validatorOpts),
       onParseFailure: async () => {
         const raw = await callAIText({
           ...callOpts,
           userMessage: `${userMessage}${parseFailureAddendum}`,
           timeoutMs: AI_RETRY_TIMEOUT_MS.dailyMeal,
         });
-        return { raw, result: validateDailyMealArray(parseAiJson(raw.text), { minMealsExpected }) };
+        return { raw, result: validateDailyMealArray(parseAiJson(raw.text), validatorOpts) };
       },
       retries: [
         {
           buildRetryMessage: (current) =>
             dailyMealsNeedRetry(current)
-              ? buildDailyMealsRetryNudge(current, minMealsExpected)
+              ? buildDailyMealsRetryNudge(current, minMealsExpected, expectedTargets)
               : null,
           shouldKeep: (prev, candidate) =>
             scoreMealValidationGaps(candidate) < scoreMealValidationGaps(prev),

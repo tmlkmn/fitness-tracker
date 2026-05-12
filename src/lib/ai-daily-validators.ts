@@ -17,6 +17,11 @@ import {
   sanitizeRestSeconds,
   sanitizeSection,
 } from "@/lib/ai-shape-validators";
+import { detectAllergens } from "@/lib/allergen-detect";
+
+/** Tolerance bands for daily total macro validation. */
+const DAILY_KCAL_TOLERANCE = 0.10;
+const DAILY_MACRO_TOLERANCE = 0.15;
 
 // ─── Meal array ────────────────────────────────────────────────────────────
 
@@ -30,6 +35,13 @@ export interface DailyMealItem {
   fatG: string | null;
 }
 
+export interface DailyExpectedTargets {
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+}
+
 export interface ValidateDailyMealsOptions {
   strictMacroValidation?: boolean;
   /**
@@ -38,6 +50,10 @@ export interface ValidateDailyMealsOptions {
    * but AI only produced 3).
    */
   minMealsExpected?: number;
+  /** Per-day macro targets. Triggers daily-total drift check + retry. */
+  expectedTargets?: DailyExpectedTargets;
+  /** User's allergen list. Substring matches in meal content emit warnings. */
+  userAllergens?: string[];
 }
 
 export interface ValidateDailyMealsResult {
@@ -47,6 +63,13 @@ export interface ValidateDailyMealsResult {
   emptyContentMeals: number[];
   /** True when meals.length < minMealsExpected. */
   belowExpectedCount: boolean;
+  /** Per-meal allergen substring matches (Turkish-fold, case-insensitive). */
+  allergenHits: { mealIndex: number; allergens: string[] }[];
+  /**
+   * Per-target drift ratio (|actual − expected| / expected) when above
+   * tolerance. Missing keys = within tolerance or target not provided.
+   */
+  macroDrift: { calories?: number; protein?: number; carbs?: number; fat?: number };
 }
 
 interface SanitizedDailyMeals {
@@ -99,23 +122,90 @@ export function sanitizeDailyMeals(
 interface MealGapAnalysis {
   warnings: string[];
   belowExpectedCount: boolean;
+  allergenHits: { mealIndex: number; allergens: string[] }[];
+  macroDrift: { calories?: number; protein?: number; carbs?: number; fat?: number };
 }
 
-/** Detects count/quality gaps in a sanitized meal array. */
-export function detectMealGaps(
+function detectMealCountGap(
   sanitized: Pick<SanitizedDailyMeals, "meals">,
-  options: Pick<ValidateDailyMealsOptions, "minMealsExpected">,
-): MealGapAnalysis {
-  const warnings: string[] = [];
-  const belowExpectedCount =
-    options.minMealsExpected != null &&
-    sanitized.meals.length < options.minMealsExpected;
-  if (belowExpectedCount) {
+  minMealsExpected: number | undefined,
+  warnings: string[],
+): boolean {
+  const below = minMealsExpected != null && sanitized.meals.length < minMealsExpected;
+  if (below) {
     warnings.push(
-      `meal count ${sanitized.meals.length} below expected minimum ${options.minMealsExpected}`,
+      `meal count ${sanitized.meals.length} below expected minimum ${minMealsExpected}`,
     );
   }
-  return { warnings, belowExpectedCount };
+  return below;
+}
+
+function detectAllergenHits(
+  meals: DailyMealItem[],
+  userAllergens: string[] | undefined,
+  warnings: string[],
+): { mealIndex: number; allergens: string[] }[] {
+  if (!userAllergens || userAllergens.length === 0) return [];
+  const hits: { mealIndex: number; allergens: string[] }[] = [];
+  meals.forEach((m, i) => {
+    const found = detectAllergens(m.content, userAllergens);
+    if (found.length > 0) {
+      hits.push({ mealIndex: i, allergens: found });
+      warnings.push(`meal[${i}]: allergen match — ${found.join(", ")}`);
+    }
+  });
+  return hits;
+}
+
+function detectMacroDrift(
+  meals: DailyMealItem[],
+  expected: DailyExpectedTargets | undefined,
+  warnings: string[],
+): { calories?: number; protein?: number; carbs?: number; fat?: number } {
+  if (!expected) return {};
+  const totals = meals.reduce(
+    (acc, m) => ({
+      calories: acc.calories + (m.calories ?? 0),
+      protein: acc.protein + Number.parseFloat(m.proteinG ?? "0"),
+      carbs: acc.carbs + Number.parseFloat(m.carbsG ?? "0"),
+      fat: acc.fat + Number.parseFloat(m.fatG ?? "0"),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+  );
+  const drift: { calories?: number; protein?: number; carbs?: number; fat?: number } = {};
+  const checks: { key: keyof DailyExpectedTargets; actual: number; tol: number }[] = [
+    { key: "calories", actual: totals.calories, tol: DAILY_KCAL_TOLERANCE },
+    { key: "protein", actual: totals.protein, tol: DAILY_MACRO_TOLERANCE },
+    { key: "carbs", actual: totals.carbs, tol: DAILY_MACRO_TOLERANCE },
+    { key: "fat", actual: totals.fat, tol: DAILY_MACRO_TOLERANCE },
+  ];
+  for (const { key, actual, tol } of checks) {
+    const target = expected[key];
+    if (target == null || target === 0) continue;
+    const ratio = Math.abs(actual - target) / target;
+    if (ratio > tol) {
+      drift[key] = ratio;
+      warnings.push(
+        `daily ${key} ${Math.round(actual)} drifts ${(ratio * 100).toFixed(0)}% from target ${target} (tolerance ±${tol * 100}%)`,
+      );
+    }
+  }
+  return drift;
+}
+
+/** Detects count/quality gaps + allergen hits + macro drift. */
+export function detectMealGaps(
+  sanitized: Pick<SanitizedDailyMeals, "meals">,
+  options: Pick<
+    ValidateDailyMealsOptions,
+    "minMealsExpected" | "expectedTargets" | "userAllergens"
+  >,
+): MealGapAnalysis {
+  const warnings: string[] = [];
+  const belowExpectedCount = detectMealCountGap(sanitized, options.minMealsExpected, warnings);
+  const allergenHits = detectAllergenHits(sanitized.meals, options.userAllergens, warnings);
+  const macroDrift = detectMacroDrift(sanitized.meals, options.expectedTargets, warnings);
+  return { warnings, belowExpectedCount, allergenHits, macroDrift };
 }
 
 export function validateDailyMealArray(
@@ -133,21 +223,34 @@ export function validateDailyMealArray(
     warnings,
     emptyContentMeals: sanitized.emptyContentMeals,
     belowExpectedCount: gaps.belowExpectedCount,
+    allergenHits: gaps.allergenHits,
+    macroDrift: gaps.macroDrift,
   };
 }
 
 export function dailyMealsNeedRetry(result: ValidateDailyMealsResult): boolean {
-  return result.belowExpectedCount || result.emptyContentMeals.length > 0;
+  return (
+    result.belowExpectedCount ||
+    result.emptyContentMeals.length > 0 ||
+    result.allergenHits.length > 0 ||
+    Object.keys(result.macroDrift).length > 0
+  );
 }
 
 /** Sums gap signals into a single quality score (lower = better). */
 export function scoreMealValidationGaps(result: ValidateDailyMealsResult): number {
-  return (result.belowExpectedCount ? 1 : 0) + result.emptyContentMeals.length;
+  return (
+    (result.belowExpectedCount ? 1 : 0) +
+    result.emptyContentMeals.length +
+    result.allergenHits.length +
+    Object.keys(result.macroDrift).length
+  );
 }
 
 export function buildDailyMealsRetryNudge(
   result: ValidateDailyMealsResult,
   minExpected?: number,
+  expectedTargets?: DailyExpectedTargets,
 ): string {
   const issues: string[] = [];
   if (result.belowExpectedCount && minExpected) {
@@ -158,6 +261,32 @@ export function buildDailyMealsRetryNudge(
   if (result.emptyContentMeals.length > 0) {
     issues.push(
       `BOŞ İÇERİK ÖĞÜNLERİ: index ${result.emptyContentMeals.join(", ")}. Bu öğünlere malzeme + hazırlık tarifi ekle.`,
+    );
+  }
+  if (result.allergenHits.length > 0) {
+    const flat = result.allergenHits
+      .map((h) => `index ${h.mealIndex}: ${h.allergens.join(", ")}`)
+      .join(" | ");
+    issues.push(
+      `ALERJEN İHLALİ: ${flat}. Bu malzemeleri KESİNLİKLE değiştir — alerjenleri alternatif gıdalarla ikame et.`,
+    );
+  }
+  if (Object.keys(result.macroDrift).length > 0 && expectedTargets) {
+    const parts: string[] = [];
+    if (result.macroDrift.calories != null && expectedTargets.calories) {
+      parts.push(`kcal hedef ${expectedTargets.calories}`);
+    }
+    if (result.macroDrift.protein != null && expectedTargets.protein) {
+      parts.push(`protein hedef ${expectedTargets.protein}g`);
+    }
+    if (result.macroDrift.carbs != null && expectedTargets.carbs) {
+      parts.push(`karb hedef ${expectedTargets.carbs}g`);
+    }
+    if (result.macroDrift.fat != null && expectedTargets.fat) {
+      parts.push(`yağ hedef ${expectedTargets.fat}g`);
+    }
+    issues.push(
+      `MAKRO HEDEF SAPMASI: günlük toplam tolerans dışında (${parts.join(", ")}). Porsiyon/içerik ayarla.`,
     );
   }
   return `\n\nÖNCEKİ YANITINDA ŞU SORUNLAR VAR — DÜZELT:\n${issues.join("\n")}\nTüm öğünleri dolu içerikle EKSİKSİZ döndür.`;

@@ -29,10 +29,29 @@ import {
   TURKISH_DAY_NAMES,
 } from "@/lib/ai-weekly-prompt-blocks";
 import { AI_MAX_TOKENS, AI_TIMEOUTS } from "@/lib/ai-config";
+import { parseUserAllergens } from "@/lib/allergen-detect";
 import type { Locale } from "@/lib/locale";
 
 const CALL_TIMEOUT = AI_TIMEOUTS.weeklyCall;
 const RETRY_TIMEOUT = AI_TIMEOUTS.weeklyRetry;
+
+/**
+ * Picks the default workout/rest split based on the user's fitness level.
+ * Beginners get 3 alternating workout days; intermediates 4 (upper/lower);
+ * advanced/unknown get the legacy 5-day split.
+ */
+function defaultDayModesForLevel(
+  fitnessLevel: string | null | undefined,
+): Partial<Record<number, DayModeChoice>> {
+  if (fitnessLevel === "beginner") {
+    return { 0: "workout", 1: "rest", 2: "workout", 3: "rest", 4: "workout", 5: "rest", 6: "rest" };
+  }
+  if (fitnessLevel === "intermediate") {
+    return { 0: "workout", 1: "workout", 2: "rest", 3: "workout", 4: "workout", 5: "rest", 6: "rest" };
+  }
+  // advanced or null/unknown — keep legacy 5-day split
+  return { 0: "workout", 1: "workout", 2: "workout", 3: "workout", 4: "workout", 5: "rest", 6: "rest" };
+}
 
 /**
  * Determines the expected 7-day mode map for a weekly generation request.
@@ -41,7 +60,7 @@ const RETRY_TIMEOUT = AI_TIMEOUTS.weeklyRetry;
  * Priority:
  *   1. If the caller supplied dayModes, use them as the base.
  *   2. Otherwise pick a default 7-day shape: nutrition-only for nutrition
- *      paths, workout/rest split for hybrid paths.
+ *      paths, fitness-level-aware workout/rest split for hybrid paths.
  *   3. Always run the nutrition override: nutrition-only paths force every
  *      day to "nutrition" — even when the caller's dayModes said otherwise.
  *      Mirrors the original two-step procedural logic exactly.
@@ -50,6 +69,7 @@ function resolveExpectedDayModes(input: {
   userDayModes: Partial<Record<number, DayModeChoice>> | undefined;
   generateMode: "both" | "nutrition" | "workout" | undefined;
   isNutritionOnly: boolean;
+  fitnessLevel?: string | null;
 }): Partial<Record<number, DayModeChoice>> {
   const wantsNutrition = input.generateMode === "nutrition"
     || (input.isNutritionOnly && input.generateMode !== "workout");
@@ -60,7 +80,7 @@ function resolveExpectedDayModes(input: {
   } else if (wantsNutrition) {
     modes = { 0: "nutrition", 1: "nutrition", 2: "nutrition", 3: "nutrition", 4: "nutrition", 5: "nutrition", 6: "nutrition" };
   } else {
-    modes = { 0: "workout", 1: "workout", 2: "workout", 3: "workout", 4: "workout", 5: "rest", 6: "rest" };
+    modes = defaultDayModesForLevel(input.fitnessLevel);
   }
 
   if (wantsNutrition) {
@@ -149,6 +169,83 @@ interface AiCallResult {
   validationResult: ValidateWeeklyPlanResult;
   inputTokens: number;
   outputTokens: number;
+  /** Telemetry flags for usage logging. */
+  truncationRetryTriggered: boolean;
+  qualityRetryTriggered: boolean;
+}
+
+function scoreWeeklyValidationGaps(
+  result: ValidateWeeklyPlanResult,
+  effectivePastDows: Set<number>,
+): number {
+  return (
+    result.missingDays.filter((d) => !effectivePastDows.has(d)).length +
+    result.emptyMealDays.filter((d) => !effectivePastDows.has(d)).length +
+    result.planTypeMismatches.filter((d) => !effectivePastDows.has(d)).length +
+    result.restDaysWithClearedExercises.filter((d) => !effectivePastDows.has(d)).length +
+    result.daysWithMissingSections.filter((m) => !effectivePastDows.has(m.dow)).length +
+    result.allergenHits.filter((h) => !effectivePastDows.has(h.dow)).length +
+    (result.weeklyKcalDrift ? 1 : 0)
+  );
+}
+
+interface QualityIssueSummary {
+  hasAny: boolean;
+  emptyMealCount: number;
+  planTypeMismatchCount: number;
+  missingSections: { dow: number; missing: string[] }[];
+  restDaysWithExercises: number[];
+  weeklyKcalDrift: boolean;
+  allergenHits: { dow: number; mealIndex: number; allergens: string[] }[];
+}
+
+function summarizeQualityIssues(
+  result: ValidateWeeklyPlanResult,
+  effectivePastDows: Set<number>,
+): QualityIssueSummary {
+  const emptyMealCount = result.emptyMealDays.filter((d) => !effectivePastDows.has(d)).length;
+  const planTypeMismatchCount = result.planTypeMismatches.filter((d) => !effectivePastDows.has(d)).length;
+  const missingSections = result.daysWithMissingSections.filter((m) => !effectivePastDows.has(m.dow));
+  const restDaysWithExercises = result.restDaysWithClearedExercises.filter((d) => !effectivePastDows.has(d));
+  const weeklyKcalDrift = result.weeklyKcalDrift;
+  const allergenHits = result.allergenHits.filter((h) => !effectivePastDows.has(h.dow));
+  const hasAny =
+    emptyMealCount > 0 ||
+    planTypeMismatchCount > 0 ||
+    missingSections.length > 0 ||
+    restDaysWithExercises.length > 0 ||
+    weeklyKcalDrift ||
+    allergenHits.length > 0;
+  return { hasAny, emptyMealCount, planTypeMismatchCount, missingSections, restDaysWithExercises, weeklyKcalDrift, allergenHits };
+}
+
+function buildQualityRetryMessage(summary: QualityIssueSummary): string {
+  const issues: string[] = [];
+  if (summary.emptyMealCount > 0) {
+    issues.push(`${summary.emptyMealCount} günde öğün eksik (her gün ≥1 öğün gerek).`);
+  }
+  if (summary.planTypeMismatchCount > 0) {
+    issues.push(`${summary.planTypeMismatchCount} günde planType kullanıcı seçimiyle uyuşmuyor.`);
+  }
+  if (summary.missingSections.length > 0) {
+    const list = summary.missingSections
+      .map((m) => `gün ${m.dow}: ${m.missing.join(",")}`)
+      .join(" | ");
+    issues.push(`Workout/swimming günlerinde section eksik (${list}). warmup + main/swimming + cooldown ZORUNLU.`);
+  }
+  if (summary.restDaysWithExercises.length > 0) {
+    issues.push(`${summary.restDaysWithExercises.length} rest gününde egzersiz vardı (rest günü exercises BOŞ olmalı).`);
+  }
+  if (summary.weeklyKcalDrift) {
+    issues.push(`Haftalık ortalama kalori hedeften %15+ sapıyor. Hedefe yakınlaştır.`);
+  }
+  if (summary.allergenHits.length > 0) {
+    const flat = summary.allergenHits
+      .map((h) => `gün ${h.dow} meal[${h.mealIndex}]: ${h.allergens.join(",")}`)
+      .join(" | ");
+    issues.push(`ALERJEN İHLALİ: ${flat}. Bu malzemeleri KESİNLİKLE alternatifle değiştir.`);
+  }
+  return `\n\nÖNCEKİ YANITINDA ŞU KALİTE SORUNLARI VAR — DÜZELT:\n${issues.join("\n")}\nEKSİKSİZ JSON döndür.`;
 }
 
 interface RunAiCallOptions {
@@ -159,10 +256,11 @@ interface RunAiCallOptions {
   maxTokens: number;
   label: string;
   expectedTargets?: ExpectedTargets;
+  userAllergens?: string[];
 }
 
 async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
-  const { systemPrompt, userMessage, expectedDayModes, effectivePastDows, maxTokens, label, expectedTargets } = opts;
+  const { systemPrompt, userMessage, expectedDayModes, effectivePastDows, maxTokens, label, expectedTargets, userAllergens } = opts;
   const nonPastTotal = 7 - effectivePastDows.size;
 
   console.log(`[AI Weekly] ▶ ${label} call start (maxTokens=${maxTokens})`);
@@ -179,13 +277,18 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
   let totalInput = first.inputTokens;
   let totalOutput = first.outputTokens;
 
-  const validate = (raw: unknown) => validateWeeklyPlan(raw, expectedTargets, { expectedDayModes });
+  const validate = (raw: unknown) => validateWeeklyPlan(raw, expectedTargets, { expectedDayModes, userAllergens });
   let result = validate(first.toolInput);
 
   const nonPastMissing = result.missingDays.filter((d) => !effectivePastDows.has(d)).length;
   const wasTruncated = first.stopReason === "max_tokens";
 
+  let truncationRetryTriggered = false;
+  let qualityRetryTriggered = false;
+
+  // Priority 1: truncation retry — fires only when the response is unusable.
   if (wasTruncated && nonPastTotal > 0 && nonPastMissing >= nonPastTotal) {
+    truncationRetryTriggered = true;
     console.warn(`[AI Weekly] ⚠ ${label} truncated (${nonPastMissing}/${nonPastTotal} days empty) → retry`);
     const retry = await callAITool({
       systemPrompt,
@@ -205,9 +308,39 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
       throw new Error(`[${label}] Truncated even after retry — plan too large`);
     }
     result = retryResult;
+  } else {
+    // Priority 2: quality retry — empty meals, planType mismatches, missing
+    // sections, rest-day exercises, or weekly kcal drift. One attempt only.
+    const summary = summarizeQualityIssues(result, effectivePastDows);
+    if (summary.hasAny) {
+      qualityRetryTriggered = true;
+      console.warn(`[AI Weekly] ⚠ ${label} quality issues → retry`);
+      const retry = await callAITool({
+        systemPrompt,
+        userMessage: `${userMessage}${buildQualityRetryMessage(summary)}`,
+        maxTokens,
+        model: "smart",
+        timeoutMs: RETRY_TIMEOUT,
+        tool: SUBMIT_WEEKLY_PLAN_TOOL,
+      });
+      totalInput += retry.inputTokens;
+      totalOutput += retry.outputTokens;
+      console.log(`[AI Weekly] ✓ ${label} quality retry (stop=${retry.stopReason}, out=${retry.outputTokens})`);
+      const retryResult = validate(retry.toolInput);
+      // Only keep retry result when it's an improvement.
+      if (scoreWeeklyValidationGaps(retryResult, effectivePastDows) < scoreWeeklyValidationGaps(result, effectivePastDows)) {
+        result = retryResult;
+      }
+    }
   }
 
-  return { validationResult: result, inputTokens: totalInput, outputTokens: totalOutput };
+  return {
+    validationResult: result,
+    inputTokens: totalInput,
+    outputTokens: totalOutput,
+    truncationRetryTriggered,
+    qualityRetryTriggered,
+  };
 }
 
 function mergePlans(
@@ -285,10 +418,12 @@ interface UserProfileRow {
   gender: string | null;
   dailyActivityLevel: string | null;
   fitnessGoal: string | null;
+  fitnessLevel: string | null;
   targetCalories: number | null;
   targetProteinG: string | null;
   targetCarbsG: string | null;
   targetFatG: string | null;
+  foodAllergens: string | null;
 }
 
 export interface ResolvedWeeklyRequest {
@@ -337,10 +472,12 @@ export async function resolveWeeklyGenerationRequest(
       gender: users.gender,
       dailyActivityLevel: users.dailyActivityLevel,
       fitnessGoal: users.fitnessGoal,
+      fitnessLevel: users.fitnessLevel,
       targetCalories: users.targetCalories,
       targetProteinG: users.targetProteinG,
       targetCarbsG: users.targetCarbsG,
       targetFatG: users.targetFatG,
+      foodAllergens: users.foodAllergens,
     }).from(users).where(eq(users.id, userId)).then((r) => r[0]),
     buildWeeklyPlanContext(userId),
     db.select({ weekNumber: weeklyPlans.weekNumber })
@@ -366,6 +503,7 @@ export async function resolveWeeklyGenerationRequest(
     userDayModes: dayModesInput,
     generateMode,
     isNutritionOnly,
+    fitnessLevel: userRow?.fitnessLevel ?? null,
   });
 
   const doNutrition = generateMode !== "workout";
@@ -407,6 +545,7 @@ interface CallSpec {
   maxTokens: number;
   label: string;
   expectedTargets?: ExpectedTargets;
+  userAllergens?: string[];
 }
 
 export interface WeeklyPrompts {
@@ -417,6 +556,7 @@ export interface WeeklyPrompts {
 export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
   const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, resolvedTargets, expectedTargets, sanitizedNote, monday, nextWeekNumber, userRow } = req;
   const isNutritionOnly = userRow?.serviceType === "nutrition";
+  const userAllergens = parseUserAllergens(userRow?.foodAllergens);
 
   const weekHeader = `Hafta başlangıç tarihi: ${monday}\nBu plan ${nextWeekNumber}. hafta için oluşturulacak. weekTitle alanı MUTLAKA "Hafta ${nextWeekNumber} — ..." formatında başlamalı.`;
 
@@ -456,6 +596,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       maxTokens: AI_MAX_TOKENS.weeklyNutrition,
       label: "nutrition",
       expectedTargets,
+      userAllergens,
     };
   }
 
@@ -512,6 +653,13 @@ export interface WeeklyGenerationOutcome {
   workoutResult: ValidateWeeklyPlanResult | null;
   inputTokens: number;
   outputTokens: number;
+  /** Per-leg retry telemetry — surfaced via logAiUsage errorMessage metadata. */
+  retryFlags: {
+    nutritionTruncationRetry: boolean;
+    nutritionQualityRetry: boolean;
+    workoutTruncationRetry: boolean;
+    workoutQualityRetry: boolean;
+  };
 }
 
 export async function runWeeklyGeneration(prompts: WeeklyPrompts): Promise<WeeklyGenerationOutcome> {
@@ -539,6 +687,12 @@ export async function runWeeklyGeneration(prompts: WeeklyPrompts): Promise<Weekl
     workoutResult: workoutRaw?.validationResult ?? null,
     inputTokens,
     outputTokens,
+    retryFlags: {
+      nutritionTruncationRetry: nutritionRaw?.truncationRetryTriggered ?? false,
+      nutritionQualityRetry: nutritionRaw?.qualityRetryTriggered ?? false,
+      workoutTruncationRetry: workoutRaw?.truncationRetryTriggered ?? false,
+      workoutQualityRetry: workoutRaw?.qualityRetryTriggered ?? false,
+    },
   };
 }
 

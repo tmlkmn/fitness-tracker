@@ -79,6 +79,9 @@ export default function TakvimPage() {
   const [createdDailyPlanId, setCreatedDailyPlanId] = useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [generateMode, setGenerateMode] = useState<"both" | "nutrition" | "workout">("both");
+  // pastDows of the most recent generation — forwarded to apply so past
+  // days' real data is never overwritten on re-apply.
+  const [lastPastDows, setLastPastDows] = useState<number[] | undefined>(undefined);
 
   const { data, isLoading } = useWeekPlansByDate(selectedDate);
   const { data: planDates } = useDatesWithPlans(viewYear, viewMonth);
@@ -183,13 +186,14 @@ export default function TakvimPage() {
   ) => {
     const m = mode ?? generateMode;
     setGenerateMode(m);
+    setLastPastDows(pastDows);
     generateWeekly.mutate({ dateStr: selectedDate, userNote, generateMode: m, dayModes, pastDows });
   };
 
   const handleApplyWeekly = () => {
     if (!generateWeekly.data) return;
     applyWeekly.mutate(
-      { dateStr: selectedDate, plan: generateWeekly.data, applyMode: generateMode },
+      { dateStr: selectedDate, plan: generateWeekly.data, applyMode: generateMode, pastDows: lastPastDows },
       {
         onSuccess: () => {
           setWeeklyModalOpen(false);
@@ -202,7 +206,7 @@ export default function TakvimPage() {
   const handleApplySaved = (plan: import("@/actions/ai-weekly").AIWeeklyPlan) => {
     if (isMonthBlocked) return;
     applyWeekly.mutate(
-      { dateStr: selectedDate, plan, applyMode: generateMode },
+      { dateStr: selectedDate, plan, applyMode: generateMode, pastDows: lastPastDows },
       {
         onSuccess: () => {
           setWeeklyModalOpen(false);

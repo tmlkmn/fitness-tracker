@@ -5,7 +5,17 @@ import {
 } from "@/lib/meal-timing";
 
 export interface GoalStrategy {
+  /**
+   * Fixed kcal delta — legacy fallback. New macro pipeline prefers
+   * `calorieDeltaPerKg` so the deficit/surplus scales with body weight.
+   */
   calorieDelta: number;
+  /**
+   * Kcal delta per kg body weight. Anchored so 80 kg matches the legacy
+   * fixed delta (loss = -5 × 80 = -400; muscle_gain = +3.5 × 80 ≈ +280).
+   * 55 kg loss = -275; 110 kg loss = -550. Clamped downstream.
+   */
+  calorieDeltaPerKg: number;
   proteinPerKgLBM: number;
   fatPctOfCalories: number;
   minCarbsG: { female: number; male: number; prefer_not_to_say: number };
@@ -14,9 +24,29 @@ export interface GoalStrategy {
   promptBlock: string;
 }
 
+/** Clamp for body-weight-derived kcal delta — guards extreme low/high weights. */
+export const CALORIE_DELTA_CLAMP = { min: -800, max: 800 };
+
+/**
+ * Computes the kcal delta for a user. Prefers per-kg scaling when both
+ * `weight` and `calorieDeltaPerKg` are usable; falls back to the legacy
+ * fixed `calorieDelta` otherwise. Result is clamped to ±800 kcal.
+ */
+export function computeCalorieDelta(
+  strategy: GoalStrategy,
+  weight: number | null | undefined,
+): number {
+  if (weight && weight > 0 && Number.isFinite(weight) && strategy.calorieDeltaPerKg != null) {
+    const raw = Math.round(strategy.calorieDeltaPerKg * weight);
+    return Math.max(CALORIE_DELTA_CLAMP.min, Math.min(CALORIE_DELTA_CLAMP.max, raw));
+  }
+  return strategy.calorieDelta;
+}
+
 export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   loss: {
     calorieDelta: -400,
+    calorieDeltaPerKg: -5,
     proteinPerKgLBM: 1.9,
     fatPctOfCalories: 0.25,
     minCarbsG: { female: 100, male: 130, prefer_not_to_say: 120 },
@@ -33,6 +63,7 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   },
   recomp: {
     calorieDelta: -150,
+    calorieDeltaPerKg: -2,
     proteinPerKgLBM: 2.1,
     fatPctOfCalories: 0.25,
     minCarbsG: { female: 130, male: 160, prefer_not_to_say: 140 },
@@ -48,6 +79,7 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   },
   maintain: {
     calorieDelta: 0,
+    calorieDeltaPerKg: 0,
     proteinPerKgLBM: 1.6,
     fatPctOfCalories: 0.3,
     minCarbsG: { female: 130, male: 160, prefer_not_to_say: 140 },
@@ -63,6 +95,7 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   },
   muscle_gain: {
     calorieDelta: 250,
+    calorieDeltaPerKg: 3.5,
     proteinPerKgLBM: 2.0,
     fatPctOfCalories: 0.25,
     minCarbsG: { female: 180, male: 220, prefer_not_to_say: 200 },
@@ -79,6 +112,7 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   },
   weight_gain: {
     calorieDelta: 450,
+    calorieDeltaPerKg: 6,
     proteinPerKgLBM: 1.8,
     fatPctOfCalories: 0.3,
     minCarbsG: { female: 200, male: 250, prefer_not_to_say: 220 },
@@ -98,10 +132,12 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
 export function renderGoalStrategyBlock(
   goal: FitnessGoal,
   goalSource: "explicit" | "derived",
+  weight?: number | null,
 ): string {
   const strategy = GOAL_STRATEGIES[goal];
   const label = FITNESS_GOAL_LABELS[goal];
-  const deltaSign = strategy.calorieDelta > 0 ? "+" : "";
+  const delta = computeCalorieDelta(strategy, weight);
+  const deltaSign = delta > 0 ? "+" : "";
 
   const lines: string[] = [`═══ HEDEF-ODAKLI STRATEJİ: ${label} ═══`];
   if (goalSource === "derived") {
@@ -109,8 +145,11 @@ export function renderGoalStrategyBlock(
       "(NOT: Kullanıcı profilden hedef seçmemiş — kilo/hedef-kilo farkından çıkarsandı.)",
     );
   }
+  const deltaLine = weight && weight > 0
+    ? `Kalori deltası: ${deltaSign}${delta} kcal (TDEE'ye göre, ${weight}kg ağırlığa ölçeklenmiş)`
+    : `Kalori deltası: ${deltaSign}${delta} kcal (TDEE'ye göre)`;
   lines.push(
-    `Kalori deltası: ${deltaSign}${strategy.calorieDelta} kcal (TDEE'ye göre)`,
+    deltaLine,
     `Protein hedefi: ${strategy.proteinPerKgLBM} g / kg yağsız kütle (LBM)`,
     `Yağ payı: toplam kalorinin %${Math.round(strategy.fatPctOfCalories * 100)}'i`,
     `Karbonhidrat tabanı: kadın ≥${strategy.minCarbsG.female}g · erkek ≥${strategy.minCarbsG.male}g · belirtilmemiş ≥${strategy.minCarbsG.prefer_not_to_say}g`,
