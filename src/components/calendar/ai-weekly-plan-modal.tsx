@@ -56,6 +56,8 @@ import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
 import { formatDate, parseDateOnly } from "@/lib/date-format";
 import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
+import { buildAiUserNote } from "@/lib/ai-user-note";
+import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
 
 function SteppedProgress({
   loading,
@@ -572,34 +574,21 @@ export function AiWeeklyPlanModal({
 
   const handleGenerate = () => {
     saveWorkoutPrefs({ location, equipment: selectedEquipment });
-    const parts: string[] = [];
-    // Location + equipment (only when at least one workout day exists)
     const hasWorkoutOrSwim = Object.values(dayModes).some((m) => m === "workout" || m === "swimming");
-    if (hasWorkoutOrSwim) {
-      if (location === "home") {
-        parts.push(
-          t("homeInstruction", {
+    const locationPart = hasWorkoutOrSwim
+      ? location === "home"
+        ? t("homeInstruction", {
             equipment:
               selectedEquipment.length > 0
                 ? selectedEquipment.join(", ")
                 : t("bodyweight"),
-          }),
-        );
-      } else {
-        parts.push(t("gymInstruction"));
-      }
-    }
-    // Ingredients
-    if (ingredientMode === "specific" && selectedIngredients.length > 0) {
-      parts.push(
-        tIngredients("ingredientNote", { list: selectedIngredients.join(", ") }),
-      );
-    }
-    // Tags
-    parts.push(...selectedTags);
-    // Free text
-    const note = userNote.trim();
-    if (note) parts.push(note);
+          })
+        : t("gymInstruction")
+      : null;
+    const ingredientsPart =
+      ingredientMode === "specific" && selectedIngredients.length > 0
+        ? tIngredients("ingredientNote", { list: selectedIngredients.join(", ") })
+        : null;
     // Force past days to "rest" so the backend never receives a workout/
     // swimming intent for a day that's already gone.
     const effectiveDayModes = { ...dayModes };
@@ -607,7 +596,7 @@ export function AiWeeklyPlanModal({
       effectiveDayModes[dow] = "rest";
     }
     onGenerate(
-      parts.length > 0 ? parts.join(". ") : undefined,
+      buildAiUserNote([locationPart, ingredientsPart, ...selectedTags, userNote]),
       generateMode,
       effectiveDayModes,
       Array.from(pastDows),
@@ -934,12 +923,10 @@ export function AiWeeklyPlanModal({
                   {t("noteLabel")}
                 </p>
               </div>
-              <textarea
+              <AiNoteTextarea
                 value={userNote}
-                onChange={(e) => setUserNote(e.target.value)}
-                rows={2}
+                onChange={setUserNote}
                 placeholder={t("notePlaceholder")}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               />
               <Button
                 onClick={handleGenerate}

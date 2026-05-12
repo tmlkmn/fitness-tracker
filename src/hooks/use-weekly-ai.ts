@@ -13,6 +13,7 @@ import {
   getSavedSuggestionById,
   deleteSavedSuggestion as deleteSavedSuggestionAction,
 } from "@/actions/ai-suggestions";
+import { invalidateWeeklyPlanQueries } from "@/hooks/ai-invalidation";
 
 export type GenerationStep = "profile" | "nutrition" | "workout" | "merging";
 
@@ -141,11 +142,7 @@ export function useApplyWeeklyPlan() {
       applyMode?: "both" | "nutrition" | "workout";
     }) => applyWeeklyPlan(dateStr, plan, applyMode),
     onSuccess: () => {
-      qc.refetchQueries({ queryKey: ["plans"] });
-      qc.refetchQueries({ queryKey: ["meals.byDay"] });
-      qc.refetchQueries({ queryKey: ["exercises"] });
-      qc.refetchQueries({ queryKey: ["today-dashboard"] });
-      qc.refetchQueries({ queryKey: ["week-plans-date"] });
+      invalidateWeeklyPlanQueries(qc);
     },
   });
 }

@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { dailyPlans, exercises, weeklyPlans, exerciseDemos } from "@/db/schema";
 import { eq, asc, desc, and, lt, inArray, ne } from "drizzle-orm";
+import type { WorkoutContextResult } from "@/lib/ai-workout-context";
 
 type ExerciseRow = typeof exercises.$inferSelect;
 
@@ -22,7 +23,7 @@ function formatExerciseLine(ex: Pick<ExerciseRow, "name" | "sets" | "reps" | "re
 export async function buildSectionContext(
   dailyPlanId: number,
   section: string,
-): Promise<{ context: string; sectionExercises: ExerciseRow[]; planType: string | null }> {
+): Promise<WorkoutContextResult> {
   const [currentDay] = await db
     .select({
       id: dailyPlans.id,
@@ -35,7 +36,7 @@ export async function buildSectionContext(
     .from(dailyPlans)
     .where(eq(dailyPlans.id, dailyPlanId));
 
-  if (!currentDay) return { context: "", sectionExercises: [], planType: null };
+  if (!currentDay) return { context: "", exercises: [], planType: null };
 
   const lines: string[] = [];
 
@@ -120,7 +121,7 @@ export async function buildSectionContext(
 
   return {
     context: lines.join("\n"),
-    sectionExercises,
+    exercises: sectionExercises,
     planType: currentDay.planType,
   };
 }

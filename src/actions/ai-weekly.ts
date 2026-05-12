@@ -19,28 +19,9 @@ import {
   type AIWeeklyPlan,
 } from "@/lib/ai-weekly-types";
 import { coerceMealLabel } from "@/lib/meal-labels";
+import { getMondayStr, addDaysStr } from "@/lib/utils";
 
 export type { AIWeeklyPlan, AIWeeklyDay } from "@/lib/ai-weekly-types";
-
-function getMondayStr(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
-}
-
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + "T00:00:00");
-  d.setDate(d.getDate() + days);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
-}
 
 export async function buildWeeklyPlanContext(userId: string): Promise<string> {
   const lines: string[] = [];
@@ -319,7 +300,7 @@ export async function applyWeeklyPlan(
     // For selective modes, update existing daily plans or create missing ones
     if (mode !== "both") {
       for (const day of plan.days) {
-        const dayDate = addDays(monday, day.dayOfWeek);
+        const dayDate = addDaysStr(monday, day.dayOfWeek);
         // Find existing daily plan for this day
         const [existingDay] = await db
           .select({ id: dailyPlans.id })
@@ -427,7 +408,7 @@ export async function applyWeeklyPlan(
 
   // Create daily plans with meals and exercises (full mode or new week)
   for (const day of plan.days) {
-    const dayDate = addDays(monday, day.dayOfWeek);
+    const dayDate = addDaysStr(monday, day.dayOfWeek);
 
     const [newDay] = await db
       .insert(dailyPlans)

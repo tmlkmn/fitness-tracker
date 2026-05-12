@@ -6,7 +6,6 @@ import { eq, and, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
-  getAIClient,
   AI_MODELS,
   checkRateLimit,
   logAiUsage,
@@ -14,6 +13,7 @@ import {
   discriminateAiError,
   PROMPT_VERSION,
 } from "@/lib/ai";
+import { callAIText, executeAIWithRetries } from "@/lib/ai-runtime";
 import { verifyDailyPlanOwnership } from "@/lib/ownership";
 import { getDailyMealsPrompt, getNutritionOnlyMealsPrompt } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
@@ -24,8 +24,9 @@ import {
   validateDailyMealArray,
   dailyMealsNeedRetry,
   buildDailyMealsRetryNudge,
-  type ValidateDailyMealsResult,
+  scoreMealValidationGaps,
 } from "@/lib/ai-daily-validators";
+import { parseAiJson } from "@/lib/ai-json-repair";
 
 export interface AIMeal {
   mealTime: string;
@@ -38,16 +39,6 @@ export interface AIMeal {
 }
 
 const MAX_SAVED_DAILY_MEAL_SUGGESTIONS = 10;
-
-function parseJSON(text: string): unknown {
-  let cleaned = text
-    .replace(/^```(?:json)?\s*\n?/i, "")
-    .replace(/\n?```\s*$/i, "")
-    .trim();
-  // Fix trailing commas before } or ]
-  cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
-  return JSON.parse(cleaned);
-}
 
 // Estimate the minimum meal count this user should receive based on
 // service type — nutrition-only/loss tend toward intermittent (3-4),
@@ -150,100 +141,39 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
   );
 
   try {
-    const client = getAIClient();
-    const message = await client.messages.create({
-      model: AI_MODELS.smart,
-      max_tokens: 5000,
-      system: [
+    const callOpts = {
+      systemPrompt,
+      maxTokens: 5000,
+      model: "smart" as const,
+    };
+    const parseFailureAddendum = locale === "en"
+      ? `\n\nPREVIOUS RESPONSE RETURNED INVALID JSON. Keep contents SHORT: content max 40 words, single-sentence recipe instead of mechanical list. Reply with valid JSON only: { "meals": [...] }`
+      : `\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. İçerikleri KISA tut: content max 40 kelime, mekanik liste yerine tek cümle tarif. Sadece geçerli JSON yanıt ver: { "meals": [...] }`;
+
+    const exec = await executeAIWithRetries({
+      userMessage,
+      initial: () => callAIText({ ...callOpts, userMessage }),
+      retry: (msg) => callAIText({ ...callOpts, userMessage: msg }),
+      consume: (raw) => validateDailyMealArray(parseAiJson(raw.text), { minMealsExpected }),
+      onParseFailure: async () => {
+        const raw = await callAIText({ ...callOpts, userMessage: `${userMessage}${parseFailureAddendum}` });
+        return { raw, result: validateDailyMealArray(parseAiJson(raw.text), { minMealsExpected }) };
+      },
+      retries: [
         {
-          type: "text",
-          text: systemPrompt,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      messages: [
-        {
-          role: "user",
-          content: userMessage,
+          buildRetryMessage: (current) =>
+            dailyMealsNeedRetry(current)
+              ? buildDailyMealsRetryNudge(current, minMealsExpected)
+              : null,
+          shouldKeep: (prev, candidate) =>
+            scoreMealValidationGaps(candidate) < scoreMealValidationGaps(prev),
         },
       ],
     });
 
-    inputTokens = message.usage.input_tokens;
-    outputTokens = message.usage.output_tokens;
-
-    let text = message.content[0].type === "text" ? message.content[0].text : "";
-    let validation: ValidateDailyMealsResult;
-    try {
-      validation = validateDailyMealArray(parseJSON(text), { minMealsExpected });
-    } catch {
-      // JSON parse failure — single retry with conciseness nudge.
-      const retry = await client.messages.create({
-        model: AI_MODELS.smart,
-        max_tokens: 5000,
-        system: [
-          {
-            type: "text",
-            text: systemPrompt,
-            cache_control: { type: "ephemeral" },
-          },
-        ],
-        messages: [
-          {
-            role: "user",
-            content: `${userMessage}\n\n${locale === "en"
-              ? `PREVIOUS RESPONSE RETURNED INVALID JSON. Keep contents SHORT: content max 40 words, single-sentence recipe instead of mechanical list. Reply with valid JSON only: { "meals": [...] }`
-              : `ÖNCEKİ YANIT HATALI JSON DÖNDÜ. İçerikleri KISA tut: content max 40 kelime, mekanik liste yerine tek cümle tarif. Sadece geçerli JSON yanıt ver: { "meals": [...] }`}`,
-          },
-        ],
-      });
-      inputTokens += retry.usage.input_tokens;
-      outputTokens += retry.usage.output_tokens;
-      text = retry.content[0].type === "text" ? retry.content[0].text : "";
-      validation = validateDailyMealArray(parseJSON(text), { minMealsExpected });
-    }
-
-    // Content-quality retry: too few meals or empty content meals → ask AI
-    // to fix specific gaps. Same pattern as the weekly route.
-    if (dailyMealsNeedRetry(validation)) {
-      const fixupResponse = await client.messages.create({
-        model: AI_MODELS.smart,
-        max_tokens: 5000,
-        system: [
-          {
-            type: "text",
-            text: systemPrompt,
-            cache_control: { type: "ephemeral" },
-          },
-        ],
-        messages: [
-          {
-            role: "user",
-            content: `${userMessage}${buildDailyMealsRetryNudge(validation, minMealsExpected)}`,
-          },
-        ],
-      });
-      inputTokens += fixupResponse.usage.input_tokens;
-      outputTokens += fixupResponse.usage.output_tokens;
-      const fixupText =
-        fixupResponse.content[0].type === "text" ? fixupResponse.content[0].text : "";
-      try {
-        const fixupValidation = validateDailyMealArray(parseJSON(fixupText), {
-          minMealsExpected,
-        });
-        const originalGaps =
-          (validation.belowExpectedCount ? 1 : 0) +
-          validation.emptyContentMeals.length;
-        const retryGaps =
-          (fixupValidation.belowExpectedCount ? 1 : 0) +
-          fixupValidation.emptyContentMeals.length;
-        if (retryGaps < originalGaps) {
-          validation = fixupValidation;
-        }
-      } catch {
-        // Retry parse failed — keep the original validation.
-      }
-    }
+    const validation = exec.result;
+    inputTokens = exec.inputTokens;
+    outputTokens = exec.outputTokens;
 
     const suggestedMeals: AIMeal[] = validation.meals;
     const hasWarnings = validation.warnings.length > 0;

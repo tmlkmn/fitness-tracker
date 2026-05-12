@@ -6,12 +6,11 @@
 
 import {
   isStrictMacroValidationEnabled as defaultStrictMacroEnabled,
-  passthroughMacro,
   reconcileMacros,
   sanitizeCalories,
   sanitizeDurationMinutes,
+  sanitizeMacroGram,
   sanitizeMealLabel,
-  sanitizeProteinG,
   sanitizeRestSeconds,
   sanitizeSection,
 } from "@/lib/ai-shape-validators";
@@ -73,9 +72,9 @@ export function validateDailyMealArray(
         mealLabel: sanitizeMealLabel(m.mealLabel, ctx, warnings),
         content,
         calories: sanitizeCalories(m.calories, ctx, warnings),
-        proteinG: sanitizeProteinG(m.proteinG, ctx, warnings),
-        carbsG: passthroughMacro(m.carbsG),
-        fatG: passthroughMacro(m.fatG),
+        proteinG: sanitizeMacroGram("protein", m.proteinG, ctx, warnings),
+        carbsG: sanitizeMacroGram("carbs", m.carbsG, ctx, warnings),
+        fatG: sanitizeMacroGram("fat", m.fatG, ctx, warnings),
       };
       return reconcileMacros(sanitized, ctx, warnings, strict);
     },
@@ -99,6 +98,11 @@ export function validateDailyMealArray(
 
 export function dailyMealsNeedRetry(result: ValidateDailyMealsResult): boolean {
   return result.belowExpectedCount || result.emptyContentMeals.length > 0;
+}
+
+/** Sums gap signals into a single quality score (lower = better). */
+export function scoreMealValidationGaps(result: ValidateDailyMealsResult): number {
+  return (result.belowExpectedCount ? 1 : 0) + result.emptyContentMeals.length;
 }
 
 export function buildDailyMealsRetryNudge(
@@ -264,6 +268,17 @@ export function dailyExercisesNeedRetry(
     result.missingSections.length > 0 ||
     result.belowExpectedCount ||
     result.droppedForEmptyName > 0
+  );
+}
+
+/** Sums gap signals into a single quality score (lower = better). */
+export function scoreExerciseValidationGaps(
+  result: ValidateDailyExercisesResult,
+): number {
+  return (
+    result.missingSections.length +
+    (result.belowExpectedCount ? 1 : 0) +
+    result.droppedForEmptyName
   );
 }
 

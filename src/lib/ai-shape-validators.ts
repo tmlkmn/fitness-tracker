@@ -50,6 +50,19 @@ export function safeParseFloat(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Coerces unknown AI-output to string with fallback; null/undefined → fallback. */
+export function safeString(raw: unknown, fallback: string = ""): string {
+  if (raw == null) return fallback;
+  return typeof raw === "string" ? raw : String(raw);
+}
+
+/** Coerces unknown AI-output to number; null/undefined/non-numeric → null. */
+export function safeNumber(raw: unknown): number | null {
+  if (raw == null) return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function sanitizeMealLabel(
   raw: unknown,
   ctx: string,
@@ -109,12 +122,21 @@ export function sanitizeCalories(
   return Math.round(n);
 }
 
-export function sanitizeProteinG(
+export type MacroKind = "protein" | "carbs" | "fat";
+
+/**
+ * Unified macro-gram sanitizer. Only protein has bounds + numeric coercion;
+ * carbs/fat preserve passthrough behavior (raw → String(raw)) so existing
+ * `reconcileMacros` drift detection sees the same input it always has.
+ */
+export function sanitizeMacroGram(
+  kind: MacroKind,
   raw: unknown,
   ctx: string,
   warnings: string[],
 ): string | null {
   if (raw == null) return null;
+  if (kind !== "protein") return String(raw);
   const n = safeParseFloat(raw);
   if (n == null) {
     warnings.push(`${ctx}: non-numeric proteinG "${raw}" → null`);
@@ -127,10 +149,6 @@ export function sanitizeProteinG(
     return null;
   }
   return String(n);
-}
-
-export function passthroughMacro(raw: unknown): string | null {
-  return raw != null ? String(raw) : null;
 }
 
 export function sanitizeRestSeconds(

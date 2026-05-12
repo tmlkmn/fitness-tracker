@@ -4,13 +4,21 @@ import { eq, asc, desc, and, lt, inArray } from "drizzle-orm";
 
 type ExerciseRow = typeof exercises.$inferSelect;
 
+export interface WorkoutContextResult {
+  context: string;
+  exercises: ExerciseRow[];
+  planType: string | null;
+}
+
 /**
  * Builds comprehensive workout context including:
  * - Current week's full program
  * - Previous weeks' same-day programs (progressive overload tracking)
  * - Program history summary for periodization awareness
  */
-export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
+export async function buildWeeklyWorkoutContext(
+  dailyPlanId: number,
+): Promise<WorkoutContextResult> {
   // Get the daily plan with its weekly plan info
   const [currentDay] = await db
     .select({
@@ -28,7 +36,7 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
   if (!currentDay?.weeklyPlanId) {
     return {
       context: "",
-      currentDayExercises: [] as ExerciseRow[],
+      exercises: [] as ExerciseRow[],
       planType: currentDay?.planType ?? null,
     };
   }
@@ -49,7 +57,7 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
   if (!currentWeek) {
     return {
       context: "",
-      currentDayExercises: [] as ExerciseRow[],
+      exercises: [] as ExerciseRow[],
       planType: currentDay.planType,
     };
   }
@@ -401,7 +409,7 @@ export async function buildWeeklyWorkoutContext(dailyPlanId: number) {
 
   return {
     context: lines.join("\n"),
-    currentDayExercises,
+    exercises: currentDayExercises,
     planType: currentDay.planType,
   };
 }

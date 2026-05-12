@@ -19,6 +19,7 @@ import {
   getExerciseTipsPrompt,
 } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
+import { parseAiJson } from "@/lib/ai-json-repair";
 
 const TIPS_TTL_DAYS = 30;
 
@@ -28,18 +29,6 @@ export interface MealVariationSuggestion {
   proteinG: string | null;
   carbsG: string | null;
   fatG: string | null;
-}
-
-function parseJSON(text: string): unknown {
-  let cleaned = text
-    .replace(/^```(?:json)?\s*\n?/i, "")
-    .replace(/\n?```\s*$/i, "")
-    .trim();
-
-  // Fix trailing commas before } or ]
-  cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
-
-  return JSON.parse(cleaned);
 }
 
 export interface GenerateMealVariationOptions {
@@ -226,7 +215,7 @@ export async function generateMealVariation(
 
     let result: { suggestions: MealVariationSuggestion[] };
     try {
-      const parsed = parseJSON(text) as Record<string, unknown>;
+      const parsed = parseAiJson(text) as Record<string, unknown>;
       const suggestionsRaw = Array.isArray(parsed.suggestions) ? parsed.suggestions : [parsed];
       const suggestions: MealVariationSuggestion[] = suggestionsRaw.map((s: Record<string, unknown>) => {
         let content = String(s.content ?? "");

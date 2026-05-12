@@ -72,8 +72,7 @@ import {
   sanitizePlanType,
   sanitizeSection,
   sanitizeCalories,
-  sanitizeProteinG,
-  passthroughMacro,
+  sanitizeMacroGram,
   reconcileMacros,
   isStrictMacroValidationEnabled as defaultStrictMacroEnabled,
 } from "@/lib/ai-shape-validators";
@@ -171,9 +170,9 @@ export function validateWeeklyPlan(
             mealLabel: sanitizeMealLabel(m.mealLabel, mealCtx, warnings),
             content: String(m.content ?? ""),
             calories: sanitizeCalories(m.calories, mealCtx, warnings),
-            proteinG: sanitizeProteinG(m.proteinG, mealCtx, warnings),
-            carbsG: passthroughMacro(m.carbsG),
-            fatG: passthroughMacro(m.fatG),
+            proteinG: sanitizeMacroGram("protein", m.proteinG, mealCtx, warnings),
+            carbsG: sanitizeMacroGram("carbs", m.carbsG, mealCtx, warnings),
+            fatG: sanitizeMacroGram("fat", m.fatG, mealCtx, warnings),
           };
           return reconcileMacros(sanitized, mealCtx, warnings, strict);
         })

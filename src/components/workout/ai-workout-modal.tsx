@@ -16,6 +16,8 @@ import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 import { MeasurementNudge } from "@/components/ai/measurement-nudge";
 import { useTranslations } from "next-intl";
+import { buildAiUserNote } from "@/lib/ai-user-note";
+import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -164,7 +166,7 @@ export function AiWorkoutModal({
 
   const handleGenerate = () => {
     saveWorkoutPrefs({ location, equipment: selectedEquipment });
-    const parts: string[] = [];
+    let locationPart: string;
     if (location === "home") {
       const equipmentList =
         selectedEquipment.length > 0
@@ -172,13 +174,11 @@ export function AiWorkoutModal({
               .map((eq) => t(`equipment.${eq}` as `equipment.${typeof EQUIPMENT_OPTIONS[number]}`))
               .join(", ")
           : t("bodyweight");
-      parts.push(`${t("locationHomePromptPrefix")} ${equipmentList}`);
+      locationPart = `${t("locationHomePromptPrefix")} ${equipmentList}`;
     } else {
-      parts.push(t("locationGymPrompt"));
+      locationPart = t("locationGymPrompt");
     }
-    const note = userNote.trim();
-    if (note) parts.push(note);
-    onGenerate(parts.join(". "));
+    onGenerate(buildAiUserNote([locationPart, userNote]));
   };
 
   return (
@@ -286,12 +286,10 @@ export function AiWorkoutModal({
                   {t("specialRequest")}
                 </p>
               </div>
-              <textarea
+              <AiNoteTextarea
                 value={userNote}
-                onChange={(e) => setUserNote(e.target.value)}
-                rows={2}
+                onChange={setUserNote}
                 placeholder={t("specialRequestPlaceholder")}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               />
               <Button
                 onClick={handleGenerate}

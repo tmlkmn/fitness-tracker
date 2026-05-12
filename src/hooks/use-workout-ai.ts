@@ -9,6 +9,7 @@ import {
   type AIExercise,
   type AIExerciseVariation,
 } from "@/actions/ai-workout";
+import { invalidateWorkoutQueries } from "@/hooks/ai-invalidation";
 
 // ─── Feature 1: Full Workout ────────────────────────────────────────────────
 
@@ -34,8 +35,7 @@ export function useApplyWorkoutReplacement() {
       exercises: AIExercise[];
     }) => applyWorkoutReplacement(dailyPlanId, exercises),
     onSuccess: () => {
-      qc.refetchQueries({ queryKey: ["exercises"] });
-      qc.refetchQueries({ queryKey: ["today-dashboard"] });
+      invalidateWorkoutQueries(qc);
     },
   });
 }
@@ -75,8 +75,7 @@ export function useApplySectionReplacement() {
       exercises: AIExercise[];
     }) => applySectionReplacement(dailyPlanId, section, exercises),
     onSuccess: () => {
-      qc.refetchQueries({ queryKey: ["exercises"] });
-      qc.refetchQueries({ queryKey: ["today-dashboard"] });
+      invalidateWorkoutQueries(qc);
     },
   });
 }
@@ -114,8 +113,7 @@ export function useApplyExerciseVariation() {
       exercise: AIExerciseVariation;
     }) => applyExerciseVariation(exerciseId, exercise),
     onSuccess: () => {
-      qc.refetchQueries({ queryKey: ["exercises"] });
-      qc.refetchQueries({ queryKey: ["today-dashboard"] });
+      invalidateWorkoutQueries(qc);
     },
   });
 }

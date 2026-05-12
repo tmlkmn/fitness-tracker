@@ -6,7 +6,6 @@ import { eq, and, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
-  getAIClient,
   AI_MODELS,
   checkRateLimit,
   logAiUsage,
@@ -14,6 +13,7 @@ import {
   discriminateAiError,
   PROMPT_VERSION,
 } from "@/lib/ai";
+import { callAIText, executeAIWithRetries } from "@/lib/ai-runtime";
 import { buildUserContext } from "@/lib/ai-context";
 import { buildWeeklyWorkoutContext } from "@/lib/ai-workout-context";
 import {
@@ -34,13 +34,14 @@ import {
   validateDailyExerciseArray,
   dailyExercisesNeedRetry,
   buildDailyExercisesRetryNudge,
+  scoreExerciseValidationGaps,
   type ValidateDailyExercisesOptions,
-  type ValidateDailyExercisesResult,
 } from "@/lib/ai-daily-validators";
 import {
   sanitizeRestSeconds,
   sanitizeDurationMinutes,
 } from "@/lib/ai-shape-validators";
+import { parseAiJson } from "@/lib/ai-json-repair";
 
 // Types for AI-generated exercise data
 export interface AIExercise {
@@ -63,14 +64,6 @@ export interface AIExerciseVariation {
   restSeconds: number | null;
   durationMinutes: number | null;
   notes: string | null;
-}
-
-function parseJSON(text: string): unknown {
-  // Strip markdown code fences if present
-  let cleaned = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
-  // Fix trailing commas before } or ]
-  cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
-  return JSON.parse(cleaned);
 }
 
 /**
@@ -98,35 +91,6 @@ function validateAlternativesArray(data: unknown): AIExerciseVariation[] {
   return result;
 }
 
-async function callAI(
-  systemPrompt: string,
-  userMessage: string,
-  maxTokens: number = 5000,
-  useSmartModel: boolean = false,
-): Promise<{ text: string; inputTokens: number; outputTokens: number; model: string }> {
-  const client = getAIClient();
-  const model = useSmartModel ? AI_MODELS.smart : AI_MODELS.fast;
-
-  const message = await client.messages.create({
-    model,
-    max_tokens: maxTokens,
-    system: [
-      {
-        type: "text",
-        text: systemPrompt,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: [{ role: "user", content: userMessage }],
-  });
-
-  return {
-    text: message.content[0].type === "text" ? message.content[0].text : "",
-    inputTokens: message.usage.input_tokens,
-    outputTokens: message.usage.output_tokens,
-    model,
-  };
-}
 
 // ─── Feature 1: Full Workout Replacement ────────────────────────────────────
 
@@ -136,7 +100,7 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
   const locale = getUserLocale(user);
 
-  const [userContext, { context: workoutContext, currentDayExercises, planType }] =
+  const [userContext, { context: workoutContext, exercises: currentDayExercises, planType }] =
     await Promise.all([
       buildUserContext(user.id, { locale }),
       buildWeeklyWorkoutContext(dailyPlanId),
@@ -167,65 +131,40 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
   const minExerciseCount = planType === "rest" ? 0 : 5;
 
   try {
-    const first = await callAI(getWorkoutReplacePrompt(locale), userMessage, 5000, true);
-    let text = first.text;
-    inputTokens = first.inputTokens;
-    outputTokens = first.outputTokens;
+    const callOpts = {
+      systemPrompt: getWorkoutReplacePrompt(locale),
+      maxTokens: 5000,
+      model: "smart" as const,
+    };
+    const parseFailureAddendum = locale === "en"
+      ? `\n\nPREVIOUS RESPONSE RETURNED INVALID JSON. Reply with valid JSON only: { "exercises": [...] }`
+      : `\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`;
+    const validatorOpts = { requiredSections, minExerciseCount };
 
-    let validation: ValidateDailyExercisesResult;
-    try {
-      validation = validateDailyExerciseArray(parseJSON(text), {
-        requiredSections,
-        minExerciseCount,
-      });
-    } catch {
-      // JSON parse failure — single retry
-      const retry = await callAI(
-        getWorkoutReplacePrompt(locale),
-        `${userMessage}\n\n${locale === "en"
-          ? `PREVIOUS RESPONSE RETURNED INVALID JSON. Reply with valid JSON only: { "exercises": [...] }`
-          : `ÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`}`,
-        5000,
-        true,
-      );
-      text = retry.text;
-      inputTokens += retry.inputTokens;
-      outputTokens += retry.outputTokens;
-      validation = validateDailyExerciseArray(parseJSON(text), {
-        requiredSections,
-        minExerciseCount,
-      });
-    }
+    const exec = await executeAIWithRetries({
+      userMessage,
+      initial: () => callAIText({ ...callOpts, userMessage }),
+      retry: (msg) => callAIText({ ...callOpts, userMessage: msg }),
+      consume: (raw) => validateDailyExerciseArray(parseAiJson(raw.text), validatorOpts),
+      onParseFailure: async () => {
+        const raw = await callAIText({ ...callOpts, userMessage: `${userMessage}${parseFailureAddendum}` });
+        return { raw, result: validateDailyExerciseArray(parseAiJson(raw.text), validatorOpts) };
+      },
+      retries: [
+        {
+          buildRetryMessage: (current) =>
+            dailyExercisesNeedRetry(current)
+              ? buildDailyExercisesRetryNudge(current, minExerciseCount)
+              : null,
+          shouldKeep: (prev, candidate) =>
+            scoreExerciseValidationGaps(candidate) < scoreExerciseValidationGaps(prev),
+        },
+      ],
+    });
 
-    // Content-quality retry: missing sections, too few exercises, or
-    // dropped-empty-name exercises → ask AI to fix specific gaps.
-    if (dailyExercisesNeedRetry(validation)) {
-      const fixupRetry = await callAI(
-        getWorkoutReplacePrompt(locale),
-        `${userMessage}${buildDailyExercisesRetryNudge(validation, minExerciseCount)}`,
-        5000,
-        true,
-      );
-      inputTokens += fixupRetry.inputTokens;
-      outputTokens += fixupRetry.outputTokens;
-      try {
-        const fixupValidation = validateDailyExerciseArray(parseJSON(fixupRetry.text), {
-          requiredSections,
-          minExerciseCount,
-        });
-        const originalGaps =
-          validation.missingSections.length +
-          (validation.belowExpectedCount ? 1 : 0) +
-          validation.droppedForEmptyName;
-        const retryGaps =
-          fixupValidation.missingSections.length +
-          (fixupValidation.belowExpectedCount ? 1 : 0) +
-          fixupValidation.droppedForEmptyName;
-        if (retryGaps < originalGaps) validation = fixupValidation;
-      } catch {
-        // Keep original if retry parse fails
-      }
-    }
+    const validation = exec.result;
+    inputTokens = exec.inputTokens;
+    outputTokens = exec.outputTokens;
 
     const suggestedExercises: AIExercise[] = validation.exercises as AIExercise[];
     const hasWarnings = validation.warnings.length > 0;
@@ -311,7 +250,7 @@ export async function generateSectionReplacement(
     buildUserContext(user.id, { locale }),
     buildSectionContext(dailyPlanId, section),
   ]);
-  const sectionExercises = slim.sectionExercises;
+  const sectionExercises = slim.exercises;
 
   let userMessage = locale === "en"
     ? `${userContext}\n\n${slim.context}\n\nToday's planType: "${slim.planType ?? "workout"}" — use only sections allowed for this planType.\n\nBuild new exercises for the "${sectionLabel}" section only. ALL exercises must have section="${section}", sectionLabel="${sectionLabel}" — DO NOT return another section. Apply progressive overload vs previous weeks.`
@@ -334,53 +273,39 @@ export async function generateSectionReplacement(
   };
 
   try {
-    const first = await callAI(getSectionReplacePrompt(locale), userMessage, 3000, true);
-    let text = first.text;
-    inputTokens = first.inputTokens;
-    outputTokens = first.outputTokens;
+    const callOpts = {
+      systemPrompt: getSectionReplacePrompt(locale),
+      maxTokens: 3000,
+      model: "smart" as const,
+    };
+    const parseFailureAddendum = locale === "en"
+      ? `\n\nPREVIOUS RESPONSE RETURNED INVALID JSON. Reply with valid JSON only: { "exercises": [...] }`
+      : `\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`;
 
-    let validation: ValidateDailyExercisesResult;
-    try {
-      validation = validateDailyExerciseArray(parseJSON(text), validatorOptions);
-    } catch {
-      const retry = await callAI(
-        getSectionReplacePrompt(locale),
-        `${userMessage}\n\n${locale === "en"
-          ? `PREVIOUS RESPONSE RETURNED INVALID JSON. Reply with valid JSON only: { "exercises": [...] }`
-          : `ÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "exercises": [...] }`}`,
-        3000,
-        true,
-      );
-      text = retry.text;
-      inputTokens += retry.inputTokens;
-      outputTokens += retry.outputTokens;
-      validation = validateDailyExerciseArray(parseJSON(text), validatorOptions);
-    }
+    const exec = await executeAIWithRetries({
+      userMessage,
+      initial: () => callAIText({ ...callOpts, userMessage }),
+      retry: (msg) => callAIText({ ...callOpts, userMessage: msg }),
+      consume: (raw) => validateDailyExerciseArray(parseAiJson(raw.text), validatorOptions),
+      onParseFailure: async () => {
+        const raw = await callAIText({ ...callOpts, userMessage: `${userMessage}${parseFailureAddendum}` });
+        return { raw, result: validateDailyExerciseArray(parseAiJson(raw.text), validatorOptions) };
+      },
+      retries: [
+        {
+          buildRetryMessage: (current) =>
+            dailyExercisesNeedRetry(current)
+              ? buildDailyExercisesRetryNudge(current, validatorOptions.minExerciseCount)
+              : null,
+          shouldKeep: (prev, candidate) =>
+            scoreExerciseValidationGaps(candidate) < scoreExerciseValidationGaps(prev),
+        },
+      ],
+    });
 
-    // Content-quality retry: too few exercises after section filter, or all
-    // dropped because the AI ignored the section constraint.
-    if (dailyExercisesNeedRetry(validation)) {
-      const fixupRetry = await callAI(
-        getSectionReplacePrompt(locale),
-        `${userMessage}${buildDailyExercisesRetryNudge(validation, validatorOptions.minExerciseCount)}`,
-        3000,
-        true,
-      );
-      inputTokens += fixupRetry.inputTokens;
-      outputTokens += fixupRetry.outputTokens;
-      try {
-        const fixupValidation = validateDailyExerciseArray(parseJSON(fixupRetry.text), validatorOptions);
-        const originalGaps =
-          (validation.belowExpectedCount ? 1 : 0) +
-          validation.droppedForEmptyName;
-        const retryGaps =
-          (fixupValidation.belowExpectedCount ? 1 : 0) +
-          fixupValidation.droppedForEmptyName;
-        if (retryGaps < originalGaps) validation = fixupValidation;
-      } catch {
-        // Keep original
-      }
-    }
+    const validation = exec.result;
+    inputTokens = exec.inputTokens;
+    outputTokens = exec.outputTokens;
 
     const suggestedExercises: AIExercise[] = validation.exercises as AIExercise[];
     const hasWarnings = validation.warnings.length > 0;
@@ -553,50 +478,41 @@ export async function generateExerciseVariation(
   try {
     // H1: use smart model — alternative selection needs anatomical reasoning
     // and progressive overload sense that Haiku gets wrong often.
-    const first = await callAI(getExerciseVariationPrompt(locale), userMessage, 1500, true);
-    let text = first.text;
-    inputTokens = first.inputTokens;
-    outputTokens = first.outputTokens;
+    const callOpts = {
+      systemPrompt: getExerciseVariationPrompt(locale),
+      maxTokens: 1500,
+      model: "smart" as const,
+    };
+    const parseFailureAddendum = locale === "en"
+      ? `\n\nPREVIOUS RESPONSE RETURNED INVALID JSON. Reply with valid JSON only: { "alternatives": [...] }`
+      : `\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "alternatives": [...] }`;
 
-    let alternatives: AIExerciseVariation[];
-    try {
-      alternatives = validateAlternativesArray(parseJSON(text));
-    } catch {
-      const retry = await callAI(
-        getExerciseVariationPrompt(locale),
-        `${userMessage}\n\n${locale === "en"
-          ? `PREVIOUS RESPONSE RETURNED INVALID JSON. Reply with valid JSON only: { "alternatives": [...] }`
-          : `ÖNCEKİ YANIT HATALI JSON DÖNDÜ. Sadece geçerli JSON yanıt ver: { "alternatives": [...] }`}`,
-        1500,
-        true,
-      );
-      text = retry.text;
-      inputTokens += retry.inputTokens;
-      outputTokens += retry.outputTokens;
-      alternatives = validateAlternativesArray(parseJSON(text));
-    }
+    const exec = await executeAIWithRetries({
+      userMessage,
+      initial: () => callAIText({ ...callOpts, userMessage }),
+      retry: (msg) => callAIText({ ...callOpts, userMessage: msg }),
+      consume: (raw) => validateAlternativesArray(parseAiJson(raw.text)),
+      onParseFailure: async () => {
+        const raw = await callAIText({ ...callOpts, userMessage: `${userMessage}${parseFailureAddendum}` });
+        return { raw, result: validateAlternativesArray(parseAiJson(raw.text)) };
+      },
+      retries: [
+        {
+          buildRetryMessage: (current) => {
+            if (current.length >= 3) return null;
+            const missing = 3 - current.length;
+            return locale === "en"
+              ? `\n\nPREVIOUS RESPONSE RETURNED ${current.length} alternatives but EXACTLY 3 are required. ADD ${missing} more alternative(s).`
+              : `\n\nÖNCEKİ YANITTA ${current.length} alternatif döndün, TAM 3 alternatif gerek. ${missing} alternatif EKLE.`;
+          },
+          shouldKeep: (prev, candidate) => candidate.length > prev.length,
+        },
+      ],
+    });
 
-    // Content-quality retry: prompt asks for exactly 3 alternatives. If we
-    // got fewer, ask for the missing count.
-    if (alternatives.length < 3) {
-      const missing = 3 - alternatives.length;
-      const fixupRetry = await callAI(
-        getExerciseVariationPrompt(locale),
-        `${userMessage}\n\n${locale === "en"
-          ? `PREVIOUS RESPONSE RETURNED ${alternatives.length} alternatives but EXACTLY 3 are required. ADD ${missing} more alternative(s).`
-          : `ÖNCEKİ YANITTA ${alternatives.length} alternatif döndün, TAM 3 alternatif gerek. ${missing} alternatif EKLE.`}`,
-        1500,
-        true,
-      );
-      inputTokens += fixupRetry.inputTokens;
-      outputTokens += fixupRetry.outputTokens;
-      try {
-        const retried = validateAlternativesArray(parseJSON(fixupRetry.text));
-        if (retried.length > alternatives.length) alternatives = retried;
-      } catch {
-        // Keep original
-      }
-    }
+    const alternatives = exec.result;
+    inputTokens = exec.inputTokens;
+    outputTokens = exec.outputTokens;
 
     // Upsert to DB cache — only when there's no user note (note-driven
     // alternatives are one-off and shouldn't leak into future noteless calls)

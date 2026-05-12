@@ -32,6 +32,34 @@ export function addDaysStr(dateStr: string, days: number): string {
   return formatDateStr(d);
 }
 
+/**
+ * Returns the Monday (YYYY-MM-DD) of the week containing `dateStr`, computed
+ * in Europe/Istanbul timezone so the result is server-TZ independent. Monday
+ * is treated as the first day of the week (dow=0), Sunday last (dow=6).
+ */
+export function getMondayStr(dateStr: string): string {
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  const noonUtc = new Date(Date.UTC(y, mo - 1, d, 9, 0, 0));
+
+  const weekdayShort = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Istanbul",
+    weekday: "short",
+  }).format(noonUtc);
+
+  const DOW: Record<string, number> = {
+    Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6,
+  };
+  const dow = DOW[weekdayShort];
+  const mondayNoonUtc = new Date(noonUtc.getTime() - dow * 86_400_000);
+
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(mondayNoonUtc);
+}
+
 const TR_MONTHS_SHORT = [
   "Oca", "Şub", "Mar", "Nis", "May", "Haz",
   "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara",

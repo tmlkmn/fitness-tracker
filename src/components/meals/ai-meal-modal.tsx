@@ -35,6 +35,8 @@ import { useTranslations, useLocale } from "next-intl";
 import { getLocalizedMealLabel, isMealLabel } from "@/lib/meal-labels";
 import type { Locale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
+import { buildAiUserNote } from "@/lib/ai-user-note";
+import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
 
 type Tab = "suggest" | "saved";
 
@@ -252,26 +254,23 @@ export function AiMealModal({
   const saveMutation = useSaveDailyMealSuggestion();
 
   const handleGenerate = () => {
-    const parts: string[] = [];
-    if (ingredients.trim()) {
-      parts.push(`${t("ingredientsPrefix")}: ${ingredients.trim()}`);
-    }
-    if (userNote.trim()) {
-      parts.push(userNote.trim());
-    }
-    onGenerate(parts.join(". ") || undefined);
+    onGenerate(
+      buildAiUserNote([
+        ingredients.trim() ? `${t("ingredientsPrefix")}: ${ingredients.trim()}` : null,
+        userNote,
+      ]),
+    );
   };
 
   const handleSave = async () => {
     if (!suggestedMeals) return;
-    const noteParts = [
-      ingredients.trim() ? `${t("ingredientsNote")}: ${ingredients.trim()}` : "",
-      userNote.trim(),
-    ].filter(Boolean);
     await saveMutation.mutateAsync({
       planType,
       meals: suggestedMeals,
-      userNote: noteParts.join(". ") || undefined,
+      userNote: buildAiUserNote([
+        ingredients.trim() ? `${t("ingredientsNote")}: ${ingredients.trim()}` : null,
+        userNote,
+      ]),
     });
   };
 
@@ -356,12 +355,10 @@ export function AiMealModal({
                     <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
                     <p className="text-xs text-muted-foreground">{t("specialRequestLabel")}</p>
                   </div>
-                  <textarea
+                  <AiNoteTextarea
                     value={userNote}
-                    onChange={(e) => setUserNote(e.target.value)}
-                    rows={2}
+                    onChange={setUserNote}
                     placeholder={t("specialRequestPlaceholder")}
-                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                   />
                 </div>
                 <Button onClick={handleGenerate} disabled={loading} className="w-full">
