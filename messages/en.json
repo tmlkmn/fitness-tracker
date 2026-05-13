@@ -404,8 +404,6 @@
       "modeBoth": "Nutrition + Workout",
       "modeNutrition": "Nutrition only",
       "modeWorkout": "Workout only",
-      "highAccuracyModeLabel": "High accuracy mode (sequential generation)",
-      "highAccuracyModeHelp": "Workout is generated first, then nutrition is aligned to it. Takes longer (~4-8 min) but consistency across days improves.",
       "deloadToggleLabel": "Deload week",
       "deloadToggleHelp": "Volume drops ~50%, intensity is preserved. Calories shift toward maintenance, protein stays the same.",
       "deloadRecommendedHardTitle": "AI recommends: deload week",

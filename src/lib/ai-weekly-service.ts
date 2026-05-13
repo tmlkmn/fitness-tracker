@@ -6,8 +6,8 @@
 
 import "server-only";
 import { db } from "@/db";
-import { users, weeklyPlans } from "@/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { users, weeklyPlans, dailyPlans, exercises } from "@/db/schema";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { buildWeeklyPlanContext } from "@/actions/ai-weekly";
 import { buildUserNotePriorityBlock } from "@/lib/ai";
 import { getNutritionOnlyWeeklyPrompt, getWorkoutOnlyWeeklyPrompt } from "@/lib/ai-prompts";
@@ -192,7 +192,8 @@ function scoreWeeklyValidationGaps(
     (result.weeklyKcalDrift ? 1 : 0) +
     (result.weeklyProteinDrift ? 1 : 0) +
     (result.weeklyCarbsDrift ? 1 : 0) +
-    (result.weeklyFatDrift ? 1 : 0)
+    (result.weeklyFatDrift ? 1 : 0) +
+    (result.progressiveOverloadIssue ? 1 : 0)
   );
 }
 
@@ -207,6 +208,7 @@ interface QualityIssueSummary {
   weeklyCarbsDrift: boolean;
   weeklyFatDrift: boolean;
   allergenHits: { dow: number; mealIndex: number; allergens: string[] }[];
+  progressiveOverloadIssue: ValidateWeeklyPlanResult["progressiveOverloadIssue"];
 }
 
 function summarizeQualityIssues(
@@ -222,6 +224,7 @@ function summarizeQualityIssues(
   const weeklyCarbsDrift = result.weeklyCarbsDrift;
   const weeklyFatDrift = result.weeklyFatDrift;
   const allergenHits = result.allergenHits.filter((h) => !effectivePastDows.has(h.dow));
+  const progressiveOverloadIssue = result.progressiveOverloadIssue;
   const hasAny =
     emptyMealCount > 0 ||
     planTypeMismatchCount > 0 ||
@@ -231,7 +234,8 @@ function summarizeQualityIssues(
     weeklyProteinDrift ||
     weeklyCarbsDrift ||
     weeklyFatDrift ||
-    allergenHits.length > 0;
+    allergenHits.length > 0 ||
+    progressiveOverloadIssue != null;
   return {
     hasAny,
     emptyMealCount,
@@ -243,6 +247,7 @@ function summarizeQualityIssues(
     weeklyCarbsDrift,
     weeklyFatDrift,
     allergenHits,
+    progressiveOverloadIssue,
   };
 }
 
@@ -275,6 +280,11 @@ function buildQualityRetryMessage(summary: QualityIssueSummary): string {
   if (summary.weeklyFatDrift) {
     issues.push(`Haftalık yağ hedeften sapıyor (±%15 tolerans aşıldı). Yağ dağılımını düzelt.`);
   }
+  if (summary.progressiveOverloadIssue) {
+    issues.push(
+      `PROGRESİF YÜKLENME: ${summary.progressiveOverloadIssue.warning}`,
+    );
+  }
   if (summary.allergenHits.length > 0) {
     const flat = summary.allergenHits
       .map((h) => `gün ${h.dow} meal[${h.mealIndex}]: ${h.allergens.join(",")}`)
@@ -293,10 +303,14 @@ interface RunAiCallOptions {
   label: string;
   expectedTargets?: ExpectedTargets;
   userAllergens?: string[];
+  /** Working-set total from the user's most recent prior week (0 = skip). */
+  previousWorkingSets?: number;
+  /** True when the AI was asked to produce a deload week. */
+  isDeloadWeek?: boolean;
 }
 
 async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
-  const { systemPrompt, userMessage, expectedDayModes, effectivePastDows, maxTokens, label, expectedTargets, userAllergens } = opts;
+  const { systemPrompt, userMessage, expectedDayModes, effectivePastDows, maxTokens, label, expectedTargets, userAllergens, previousWorkingSets, isDeloadWeek } = opts;
   const nonPastTotal = 7 - effectivePastDows.size;
 
   console.log(`[AI Weekly] ▶ ${label} call start (maxTokens=${maxTokens})`);
@@ -313,7 +327,13 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
   let totalInput = first.inputTokens;
   let totalOutput = first.outputTokens;
 
-  const validate = (raw: unknown) => validateWeeklyPlan(raw, expectedTargets, { expectedDayModes, userAllergens });
+  const validate = (raw: unknown) =>
+    validateWeeklyPlan(raw, expectedTargets, {
+      expectedDayModes,
+      userAllergens,
+      previousWorkingSets,
+      isDeloadWeek,
+    });
   let result = validate(first.toolInput);
 
   const nonPastMissing = result.missingDays.filter((d) => !effectivePastDows.has(d)).length;
@@ -482,6 +502,8 @@ export interface ResolvedWeeklyRequest {
   sanitizedNote: string | null;
   rawUserNote: string | null;
   deloadWeek: boolean;
+  /** Sum of main/swimming working sets from the user's most recent prior week. */
+  previousWorkingSets: number;
 }
 
 export async function resolveWeeklyGenerationRequest(
@@ -584,6 +606,13 @@ export async function resolveWeeklyGenerationRequest(
 
   const sanitizedNote = userNote?.trim() ? sanitizeUserNote(userNote) : null;
 
+  // Sum working sets (main/swimming sections) from the user's most recent
+  // prior week. Used by the progressive-overload assessment — beginners and
+  // first-week users naturally have 0 here and skip the check.
+  const previousWorkingSets = doWorkout
+    ? await loadPreviousWeekWorkingSets(userId, nextWeekNumber)
+    : 0;
+
   return {
     userId,
     locale,
@@ -602,7 +631,42 @@ export async function resolveWeeklyGenerationRequest(
     sanitizedNote,
     rawUserNote: userNote ?? null,
     deloadWeek,
+    previousWorkingSets,
   };
+}
+
+async function loadPreviousWeekWorkingSets(
+  userId: string,
+  currentWeekNumber: number,
+): Promise<number> {
+  const [prevWeek] = await db
+    .select({ id: weeklyPlans.id })
+    .from(weeklyPlans)
+    .where(
+      and(
+        eq(weeklyPlans.userId, userId),
+        sql`${weeklyPlans.weekNumber} < ${currentWeekNumber}`,
+      ),
+    )
+    .orderBy(desc(weeklyPlans.weekNumber))
+    .limit(1);
+  if (!prevWeek) return 0;
+  const dayRows = await db
+    .select({ id: dailyPlans.id })
+    .from(dailyPlans)
+    .where(eq(dailyPlans.weeklyPlanId, prevWeek.id));
+  const dayIds = dayRows.map((d) => d.id);
+  if (dayIds.length === 0) return 0;
+  const rows = await db
+    .select({ section: exercises.section, sets: exercises.sets })
+    .from(exercises)
+    .where(inArray(exercises.dailyPlanId, dayIds));
+  let total = 0;
+  for (const r of rows) {
+    if (r.section !== "main" && r.section !== "swimming") continue;
+    total += r.sets ?? 1;
+  }
+  return total;
 }
 
 interface CallSpec {
@@ -614,6 +678,8 @@ interface CallSpec {
   label: string;
   expectedTargets?: ExpectedTargets;
   userAllergens?: string[];
+  previousWorkingSets?: number;
+  isDeloadWeek?: boolean;
 }
 
 export interface WeeklyPrompts {
@@ -622,7 +688,7 @@ export interface WeeklyPrompts {
 }
 
 export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
-  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, adjustedTargets, expectedTargets, supplementBudget, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek } = req;
+  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, adjustedTargets, expectedTargets, supplementBudget, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek, previousWorkingSets } = req;
   const isNutritionOnly = userRow?.serviceType === "nutrition";
   const userAllergens = parseUserAllergens(userRow?.foodAllergens);
   const deloadWorkoutBlock = deloadWeek ? `\n\n${buildDeloadWorkoutBlock(locale)}` : "";
@@ -716,6 +782,8 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
         effectivePastDows: workoutEffPastDows,
         maxTokens: AI_MAX_TOKENS.weeklyWorkout,
         label: "workout",
+        previousWorkingSets,
+        isDeloadWeek: deloadWeek,
       };
     } else {
       // Workout-only mode: full 7-day plan
@@ -729,6 +797,8 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
         effectivePastDows: pastDowsSet,
         maxTokens: AI_MAX_TOKENS.weeklyWorkout,
         label: "workout",
+        previousWorkingSets,
+        isDeloadWeek: deloadWeek,
       };
     }
   }
@@ -751,13 +821,6 @@ export interface WeeklyGenerationOutcome {
 }
 
 export interface RunWeeklyGenerationOptions {
-  /**
-   * When true and both prompts are present, the workout call runs first.
-   * Its produced volume summary is appended to the nutrition user message,
-   * then nutrition runs. Doubles best-case latency in exchange for nutrition
-   * that's aware of the actual produced workout.
-   */
-  highAccuracyMode?: boolean;
   /** Locale used to render the produced workout summary block. */
   locale?: Locale;
   /** Reports the active call leg as the orchestrator transitions through it. */
@@ -768,9 +831,13 @@ export async function runWeeklyGeneration(
   prompts: WeeklyPrompts,
   opts: RunWeeklyGenerationOptions = {},
 ): Promise<WeeklyGenerationOutcome> {
-  const sequential = Boolean(
-    opts.highAccuracyMode && prompts.nutrition && prompts.workout,
-  );
+  // When both nutrition and workout are requested we always run sequentially:
+  // workout first, then feed its produced-volume summary into the nutrition
+  // prompt. The parallel fast-path is reserved for nutrition-only or
+  // workout-only requests where there is no cross-talk to preserve.
+  // Nutrition that is aware of the actual produced workout is strictly
+  // higher quality and costs the same tokens; only latency differs.
+  const sequential = Boolean(prompts.nutrition && prompts.workout);
 
   let nutritionRaw: AiCallResult | null = null;
   let workoutRaw: AiCallResult | null = null;
@@ -781,7 +848,7 @@ export async function runWeeklyGeneration(
 
     if (isProducedWorkoutEmpty(workoutRaw.validationResult.plan)) {
       throw new Error(
-        "AI antrenman üretemedi; yüksek doğruluk modunda beslenme atlandı. Lütfen tekrar deneyin veya hızlı modu seçin.",
+        "AI antrenman üretemedi; beslenme adımı atlandı. Lütfen tekrar deneyin.",
       );
     }
 

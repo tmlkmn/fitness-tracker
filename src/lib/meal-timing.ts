@@ -272,9 +272,13 @@ const SLOT_NUTRITION = {
   earlyProtein: { calorieRange: { min: 150, max: 250 }, proteinMinG: 20 },
   interMainModerate: { calorieRange: { min: 150, max: 250 }, proteinMinG: 10 },
   interMainFrequent: { calorieRange: { min: 200, max: 350 }, proteinMinG: 15 },
+  preWorkout: { calorieRange: { min: 200, max: 350 }, proteinMinG: 15 },
   postWorkout: { calorieRange: { min: 250, max: 400 }, proteinMinG: 25 },
   eveningSnack: { calorieRange: { min: 100, max: 200 }, proteinMinG: 8 },
 } as const;
+
+/** Window (minutes) around a main meal where extra snack slots are skipped. */
+const MAIN_MEAL_COLLISION_MIN = 30;
 
 function generateSlots(
   times: RoutineTimes,
@@ -304,7 +308,40 @@ function generateSlots(
     }
   }
 
-  // 2. Inter-main snacks — breakfast → lunch, lunch → dinner
+  // 2. Pre-Workout — 60-90 min before workout on workout/swimming days.
+  //    Carb-dominant, modest protein. Skipped if it would land within
+  //    MAIN_MEAL_COLLISION_MIN of any main meal (the main meal serves as
+  //    pre-workout fuel in that case). Skipped for intermittent fasting
+  //    (mainGapH null) since the eating window may not include it.
+  if (
+    isFullProgram &&
+    isWorkoutDay &&
+    t.mainGapH != null &&
+    times.workout != null
+  ) {
+    const preMin = roundTo5(times.workout - 75); // mid of 60-90 dk
+    const mainAnchors: number[] = [
+      times.breakfast,
+      times.lunch,
+      times.dinner,
+    ].filter((m): m is number => m != null);
+    const collides = mainAnchors.some(
+      (anchor) => Math.abs(preMin - anchor) < MAIN_MEAL_COLLISION_MIN,
+    );
+    // Also skip if preMin lands before wake or after sleep window.
+    const beforeWake = times.wake != null && preMin < times.wake;
+    if (!collides && !beforeWake && preMin > 0) {
+      slots.push({
+        time: formatTime(preMin),
+        label: "Pre-Workout",
+        rationale: `Antrenman ${formatTime(times.workout)} öncesi 60-90dk: hafif karb + protein`,
+        size: "medium",
+        ...SLOT_NUTRITION.preWorkout,
+      });
+    }
+  }
+
+  // 3. Inter-main snacks — breakfast → lunch, lunch → dinner
   type MainPair = { from: number | null; fromLabel: string; to: number | null; toLabel: string };
   const pairs: MainPair[] = [
     {
@@ -361,7 +398,7 @@ function generateSlots(
     }
   }
 
-  // 3. Evening snack — dinner → sleep
+  // 4. Evening snack — dinner → sleep
   if (
     t.eveningSnackH != null &&
     times.dinner != null &&

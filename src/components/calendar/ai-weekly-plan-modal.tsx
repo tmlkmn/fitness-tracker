@@ -222,7 +222,6 @@ interface AiWeeklyPlanModalProps {
     generateMode?: "both" | "nutrition" | "workout",
     dayModes?: Record<number, "workout" | "swimming" | "rest">,
     pastDows?: number[],
-    highAccuracyMode?: boolean,
     deloadWeek?: boolean,
   ) => void;
   onApply: () => void;
@@ -497,7 +496,6 @@ export function AiWeeklyPlanModal({
   const [ingredientMode, setIngredientMode] = useState<"all" | "specific">("all");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [generateMode, setGenerateMode] = useState<"both" | "nutrition" | "workout">("both");
-  const [highAccuracyMode, setHighAccuracyMode] = useState(false);
   const [deloadOverride, setDeloadOverride] = useState<boolean | null>(null);
 
   const { data: quotaData } = useAiQuota();
@@ -649,7 +647,6 @@ export function AiWeeklyPlanModal({
       generateMode,
       dayModesToSend,
       Array.from(pastDows),
-      generateMode === "both" ? highAccuracyMode : false,
       generateMode !== "nutrition" && serviceType !== "nutrition" ? deloadWeek : false,
     );
     // Quota invalidation happens in the mutation's onSettled callback after
@@ -764,7 +761,6 @@ export function AiWeeklyPlanModal({
                         key={value}
                         onClick={() => {
                           setGenerateMode(value);
-                          if (value !== "both") setHighAccuracyMode(false);
                           if (value === "nutrition") setDeloadWeek(false);
                         }}
                         className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
@@ -777,24 +773,6 @@ export function AiWeeklyPlanModal({
                       </button>
                     ))}
                   </div>
-                  {generateMode === "both" && (
-                    <label className="mt-2 flex items-start gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        className="mt-0.5 h-4 w-4 accent-primary cursor-pointer"
-                        checked={highAccuracyMode}
-                        onChange={(e) => setHighAccuracyMode(e.target.checked)}
-                      />
-                      <span className="flex flex-col">
-                        <span className="text-[11px] font-medium text-foreground">
-                          {t("highAccuracyModeLabel")}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground leading-tight">
-                          {t("highAccuracyModeHelp")}
-                        </span>
-                      </span>
-                    </label>
-                  )}
                   {generateMode !== "nutrition" && (
                     <div className={`mt-2 rounded-md border px-2 py-1.5 ${deloadRec?.recommended && deloadRec.severity === "hard" ? "border-amber-500/40 bg-amber-500/10" : deloadRec?.recommended && deloadRec.severity === "soft" ? "border-blue-500/40 bg-blue-500/10" : "border-transparent bg-muted/40"}`}>
                       <label className="flex items-start gap-2 cursor-pointer select-none">

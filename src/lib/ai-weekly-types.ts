@@ -61,6 +61,12 @@ export interface ValidateWeeklyPlanResult {
   weeklyFatDrift: boolean;
   /** Per-day allergen substring hits across the week. */
   allergenHits: { dow: number; mealIndex: number; allergens: string[] }[];
+  /** Progressive overload assessment outcome (null when no comparison available). */
+  progressiveOverloadIssue: null | {
+    kind: "no-progression" | "aggressive-progression" | "deload-violation";
+    deltaRatio: number;
+    warning: string;
+  };
 }
 
 export interface ExpectedTargets {
@@ -95,6 +101,14 @@ export interface ValidateWeeklyPlanOptions {
    * warnings and surface via `allergenHits` so D's quality retry can nudge.
    */
   userAllergens?: string[];
+  /**
+   * Sum of working sets (main/swimming sections) from the *previous* week's
+   * generated workout, used by the progressive-overload assessment. Pass 0
+   * (or omit) when no prior week exists.
+   */
+  previousWorkingSets?: number;
+  /** True when the AI was asked to produce a deload week. */
+  isDeloadWeek?: boolean;
 }
 
 import {
@@ -112,6 +126,10 @@ import {
 } from "@/lib/ai-shape-validators";
 import { detectAllergens } from "@/lib/allergen-detect";
 import { computeMacroDrift, type MacroTotals } from "@/lib/macro-drift";
+import {
+  computeWorkingSets,
+  assessProgressiveOverload,
+} from "@/lib/progressive-overload-validator";
 
 const TURKISH_DAY_NAMES_MAP: Record<string, number> = {
   pazartesi: 0,
@@ -220,6 +238,38 @@ function detectMissingSections(
   return result;
 }
 
+/**
+ * Run the progressive-overload assessment when the caller supplied a
+ * previous-week working-set baseline. Returns null when no comparison is
+ * possible (beginners / first-week users) or when no issue was found.
+ */
+function assessOverloadAgainstPrevious(
+  rawDays: AIWeeklyDay[],
+  options: ValidateWeeklyPlanOptions | undefined,
+  warnings: string[],
+): ValidateWeeklyPlanResult["progressiveOverloadIssue"] {
+  const prevSets = options?.previousWorkingSets ?? 0;
+  if (prevSets <= 0) return null;
+  const currentSets = computeWorkingSets({
+    weekTitle: "",
+    phase: "",
+    notes: null,
+    days: rawDays,
+  });
+  const assessment = assessProgressiveOverload({
+    currentSets,
+    previousSets: prevSets,
+    isDeloadWeek: Boolean(options?.isDeloadWeek),
+  });
+  if (assessment.ok || !assessment.warning || !assessment.kind) return null;
+  warnings.push(assessment.warning);
+  return {
+    kind: assessment.kind,
+    deltaRatio: assessment.deltaRatio,
+    warning: assessment.warning,
+  };
+}
+
 export function validateWeeklyPlan(
   data: unknown,
   expectedTargets?: ExpectedTargets,
@@ -269,6 +319,7 @@ export function validateWeeklyPlan(
       weeklyCarbsDrift: false,
       weeklyFatDrift: false,
       allergenHits: [],
+      progressiveOverloadIssue: null,
     };
   }
 
@@ -442,6 +493,11 @@ export function validateWeeklyPlan(
     }
   }
 
+  // ─── Progressive overload (current week vs previous) ──────────────────
+  // Only assess when caller supplied previousWorkingSets > 0 — beginners
+  // and first-week users skip this check by design.
+  const progressiveOverloadIssue = assessOverloadAgainstPrevious(rawDays, options, warnings);
+
   if (warnings.length > 0) {
     console.warn(`[validateWeeklyPlan] ${warnings.length} warning(s):`, warnings);
   }
@@ -464,5 +520,6 @@ export function validateWeeklyPlan(
     weeklyCarbsDrift,
     weeklyFatDrift,
     allergenHits,
+    progressiveOverloadIssue,
   };
 }

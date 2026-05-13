@@ -28,7 +28,6 @@ const RequestBodySchema = z.object({
     z.enum(["workout", "swimming", "rest", "nutrition"]),
   ).optional(),
   pastDows: z.array(z.number().int().min(0).max(6)).optional(),
-  highAccuracyMode: z.boolean().optional(),
   deloadWeek: z.boolean().optional(),
 });
 
@@ -82,9 +81,12 @@ export async function POST(request: Request) {
         const req = await resolveWeeklyGenerationRequest(parsedBody, userId, locale);
         const prompts = buildWeeklyPrompts(req);
 
-        const highAccuracyMode = Boolean(parsedBody.highAccuracyMode);
+        // Sequential workout → nutrition is now the default whenever both
+        // prompts are present (Tur 2.1). The legacy `highAccuracyMode` flag
+        // on the request body is ignored; we surface progress via onStep so
+        // the SSE stream still emits per-leg "workout" / "nutrition" events.
         const sequentialActive =
-          highAccuracyMode && prompts.nutrition !== null && prompts.workout !== null;
+          prompts.nutrition !== null && prompts.workout !== null;
 
         if (!sequentialActive) {
           if (prompts.nutrition) emit({ type: "status", step: "nutrition" });
@@ -92,7 +94,6 @@ export async function POST(request: Request) {
         }
 
         const outcome = await runWeeklyGeneration(prompts, {
-          highAccuracyMode,
           locale,
           onStep: sequentialActive
             ? (s) => emit({ type: "status", step: s })
@@ -119,7 +120,6 @@ export async function POST(request: Request) {
           const supplementsCount = req.supplementBudget.supplementsCount;
           const metaPayload = {
             retryFlags: outcome.retryFlags,
-            highAccuracyMode,
             deloadWeek,
             carbCyclingProfile,
             supplementKcal,
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
           const supplementsActive = supplementsCount > 0;
           await logAiUsage(userId, "weekly", {
             status: flagsAny ? "success_with_warnings" : "success",
-            errorMessage: flagsAny || highAccuracyMode || deloadWeek || cyclingActive || supplementsActive ? JSON.stringify(metaPayload) : undefined,
+            errorMessage: flagsAny || deloadWeek || cyclingActive || supplementsActive ? JSON.stringify(metaPayload) : undefined,
             inputTokens: totalInputTokens,
             outputTokens: totalOutputTokens,
             durationMs: Date.now() - startTime,
