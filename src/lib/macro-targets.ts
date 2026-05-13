@@ -7,6 +7,12 @@ import {
   type FitnessGoal,
 } from "@/lib/meal-timing";
 import { GOAL_STRATEGIES, computeCalorieDelta } from "@/lib/strategy/goal-strategy";
+import { DELOAD_CALORIE_DELTA_MULTIPLIER } from "@/lib/deload-policy";
+
+export interface ResolveTargetsOptions {
+  /** Apply deload multiplier to the calorie delta. */
+  deloadWeek?: boolean;
+}
 
 export interface MacroTargets {
   calories: number;
@@ -134,6 +140,7 @@ function computeLeanMass(weightKg: number, fatPercent: number | null, gender: Ge
 export async function computeDefaultTargets(
   user: UserBasics,
   userId: string | null,
+  opts?: ResolveTargetsOptions,
 ): Promise<MacroTargets | null> {
   const w = safeParseFloat(user.weight);
   const h = user.height ?? null;
@@ -148,9 +155,12 @@ export async function computeDefaultTargets(
   // Mifflin-St Jeor (sex-aware)
   const bmr = 10 * w + 6.25 * h - 5 * age + BMR_SEX_CONSTANT[gender];
   const tdee = bmr * activity;
+  const deltaOpts = opts?.deloadWeek
+    ? { deloadMultiplier: DELOAD_CALORIE_DELTA_MULTIPLIER }
+    : undefined;
   const calories = Math.max(
     MIN_DAILY_CALORIES,
-    Math.round(tdee + computeCalorieDelta(strategy, w)),
+    Math.round(tdee + computeCalorieDelta(strategy, w, deltaOpts)),
   );
 
   // LBM: prefer measured fatPercent, else gender-based fallback
@@ -174,6 +184,7 @@ export async function computeDefaultTargets(
 export async function resolveTargets(
   user: UserWithTargets,
   userId: string | null,
+  opts?: ResolveTargetsOptions,
 ): Promise<MacroTargets | null> {
   const hasOverride =
     user.targetCalories != null ||
@@ -181,7 +192,7 @@ export async function resolveTargets(
     user.targetCarbsG != null ||
     user.targetFatG != null;
 
-  const defaults = await computeDefaultTargets(user, userId);
+  const defaults = await computeDefaultTargets(user, userId, opts);
 
   if (!hasOverride) return defaults;
 

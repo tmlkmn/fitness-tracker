@@ -35,6 +35,10 @@ import {
   buildProducedWorkoutBlock,
   isProducedWorkoutEmpty,
 } from "@/lib/ai-workout-summary";
+import {
+  buildDeloadWorkoutBlock,
+  buildDeloadNutritionBlock,
+} from "@/lib/deload-policy";
 import type { Locale } from "@/lib/locale";
 
 const CALL_TIMEOUT = AI_TIMEOUTS.weeklyCall;
@@ -412,6 +416,7 @@ export interface WeeklyRequestInput {
   generateMode?: "both" | "nutrition" | "workout";
   dayModes?: Record<string, DayModeChoice>;
   pastDows?: number[];
+  deloadWeek?: boolean;
 }
 
 interface UserProfileRow {
@@ -446,6 +451,7 @@ export interface ResolvedWeeklyRequest {
   expectedTargets: ExpectedTargets | undefined;
   sanitizedNote: string | null;
   rawUserNote: string | null;
+  deloadWeek: boolean;
 }
 
 export async function resolveWeeklyGenerationRequest(
@@ -514,9 +520,11 @@ export async function resolveWeeklyGenerationRequest(
   const doNutrition = generateMode !== "workout";
   const doWorkout = generateMode !== "nutrition" && !isNutritionOnly;
 
+  const deloadWeek = Boolean(body.deloadWeek);
+
   let resolvedTargets: MacroTargets | null = null;
   if (doNutrition && userRow) {
-    resolvedTargets = await resolveTargets(userRow, userId);
+    resolvedTargets = await resolveTargets(userRow, userId, { deloadWeek });
   }
   const expectedTargets: ExpectedTargets | undefined = resolvedTargets
     ? { calories: resolvedTargets.calories, protein: resolvedTargets.protein, carbs: resolvedTargets.carbs, fat: resolvedTargets.fat }
@@ -539,6 +547,7 @@ export async function resolveWeeklyGenerationRequest(
     expectedTargets,
     sanitizedNote,
     rawUserNote: userNote ?? null,
+    deloadWeek,
   };
 }
 
@@ -559,9 +568,11 @@ export interface WeeklyPrompts {
 }
 
 export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
-  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, resolvedTargets, expectedTargets, sanitizedNote, monday, nextWeekNumber, userRow } = req;
+  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, resolvedTargets, expectedTargets, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek } = req;
   const isNutritionOnly = userRow?.serviceType === "nutrition";
   const userAllergens = parseUserAllergens(userRow?.foodAllergens);
+  const deloadWorkoutBlock = deloadWeek ? `\n\n${buildDeloadWorkoutBlock(locale)}` : "";
+  const deloadNutritionBlock = deloadWeek ? `\n\n${buildDeloadNutritionBlock(locale)}` : "";
 
   const weekHeader = `Hafta başlangıç tarihi: ${monday}\nBu plan ${nextWeekNumber}. hafta için oluşturulacak. weekTitle alanı MUTLAKA "Hafta ${nextWeekNumber} — ..." formatında başlamalı.`;
 
@@ -591,7 +602,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       : "";
 
     const nutritionDayModesBlock = buildDayModesBlock(nutritionDayModes, pastDowsSet);
-    const nutritionUserMsg = `${targetsBlock}\n\n${weeklyContext}${trainingContextBlock}${nutritionDayModesBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.\n\n⚡ KISALTMA KURALI: content alanı MAX 15 kelime. Notlar 1 cümle.${noteBlockNutrition}`;
+    const nutritionUserMsg = `${targetsBlock}\n\n${weeklyContext}${trainingContextBlock}${nutritionDayModesBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.\n\n⚡ KISALTMA KURALI: content alanı MAX 15 kelime. Notlar 1 cümle.${noteBlockNutrition}${deloadNutritionBlock}`;
 
     nutrition = {
       systemPrompt: getNutritionOnlyWeeklyPrompt(locale),
@@ -624,7 +635,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       }
 
       const workoutDayModesBlock = buildWorkoutOnlyDayModesBlock(expectedDayModes, pastDowsSet);
-      const workoutUserMsg = `${weeklyContext}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}`;
+      const workoutUserMsg = `${weeklyContext}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}`;
 
       workout = {
         systemPrompt: getWorkoutOnlyWeeklyPrompt(locale),
@@ -637,7 +648,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     } else {
       // Workout-only mode: full 7-day plan
       const workoutDayModesBlock = buildDayModesBlock(expectedDayModes, pastDowsSet);
-      const workoutUserMsg = `${weeklyContext}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}`;
+      const workoutUserMsg = `${weeklyContext}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}`;
 
       workout = {
         systemPrompt: getWorkoutOnlyWeeklyPrompt(locale),

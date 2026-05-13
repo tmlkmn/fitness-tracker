@@ -29,6 +29,7 @@ const RequestBodySchema = z.object({
   ).optional(),
   pastDows: z.array(z.number().int().min(0).max(6)).optional(),
   highAccuracyMode: z.boolean().optional(),
+  deloadWeek: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -112,10 +113,11 @@ export async function POST(request: Request) {
 
         try {
           const flagsAny = Object.values(outcome.retryFlags).some(Boolean);
-          const metaPayload = { retryFlags: outcome.retryFlags, highAccuracyMode };
+          const deloadWeek = Boolean(parsedBody.deloadWeek);
+          const metaPayload = { retryFlags: outcome.retryFlags, highAccuracyMode, deloadWeek };
           await logAiUsage(userId, "weekly", {
             status: flagsAny ? "success_with_warnings" : "success",
-            errorMessage: flagsAny || highAccuracyMode ? JSON.stringify(metaPayload) : undefined,
+            errorMessage: flagsAny || highAccuracyMode || deloadWeek ? JSON.stringify(metaPayload) : undefined,
             inputTokens: totalInputTokens,
             outputTokens: totalOutputTokens,
             durationMs: Date.now() - startTime,

@@ -50,6 +50,7 @@ import {
   useDeleteSavedSuggestion,
   type GenerationStep,
 } from "@/hooks/use-weekly-ai";
+import { useDeloadRecommendation } from "@/hooks/use-deload-recommendation";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 import { useTranslations, useLocale } from "next-intl";
@@ -221,6 +222,7 @@ interface AiWeeklyPlanModalProps {
     dayModes?: Record<number, "workout" | "swimming" | "rest">,
     pastDows?: number[],
     highAccuracyMode?: boolean,
+    deloadWeek?: boolean,
   ) => void;
   onApply: () => void;
   onApplySaved: (plan: AIWeeklyPlan) => void;
@@ -476,6 +478,7 @@ export function AiWeeklyPlanModal({
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [generateMode, setGenerateMode] = useState<"both" | "nutrition" | "workout">("both");
   const [highAccuracyMode, setHighAccuracyMode] = useState(false);
+  const [deloadOverride, setDeloadOverride] = useState<boolean | null>(null);
 
   const { data: quotaData } = useAiQuota();
   const weeklyQuota = getQuota(quotaData, "weekly");
@@ -489,6 +492,25 @@ export function AiWeeklyPlanModal({
   const { data: savedList } = useSavedSuggestions(open);
   const { data: savedDetail, isLoading: loadingSavedDetail } = useSavedSuggestionDetail(selectedSavedId);
   const deleteSaved = useDeleteSavedSuggestion();
+
+  const deloadEnabled =
+    open
+    && !showSaved
+    && !savedPlanToPreview
+    && !suggestedPlan
+    && !loading
+    && generateMode !== "nutrition"
+    && serviceType !== "nutrition";
+  const { data: deloadRec } = useDeloadRecommendation(weekStartStr, deloadEnabled);
+  const deloadWeek = deloadOverride ?? deloadRec?.recommended ?? false;
+  const setDeloadWeek = (v: boolean) => setDeloadOverride(v);
+
+  useEffect(() => {
+    if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDeloadOverride(null);
+    }
+  }, [open]);
 
   // Group suggestions by week for display
   const groupedSuggestions = useMemo(() => {
@@ -602,6 +624,7 @@ export function AiWeeklyPlanModal({
       effectiveDayModes,
       Array.from(pastDows),
       generateMode === "both" ? highAccuracyMode : false,
+      generateMode !== "nutrition" && serviceType !== "nutrition" ? deloadWeek : false,
     );
     // Quota invalidation happens in the mutation's onSettled callback after
     // usage_log is written — invalidating here would refresh stale quota.
@@ -716,6 +739,7 @@ export function AiWeeklyPlanModal({
                         onClick={() => {
                           setGenerateMode(value);
                           if (value !== "both") setHighAccuracyMode(false);
+                          if (value === "nutrition") setDeloadWeek(false);
                         }}
                         className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
                           generateMode === value
@@ -744,6 +768,57 @@ export function AiWeeklyPlanModal({
                         </span>
                       </span>
                     </label>
+                  )}
+                  {generateMode !== "nutrition" && (
+                    <div className={`mt-2 rounded-md border px-2 py-1.5 ${deloadRec?.recommended && deloadRec.severity === "hard" ? "border-amber-500/40 bg-amber-500/10" : deloadRec?.recommended && deloadRec.severity === "soft" ? "border-blue-500/40 bg-blue-500/10" : "border-transparent bg-muted/40"}`}>
+                      <label className="flex items-start gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5 h-4 w-4 accent-primary cursor-pointer"
+                          checked={deloadWeek}
+                          onChange={(e) => setDeloadWeek(e.target.checked)}
+                        />
+                        <span className="flex flex-col gap-0.5">
+                          <span className="text-[11px] font-medium text-foreground flex items-center gap-1">
+                            {deloadRec?.recommended && deloadRec.severity === "hard" && (
+                              <span aria-hidden>⚡</span>
+                            )}
+                            {deloadRec?.recommended && deloadRec.severity === "soft" && (
+                              <span aria-hidden>💤</span>
+                            )}
+                            {deloadRec?.recommended && deloadRec.severity === "hard"
+                              ? t("deloadRecommendedHardTitle")
+                              : deloadRec?.recommended && deloadRec.severity === "soft"
+                                ? t("deloadRecommendedSoftTitle")
+                                : t("deloadToggleLabel")}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground leading-tight">
+                            {t("deloadToggleHelp")}
+                          </span>
+                          {deloadRec?.recommended && deloadRec.reasons.length > 0 && (
+                            <span className="text-[10px] text-muted-foreground/80 leading-tight">
+                              {deloadRec.reasons.includes("cadence") && (
+                                <span>{t("deloadReasonCadence", { weeks: deloadRec.consecutiveTrainingWeeks })}. </span>
+                              )}
+                              {deloadRec.reasons.includes("sleep_quality") && (
+                                <span>{t("deloadReasonSleepQuality")}. </span>
+                              )}
+                              {deloadRec.reasons.includes("sleep_duration") && (
+                                <span>{t("deloadReasonSleepDuration")}. </span>
+                              )}
+                              {deloadRec.reasons.includes("completion") && (
+                                <span>{t("deloadReasonCompletion")}. </span>
+                              )}
+                            </span>
+                          )}
+                          {deloadRec?.reasons.includes("just_deloaded") && (
+                            <span className="text-[10px] text-muted-foreground/80 leading-tight">
+                              {t("deloadJustDeloadedNote")}
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    </div>
                   )}
                 </div>
               )}

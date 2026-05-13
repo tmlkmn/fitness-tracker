@@ -31,16 +31,21 @@ export const CALORIE_DELTA_CLAMP = { min: -800, max: 800 };
  * Computes the kcal delta for a user. Prefers per-kg scaling when both
  * `weight` and `calorieDeltaPerKg` are usable; falls back to the legacy
  * fixed `calorieDelta` otherwise. Result is clamped to ±800 kcal.
+ *
+ * `opts.deloadMultiplier` (0..1) shrinks the delta toward maintenance for
+ * deload weeks. Applied before clamping so the safety bounds still hold.
  */
 export function computeCalorieDelta(
   strategy: GoalStrategy,
   weight: number | null | undefined,
+  opts?: { deloadMultiplier?: number },
 ): number {
+  const multiplier = opts?.deloadMultiplier ?? 1;
   if (weight && weight > 0 && Number.isFinite(weight) && strategy.calorieDeltaPerKg != null) {
-    const raw = Math.round(strategy.calorieDeltaPerKg * weight);
+    const raw = Math.round(strategy.calorieDeltaPerKg * weight * multiplier);
     return Math.max(CALORIE_DELTA_CLAMP.min, Math.min(CALORIE_DELTA_CLAMP.max, raw));
   }
-  return strategy.calorieDelta;
+  return Math.round(strategy.calorieDelta * multiplier);
 }
 
 export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
@@ -133,10 +138,15 @@ export function renderGoalStrategyBlock(
   goal: FitnessGoal,
   goalSource: "explicit" | "derived",
   weight?: number | null,
+  deloadWeek?: boolean,
 ): string {
   const strategy = GOAL_STRATEGIES[goal];
   const label = FITNESS_GOAL_LABELS[goal];
-  const delta = computeCalorieDelta(strategy, weight);
+  const delta = computeCalorieDelta(
+    strategy,
+    weight,
+    deloadWeek ? { deloadMultiplier: 0.4 } : undefined,
+  );
   const deltaSign = delta > 0 ? "+" : "";
 
   const lines: string[] = [`═══ HEDEF-ODAKLI STRATEJİ: ${label} ═══`];
@@ -144,6 +154,9 @@ export function renderGoalStrategyBlock(
     lines.push(
       "(NOT: Kullanıcı profilden hedef seçmemiş — kilo/hedef-kilo farkından çıkarsandı.)",
     );
+  }
+  if (deloadWeek) {
+    lines.push("(NOT: Bu hafta deload — kalori deltası maintenance'a yaklaştırıldı.)");
   }
   const deltaLine = weight && weight > 0
     ? `Kalori deltası: ${deltaSign}${delta} kcal (TDEE'ye göre, ${weight}kg ağırlığa ölçeklenmiş)`
