@@ -248,6 +248,12 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
       }
     }
 
+    if (suggestedExercises.length === 0) {
+      validation.warnings.push(
+        `[daily-empty-day] AI returned no exercises for planType "${planType}" — applying would create an empty training day`,
+      );
+    }
+
     // Weekly-aggregate parity check — combine the AI's suggestion with the
     // other 6 days of the user's current week and run the same validators
     // the weekly flow uses (muscle volume bands, per-muscle/per-pattern
@@ -314,6 +320,7 @@ async function loadProactiveWorkoutContext(
   previousBreakdown: Awaited<ReturnType<typeof loadPreviousWeekVolumeBreakdown>>;
   weeklyPlanId: number;
   weekNumber: number;
+  isDeloadWeek: boolean;
 } | null> {
   const [planRow] = await db
     .select({ weeklyPlanId: dailyPlans.weeklyPlanId })
@@ -322,10 +329,16 @@ async function loadProactiveWorkoutContext(
   if (!planRow?.weeklyPlanId) return null;
 
   const [weekRow] = await db
-    .select({ id: weeklyPlans.id, weekNumber: weeklyPlans.weekNumber })
+    .select({
+      id: weeklyPlans.id,
+      weekNumber: weeklyPlans.weekNumber,
+      phase: weeklyPlans.phase,
+    })
     .from(weeklyPlans)
     .where(eq(weeklyPlans.id, planRow.weeklyPlanId));
   if (!weekRow) return null;
+
+  const isDeloadWeek = weekRow.phase.trim().toLowerCase() === "deload";
 
   const allDays = await db
     .select({ planType: dailyPlans.planType })
@@ -346,7 +359,7 @@ async function loadProactiveWorkoutContext(
   const bands = getMuscleVolumeBands({
     fitnessLevel: profile?.fitnessLevel ?? null,
     fitnessGoal: profile?.fitnessGoal ?? null,
-    deloadWeek: false,
+    deloadWeek: isDeloadWeek,
     trainingDayCount,
   });
 
@@ -360,6 +373,7 @@ async function loadProactiveWorkoutContext(
     previousBreakdown,
     weeklyPlanId: planRow.weeklyPlanId,
     weekNumber: weekRow.weekNumber,
+    isDeloadWeek,
   };
 }
 
@@ -390,7 +404,7 @@ async function appendAggregateWarnings(input: {
   const perMuscle = assessPerMuscleProgressiveOverload({
     current: volReport.totals,
     previous: proactive.previousBreakdown.byMuscle,
-    isDeloadWeek: false,
+    isDeloadWeek: proactive.isDeloadWeek,
   });
   pushBucketWarnings(warnings, perMuscle, "daily-muscle-overload");
 
@@ -398,7 +412,7 @@ async function appendAggregateWarnings(input: {
   const perPattern = assessPerPatternProgressiveOverload({
     current: currentByPattern,
     previous: proactive.previousBreakdown.byPattern,
-    isDeloadWeek: false,
+    isDeloadWeek: proactive.isDeloadWeek,
   });
   pushBucketWarnings(warnings, perPattern, "daily-pattern-overload");
 }

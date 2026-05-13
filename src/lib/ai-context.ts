@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { users, weeklyPlans, dailyPlans, meals, exercises, waterLogs, sleepLogs } from "@/db/schema";
 import { eq, desc, and, lte, asc, ne, inArray } from "drizzle-orm";
-import { resolveTargets, type MacroTargets } from "@/lib/macro-targets";
+import { resolveTargetsForDay, type MacroTargets } from "@/lib/macro-targets";
 import { computeMealMacros } from "@/lib/meal-macros";
 import {
   loadUserProfileRow,
@@ -83,10 +83,11 @@ function labelsFor(locale: Locale): CtxLabels {
 
 export async function buildUserContext(
   userId: string,
-  options?: { forceRefresh?: boolean; locale?: Locale },
+  options?: { forceRefresh?: boolean; locale?: Locale; slim?: boolean },
 ): Promise<string> {
   const locale: Locale = options?.locale ?? "tr";
-  const cacheKey = `${userId}:${locale}`;
+  const slim = options?.slim === true;
+  const cacheKey = `${userId}:${locale}:${slim ? "slim" : "full"}`;
   const cached = contextCache.get(cacheKey);
   if (!options?.forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.text;
@@ -98,8 +99,19 @@ export async function buildUserContext(
 
   const lines: string[] = renderUserProfileLines(user, {
     includeAgeAndService: true,
-    compact: false,
+    compact: slim,
   });
+
+  // Slim mode skips weekly plan rendering, water/sleep telemetry, supplement
+  // breakdown, and progress lines — meant for single-meal variation and
+  // exercise tips where the heavy program state isn't actionable. Caller
+  // gets profile + age/service + (in slim) one-line goal context, which is
+  // enough for the model to produce a relevant alternative.
+  if (slim) {
+    const result = lines.join("\n");
+    contextCache.set(cacheKey, { text: result, timestamp: Date.now() });
+    return result;
+  }
 
   const { getTurkeyTodayStr } = await import("@/lib/utils");
   const today = getTurkeyTodayStr();
@@ -415,12 +427,19 @@ export async function getMealMacroBudget(
     .from(users)
     .where(eq(users.id, userId));
 
-  const rawTargets = userRow ? await resolveTargets(userRow, userId) : null;
-
   const [dayRow] = await db
-    .select({ weeklyPlanId: dailyPlans.weeklyPlanId })
+    .select({
+      weeklyPlanId: dailyPlans.weeklyPlanId,
+      planType: dailyPlans.planType,
+    })
     .from(dailyPlans)
     .where(eq(dailyPlans.id, dailyPlanId));
+  // Resolve per-day targets (carb-cycled by planType) so meal variation on
+  // a rest day with aggressive cycling doesn't suggest a high-carb meal
+  // against a baseline budget that doesn't apply.
+  const rawTargets = userRow
+    ? await resolveTargetsForDay(userRow, userId, dayRow?.planType ?? null)
+    : null;
   const supplementBudget = await getDailySupplementBudget(
     userId,
     dayRow?.weeklyPlanId ?? null,

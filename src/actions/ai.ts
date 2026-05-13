@@ -86,7 +86,7 @@ export async function generateMealVariation(
   await checkRateLimit(user.id, "meal");
   const locale = getUserLocale(user);
 
-  const userContext = await buildUserContext(user.id, { locale });
+  const userContext = await buildUserContext(user.id, { locale, slim: true });
 
   const macroInfo = [
     calories ? `${calories} kcal` : null,
@@ -407,7 +407,7 @@ export async function getExerciseFormTips(
 
   try {
     const locale = getUserLocale(user);
-    const userContext = await buildUserContext(user.id, { locale });
+    const userContext = await buildUserContext(user.id, { locale, slim: true });
     const result = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext, locale);
     inputTokens = result.inputTokens;
     outputTokens = result.outputTokens;
@@ -457,7 +457,7 @@ export async function regenerateExerciseFormTips(
 
   try {
     const locale = getUserLocale(user);
-    const userContext = await buildUserContext(user.id, { locale });
+    const userContext = await buildUserContext(user.id, { locale, slim: true });
     const result = await callAIForTips(exerciseName, englishName, exerciseNotes, userContext, locale);
     inputTokens = result.inputTokens;
     outputTokens = result.outputTokens;
