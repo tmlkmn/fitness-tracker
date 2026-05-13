@@ -418,6 +418,27 @@
       "carbCyclingBadgeSwimming": "Swimming day • moderate carb",
       "dayTypeLabel": "Daily plan type",
       "dayTypeHint": "(tap to change)",
+      "levelHint": {
+        "beginnerTitle": "Beginner level — {count} workout days/week recommended",
+        "intermediateTitle": "Intermediate level — {count} workout days/week recommended",
+        "advancedTitle": "Advanced level — {count} workout days/week recommended",
+        "beginnerBody": "{days} selected as workout days by default. This split allows recovery between muscle groups; tap any day to change.",
+        "intermediateBody": "{days} selected as workout days by default. Suits an upper/lower split; tap any day to change.",
+        "advancedBody": "{days} selected as workout days by default. Suits a 5-day split; tap any day to change.",
+        "personalized": "Personalized — you've adjusted the defaults.",
+        "missingLevel": "Your training level isn't set; defaulting to a 5-day split.",
+        "settingsLink": "Set it in settings",
+        "dismiss": "Dismiss",
+        "days": {
+          "mon": "Monday",
+          "tue": "Tuesday",
+          "wed": "Wednesday",
+          "thu": "Thursday",
+          "fri": "Friday",
+          "sat": "Saturday",
+          "sun": "Sunday"
+        }
+      },
       "dayTooltipPast": "{label}: this day has passed — AI will not suggest content",
       "dayTooltipActive": "{label}: {mode}",
       "dayCycleNote": "Cycles: Workout → Swimming → Rest. Nutrition program is written for every day.",

@@ -60,6 +60,7 @@ import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
 import { buildAiUserNote } from "@/lib/ai-user-note";
 import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
 import { defaultUiDayModesForLevel } from "@/lib/day-modes-default";
+import { DayModeLevelHint } from "@/components/calendar/day-mode-level-hint";
 
 function SteppedProgress({
   loading,
@@ -830,6 +831,10 @@ export function AiWeeklyPlanModal({
               {/* Day selection — hide for nutrition-only */}
               {generateMode !== "nutrition" && (
               <>
+              <DayModeLevelHint
+                fitnessLevel={fitnessLevel}
+                personalized={userTouchedDayModes}
+              />
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
                   {t("dayTypeLabel")} <span className="text-muted-foreground/60">{t("dayTypeHint")}</span>:

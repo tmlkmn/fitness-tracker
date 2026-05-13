@@ -418,6 +418,27 @@
       "carbCyclingBadgeSwimming": "Yüzme günü • orta carb",
       "dayTypeLabel": "Günlük plan tipi",
       "dayTypeHint": "(üzerine basarak değiştir)",
+      "levelHint": {
+        "beginnerTitle": "Başlangıç seviyesi — haftada {count} antrenman önerilir",
+        "intermediateTitle": "Orta seviye — haftada {count} antrenman önerilir",
+        "advancedTitle": "İleri seviye — haftada {count} antrenman önerilir",
+        "beginnerBody": "{days} default olarak antrenman seçildi. Kas grupları arası dinlenme için bu düzen önerilir; istediğin günü dokunarak değiştirebilirsin.",
+        "intermediateBody": "{days} default olarak antrenman seçildi. Upper/lower split için uygun; istediğin günü dokunarak değiştirebilirsin.",
+        "advancedBody": "{days} default olarak antrenman seçildi. 5-gün split için uygun; istediğin günü dokunarak değiştirebilirsin.",
+        "personalized": "Kişiselleştirildi — istediğin gibi düzenledin.",
+        "missingLevel": "Antrenman seviyen tanımlı değil; default 5-gün split uygulanıyor.",
+        "settingsLink": "Ayarlardan belirle",
+        "dismiss": "Kapat",
+        "days": {
+          "mon": "Pazartesi",
+          "tue": "Salı",
+          "wed": "Çarşamba",
+          "thu": "Perşembe",
+          "fri": "Cuma",
+          "sat": "Cumartesi",
+          "sun": "Pazar"
+        }
+      },
       "dayTooltipPast": "{label}: bu gün geçti — AI öneri sunmayacak",
       "dayTooltipActive": "{label}: {mode}",
       "dayCycleNote": "Antrenman → Yüzme → Dinlenme sırasıyla döner. Beslenme programı her güne yazılır.",

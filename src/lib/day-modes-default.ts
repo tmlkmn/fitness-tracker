@@ -79,3 +79,34 @@ export function defaultUiDayModesForLevel(
   }
   return out;
 }
+
+export type FitnessLevel = "beginner" | "intermediate" | "advanced";
+
+export interface LevelRecommendation {
+  /** Resolved level used for the recommendation (null falls back to advanced). */
+  level: FitnessLevel;
+  /** Number of workout days the default split assigns. */
+  workoutDays: number;
+  /** 0-indexed day positions (Mon=0…Sun=6) that default to workout. */
+  workoutDayIndices: number[];
+}
+
+/**
+ * Derive the human-readable recommendation summary from the same DEFAULTS the
+ * modal uses. Single source — keeps the UI hint in sync with the actual default
+ * split the picker applies on mount.
+ */
+export function getLevelRecommendation(
+  fitnessLevel: string | null | undefined,
+): LevelRecommendation {
+  const level: FitnessLevel =
+    fitnessLevel === "beginner" || fitnessLevel === "intermediate"
+      ? fitnessLevel
+      : "advanced";
+  const base = defaultDayModesForLevel(level);
+  const workoutDayIndices: number[] = [];
+  for (let i = 0; i < 7; i++) {
+    if (base[i] === "workout") workoutDayIndices.push(i);
+  }
+  return { level, workoutDays: workoutDayIndices.length, workoutDayIndices };
+}
