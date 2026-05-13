@@ -476,6 +476,20 @@ export interface AiWarningsAnalytics {
     success: number;
     warnings: number;
   }[];
+  /**
+   * Per-feature × per-category warning counts, derived from the structured
+   * `warningCategories` field that `buildExecMetadata` writes into
+   * `errorMessage`. Rows are sorted by total descending.
+   */
+  categoryBreakdown: {
+    feature: string;
+    categories: { category: string; count: number }[];
+    total: number;
+  }[];
+}
+
+interface WarningCategoriesEnvelope extends WarningEnvelope {
+  warningCategories?: unknown;
 }
 
 /**
@@ -582,11 +596,13 @@ export async function getAiWarningsAnalytics(): Promise<AiWarningsAnalytics> {
     string,
     { count: number; samples: { feature: string; createdAt: Date }[] }
   >();
+  // feature → category → count
+  const categoryMap = new Map<string, Map<string, number>>();
   for (const row of warningRows) {
     if (!row.errorMessage) continue;
-    let parsed: WarningEnvelope;
+    let parsed: WarningCategoriesEnvelope;
     try {
-      parsed = JSON.parse(row.errorMessage) as WarningEnvelope;
+      parsed = JSON.parse(row.errorMessage) as WarningCategoriesEnvelope;
     } catch {
       continue; // non-JSON payloads (older rows) skipped
     }
@@ -601,7 +617,26 @@ export async function getAiWarningsAnalytics(): Promise<AiWarningsAnalytics> {
       }
       patternMap.set(pattern, entry);
     }
+    const cats = parsed.warningCategories;
+    if (cats && typeof cats === "object" && !Array.isArray(cats)) {
+      const featureBucket = categoryMap.get(row.feature) ?? new Map<string, number>();
+      for (const [cat, n] of Object.entries(cats as Record<string, unknown>)) {
+        const count = typeof n === "number" && Number.isFinite(n) ? n : 0;
+        if (count <= 0) continue;
+        featureBucket.set(cat, (featureBucket.get(cat) ?? 0) + count);
+      }
+      categoryMap.set(row.feature, featureBucket);
+    }
   }
+  const categoryBreakdown = Array.from(categoryMap.entries())
+    .map(([feature, bucket]) => {
+      const categories = Array.from(bucket.entries())
+        .map(([category, count]) => ({ category, count }))
+        .sort((a, b) => b.count - a.count);
+      const total = categories.reduce((s, c) => s + c.count, 0);
+      return { feature, categories, total };
+    })
+    .sort((a, b) => b.total - a.total);
   const topPatterns = Array.from(patternMap.entries())
     .map(([pattern, { count, samples }]) => ({ pattern, count, samples }))
     .sort((a, b) => b.count - a.count)
@@ -650,5 +685,6 @@ export async function getAiWarningsAnalytics(): Promise<AiWarningsAnalytics> {
     perFeature,
     topPatterns,
     daily,
+    categoryBreakdown,
   };
 }

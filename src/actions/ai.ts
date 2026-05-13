@@ -20,8 +20,29 @@ import {
 } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
 import { parseAiJson } from "@/lib/ai-json-repair";
+import { categorizeWarnings } from "@/lib/ai-warning-telemetry";
 
 const TIPS_TTL_DAYS = 30;
+
+const MEAL_VARIATION_OVERSHOOT_TOLERANCE = 0.15;
+
+function validateMealVariationSuggestions(
+  suggestions: MealVariationSuggestion[],
+  remaining: { calories: number; protein: number; carbs: number; fat: number } | null,
+): string[] {
+  if (!remaining || remaining.calories <= 0) return [];
+  const warnings: string[] = [];
+  suggestions.forEach((s, i) => {
+    if (s.calories == null) return;
+    const overshootRatio = (s.calories - remaining.calories) / remaining.calories;
+    if (overshootRatio > MEAL_VARIATION_OVERSHOOT_TOLERANCE) {
+      warnings.push(
+        `[meal-variation-overshoot] suggestion ${i + 1} ${s.calories} kcal exceeds remaining budget ${remaining.calories} kcal by ${Math.round(overshootRatio * 100)}%`,
+      );
+    }
+  });
+  return warnings;
+}
 
 export interface MealVariationSuggestion {
   content: string;
@@ -48,7 +69,7 @@ const PREVIOUS_SUGGESTIONS_MAX = 5;
 
 export async function generateMealVariation(
   options: GenerateMealVariationOptions,
-): Promise<{ suggestions: MealVariationSuggestion[] }> {
+): Promise<{ suggestions: MealVariationSuggestion[]; validationWarnings: string[] }> {
   const {
     mealLabel,
     currentContent,
@@ -96,6 +117,7 @@ export async function generateMealVariation(
   let weekContext = "";
   let planTypeContext = "";
   let budgetContext = "";
+  let remainingBudget: { calories: number; protein: number; carbs: number; fat: number } | null = null;
   if (resolvedDailyPlanId) {
     try {
       try {
@@ -103,6 +125,7 @@ export async function generateMealVariation(
         if (budget.text) {
           budgetContext = `\n\n${budget.text}`;
         }
+        remainingBudget = budget.remaining;
       } catch {
         // Best effort — proceed without budget
       }
@@ -243,8 +266,20 @@ export async function generateMealVariation(
       };
     }
 
+    const validationWarnings = validateMealVariationSuggestions(
+      result.suggestions,
+      remainingBudget,
+    );
+    const hasWarnings = validationWarnings.length > 0;
+
     await logAiUsage(user.id, "meal", {
-      status: "success",
+      status: hasWarnings ? "success_with_warnings" : "success",
+      errorMessage: hasWarnings
+        ? JSON.stringify({
+            warnings: validationWarnings,
+            warningCategories: categorizeWarnings(validationWarnings),
+          })
+        : undefined,
       inputTokens,
       outputTokens,
       durationMs: Date.now() - startTime,
@@ -252,7 +287,7 @@ export async function generateMealVariation(
       promptVersion: PROMPT_VERSION,
     });
 
-    return result;
+    return { ...result, validationWarnings };
   } catch (error) {
     const { status, errorMessage } = discriminateAiError(error);
     await logAiUsage(user.id, "meal", {

@@ -1159,6 +1159,7 @@
       "saved": "Saved ({count})",
       "loading": "Preparing 3 different suggestions...",
       "suggestionN": "Suggestion {n}",
+      "warningsTitle": "Validator warnings (won't block apply)",
       "apply": "Apply",
       "newSuggestions": "New Suggestions",
       "emptySaved": "No saved meals yet",
@@ -1276,6 +1277,8 @@
       "ratio": "Ratio",
       "topPatterns": "Top Warning Patterns",
       "topPatternsHint": "Numeric values and day indices are normalized. Variations of the same pattern are grouped.",
+      "categoryBreakdown": "Category Breakdown",
+      "categoryBreakdownHint": "Validators emit warnings with tags ([daily-meal-drift] etc.). This report shows feature × category counts.",
       "cleanPipeline": "No warnings recorded in this window. Pipeline is clean.",
       "featureLabels": {
         "meal": "Meal Suggestion",

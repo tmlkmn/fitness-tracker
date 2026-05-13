@@ -66,6 +66,7 @@ export function AiSuggestionModal({
   const locale = useLocale() as Locale;
   const INGREDIENT_TAGS = t.raw("ingredients") as string[];
   const [suggestions, setSuggestions] = useState<MealVariationSuggestion[]>([]);
+  const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [userNote, setUserNote] = useState("");
@@ -113,6 +114,7 @@ export function AiSuggestionModal({
         userNote: buildUserNote(),
       });
       setSuggestions(result.suggestions);
+      setValidationWarnings(result.validationWarnings ?? []);
       setView("suggestions");
       // Track suggestions for future calls
       for (const s of result.suggestions) {
@@ -145,6 +147,7 @@ export function AiSuggestionModal({
       {
         onSuccess: () => {
           setSuggestions([]);
+          setValidationWarnings([]);
           previousSuggestionsRef.current = [];
           setView("input");
           onOpenChange(false);
@@ -175,6 +178,7 @@ export function AiSuggestionModal({
     if (!open) {
       previousSuggestionsRef.current = [];
       setSuggestions([]);
+      setValidationWarnings([]);
       setView("input");
       setError("");
       setSavedIds(new Set());
@@ -329,6 +333,19 @@ export function AiSuggestionModal({
           )}
 
           {/* ── SUGGESTIONS VIEW ── */}
+          {view === "suggestions" && suggestions.length > 0 && validationWarnings.length > 0 && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-1">
+              <p className="text-xs font-medium text-amber-500">
+                {t("warningsTitle")}
+              </p>
+              <ul className="text-[11px] text-muted-foreground space-y-0.5 list-disc list-inside">
+                {validationWarnings.map((w, i) => (
+                  <li key={i} className="wrap-break-word">{w}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {view === "suggestions" && suggestions.length > 0 && (
             <div className="space-y-3">
               {suggestions.map((s, i) => (

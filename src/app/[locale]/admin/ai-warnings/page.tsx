@@ -236,6 +236,40 @@ export default function AiWarningsPage() {
           </Card>
         )}
 
+        {data.categoryBreakdown.length > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <h2 className="text-sm font-semibold">{t("categoryBreakdown")}</h2>
+              <p className="text-[10px] text-muted-foreground">
+                {t("categoryBreakdownHint")}
+              </p>
+              <div className="space-y-3">
+                {data.categoryBreakdown.map((row) => (
+                  <div key={row.feature} className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium">{featureLabel(row.feature)}</span>
+                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                        {row.total}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {row.categories.map((c) => (
+                        <span
+                          key={c.category}
+                          className="inline-flex items-center gap-1 rounded bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-[10px]"
+                        >
+                          <code className="text-amber-500">{c.category}</code>
+                          <span className="text-muted-foreground tabular-nums">{c.count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {data.topPatterns.length > 0 ? (
           <Card>
             <CardContent className="p-4 space-y-3">

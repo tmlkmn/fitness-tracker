@@ -1160,6 +1160,7 @@
       "saved": "Kayıtlı ({count})",
       "loading": "3 farklı öneri hazırlanıyor...",
       "suggestionN": "Öneri {n}",
+      "warningsTitle": "Validatör uyarıları (uygulamayı engellemez)",
       "apply": "Uygula",
       "newSuggestions": "Yeni Öneriler",
       "emptySaved": "Henüz kayıtlı öğün yok",
@@ -1277,6 +1278,8 @@
       "ratio": "Oran",
       "topPatterns": "En Sık Uyarı Tipleri",
       "topPatternsHint": "Numerik değerler ve gün indeksleri normalize edildi. Aynı kalıbın varyasyonları gruplanır.",
+      "categoryBreakdown": "Kategori Dağılımı",
+      "categoryBreakdownHint": "Validator'lar warning'leri etiketli emit eder ([daily-meal-drift] vb.). Bu rapor feature × kategori sayımı verir.",
       "cleanPipeline": "Bu pencerede uyarı kaydedilmemiş. Pipeline temiz.",
       "featureLabels": {
         "meal": "Öğün Önerisi",
