@@ -22,6 +22,7 @@ export function useCreateSupplement() {
     }) => createSupplement(weeklyPlanId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["supplements"] });
+      qc.invalidateQueries({ queryKey: ["supplements.byDay"] });
     },
   });
 }
@@ -43,6 +44,7 @@ export function useUpdateSupplement() {
     }) => updateSupplement(supplementId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["supplements"] });
+      qc.invalidateQueries({ queryKey: ["supplements.byDay"] });
     },
   });
 }
@@ -53,6 +55,7 @@ export function useDeleteSupplement() {
     mutationFn: (supplementId: number) => deleteSupplement(supplementId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["supplements"] });
+      qc.invalidateQueries({ queryKey: ["supplements.byDay"] });
     },
   });
 }

@@ -910,7 +910,8 @@
       "addMeal": "Add Meal",
       "moveToAnotherDay": "Move to another day",
       "moveToTodayOrFuture": "Move to Today or Future",
-      "itemLabel": "meal"
+      "itemLabel": "meal",
+      "supplementContribution": "from {count, plural, one {# supplement} other {# supplements}}"
     },
     "aiModal": {
       "title": "AI Nutrition Plan",
@@ -2036,6 +2037,16 @@
       "saving": "Saving...",
       "update": "Update",
       "add": "Add",
+      "presetLabel": "Preset",
+      "presetPlaceholder": "Choose a preset",
+      "presetHint": "Values are averages; adjust per your product label.",
+      "macroSectionTitle": "Macro Values (per serving)",
+      "servingsPerDoseLabel": "Servings per dose",
+      "servingsHint": "e.g. 2 scoops → 2",
+      "caloriesLabel": "kcal",
+      "proteinLabel": "Protein (g)",
+      "carbsLabel": "Carbs (g)",
+      "fatLabel": "Fat (g)",
       "timings": {
         "sabah": "Morning",
         "kahvalti": "With breakfast",
@@ -2045,6 +2056,25 @@
         "aksam": "Evening",
         "yatmadan-once": "Before bed"
       }
+    },
+    "presets": {
+      "custom": "Custom / Other",
+      "whey": "Whey Protein",
+      "casein": "Casein Protein",
+      "eaa": "EAA (Essential Amino Acids)",
+      "bcaa": "BCAA",
+      "mass-gainer": "Mass Gainer",
+      "creatine": "Creatine Monohydrate",
+      "multivitamin": "Multivitamin",
+      "omega-3": "Omega-3",
+      "vitamin-d": "Vitamin D",
+      "magnesium": "Magnesium",
+      "zinc": "Zinc",
+      "preworkout": "Pre-Workout",
+      "caffeine": "Caffeine",
+      "glutamine": "Glutamine",
+      "collagen": "Collagen",
+      "fish-oil": "Fish Oil"
     }
   },
   "onboarding": {

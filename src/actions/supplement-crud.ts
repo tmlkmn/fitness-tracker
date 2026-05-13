@@ -12,6 +12,12 @@ interface SupplementInput {
   dosage: string;
   timing: string;
   notes?: string | null;
+  presetKey?: string | null;
+  servingsPerDose?: number | null;
+  caloriesPerServing?: number | null;
+  proteinPerServing?: number | null;
+  carbsPerServing?: number | null;
+  fatPerServing?: number | null;
 }
 
 async function verifySupplementOwnership(supplementId: number, userId: string) {
@@ -21,6 +27,25 @@ async function verifySupplementOwnership(supplementId: number, userId: string) {
     .innerJoin(weeklyPlans, eq(supplements.weeklyPlanId, weeklyPlans.id))
     .where(and(eq(supplements.id, supplementId), eq(weeklyPlans.userId, userId)));
   if (rows.length === 0) throw new Error("Unauthorized");
+}
+
+function toNumericString(n: number | null | undefined): string | null {
+  if (n === null || n === undefined || !Number.isFinite(n)) return null;
+  return String(n);
+}
+
+function macroFields(data: SupplementInput) {
+  return {
+    presetKey: data.presetKey ?? null,
+    servingsPerDose: toNumericString(data.servingsPerDose ?? null),
+    caloriesPerServing:
+      data.caloriesPerServing !== null && data.caloriesPerServing !== undefined && Number.isFinite(data.caloriesPerServing)
+        ? Math.round(data.caloriesPerServing)
+        : null,
+    proteinPerServing: toNumericString(data.proteinPerServing ?? null),
+    carbsPerServing: toNumericString(data.carbsPerServing ?? null),
+    fatPerServing: toNumericString(data.fatPerServing ?? null),
+  };
 }
 
 export async function createSupplement(
@@ -39,6 +64,7 @@ export async function createSupplement(
       timing: data.timing,
       notes: data.notes ?? null,
       startWeek: 1,
+      ...macroFields(data),
     })
     .returning({ id: supplements.id });
 
@@ -61,6 +87,7 @@ export async function updateSupplement(
       dosage: data.dosage,
       timing: data.timing,
       notes: data.notes ?? null,
+      ...macroFields(data),
     })
     .where(eq(supplements.id, supplementId));
 

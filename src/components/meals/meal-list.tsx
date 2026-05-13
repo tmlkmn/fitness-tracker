@@ -22,6 +22,8 @@ import { useUserProfile, useResolvedMacroTargetsForDay } from "@/hooks/use-user"
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { computeMealMacros } from "@/lib/meal-macros";
+import { computeSupplementMacros } from "@/lib/supplement-macros";
+import { useSupplementsForDay } from "@/hooks/use-supplements-for-day";
 import { formatAiError } from "@/lib/ai-errors";
 import { formatEnergy, type EnergyUnit } from "@/lib/units";
 import type { AIMeal } from "@/actions/ai-meals";
@@ -90,6 +92,11 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
   };
 
   const macros = useMemo(() => computeMealMacros(mealList ?? []), [mealList]);
+  const { data: daySupplements } = useSupplementsForDay(dailyPlanId);
+  const supplementMacros = useMemo(
+    () => computeSupplementMacros(daySupplements ?? []),
+    [daySupplements],
+  );
 
   if (isLoading) {
     return (
@@ -205,6 +212,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
         fat={Math.round(totalFat)}
         planType={dailyPlanType ?? null}
         cyclingLabel={cyclingLabel}
+        supplementMacros={supplementMacros}
       />
 
       <div className="space-y-1.5">

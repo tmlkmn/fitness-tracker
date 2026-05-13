@@ -911,7 +911,8 @@
       "addMeal": "Öğün Ekle",
       "moveToAnotherDay": "Başka güne taşı",
       "moveToTodayOrFuture": "Bugüne veya İleri Güne Taşı",
-      "itemLabel": "öğün"
+      "itemLabel": "öğün",
+      "supplementContribution": "{count} takviyeden"
     },
     "aiModal": {
       "title": "AI ile Beslenme Programı",
@@ -2037,6 +2038,16 @@
       "saving": "Kaydediliyor...",
       "update": "Güncelle",
       "add": "Ekle",
+      "presetLabel": "Hazır Şablon",
+      "presetPlaceholder": "Şablon seçin",
+      "presetHint": "Değerler ortalamadır; ürün etiketine göre düzenleyebilirsiniz.",
+      "macroSectionTitle": "Makro Değerleri (servis başına)",
+      "servingsPerDoseLabel": "Doz başına servis",
+      "servingsHint": "Örn: 2 scoop alıyorsan → 2",
+      "caloriesLabel": "kcal",
+      "proteinLabel": "Protein (g)",
+      "carbsLabel": "Karb (g)",
+      "fatLabel": "Yağ (g)",
       "timings": {
         "sabah": "Sabah",
         "kahvalti": "Kahvaltı ile",
@@ -2046,6 +2057,25 @@
         "aksam": "Akşam",
         "yatmadan-once": "Yatmadan Önce"
       }
+    },
+    "presets": {
+      "custom": "Özel / Diğer",
+      "whey": "Whey Protein",
+      "casein": "Casein Protein",
+      "eaa": "EAA (Esansiyel Amino Asit)",
+      "bcaa": "BCAA",
+      "mass-gainer": "Mass Gainer",
+      "creatine": "Kreatin Monohidrat",
+      "multivitamin": "Multivitamin",
+      "omega-3": "Omega-3",
+      "vitamin-d": "D Vitamini",
+      "magnesium": "Magnezyum",
+      "zinc": "Çinko",
+      "preworkout": "Pre-Workout",
+      "caffeine": "Kafein",
+      "glutamine": "Glutamine",
+      "collagen": "Kolajen",
+      "fish-oil": "Balık Yağı"
     }
   },
   "onboarding": {

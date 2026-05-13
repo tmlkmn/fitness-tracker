@@ -254,6 +254,12 @@ export const supplements = pgTable("supplements", {
   timing: text("timing").notNull(),
   notes: text("notes"),
   startWeek: integer("start_week").notNull(),
+  presetKey: text("preset_key"),
+  servingsPerDose: numeric("servings_per_dose"),
+  caloriesPerServing: integer("calories_per_serving"),
+  proteinPerServing: numeric("protein_per_serving"),
+  carbsPerServing: numeric("carbs_per_serving"),
+  fatPerServing: numeric("fat_per_serving"),
 });
 
 export const supplementCompletions = pgTable(

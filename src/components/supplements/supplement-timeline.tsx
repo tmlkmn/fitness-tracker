@@ -32,6 +32,12 @@ export function SupplementTimeline({ weeklyPlanId, date, readOnly }: SupplementT
     dosage: string;
     timing: string;
     notes?: string | null;
+    presetKey?: string | null;
+    servingsPerDose?: string | null;
+    caloriesPerServing?: number | null;
+    proteinPerServing?: string | null;
+    carbsPerServing?: string | null;
+    fatPerServing?: string | null;
   } | null>(null);
 
   if (isLoading) {
@@ -88,6 +94,11 @@ export function SupplementTimeline({ weeklyPlanId, date, readOnly }: SupplementT
             dosage={s.dosage}
             timing={s.timing}
             notes={s.notes}
+            caloriesPerServing={s.caloriesPerServing}
+            proteinPerServing={s.proteinPerServing}
+            carbsPerServing={s.carbsPerServing}
+            fatPerServing={s.fatPerServing}
+            servingsPerDose={s.servingsPerDose}
             isCompleted={date ? completedSet.has(s.id) : undefined}
             onToggle={
               date && !readOnly
@@ -103,7 +114,21 @@ export function SupplementTimeline({ weeklyPlanId, date, readOnly }: SupplementT
               !readOnly
                 ? (id) => {
                     const sup = supplements.find((x) => x.id === id);
-                    if (sup) setEditSupplement(sup);
+                    if (sup) {
+                      setEditSupplement({
+                        id: sup.id,
+                        name: sup.name,
+                        dosage: sup.dosage,
+                        timing: sup.timing,
+                        notes: sup.notes,
+                        presetKey: sup.presetKey,
+                        servingsPerDose: sup.servingsPerDose,
+                        caloriesPerServing: sup.caloriesPerServing,
+                        proteinPerServing: sup.proteinPerServing,
+                        carbsPerServing: sup.carbsPerServing,
+                        fatPerServing: sup.fatPerServing,
+                      });
+                    }
                   }
                 : undefined
             }

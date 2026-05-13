@@ -27,6 +27,7 @@ export function useToggleSupplementCompletion() {
     }) => toggleSupplementCompletion(supplementId, date, completed),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["supplement-completions"] });
+      qc.invalidateQueries({ queryKey: ["supplements.byDay"] });
     },
   });
 }

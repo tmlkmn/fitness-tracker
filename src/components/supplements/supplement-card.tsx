@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Pill, Pencil, Trash2 } from "lucide-react";
+import { Pill, Pencil, Trash2, Flame } from "lucide-react";
+import { computeSupplementMacrosForSingle } from "@/lib/supplement-macros";
 
 interface SupplementCardProps {
   id: number;
@@ -14,6 +15,11 @@ interface SupplementCardProps {
   timing: string;
   notes?: string | null;
   isCompleted?: boolean;
+  caloriesPerServing?: number | null;
+  proteinPerServing?: string | null;
+  carbsPerServing?: string | null;
+  fatPerServing?: string | null;
+  servingsPerDose?: string | null;
   onToggle?: (id: number, completed: boolean) => void;
   onEdit?: (id: number) => void;
   onDelete?: (id: number) => void;
@@ -27,11 +33,26 @@ export function SupplementCard({
   timing,
   notes,
   isCompleted,
+  caloriesPerServing,
+  proteinPerServing,
+  carbsPerServing,
+  fatPerServing,
+  servingsPerDose,
   onToggle,
   onEdit,
   onDelete,
   readOnly,
 }: SupplementCardProps) {
+  const macros = computeSupplementMacrosForSingle({
+    caloriesPerServing,
+    proteinPerServing,
+    carbsPerServing,
+    fatPerServing,
+    servingsPerDose,
+  });
+  const hasMacros =
+    macros.calories > 0 || macros.protein > 0 || macros.carbs > 0 || macros.fat > 0;
+
   return (
     <Card className={cn("transition-opacity", isCompleted && "opacity-60")}>
       <CardContent className="p-3">
@@ -56,6 +77,15 @@ export function SupplementCard({
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">{timing}</p>
+            {hasMacros && (
+              <p className="text-[11px] text-muted-foreground/90 mt-1 flex items-center gap-1 tabular-nums">
+                <Flame className="h-3 w-3 text-orange-400/80" />
+                {macros.calories} kcal
+                {macros.protein > 0 ? ` · ${macros.protein}g P` : null}
+                {macros.carbs > 0 ? ` · ${macros.carbs}g C` : null}
+                {macros.fat > 0 ? ` · ${macros.fat}g F` : null}
+              </p>
+            )}
             {notes ? (
               <p className="text-xs text-yellow-500 mt-1">{notes}</p>
             ) : null}
