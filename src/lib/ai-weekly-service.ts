@@ -6,7 +6,7 @@
 
 import "server-only";
 import { db } from "@/db";
-import { users, weeklyPlans, dailyPlans, exercises } from "@/db/schema";
+import { users, weeklyPlans, dailyPlans, exercises, exerciseDemos } from "@/db/schema";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { buildWeeklyPlanContext } from "@/actions/ai-weekly";
 import { buildUserNotePriorityBlock } from "@/lib/ai";
@@ -46,13 +46,30 @@ import {
   summarizeProducedWorkout,
   buildProducedWorkoutBlock,
   isProducedWorkoutEmpty,
+  detectExercisePattern,
+  type Pattern,
 } from "@/lib/ai-workout-summary";
 import {
   buildDeloadWorkoutBlock,
   buildDeloadNutritionBlock,
 } from "@/lib/deload-policy";
 import { defaultDayModesForLevel } from "@/lib/day-modes-default";
-import { assessMuscleVolume } from "@/lib/muscle-volume-validator";
+import {
+  resolveUnderlyingTrainingDayModes,
+  hasAnyTrainingDay,
+} from "@/lib/underlying-day-modes";
+import {
+  assessMuscleVolume,
+  getMuscleVolumeBands,
+  MUSCLE_RAW_TO_GROUP,
+  type MuscleGroup,
+} from "@/lib/muscle-volume-validator";
+import {
+  assessPerMuscleProgressiveOverload,
+  assessPerPatternProgressiveOverload,
+  bucketSetsByPattern,
+  type BucketOverloadAssessment,
+} from "@/lib/progressive-overload-validator";
 import type { Locale } from "@/lib/locale";
 
 const CALL_TIMEOUT = AI_TIMEOUTS.weeklyCall;
@@ -506,6 +523,17 @@ export interface ResolvedWeeklyRequest {
   deloadWeek: boolean;
   /** Sum of main/swimming working sets from the user's most recent prior week. */
   previousWorkingSets: number;
+  /** Per-muscle and per-pattern breakdown of the prior week's working sets. */
+  previousWeekBreakdown: PreviousWeekVolumeBreakdown;
+  /**
+   * The real workout/swimming/rest backdrop for this week, regardless of
+   * generateMode. Nutrition-only requests force `expectedDayModes` to all
+   * "nutrition" for the AI output schema, but carb cycling, meal-timing
+   * pre/post-workout slots, and training-context blocks still need the
+   * underlying training shape — sourced from user input, existing plan, or
+   * fitness-level default in that priority.
+   */
+  underlyingTrainingDayModes: Record<number, "workout" | "swimming" | "rest">;
 }
 
 export async function resolveWeeklyGenerationRequest(
@@ -545,11 +573,20 @@ export async function resolveWeeklyGenerationRequest(
       foodAllergens: users.foodAllergens,
     }).from(users).where(eq(users.id, userId)).then((r) => r[0]),
     buildWeeklyPlanContext(userId),
-    db.select({ weekNumber: weeklyPlans.weekNumber })
+    db.select({ id: weeklyPlans.id, weekNumber: weeklyPlans.weekNumber })
       .from(weeklyPlans)
       .where(and(eq(weeklyPlans.userId, userId), eq(weeklyPlans.startDate, monday)))
       .then((r) => r[0]),
   ]);
+
+  // If a weekly plan already exists for this Monday, pull its daily planType
+  // shape so nutrition-only refreshes preserve the training day backdrop.
+  const existingDailyPlans = existingForMonday
+    ? await db
+        .select({ dayOfWeek: dailyPlans.dayOfWeek, planType: dailyPlans.planType })
+        .from(dailyPlans)
+        .where(eq(dailyPlans.weeklyPlanId, existingForMonday.id))
+    : [];
 
   const isNutritionOnly = userRow?.serviceType === "nutrition";
 
@@ -571,15 +608,28 @@ export async function resolveWeeklyGenerationRequest(
     fitnessLevel: userRow?.fitnessLevel ?? null,
   });
 
+  // Underlying training shape — kept separate from expectedDayModes so that
+  // nutrition-only refreshes still see workout/swimming days for carb
+  // cycling and meal timing, even though the AI's output planType per day
+  // is forced to "nutrition" for the schema.
+  const underlyingTrainingDayModes = resolveUnderlyingTrainingDayModes({
+    userDayModes: dayModesInput,
+    existingDailyPlans,
+    fitnessLevel: userRow?.fitnessLevel ?? null,
+  });
+
   const doNutrition = generateMode !== "workout";
   const doWorkout = generateMode !== "nutrition" && !isNutritionOnly;
 
   const deloadWeek = Boolean(body.deloadWeek);
 
-  // Derive dayTypeCounts from expectedDayModes for carb cycling distribution.
+  // dayTypeCounts feeds carb cycling — derived from the underlying training
+  // shape (not expectedDayModes) so nutrition-only plans still distribute
+  // carbs across workout vs rest days correctly. workout/swimming/rest only;
+  // there's no carb-cycling concept of "nutrition" days.
   const dayTypeCounts: Record<DayType, number> = { workout: 0, swimming: 0, rest: 0, nutrition: 0 };
   for (let i = 0; i < 7; i++) {
-    const mode = expectedDayModes[i] ?? "rest";
+    const mode = underlyingTrainingDayModes[i];
     dayTypeCounts[mode] = (dayTypeCounts[mode] ?? 0) + 1;
   }
 
@@ -608,12 +658,13 @@ export async function resolveWeeklyGenerationRequest(
 
   const sanitizedNote = userNote?.trim() ? sanitizeUserNote(userNote) : null;
 
-  // Sum working sets (main/swimming sections) from the user's most recent
-  // prior week. Used by the progressive-overload assessment — beginners and
-  // first-week users naturally have 0 here and skip the check.
-  const previousWorkingSets = doWorkout
-    ? await loadPreviousWeekWorkingSets(userId, nextWeekNumber)
-    : 0;
+  // Previous-week working sets, plus per-muscle and per-pattern breakdowns
+  // for the new layered progressive-overload checks. Beginners and first-week
+  // users naturally have all-zeros here and skip every check.
+  const previousWeekBreakdown = doWorkout
+    ? await loadPreviousWeekVolumeBreakdown(userId, nextWeekNumber)
+    : { total: 0, byMuscle: { chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0 } as Record<MuscleGroup, number>, byPattern: { lower: 0, push: 0, pull: 0, full_body: 0, mixed: 0 } as Record<Pattern, number> };
+  const previousWorkingSets = previousWeekBreakdown.total;
 
   return {
     userId,
@@ -634,13 +685,27 @@ export async function resolveWeeklyGenerationRequest(
     rawUserNote: userNote ?? null,
     deloadWeek,
     previousWorkingSets,
+    previousWeekBreakdown,
+    underlyingTrainingDayModes,
   };
 }
 
-async function loadPreviousWeekWorkingSets(
+export interface PreviousWeekVolumeBreakdown {
+  total: number;
+  byMuscle: Record<MuscleGroup, number>;
+  byPattern: Record<Pattern, number>;
+}
+
+const EMPTY_BREAKDOWN: PreviousWeekVolumeBreakdown = {
+  total: 0,
+  byMuscle: { chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0 },
+  byPattern: { lower: 0, push: 0, pull: 0, full_body: 0, mixed: 0 },
+};
+
+async function loadPreviousWeekVolumeBreakdown(
   userId: string,
   currentWeekNumber: number,
-): Promise<number> {
+): Promise<PreviousWeekVolumeBreakdown> {
   const [prevWeek] = await db
     .select({ id: weeklyPlans.id })
     .from(weeklyPlans)
@@ -652,23 +717,88 @@ async function loadPreviousWeekWorkingSets(
     )
     .orderBy(desc(weeklyPlans.weekNumber))
     .limit(1);
-  if (!prevWeek) return 0;
+  if (!prevWeek) return EMPTY_BREAKDOWN;
   const dayRows = await db
     .select({ id: dailyPlans.id })
     .from(dailyPlans)
     .where(eq(dailyPlans.weeklyPlanId, prevWeek.id));
   const dayIds = dayRows.map((d) => d.id);
-  if (dayIds.length === 0) return 0;
+  if (dayIds.length === 0) return EMPTY_BREAKDOWN;
   const rows = await db
-    .select({ section: exercises.section, sets: exercises.sets })
+    .select({
+      section: exercises.section,
+      sets: exercises.sets,
+      name: exercises.name,
+      englishName: exercises.englishName,
+    })
     .from(exercises)
     .where(inArray(exercises.dailyPlanId, dayIds));
+
+  // Total + pattern bucketing — sync, name-keyword based.
   let total = 0;
+  const byPattern: Record<Pattern, number> = { lower: 0, push: 0, pull: 0, full_body: 0, mixed: 0 };
+  const englishNames = new Set<string>();
   for (const r of rows) {
     if (r.section !== "main" && r.section !== "swimming") continue;
-    total += r.sets ?? 1;
+    const sets = r.sets ?? 1;
+    total += sets;
+    byPattern[detectExercisePattern(r.name)] += sets;
+    if (r.englishName) englishNames.add(r.englishName.toLowerCase().trim());
   }
-  return total;
+
+  // Per-muscle bucketing — requires exerciseDemos lookup. Same pattern as
+  // muscle-volume-validator so distinct buckets per primary are de-duped.
+  const byMuscle: Record<MuscleGroup, number> = { chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0 };
+  if (englishNames.size > 0) {
+    const demoRows = await db
+      .select({
+        name: exerciseDemos.exerciseNameNorm,
+        primary: exerciseDemos.primaryMuscles,
+      })
+      .from(exerciseDemos)
+      .where(inArray(exerciseDemos.exerciseNameNorm, Array.from(englishNames)));
+    const demosByName = new Map<string, string[]>();
+    for (const row of demoRows) {
+      demosByName.set(row.name, Array.isArray(row.primary) ? (row.primary as string[]) : []);
+    }
+    addMusclesFromRows(rows, demosByName, byMuscle);
+  }
+
+  return { total, byMuscle, byPattern };
+}
+
+function appendBucketWarnings(
+  workoutRaw: AiCallResult,
+  assessment: BucketOverloadAssessment,
+  tag: string,
+): void {
+  if (assessment.ok || assessment.issues.length === 0) return;
+  for (const issue of assessment.issues) {
+    workoutRaw.validationResult.warnings.push(`[${tag}] ${issue.warning}`);
+  }
+  console.warn(`[AI Weekly] ${tag} warnings:`, {
+    issues: assessment.issues,
+  });
+}
+
+function addMusclesFromRows(
+  rows: Array<{ section: string; sets: number | null; englishName: string | null }>,
+  demosByName: Map<string, string[]>,
+  byMuscle: Record<MuscleGroup, number>,
+): void {
+  for (const r of rows) {
+    if (r.section !== "main" && r.section !== "swimming") continue;
+    const sets = r.sets ?? 1;
+    const key = r.englishName?.toLowerCase().trim();
+    const primary = key ? demosByName.get(key) : undefined;
+    if (!primary || primary.length === 0) continue;
+    const buckets = new Set<MuscleGroup>();
+    for (const m of primary) {
+      const g = MUSCLE_RAW_TO_GROUP[m.toLowerCase().trim()];
+      if (g) buckets.add(g);
+    }
+    for (const g of buckets) byMuscle[g] += sets;
+  }
 }
 
 interface CallSpec {
@@ -690,7 +820,7 @@ export interface WeeklyPrompts {
 }
 
 export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
-  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, adjustedTargets, expectedTargets, supplementBudget, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek, previousWorkingSets } = req;
+  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, adjustedTargets, expectedTargets, supplementBudget, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek, previousWorkingSets, underlyingTrainingDayModes } = req;
   const isNutritionOnly = userRow?.serviceType === "nutrition";
   const userAllergens = parseUserAllergens(userRow?.foodAllergens);
   const deloadWorkoutBlock = deloadWeek ? `\n\n${buildDeloadWorkoutBlock(locale)}` : "";
@@ -699,10 +829,12 @@ export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
   const weekHeader = `Hafta başlangıç tarihi: ${monday}\nBu plan ${nextWeekNumber}. hafta için oluşturulacak. weekTitle alanı MUTLAKA "Hafta ${nextWeekNumber} — ..." formatında başlamalı.`;
 
   // dayTypeCounts re-derived here so buildCyclingTargetsBlock can hide types
-  // with 0 days (e.g. all-workout weeks shouldn't render a REST DAY row).
+  // with 0 days. Derived from the underlying training shape so a nutrition-
+  // only refresh on a week with 4 workout days still shows the cycling block
+  // with workout/rest splits instead of collapsing everything to nutrition.
   const promptDayTypeCounts: Record<DayType, number> = { workout: 0, swimming: 0, rest: 0, nutrition: 0 };
   for (let i = 0; i < 7; i++) {
-    const mode = expectedDayModes[i] ?? "rest";
+    const mode = underlyingTrainingDayModes[i];
     promptDayTypeCounts[mode] = (promptDayTypeCounts[mode] ?? 0) + 1;
   }
 
@@ -737,9 +869,14 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     const nutritionDayModes: Partial<Record<number, DayModeChoice>> = {};
     for (let i = 0; i < 7; i++) nutritionDayModes[i] = "nutrition";
 
-    const trainingContextBlock = (doNutrition && !isNutritionOnly && doWorkout)
-      ? buildTrainingDayContextBlock(expectedDayModes, pastDowsSet)
-      : "";
+    // Render the training-day backdrop for the nutrition prompt whenever the
+    // underlying week has at least one workout/swimming day — even on a
+    // nutrition-only refresh. The block itself emits planType="nutrition" in
+    // its instructions and uses the training modes purely for carb timing.
+    const trainingContextBlock =
+      doNutrition && !isNutritionOnly && hasAnyTrainingDay(underlyingTrainingDayModes)
+        ? buildTrainingDayContextBlock(underlyingTrainingDayModes, pastDowsSet)
+        : "";
 
     const nutritionDayModesBlock = buildDayModesBlock(nutritionDayModes, pastDowsSet);
     const nutritionUserMsg = `${supplementBlock}${targetsBlock}\n\n${weeklyContext}${trainingContextBlock}${nutritionDayModesBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.\n\n⚡ KISALTMA KURALI: content alanı MAX 15 kelime. Notlar 1 cümle.${noteBlockNutrition}${deloadNutritionBlock}`;
@@ -827,6 +964,16 @@ export interface RunWeeklyGenerationOptions {
   locale?: Locale;
   /** Reports the active call leg as the orchestrator transitions through it. */
   onStep?: (step: "workout" | "nutrition") => void;
+  /**
+   * Pre-computed dynamic muscle-volume bands for this user/week. When
+   * omitted the muscle-volume check is skipped (the bands come from the
+   * request resolution layer which has the user profile in hand).
+   */
+  muscleVolumeBands?: ReturnType<typeof getMuscleVolumeBands>;
+  /** Prior week's volume breakdown used by per-muscle/per-pattern overload. */
+  previousWeekBreakdown?: PreviousWeekVolumeBreakdown;
+  /** Whether the requested week is a deload week (used by per-bucket overload). */
+  isDeloadWeek?: boolean;
 }
 
 export async function runWeeklyGeneration(
@@ -878,19 +1025,48 @@ export async function runWeeklyGeneration(
 
   // Muscle-group volume check — soft warning only. Runs once after the
   // workout call resolves (no retry pressure on this layer; the progressive-
-  // overload validator handles week-to-week regression separately).
-  if (workoutRaw) {
+  // overload validator handles week-to-week regression separately). Skipped
+  // when the caller didn't supply pre-computed bands.
+  if (workoutRaw && opts.muscleVolumeBands) {
     try {
-      const volReport = await assessMuscleVolume(workoutRaw.validationResult.plan);
+      const volReport = await assessMuscleVolume(
+        workoutRaw.validationResult.plan,
+        opts.muscleVolumeBands,
+      );
       if (volReport.warnings.length > 0) {
         workoutRaw.validationResult.warnings.push(
           ...volReport.warnings.map((w) => `[muscle-volume] ${w}`),
         );
         console.warn("[AI Weekly] muscle volume warnings:", {
           totals: volReport.totals,
+          appliedBands: volReport.appliedBands,
           unknownExerciseCount: volReport.unknownExerciseCount,
           warnings: volReport.warnings,
         });
+      }
+
+      // Per-muscle progressive overload — uses the demos lookup that
+      // assessMuscleVolume just performed (cached via volReport.totals).
+      // This catches cases where total weekly sets are flat but volume
+      // shifted entirely between muscle groups (e.g. all-chest → all-back).
+      if (opts.previousWeekBreakdown) {
+        const perMuscle = assessPerMuscleProgressiveOverload({
+          current: volReport.totals,
+          previous: opts.previousWeekBreakdown.byMuscle,
+          isDeloadWeek: Boolean(opts.isDeloadWeek),
+        });
+        appendBucketWarnings(workoutRaw, perMuscle, "muscle-overload");
+
+        // Per-pattern (push/pull/lower/full_body/mixed) — keyword bucketing,
+        // no DB round trip. Catches movement-pattern shifts independent of
+        // muscle taxonomy (push-day week → pull-day week).
+        const currentByPattern = bucketSetsByPattern(workoutRaw.validationResult.plan);
+        const perPattern = assessPerPatternProgressiveOverload({
+          current: currentByPattern,
+          previous: opts.previousWeekBreakdown.byPattern,
+          isDeloadWeek: Boolean(opts.isDeloadWeek),
+        });
+        appendBucketWarnings(workoutRaw, perPattern, "pattern-overload");
       }
     } catch (err) {
       console.warn("[AI Weekly] muscle volume check failed:", err);

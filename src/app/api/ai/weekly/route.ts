@@ -16,6 +16,7 @@ import {
   runWeeklyGeneration,
   mergeWeeklyResults,
 } from "@/lib/ai-weekly-service";
+import { getMuscleVolumeBands } from "@/lib/muscle-volume-validator";
 
 export const maxDuration = 300;
 
@@ -93,11 +94,28 @@ export async function POST(request: Request) {
           else if (prompts.workout) emit({ type: "status", step: "workout" });
         }
 
+        // Bands scale with fitness level / goal / deload / training day count
+        // so the muscle-volume validator doesn't fire false MEV warnings for
+        // a 3-day beginner program or a deload week. Training day count comes
+        // from the underlying training shape (not the AI output schema).
+        const trainingDayCount = Object.values(req.underlyingTrainingDayModes).filter(
+          (m) => m === "workout" || m === "swimming",
+        ).length;
+        const muscleVolumeBands = getMuscleVolumeBands({
+          fitnessLevel: req.userRow?.fitnessLevel ?? null,
+          fitnessGoal: req.userRow?.fitnessGoal ?? null,
+          deloadWeek: req.deloadWeek,
+          trainingDayCount,
+        });
+
         const outcome = await runWeeklyGeneration(prompts, {
           locale,
           onStep: sequentialActive
             ? (s) => emit({ type: "status", step: s })
             : undefined,
+          muscleVolumeBands,
+          previousWeekBreakdown: req.previousWeekBreakdown,
+          isDeloadWeek: req.deloadWeek,
         });
         totalInputTokens += outcome.inputTokens;
         totalOutputTokens += outcome.outputTokens;

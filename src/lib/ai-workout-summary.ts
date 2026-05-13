@@ -21,7 +21,7 @@ export interface ProducedWorkoutDaySummary {
 const TR_DAY_SHORT = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] as const;
 const EN_DAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
-type Pattern = "lower" | "push" | "pull" | "full_body" | "mixed";
+export type Pattern = "lower" | "push" | "pull" | "full_body" | "mixed";
 
 const PATTERN_KEYWORDS: Record<Exclude<Pattern, "mixed">, string[]> = {
   lower: ["squat", "lunge", "deadlift", "leg press", "calf", "hip thrust", "bacak", "kalça", "uyluk"],
@@ -29,6 +29,19 @@ const PATTERN_KEYWORDS: Record<Exclude<Pattern, "mixed">, string[]> = {
   pull: ["row", "pull", "lat", "curl", "chin", "deadlift", "kürek", "çekiş", "biceps"],
   full_body: ["full body", "compound", "tam vücut", "komple"],
 };
+
+/**
+ * Classify a single exercise name into one of the movement patterns above.
+ * Exported for reuse by the per-pattern progressive-overload validator so
+ * pattern bucketing stays consistent with the workout-summary block.
+ */
+export function detectExercisePattern(name: string): Pattern {
+  const lower = name.toLowerCase();
+  for (const [pattern, keywords] of Object.entries(PATTERN_KEYWORDS) as [Exclude<Pattern, "mixed">, string[]][]) {
+    if (keywords.some((kw) => lower.includes(kw))) return pattern;
+  }
+  return "mixed";
+}
 
 function detectDominantPattern(exerciseNames: string[]): Pattern {
   if (exerciseNames.length === 0) return "mixed";

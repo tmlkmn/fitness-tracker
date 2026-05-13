@@ -21,16 +21,20 @@
  * later.
  */
 import type { AIWeeklyPlan } from "@/lib/ai-weekly-types";
+import type { MuscleGroup } from "@/lib/muscle-volume-validator";
+import { detectExercisePattern, type Pattern } from "@/lib/ai-workout-summary";
 
 /** Sections counted as working volume. Warmup/cooldown are excluded. */
 const WORKING_SECTIONS = new Set(["main", "swimming"]);
 
 /** Threshold (fraction) — increase ≤ this counts as "no progression". */
-export const NO_PROGRESSION_THRESHOLD = 0.0;
+export const NO_PROGRESSION_THRESHOLD = 0;
 /** Threshold (fraction) — increase > this counts as "aggressive". */
-export const AGGRESSIVE_PROGRESSION_THRESHOLD = 0.30;
+export const AGGRESSIVE_PROGRESSION_THRESHOLD = 0.3;
 /** Required minimum volume drop in a deload week (fraction). */
-export const DELOAD_MIN_REDUCTION = 0.30;
+export const DELOAD_MIN_REDUCTION = 0.3;
+/** Per-muscle/per-pattern deload tolerance — looser than total. */
+export const PER_BUCKET_DELOAD_MIN_REDUCTION = 0.2;
 
 /**
  * Sum every "set" across the plan's main/swimming sections. Exercises with
@@ -117,4 +121,154 @@ export function assessProgressiveOverload(
   }
 
   return { ok: true, warning: null, kind: null, deltaRatio: delta };
+}
+
+// ─── Per-muscle progressive overload ────────────────────────────────────────
+//
+// The total-set check above can miss obvious distribution problems — the same
+// 60 weekly sets can be 30 chest one week and 30 back the next, technically
+// "no progression" by total but with chest dropping to zero. Per-muscle
+// comparison surfaces that pattern. Pattern bucketing does the same for
+// push/pull/lower/full_body shifts.
+//
+// Both layers use the same thresholds as the total check, with a looser
+// deload tolerance (PER_BUCKET_DELOAD_MIN_REDUCTION = 20%) since a deload
+// week can legitimately concentrate volume on one muscle while shrinking
+// total — we don't want noise on every bucket every deload.
+
+export interface BucketOverloadIssue {
+  bucket: string;
+  kind: "no-progression" | "aggressive-progression" | "deload-violation";
+  deltaRatio: number;
+  currentSets: number;
+  previousSets: number;
+  warning: string;
+}
+
+export interface BucketOverloadAssessment {
+  issues: BucketOverloadIssue[];
+  /** True when every bucket cleared. */
+  ok: boolean;
+}
+
+function assessBucket(
+  bucket: string,
+  current: number,
+  previous: number,
+  isDeloadWeek: boolean,
+  deloadMinReduction: number,
+): BucketOverloadIssue | null {
+  // Skip empty-on-both: nothing to compare. Skip empty-current only if
+  // previous was also small — common when a muscle wasn't trained either week.
+  if (previous <= 0 && current <= 0) return null;
+  // Pure "added a new muscle this week" — not a regression, no warning.
+  if (previous <= 0) return null;
+  const delta = (current - previous) / previous;
+
+  if (isDeloadWeek) {
+    if (delta > -deloadMinReduction) {
+      return {
+        bucket,
+        kind: "deload-violation",
+        deltaRatio: delta,
+        currentSets: current,
+        previousSets: previous,
+        warning:
+          `${bucket}: deload haftası ama set sayısı ${previous} → ${current} ` +
+          `(${(delta * 100).toFixed(0)}%). Bu kas grubunda en az %${Math.round(deloadMinReduction * 100)} azalma bekleniyor.`,
+      };
+    }
+    return null;
+  }
+
+  if (delta <= NO_PROGRESSION_THRESHOLD) {
+    return {
+      bucket,
+      kind: "no-progression",
+      deltaRatio: delta,
+      currentSets: current,
+      previousSets: previous,
+      warning:
+        `${bucket}: set sayısı önceki haftadan artmamış ${previous} → ${current} ` +
+        `(${(delta * 100).toFixed(0)}%). Bu kas grubunda progresif yüklenme uygula.`,
+    };
+  }
+  if (delta > AGGRESSIVE_PROGRESSION_THRESHOLD) {
+    return {
+      bucket,
+      kind: "aggressive-progression",
+      deltaRatio: delta,
+      currentSets: current,
+      previousSets: previous,
+      warning:
+        `${bucket}: set sayısı %${(delta * 100).toFixed(0)} arttı (${previous} → ${current}). ` +
+        `%${Math.round(AGGRESSIVE_PROGRESSION_THRESHOLD * 100)}+ artış toparlanma riski — kademeli artır.`,
+    };
+  }
+  return null;
+}
+
+export interface BucketComparisonInput<K extends string> {
+  current: Partial<Record<K, number>>;
+  previous: Partial<Record<K, number>>;
+  isDeloadWeek: boolean;
+}
+
+function compareBuckets<K extends string>(
+  input: BucketComparisonInput<K>,
+  deloadMinReduction: number,
+  bucketPrefix: string,
+): BucketOverloadAssessment {
+  const keys = new Set<K>([
+    ...(Object.keys(input.current) as K[]),
+    ...(Object.keys(input.previous) as K[]),
+  ]);
+  const issues: BucketOverloadIssue[] = [];
+  for (const k of keys) {
+    const issue = assessBucket(
+      `${bucketPrefix}${k}`,
+      input.current[k] ?? 0,
+      input.previous[k] ?? 0,
+      input.isDeloadWeek,
+      deloadMinReduction,
+    );
+    if (issue) issues.push(issue);
+  }
+  return { issues, ok: issues.length === 0 };
+}
+
+/** Per-MuscleGroup progressive overload. */
+export function assessPerMuscleProgressiveOverload(
+  input: BucketComparisonInput<MuscleGroup>,
+): BucketOverloadAssessment {
+  return compareBuckets(input, PER_BUCKET_DELOAD_MIN_REDUCTION, "");
+}
+
+/** Per-movement-pattern progressive overload (push/pull/lower/full_body/mixed). */
+export function assessPerPatternProgressiveOverload(
+  input: BucketComparisonInput<Pattern>,
+): BucketOverloadAssessment {
+  return compareBuckets(input, PER_BUCKET_DELOAD_MIN_REDUCTION, "");
+}
+
+/**
+ * Bucket the working sets of a plan by movement pattern. Used by callers
+ * that need to feed `assessPerPatternProgressiveOverload`.
+ */
+export function bucketSetsByPattern(plan: AIWeeklyPlan): Record<Pattern, number> {
+  const out: Record<Pattern, number> = {
+    lower: 0,
+    push: 0,
+    pull: 0,
+    full_body: 0,
+    mixed: 0,
+  };
+  for (const day of plan.days) {
+    for (const ex of day.exercises) {
+      if (!WORKING_SECTIONS.has(ex.section)) continue;
+      const pattern = detectExercisePattern(ex.name);
+      out[pattern] += ex.sets ?? 1;
+    }
+  }
+  return out;
 }
