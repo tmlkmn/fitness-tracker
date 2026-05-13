@@ -28,6 +28,13 @@ import {
   type WeeklyMacroTargets,
 } from "@/lib/carb-cycling";
 import {
+  getDailySupplementBudget,
+  applySupplementAdjustment,
+  buildSupplementInfoBlock,
+  EMPTY_SUPPLEMENT_BUDGET,
+  type SupplementBudget,
+} from "@/lib/supplement-budget";
+import {
   buildDayModesBlock,
   buildWorkoutOnlyDayModesBlock,
   buildTrainingDayContextBlock,
@@ -453,7 +460,10 @@ export interface ResolvedWeeklyRequest {
   doNutrition: boolean;
   doWorkout: boolean;
   resolvedTargets: WeeklyMacroTargets | null;
+  /** Cycling/baseline targets AFTER supplement budget is subtracted — what AI sees. */
+  adjustedTargets: WeeklyMacroTargets | null;
   expectedTargets: ExpectedTargets | undefined;
+  supplementBudget: SupplementBudget;
   sanitizedNote: string | null;
   rawUserNote: string | null;
   deloadWeek: boolean;
@@ -538,13 +548,22 @@ export async function resolveWeeklyGenerationRequest(
   if (doNutrition && userRow) {
     resolvedTargets = await resolveWeeklyTargets(userRow, userId, { deloadWeek, dayTypeCounts });
   }
-  const expectedTargets: ExpectedTargets | undefined = resolvedTargets
+
+  const supplementBudget = doNutrition
+    ? await getDailySupplementBudget(userId, null)
+    : EMPTY_SUPPLEMENT_BUDGET;
+
+  const adjustedTargets = resolvedTargets
+    ? applySupplementAdjustment(resolvedTargets, supplementBudget)
+    : null;
+
+  const expectedTargets: ExpectedTargets | undefined = adjustedTargets
     ? {
-        calories: resolvedTargets.baseline.calories,
-        protein: resolvedTargets.baseline.protein,
-        carbs: resolvedTargets.baseline.carbs,
-        fat: resolvedTargets.baseline.fat,
-        perDayType: resolvedTargets.cyclingProfile.enabled ? resolvedTargets.perDayType : undefined,
+        calories: adjustedTargets.baseline.calories,
+        protein: adjustedTargets.baseline.protein,
+        carbs: adjustedTargets.baseline.carbs,
+        fat: adjustedTargets.baseline.fat,
+        perDayType: adjustedTargets.cyclingProfile.enabled ? adjustedTargets.perDayType : undefined,
       }
     : undefined;
 
@@ -562,7 +581,9 @@ export async function resolveWeeklyGenerationRequest(
     doNutrition,
     doWorkout,
     resolvedTargets,
+    adjustedTargets,
     expectedTargets,
+    supplementBudget,
     sanitizedNote,
     rawUserNote: userNote ?? null,
     deloadWeek,
@@ -586,7 +607,7 @@ export interface WeeklyPrompts {
 }
 
 export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
-  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, resolvedTargets, expectedTargets, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek } = req;
+  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, adjustedTargets, expectedTargets, supplementBudget, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek } = req;
   const isNutritionOnly = userRow?.serviceType === "nutrition";
   const userAllergens = parseUserAllergens(userRow?.foodAllergens);
   const deloadWorkoutBlock = deloadWeek ? `\n\n${buildDeloadWorkoutBlock(locale)}` : "";
@@ -602,12 +623,16 @@ export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
     promptDayTypeCounts[mode] = (promptDayTypeCounts[mode] ?? 0) + 1;
   }
 
+  const supplementBlock = supplementBudget.supplementsCount > 0
+    ? `\n\n${buildSupplementInfoBlock(supplementBudget, locale)}`
+    : "";
+
   let targetsBlock = "";
-  if (resolvedTargets) {
-    if (resolvedTargets.cyclingProfile.enabled) {
-      targetsBlock = `\n\n${buildCyclingTargetsBlock(resolvedTargets, promptDayTypeCounts, locale)}`;
+  if (adjustedTargets) {
+    if (adjustedTargets.cyclingProfile.enabled) {
+      targetsBlock = `\n\n${buildCyclingTargetsBlock(adjustedTargets, promptDayTypeCounts, locale)}`;
     } else {
-      const b = resolvedTargets.baseline;
+      const b = adjustedTargets.baseline;
       targetsBlock = `\n\n═══ HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ ═══
 Kalori: ${b.calories} kcal
 Protein: ${b.protein}g
@@ -634,7 +659,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       : "";
 
     const nutritionDayModesBlock = buildDayModesBlock(nutritionDayModes, pastDowsSet);
-    const nutritionUserMsg = `${targetsBlock}\n\n${weeklyContext}${trainingContextBlock}${nutritionDayModesBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.\n\n⚡ KISALTMA KURALI: content alanı MAX 15 kelime. Notlar 1 cümle.${noteBlockNutrition}${deloadNutritionBlock}`;
+    const nutritionUserMsg = `${supplementBlock}${targetsBlock}\n\n${weeklyContext}${trainingContextBlock}${nutritionDayModesBlock}\n\n${weekHeader}\n\nKullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek bu hafta için kişiye özel 7 günlük beslenme programı oluştur. Hedef kiloya göre kalori stratejisi belirle.\n\n⚡ KISALTMA KURALI: content alanı MAX 15 kelime. Notlar 1 cümle.${noteBlockNutrition}${deloadNutritionBlock}`;
 
     nutrition = {
       systemPrompt: getNutritionOnlyWeeklyPrompt(locale),

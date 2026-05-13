@@ -30,6 +30,8 @@ export interface MealContextResult {
   totalMealsTarget: number | null;
   /** The day's `dailyPlans.planType` (workout / swimming / rest / nutrition). */
   planType: string | null;
+  /** The day's owning weekly plan id — used to scope supplement budget lookups. */
+  weeklyPlanId: number | null;
 }
 
 const mealContextCache = new Map<string, { value: MealContextResult; expires: number }>();
@@ -63,7 +65,7 @@ async function buildMealContextInternal(dailyPlanId: number, userId: string): Pr
     .where(eq(dailyPlans.id, dailyPlanId));
 
   if (!currentDay) {
-    return { context: "", totalMealsTarget: null, planType: null };
+    return { context: "", totalMealsTarget: null, planType: null, weeklyPlanId: null };
   }
 
   let totalMealsTarget: number | null = null;
@@ -391,5 +393,10 @@ async function buildMealContextInternal(dailyPlanId: number, userId: string): Pr
     }
   }
 
-  return { context: lines.join("\n"), totalMealsTarget, planType: currentDay.planType ?? null };
+  return {
+    context: lines.join("\n"),
+    totalMealsTarget,
+    planType: currentDay.planType ?? null,
+    weeklyPlanId: currentDay.weeklyPlanId ?? null,
+  };
 }

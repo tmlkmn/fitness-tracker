@@ -22,6 +22,10 @@ import { getUserLocale } from "@/lib/locale";
 import { buildMealContext } from "@/lib/ai-meal-context";
 import { resolveTargetsForDay } from "@/lib/macro-targets";
 import {
+  getDailySupplementBudget,
+  subtractSupplementBudget,
+} from "@/lib/supplement-budget";
+import {
   validateDailyMealArray,
   dailyMealsNeedRetry,
   buildDailyMealsRetryNudge,
@@ -90,9 +94,13 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     ? getNutritionOnlyMealsPrompt(locale)
     : getDailyMealsPrompt(locale);
 
-  const { context: mealContext, totalMealsTarget, planType } = await buildMealContext(dailyPlanId, user.id);
+  const { context: mealContext, totalMealsTarget, planType, weeklyPlanId } = await buildMealContext(dailyPlanId, user.id);
 
-  const targets = userRow ? await resolveTargetsForDay(userRow, user.id, planType) : null;
+  const rawTargets = userRow ? await resolveTargetsForDay(userRow, user.id, planType) : null;
+  const supplementBudget = await getDailySupplementBudget(user.id, weeklyPlanId);
+  const targets = rawTargets
+    ? subtractSupplementBudget(rawTargets, supplementBudget)
+    : null;
 
   const userMessage = buildDailyMealPrompt({
     locale,
@@ -107,6 +115,7 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
           content: m.content,
         }))
       : undefined,
+    supplementBudget,
   });
 
   const startTime = Date.now();

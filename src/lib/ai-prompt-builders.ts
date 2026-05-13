@@ -10,6 +10,8 @@
 import "server-only";
 import type { Locale } from "@/lib/locale";
 import type { MacroTargets } from "@/lib/macro-targets";
+import type { SupplementBudget } from "@/lib/supplement-budget";
+import { buildSupplementInfoBlock } from "@/lib/supplement-budget";
 import { buildUserNotePriorityBlock } from "@/lib/ai";
 
 function appendUserNote(base: string, userNote: string | null | undefined): string {
@@ -36,6 +38,11 @@ export interface DailyMealPromptInput {
    * meal times/labels while upgrading content + macros toward the target.
    */
   currentMeals?: CurrentMealForPrompt[];
+  /**
+   * Daily supplement contribution. When supplementsCount > 0, an info block
+   * is prepended and `targets` are expected to already be supplement-adjusted.
+   */
+  supplementBudget?: SupplementBudget | null;
 }
 
 function buildCurrentMealsBlock(
@@ -52,7 +59,11 @@ function buildCurrentMealsBlock(
 }
 
 export function buildDailyMealPrompt(input: DailyMealPromptInput): string {
-  const { locale, mealContext, targets, isNutritionOnly, userNote, currentMeals } = input;
+  const { locale, mealContext, targets, isNutritionOnly, userNote, currentMeals, supplementBudget } = input;
+
+  const supplementBlock = supplementBudget && supplementBudget.supplementsCount > 0
+    ? `\n\n${buildSupplementInfoBlock(supplementBudget, locale)}`
+    : "";
 
   let targetsBlock = "";
   if (targets) {
@@ -81,7 +92,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
 
   const currentMealsBlock = buildCurrentMealsBlock(locale, currentMeals);
 
-  const base = `${targetsBlock}${currentMealsBlock}\n\n${mealContext}\n\n${taskLine}`;
+  const base = `${supplementBlock}${targetsBlock}${currentMealsBlock}\n\n${mealContext}\n\n${taskLine}`;
   return appendUserNote(base, userNote);
 }
 

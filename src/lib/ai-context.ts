@@ -8,6 +8,10 @@ import {
   renderUserProfileLines,
 } from "@/lib/ai-user-profile-block";
 import { loadRecentProgressLines } from "@/lib/ai-progress-block";
+import {
+  getDailySupplementBudget,
+  subtractSupplementBudget,
+} from "@/lib/supplement-budget";
 import type { Locale } from "@/lib/locale";
 
 // 5-minute TTL memory cache for user context (keyed by userId + locale)
@@ -292,6 +296,35 @@ export async function buildUserContext(
     }
   }
 
+  const supplementBudget = await getDailySupplementBudget(userId, null);
+  if (supplementBudget.list.length > 0) {
+    lines.push("");
+    lines.push(locale === "en" ? "═══ SUPPLEMENT STACK (Daily) ═══" : "═══ SUPPLEMENT STACK (Günlük) ═══");
+    for (const s of supplementBudget.list) {
+      const hasMacros = s.calories > 0 || s.protein > 0 || s.carbs > 0 || s.fat > 0;
+      if (locale === "en") {
+        lines.push(
+          hasMacros
+            ? `- ${s.name} × ${s.servings} (${s.dosage}): ${s.calories} kcal · ${s.protein}g P · ${s.carbs}g C · ${s.fat}g F`
+            : `- ${s.name} × ${s.servings} (${s.dosage})`,
+        );
+      } else {
+        lines.push(
+          hasMacros
+            ? `- ${s.name} × ${s.servings} (${s.dosage}): ${s.calories} kcal · ${s.protein}g P · ${s.carbs}g K · ${s.fat}g Y`
+            : `- ${s.name} × ${s.servings} (${s.dosage})`,
+        );
+      }
+    }
+    if (supplementBudget.supplementsCount > 0) {
+      lines.push(
+        locale === "en"
+          ? `Total supplement macros: ${supplementBudget.calories} kcal · ${supplementBudget.protein}g P · ${supplementBudget.carbs}g C · ${supplementBudget.fat}g F`
+          : `Toplam supplement makrosu: ${supplementBudget.calories} kcal · ${supplementBudget.protein}g P · ${supplementBudget.carbs}g K · ${supplementBudget.fat}g Y`,
+      );
+    }
+  }
+
   const progressLines = await loadRecentProgressLines(userId, { emptyState: true });
   if (progressLines.length > 0) {
     lines.push("");
@@ -382,7 +415,19 @@ export async function getMealMacroBudget(
     .from(users)
     .where(eq(users.id, userId));
 
-  const targets = userRow ? await resolveTargets(userRow, userId) : null;
+  const rawTargets = userRow ? await resolveTargets(userRow, userId) : null;
+
+  const [dayRow] = await db
+    .select({ weeklyPlanId: dailyPlans.weeklyPlanId })
+    .from(dailyPlans)
+    .where(eq(dailyPlans.id, dailyPlanId));
+  const supplementBudget = await getDailySupplementBudget(
+    userId,
+    dayRow?.weeklyPlanId ?? null,
+  );
+  const targets = rawTargets
+    ? subtractSupplementBudget(rawTargets, supplementBudget)
+    : null;
 
   const whereClause = excludeMealId
     ? and(eq(meals.dailyPlanId, dailyPlanId), ne(meals.id, excludeMealId))
@@ -437,6 +482,13 @@ export async function getMealMacroBudget(
       isEn
         ? `Remaining budget for this meal: ${remaining.calories} kcal, ${remaining.protein}g P, ${remaining.carbs}g ${C}, ${remaining.fat}g ${F}`
         : `Bu öğün için kalan bütçe: ${remaining.calories} kcal, ${remaining.protein}g P, ${remaining.carbs}g ${C}, ${remaining.fat}g ${F}`,
+    );
+  }
+  if (supplementBudget.supplementsCount > 0) {
+    parts.push(
+      isEn
+        ? `Supplement contribution: ${supplementBudget.calories} kcal/day (already excluded from the meal budget above)`
+        : `Supplement contribution: ${supplementBudget.calories} kcal/gün (yukarıdaki öğün bütçesinden zaten çıkarıldı)`,
     );
   }
 

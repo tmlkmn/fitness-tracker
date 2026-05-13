@@ -115,11 +115,21 @@ export async function POST(request: Request) {
           const flagsAny = Object.values(outcome.retryFlags).some(Boolean);
           const deloadWeek = Boolean(parsedBody.deloadWeek);
           const carbCyclingProfile = req.resolvedTargets?.cyclingProfile.label ?? "off";
-          const metaPayload = { retryFlags: outcome.retryFlags, highAccuracyMode, deloadWeek, carbCyclingProfile };
+          const supplementKcal = req.supplementBudget.calories;
+          const supplementsCount = req.supplementBudget.supplementsCount;
+          const metaPayload = {
+            retryFlags: outcome.retryFlags,
+            highAccuracyMode,
+            deloadWeek,
+            carbCyclingProfile,
+            supplementKcal,
+            supplementsCount,
+          };
           const cyclingActive = carbCyclingProfile !== "off";
+          const supplementsActive = supplementsCount > 0;
           await logAiUsage(userId, "weekly", {
             status: flagsAny ? "success_with_warnings" : "success",
-            errorMessage: flagsAny || highAccuracyMode || deloadWeek || cyclingActive ? JSON.stringify(metaPayload) : undefined,
+            errorMessage: flagsAny || highAccuracyMode || deloadWeek || cyclingActive || supplementsActive ? JSON.stringify(metaPayload) : undefined,
             inputTokens: totalInputTokens,
             outputTokens: totalOutputTokens,
             durationMs: Date.now() - startTime,
