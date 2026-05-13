@@ -59,6 +59,7 @@ import { formatDate, parseDateOnly } from "@/lib/date-format";
 import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
 import { buildAiUserNote } from "@/lib/ai-user-note";
 import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
+import { defaultUiDayModesForLevel } from "@/lib/day-modes-default";
 
 function SteppedProgress({
   loading,
@@ -229,6 +230,8 @@ interface AiWeeklyPlanModalProps {
   onReset: () => void;
   hasExistingPlan: boolean;
   serviceType?: string;
+  /** User's fitness level — drives the default workout/rest split shown in the picker. */
+  fitnessLevel?: string | null;
   /** Monday of the week being generated (YYYY-MM-DD). */
   weekStartStr?: string;
   /** Today's date (YYYY-MM-DD). */
@@ -435,6 +438,7 @@ export function AiWeeklyPlanModal({
   onReset,
   hasExistingPlan,
   serviceType,
+  fitnessLevel,
   weekStartStr,
   todayStr,
 }: AiWeeklyPlanModalProps) {
@@ -449,12 +453,28 @@ export function AiWeeklyPlanModal({
     (d, i) => ({ value: i, label: d.label, full: d.full }),
   );
   const [userNote, setUserNote] = useState("");
-  // Per-day plan type: workout / swimming / rest. Default Pzt-Cum workout,
-  // Cmt-Paz rest. User cycles each day through the 3 states.
-  const [dayModes, setDayModes] = useState<Record<number, "workout" | "swimming" | "rest">>({
-    0: "workout", 1: "workout", 2: "workout", 3: "workout", 4: "workout",
-    5: "rest", 6: "rest",
-  });
+  // Per-day plan type: workout / swimming / rest. The default split derives
+  // from the user's fitness level (beginner=3 / intermediate=4 / advanced=5
+  // workout days) and is shared with the backend via day-modes-default.ts —
+  // single source of truth. We track whether the user has interacted with the
+  // picker so we can skip sending dayModes when they haven't (letting the
+  // backend re-derive the same default, plus future-proof against changes).
+  const defaultDayModes = useMemo(
+    () => defaultUiDayModesForLevel(fitnessLevel),
+    [fitnessLevel],
+  );
+  const [dayModes, setDayModes] = useState<Record<number, "workout" | "swimming" | "rest">>(
+    () => defaultUiDayModesForLevel(fitnessLevel),
+  );
+  const [userTouchedDayModes, setUserTouchedDayModes] = useState(false);
+
+  // If the fitness level changes (or arrives async after mount) and the user
+  // hasn't touched the picker yet, refresh to the new default.
+  useEffect(() => {
+    if (userTouchedDayModes) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDayModes(defaultDayModes);
+  }, [defaultDayModes, userTouchedDayModes]);
 
   // Past-day detection: when generating for the CURRENT week, days before
   // today are already gone — disable them in the picker so the user can't
@@ -572,6 +592,7 @@ export function AiWeeklyPlanModal({
   // Past days are not changeable — they're locked to "rest" by the UI.
   const cycleDayMode = (dow: number) => {
     if (pastDows.has(dow)) return;
+    setUserTouchedDayModes(true);
     setDayModes((prev) => {
       const current = prev[dow];
       const allowSwimming = serviceType !== "nutrition";
@@ -618,10 +639,15 @@ export function AiWeeklyPlanModal({
     for (const dow of pastDows) {
       effectiveDayModes[dow] = "rest";
     }
+    // If the user never touched the day picker, omit dayModes entirely so the
+    // backend can apply its fitness-level-aware default (single source of
+    // truth in day-modes-default.ts). pastDows is sent separately and handled
+    // by the service regardless of dayModes presence.
+    const dayModesToSend = userTouchedDayModes ? effectiveDayModes : undefined;
     onGenerate(
       buildAiUserNote([locationPart, ingredientsPart, ...selectedTags, userNote]),
       generateMode,
-      effectiveDayModes,
+      dayModesToSend,
       Array.from(pastDows),
       generateMode === "both" ? highAccuracyMode : false,
       generateMode !== "nutrition" && serviceType !== "nutrition" ? deloadWeek : false,

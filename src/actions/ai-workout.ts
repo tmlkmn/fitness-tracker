@@ -58,6 +58,7 @@ import {
   safeString,
 } from "@/lib/ai-shape-validators";
 import { parseAiJson } from "@/lib/ai-json-repair";
+import { buildFallbackSections, type FallbackPlanType } from "@/lib/workout-fallback-sections";
 
 // Types for AI-generated exercise data
 export interface AIExercise {
@@ -188,7 +189,33 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
     inputTokens = exec.inputTokens;
     outputTokens = exec.outputTokens;
 
-    const suggestedExercises: AIExercise[] = validation.exercises as AIExercise[];
+    // Deterministic fallback for warmup/cooldown when the AI still omits
+    // them after the retry pass. We never synthesize main/swimming work —
+    // that's the AI's job — only the bookend sections so the user never
+    // gets a training day missing its warmup or cooldown entirely.
+    let suggestedExercises: AIExercise[] = validation.exercises as AIExercise[];
+    const missingBookends = validation.missingSections.filter(
+      (s) => s === "warmup" || s === "cooldown",
+    );
+    if (
+      missingBookends.length > 0 &&
+      (planType === "workout" || planType === "swimming")
+    ) {
+      const fallback = buildFallbackSections(
+        missingBookends,
+        planType as FallbackPlanType,
+      );
+      if (fallback.length > 0) {
+        validation.warnings.push(
+          `[fallback] injected ${missingBookends.join(",")} template(s) after retry — AI omitted these section(s)`,
+        );
+        suggestedExercises = [
+          ...(fallback as unknown as AIExercise[]),
+          ...suggestedExercises,
+        ];
+      }
+    }
+
     const hasWarnings = validation.warnings.length > 0;
 
     await logAiUsage(user.id, "workout", {

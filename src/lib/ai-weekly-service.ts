@@ -51,28 +51,11 @@ import {
   buildDeloadWorkoutBlock,
   buildDeloadNutritionBlock,
 } from "@/lib/deload-policy";
+import { defaultDayModesForLevel } from "@/lib/day-modes-default";
 import type { Locale } from "@/lib/locale";
 
 const CALL_TIMEOUT = AI_TIMEOUTS.weeklyCall;
 const RETRY_TIMEOUT = AI_TIMEOUTS.weeklyRetry;
-
-/**
- * Picks the default workout/rest split based on the user's fitness level.
- * Beginners get 3 alternating workout days; intermediates 4 (upper/lower);
- * advanced/unknown get the legacy 5-day split.
- */
-function defaultDayModesForLevel(
-  fitnessLevel: string | null | undefined,
-): Partial<Record<number, DayModeChoice>> {
-  if (fitnessLevel === "beginner") {
-    return { 0: "workout", 1: "rest", 2: "workout", 3: "rest", 4: "workout", 5: "rest", 6: "rest" };
-  }
-  if (fitnessLevel === "intermediate") {
-    return { 0: "workout", 1: "workout", 2: "rest", 3: "workout", 4: "workout", 5: "rest", 6: "rest" };
-  }
-  // advanced or null/unknown — keep legacy 5-day split
-  return { 0: "workout", 1: "workout", 2: "workout", 3: "workout", 4: "workout", 5: "rest", 6: "rest" };
-}
 
 /**
  * Determines the expected 7-day mode map for a weekly generation request.
@@ -206,7 +189,10 @@ function scoreWeeklyValidationGaps(
     result.restDaysWithClearedExercises.filter((d) => !effectivePastDows.has(d)).length +
     result.daysWithMissingSections.filter((m) => !effectivePastDows.has(m.dow)).length +
     result.allergenHits.filter((h) => !effectivePastDows.has(h.dow)).length +
-    (result.weeklyKcalDrift ? 1 : 0)
+    (result.weeklyKcalDrift ? 1 : 0) +
+    (result.weeklyProteinDrift ? 1 : 0) +
+    (result.weeklyCarbsDrift ? 1 : 0) +
+    (result.weeklyFatDrift ? 1 : 0)
   );
 }
 
@@ -217,6 +203,9 @@ interface QualityIssueSummary {
   missingSections: { dow: number; missing: string[] }[];
   restDaysWithExercises: number[];
   weeklyKcalDrift: boolean;
+  weeklyProteinDrift: boolean;
+  weeklyCarbsDrift: boolean;
+  weeklyFatDrift: boolean;
   allergenHits: { dow: number; mealIndex: number; allergens: string[] }[];
 }
 
@@ -229,6 +218,9 @@ function summarizeQualityIssues(
   const missingSections = result.daysWithMissingSections.filter((m) => !effectivePastDows.has(m.dow));
   const restDaysWithExercises = result.restDaysWithClearedExercises.filter((d) => !effectivePastDows.has(d));
   const weeklyKcalDrift = result.weeklyKcalDrift;
+  const weeklyProteinDrift = result.weeklyProteinDrift;
+  const weeklyCarbsDrift = result.weeklyCarbsDrift;
+  const weeklyFatDrift = result.weeklyFatDrift;
   const allergenHits = result.allergenHits.filter((h) => !effectivePastDows.has(h.dow));
   const hasAny =
     emptyMealCount > 0 ||
@@ -236,8 +228,22 @@ function summarizeQualityIssues(
     missingSections.length > 0 ||
     restDaysWithExercises.length > 0 ||
     weeklyKcalDrift ||
+    weeklyProteinDrift ||
+    weeklyCarbsDrift ||
+    weeklyFatDrift ||
     allergenHits.length > 0;
-  return { hasAny, emptyMealCount, planTypeMismatchCount, missingSections, restDaysWithExercises, weeklyKcalDrift, allergenHits };
+  return {
+    hasAny,
+    emptyMealCount,
+    planTypeMismatchCount,
+    missingSections,
+    restDaysWithExercises,
+    weeklyKcalDrift,
+    weeklyProteinDrift,
+    weeklyCarbsDrift,
+    weeklyFatDrift,
+    allergenHits,
+  };
 }
 
 function buildQualityRetryMessage(summary: QualityIssueSummary): string {
@@ -258,7 +264,16 @@ function buildQualityRetryMessage(summary: QualityIssueSummary): string {
     issues.push(`${summary.restDaysWithExercises.length} rest gününde egzersiz vardı (rest günü exercises BOŞ olmalı).`);
   }
   if (summary.weeklyKcalDrift) {
-    issues.push(`Haftalık ortalama kalori hedeften %15+ sapıyor. Hedefe yakınlaştır.`);
+    issues.push(`Haftalık kalori hedeften sapıyor (±%10 tolerans aşıldı). Hedefe yakınlaştır.`);
+  }
+  if (summary.weeklyProteinDrift) {
+    issues.push(`Haftalık protein hedeften sapıyor (±%15 tolerans aşıldı). Protein dağılımını düzelt.`);
+  }
+  if (summary.weeklyCarbsDrift) {
+    issues.push(`Haftalık karbonhidrat hedeften sapıyor (±%15 tolerans aşıldı). Carb dağılımını düzelt.`);
+  }
+  if (summary.weeklyFatDrift) {
+    issues.push(`Haftalık yağ hedeften sapıyor (±%15 tolerans aşıldı). Yağ dağılımını düzelt.`);
   }
   if (summary.allergenHits.length > 0) {
     const flat = summary.allergenHits

@@ -18,10 +18,7 @@ import {
   sanitizeSection,
 } from "@/lib/ai-shape-validators";
 import { detectAllergens } from "@/lib/allergen-detect";
-
-/** Tolerance bands for daily total macro validation. */
-const DAILY_KCAL_TOLERANCE = 0.10;
-const DAILY_MACRO_TOLERANCE = 0.15;
+import { computeMacroDrift } from "@/lib/macro-drift";
 
 // ─── Meal array ────────────────────────────────────────────────────────────
 
@@ -172,25 +169,7 @@ function detectMacroDrift(
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 },
   );
-  const drift: { calories?: number; protein?: number; carbs?: number; fat?: number } = {};
-  const checks: { key: keyof DailyExpectedTargets; actual: number; tol: number }[] = [
-    { key: "calories", actual: totals.calories, tol: DAILY_KCAL_TOLERANCE },
-    { key: "protein", actual: totals.protein, tol: DAILY_MACRO_TOLERANCE },
-    { key: "carbs", actual: totals.carbs, tol: DAILY_MACRO_TOLERANCE },
-    { key: "fat", actual: totals.fat, tol: DAILY_MACRO_TOLERANCE },
-  ];
-  for (const { key, actual, tol } of checks) {
-    const target = expected[key];
-    if (target == null || target === 0) continue;
-    const ratio = Math.abs(actual - target) / target;
-    if (ratio > tol) {
-      drift[key] = ratio;
-      warnings.push(
-        `daily ${key} ${Math.round(actual)} drifts ${(ratio * 100).toFixed(0)}% from target ${target} (tolerance ±${tol * 100}%)`,
-      );
-    }
-  }
-  return drift;
+  return computeMacroDrift(totals, expected, "daily", warnings);
 }
 
 /** Detects count/quality gaps + allergen hits + macro drift. */

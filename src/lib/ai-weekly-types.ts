@@ -53,6 +53,12 @@ export interface ValidateWeeklyPlanResult {
   daysWithMissingSections: { dow: number; missing: string[] }[];
   /** Days where weekly-average kcal drift exceeds tolerance (single flag, kept for D's quality retry). */
   weeklyKcalDrift: boolean;
+  /** Days where weekly protein drift exceeds tolerance (per-day-type or weekly-average). */
+  weeklyProteinDrift: boolean;
+  /** Days where weekly carbs drift exceeds tolerance. */
+  weeklyCarbsDrift: boolean;
+  /** Days where weekly fat drift exceeds tolerance. */
+  weeklyFatDrift: boolean;
   /** Per-day allergen substring hits across the week. */
   allergenHits: { dow: number; mealIndex: number; allergens: string[] }[];
 }
@@ -105,9 +111,7 @@ import {
   isStrictMacroValidationEnabled as defaultStrictMacroEnabled,
 } from "@/lib/ai-shape-validators";
 import { detectAllergens } from "@/lib/allergen-detect";
-
-// Weekly-average vs expected target tolerance.
-const TARGET_AVG_TOLERANCE = 0.15;
+import { computeMacroDrift, type MacroTotals } from "@/lib/macro-drift";
 
 const TURKISH_DAY_NAMES_MAP: Record<string, number> = {
   pazartesi: 0,
@@ -261,6 +265,9 @@ export function validateWeeklyPlan(
       restDaysWithClearedExercises: [],
       daysWithMissingSections: [],
       weeklyKcalDrift: false,
+      weeklyProteinDrift: false,
+      weeklyCarbsDrift: false,
+      weeklyFatDrift: false,
       allergenHits: [],
     };
   }
@@ -370,37 +377,68 @@ export function validateWeeklyPlan(
     }
   }
 
-  // ─── Per-day or weekly-average kcal target drift ──────────────────────
+  // ─── Per-day or weekly-average macro target drift ─────────────────────
+  // Daily and weekly validators share the same tolerances (kcal ±10%, macros
+  // ±15%) via macro-drift.ts. Per-day-type path checks each day against its
+  // own planType target (carb cycling); otherwise we compare the weekly
+  // average against a single target. Any drift flag flips its `weeklyXDrift`
+  // boolean so the quality retry path can pick it up.
   let weeklyKcalDrift = false;
+  let weeklyProteinDrift = false;
+  let weeklyCarbsDrift = false;
+  let weeklyFatDrift = false;
+
+  const dayTotals = (d: AIWeeklyDay): MacroTotals => ({
+    calories: d.meals.reduce((s, m) => s + (m.calories ?? 0), 0),
+    protein: d.meals.reduce((s, m) => s + Number.parseFloat(m.proteinG ?? "0"), 0),
+    carbs: d.meals.reduce((s, m) => s + Number.parseFloat(m.carbsG ?? "0"), 0),
+    fat: d.meals.reduce((s, m) => s + Number.parseFloat(m.fatG ?? "0"), 0),
+  });
+
+  const flagDrift = (d: ReturnType<typeof computeMacroDrift>) => {
+    if (d.calories != null) weeklyKcalDrift = true;
+    if (d.protein != null) weeklyProteinDrift = true;
+    if (d.carbs != null) weeklyCarbsDrift = true;
+    if (d.fat != null) weeklyFatDrift = true;
+  };
+
   if (expectedTargets?.perDayType) {
-    // Per-day-type check — carb cycling distributes targets across days,
-    // so comparing each day to its planType target is the correct shape.
     for (const d of rawDays) {
-      const dayTotal = d.meals.reduce((sum, m) => sum + (m.calories ?? 0), 0);
-      if (dayTotal === 0) continue;
+      const totals = dayTotals(d);
+      if (totals.calories === 0) continue;
       const dayTarget = expectedTargets.perDayType[d.planType as "workout" | "swimming" | "rest" | "nutrition"];
       if (!dayTarget) continue;
-      const drift = Math.abs(dayTotal - dayTarget.calories) / dayTarget.calories;
-      if (drift > TARGET_AVG_TOLERANCE) {
-        weeklyKcalDrift = true;
-        warnings.push(
-          `day ${d.dayOfWeek} (${d.planType}) kcal ${dayTotal} drifts ${(drift * 100).toFixed(0)}% from target ${dayTarget.calories} (tolerance ±${TARGET_AVG_TOLERANCE * 100}%)`,
-        );
-      }
+      const drift = computeMacroDrift(
+        totals,
+        dayTarget,
+        `day ${d.dayOfWeek} (${d.planType})`,
+        warnings,
+      );
+      flagDrift(drift);
     }
-  } else if (expectedTargets?.calories) {
-    const dailyTotals = rawDays
-      .map((d) => d.meals.reduce((sum, m) => sum + (m.calories ?? 0), 0))
-      .filter((t) => t > 0);
-    if (dailyTotals.length > 0) {
-      const avg = dailyTotals.reduce((s, t) => s + t, 0) / dailyTotals.length;
-      const drift = Math.abs(avg - expectedTargets.calories) / expectedTargets.calories;
-      if (drift > TARGET_AVG_TOLERANCE) {
-        weeklyKcalDrift = true;
-        warnings.push(
-          `weekly-average kcal ${Math.round(avg)} drifts ${(drift * 100).toFixed(0)}% from target ${expectedTargets.calories} (tolerance ±${TARGET_AVG_TOLERANCE * 100}%)`,
-        );
-      }
+  } else if (expectedTargets) {
+    const productiveDays = rawDays
+      .map(dayTotals)
+      .filter((t) => t.calories > 0);
+    if (productiveDays.length > 0) {
+      const avg: MacroTotals = {
+        calories: productiveDays.reduce((s, t) => s + t.calories, 0) / productiveDays.length,
+        protein: productiveDays.reduce((s, t) => s + t.protein, 0) / productiveDays.length,
+        carbs: productiveDays.reduce((s, t) => s + t.carbs, 0) / productiveDays.length,
+        fat: productiveDays.reduce((s, t) => s + t.fat, 0) / productiveDays.length,
+      };
+      const drift = computeMacroDrift(
+        avg,
+        {
+          calories: expectedTargets.calories,
+          protein: expectedTargets.protein,
+          carbs: expectedTargets.carbs,
+          fat: expectedTargets.fat,
+        },
+        "weekly-average",
+        warnings,
+      );
+      flagDrift(drift);
     }
   }
 
@@ -422,6 +460,9 @@ export function validateWeeklyPlan(
     restDaysWithClearedExercises,
     daysWithMissingSections,
     weeklyKcalDrift,
+    weeklyProteinDrift,
+    weeklyCarbsDrift,
+    weeklyFatDrift,
     allergenHits,
   };
 }

@@ -507,6 +507,7 @@ export default function TakvimPage() {
           onReset={() => generateWeekly.reset()}
           hasExistingPlan={!!data?.weeklyPlan}
           serviceType={userProfile?.serviceType ?? undefined}
+          fitnessLevel={userProfile?.fitnessLevel ?? null}
           weekStartStr={weekStartStr}
           todayStr={todayStr}
         />
