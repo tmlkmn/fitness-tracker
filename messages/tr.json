@@ -418,6 +418,10 @@
       "carbCyclingBadgeSwimming": "Yüzme günü • orta carb",
       "dayTypeLabel": "Günlük plan tipi",
       "dayTypeHint": "(üzerine basarak değiştir)",
+      "deloadBanner": {
+        "applyAction": "Bu haftayı deload olarak işaretle",
+        "activeBadge": "Deload aktif"
+      },
       "levelHint": {
         "beginnerTitle": "Başlangıç seviyesi — haftada {count} antrenman önerilir",
         "intermediateTitle": "Orta seviye — haftada {count} antrenman önerilir",

@@ -418,6 +418,10 @@
       "carbCyclingBadgeSwimming": "Swimming day • moderate carb",
       "dayTypeLabel": "Daily plan type",
       "dayTypeHint": "(tap to change)",
+      "deloadBanner": {
+        "applyAction": "Apply this week as deload",
+        "activeBadge": "Deload active"
+      },
       "levelHint": {
         "beginnerTitle": "Beginner level — {count} workout days/week recommended",
         "intermediateTitle": "Intermediate level — {count} workout days/week recommended",

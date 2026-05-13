@@ -61,6 +61,7 @@ import { buildAiUserNote } from "@/lib/ai-user-note";
 import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
 import { defaultUiDayModesForLevel } from "@/lib/day-modes-default";
 import { DayModeLevelHint } from "@/components/calendar/day-mode-level-hint";
+import { DeloadRecommendationBanner } from "@/components/calendar/deload-recommendation-banner";
 
 function SteppedProgress({
   loading,
@@ -775,54 +776,37 @@ export function AiWeeklyPlanModal({
                     ))}
                   </div>
                   {generateMode !== "nutrition" && (
-                    <div className={`mt-2 rounded-md border px-2 py-1.5 ${deloadRec?.recommended && deloadRec.severity === "hard" ? "border-amber-500/40 bg-amber-500/10" : deloadRec?.recommended && deloadRec.severity === "soft" ? "border-blue-500/40 bg-blue-500/10" : "border-transparent bg-muted/40"}`}>
-                      <label className="flex items-start gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5 h-4 w-4 accent-primary cursor-pointer"
+                    <div className="mt-2 space-y-2">
+                      {deloadRec && deloadRec.severity !== "none" && (
+                        <DeloadRecommendationBanner
+                          recommendation={deloadRec}
                           checked={deloadWeek}
-                          onChange={(e) => setDeloadWeek(e.target.checked)}
+                          onAccept={() => setDeloadWeek(true)}
                         />
-                        <span className="flex flex-col gap-0.5">
-                          <span className="text-[11px] font-medium text-foreground flex items-center gap-1">
-                            {deloadRec?.recommended && deloadRec.severity === "hard" && (
-                              <span aria-hidden>⚡</span>
-                            )}
-                            {deloadRec?.recommended && deloadRec.severity === "soft" && (
-                              <span aria-hidden>💤</span>
-                            )}
-                            {deloadRec?.recommended && deloadRec.severity === "hard"
-                              ? t("deloadRecommendedHardTitle")
-                              : deloadRec?.recommended && deloadRec.severity === "soft"
-                                ? t("deloadRecommendedSoftTitle")
-                                : t("deloadToggleLabel")}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground leading-tight">
-                            {t("deloadToggleHelp")}
-                          </span>
-                          {deloadRec?.recommended && deloadRec.reasons.length > 0 && (
-                            <span className="text-[10px] text-muted-foreground/80 leading-tight">
-                              {deloadRec.reasons.includes("cadence") && (
-                                <span>{t("deloadReasonCadence", { weeks: deloadRec.consecutiveTrainingWeeks })}. </span>
-                              )}
-                              {deloadRec.reasons.includes("sleep_quality") && (
-                                <span>{t("deloadReasonSleepQuality")}. </span>
-                              )}
-                              {deloadRec.reasons.includes("sleep_duration") && (
-                                <span>{t("deloadReasonSleepDuration")}. </span>
-                              )}
-                              {deloadRec.reasons.includes("completion") && (
-                                <span>{t("deloadReasonCompletion")}. </span>
-                              )}
+                      )}
+                      <div className="rounded-md border border-transparent bg-muted/40 px-2 py-1.5">
+                        <label className="flex items-start gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            className="mt-0.5 h-4 w-4 accent-primary cursor-pointer"
+                            checked={deloadWeek}
+                            onChange={(e) => setDeloadWeek(e.target.checked)}
+                          />
+                          <span className="flex flex-col gap-0.5">
+                            <span className="text-[11px] font-medium text-foreground">
+                              {t("deloadToggleLabel")}
                             </span>
-                          )}
-                          {deloadRec?.reasons.includes("just_deloaded") && (
-                            <span className="text-[10px] text-muted-foreground/80 leading-tight">
-                              {t("deloadJustDeloadedNote")}
+                            <span className="text-[10px] text-muted-foreground leading-tight">
+                              {t("deloadToggleHelp")}
                             </span>
-                          )}
-                        </span>
-                      </label>
+                            {deloadRec?.reasons.includes("just_deloaded") && (
+                              <span className="text-[10px] text-muted-foreground/80 leading-tight">
+                                {t("deloadJustDeloadedNote")}
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      </div>
                     </div>
                   )}
                 </div>
