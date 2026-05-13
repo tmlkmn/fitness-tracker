@@ -8,6 +8,13 @@ import {
 } from "@/lib/meal-timing";
 import { GOAL_STRATEGIES, computeCalorieDelta } from "@/lib/strategy/goal-strategy";
 import { DELOAD_CALORIE_DELTA_MULTIPLIER } from "@/lib/deload-policy";
+import {
+  applyCarbCycling,
+  applyCarbCyclingSingleDay,
+  getCarbCyclingProfile,
+  type DayType,
+  type WeeklyMacroTargets,
+} from "@/lib/carb-cycling";
 
 export interface ResolveTargetsOptions {
   /** Apply deload multiplier to the calorie delta. */
@@ -220,4 +227,51 @@ export function macroProgressColor(actual: number, target: number): string {
   if (pct < 90) return "bg-amber-500";
   if (pct <= 110) return "bg-primary";
   return "bg-destructive";
+}
+
+/**
+ * Resolves baseline macro targets and distributes them across day types using
+ * a goal-adaptive carb-cycling profile. Returns null when the user's profile
+ * is too incomplete to compute targets.
+ */
+export async function resolveWeeklyTargets(
+  user: UserWithTargets,
+  userId: string | null,
+  opts: ResolveTargetsOptions & {
+    dayTypeCounts: Record<DayType, number>;
+  },
+): Promise<WeeklyMacroTargets | null> {
+  const baseline = await resolveTargets(user, userId, { deloadWeek: opts.deloadWeek });
+  if (!baseline) return null;
+  const profile = getCarbCyclingProfile(
+    isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user),
+    opts.deloadWeek,
+  );
+  const gender = normalizeGender(user.gender);
+  const goal = isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user);
+  const minCarbsFloor = GOAL_STRATEGIES[goal].minCarbsG[gender];
+  return applyCarbCycling(baseline, opts.dayTypeCounts, profile, minCarbsFloor);
+}
+
+/**
+ * Resolves macro targets for a single day, adjusting carbs per the cycling
+ * profile and the given `planType`. Used by the daily meal flow.
+ */
+export async function resolveTargetsForDay(
+  user: UserWithTargets,
+  userId: string | null,
+  planType: string | null | undefined,
+  opts?: ResolveTargetsOptions,
+): Promise<MacroTargets | null> {
+  const baseline = await resolveTargets(user, userId, opts);
+  if (!baseline) return null;
+  const profile = getCarbCyclingProfile(
+    isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user),
+    opts?.deloadWeek,
+  );
+  if (!profile.enabled) return baseline;
+  const gender = normalizeGender(user.gender);
+  const goal = isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user);
+  const minCarbsFloor = GOAL_STRATEGIES[goal].minCarbsG[gender];
+  return applyCarbCyclingSingleDay(baseline, planType, profile, minCarbsFloor);
 }

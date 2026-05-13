@@ -20,7 +20,7 @@ import { verifyDailyPlanOwnership } from "@/lib/ownership";
 import { getDailyMealsPrompt, getNutritionOnlyMealsPrompt } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
 import { buildMealContext } from "@/lib/ai-meal-context";
-import { resolveTargets } from "@/lib/macro-targets";
+import { resolveTargetsForDay } from "@/lib/macro-targets";
 import {
   validateDailyMealArray,
   dailyMealsNeedRetry,
@@ -90,9 +90,9 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     ? getNutritionOnlyMealsPrompt(locale)
     : getDailyMealsPrompt(locale);
 
-  const { context: mealContext, totalMealsTarget } = await buildMealContext(dailyPlanId, user.id);
+  const { context: mealContext, totalMealsTarget, planType } = await buildMealContext(dailyPlanId, user.id);
 
-  const targets = userRow ? await resolveTargets(userRow, user.id) : null;
+  const targets = userRow ? await resolveTargetsForDay(userRow, user.id, planType) : null;
 
   const userMessage = buildDailyMealPrompt({
     locale,

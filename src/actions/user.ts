@@ -8,8 +8,11 @@ import { getAuthUser } from "@/lib/auth-utils";
 import {
   computeDefaultTargets,
   resolveTargets,
+  resolveTargetsForDay,
   type MacroTargets,
 } from "@/lib/macro-targets";
+import { getCarbCyclingProfile, type CarbCyclingLabel } from "@/lib/carb-cycling";
+import { isFitnessGoal, deriveGoalFallback } from "@/lib/meal-timing";
 
 const TARGET_PROFILE_FIELDS = {
   weight: users.weight,
@@ -34,6 +37,37 @@ export async function getResolvedMacroTargets(): Promise<MacroTargets | null> {
     .where(eq(users.id, user.id));
   if (!profile) return null;
   return resolveTargets(profile, user.id);
+}
+
+export interface ResolvedMacroTargetsForDay {
+  targets: MacroTargets | null;
+  cyclingLabel: CarbCyclingLabel;
+  planType: string | null;
+}
+
+/**
+ * Returns macro targets adjusted for the given day's planType, along with the
+ * active carb-cycling label so the UI can render an explanatory badge.
+ */
+export async function getResolvedMacroTargetsForDay(
+  planType: string | null,
+): Promise<ResolvedMacroTargetsForDay> {
+  const user = await getAuthUser();
+  const [profile] = await db
+    .select(TARGET_PROFILE_FIELDS)
+    .from(users)
+    .where(eq(users.id, user.id));
+  if (!profile) return { targets: null, cyclingLabel: "off", planType };
+  const goal = isFitnessGoal(profile.fitnessGoal)
+    ? profile.fitnessGoal
+    : deriveGoalFallback(
+        profile.weight ? parseFloat(profile.weight) : null,
+        profile.targetWeight ? parseFloat(profile.targetWeight) : null,
+        profile.serviceType ?? null,
+      );
+  const cyclingProfile = getCarbCyclingProfile(goal);
+  const targets = await resolveTargetsForDay(profile, user.id, planType);
+  return { targets, cyclingLabel: cyclingProfile.label, planType };
 }
 
 export async function getDefaultMacroTargets(): Promise<MacroTargets | null> {

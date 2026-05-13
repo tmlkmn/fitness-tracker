@@ -114,10 +114,12 @@ export async function POST(request: Request) {
         try {
           const flagsAny = Object.values(outcome.retryFlags).some(Boolean);
           const deloadWeek = Boolean(parsedBody.deloadWeek);
-          const metaPayload = { retryFlags: outcome.retryFlags, highAccuracyMode, deloadWeek };
+          const carbCyclingProfile = req.resolvedTargets?.cyclingProfile.label ?? "off";
+          const metaPayload = { retryFlags: outcome.retryFlags, highAccuracyMode, deloadWeek, carbCyclingProfile };
+          const cyclingActive = carbCyclingProfile !== "off";
           await logAiUsage(userId, "weekly", {
             status: flagsAny ? "success_with_warnings" : "success",
-            errorMessage: flagsAny || highAccuracyMode || deloadWeek ? JSON.stringify(metaPayload) : undefined,
+            errorMessage: flagsAny || highAccuracyMode || deloadWeek || cyclingActive ? JSON.stringify(metaPayload) : undefined,
             inputTokens: totalInputTokens,
             outputTokens: totalOutputTokens,
             durationMs: Date.now() - startTime,

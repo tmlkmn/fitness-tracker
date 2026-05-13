@@ -17,6 +17,10 @@ interface MacroSummaryProps {
   carbs: number;
   fat: number;
   targets?: MacroTargets | null;
+  /** Day's planType — when set and cyclingLabel != "off", a small badge is rendered. */
+  planType?: string | null;
+  /** Cycling profile label from `getResolvedMacroTargetsForDay`. */
+  cyclingLabel?: "off" | "moderate" | "aggressive";
 }
 
 function MacroCell({
@@ -70,26 +74,42 @@ export function DailyMacroSummary({
   carbs,
   fat,
   targets,
+  planType,
+  cyclingLabel,
 }: MacroSummaryProps) {
   const { data: profile } = useUserProfile();
   const t = useTranslations("meals.form");
+  const tCycle = useTranslations("calendar.aiWeekly");
   const energyUnit = (profile?.energyUnit as EnergyUnit) ?? "kcal";
   const displayCalories = Math.round(kcalToDisplay(calories, energyUnit));
   const displayTarget = targets?.calories
     ? Math.round(kcalToDisplay(targets.calories, energyUnit))
     : undefined;
+
+  let badgeLabel: string | null = null;
+  if (cyclingLabel && cyclingLabel !== "off") {
+    if (planType === "workout") badgeLabel = tCycle("carbCyclingBadgeWorkout");
+    else if (planType === "swimming") badgeLabel = tCycle("carbCyclingBadgeSwimming");
+    else if (planType === "rest" || planType === "nutrition") badgeLabel = tCycle("carbCyclingBadgeRest");
+  }
+
   return (
-    <div className="grid grid-cols-4 gap-2 p-3 bg-muted rounded-lg">
-      <MacroCell
-        value={displayCalories}
-        unit=""
-        label={energyUnitLabel(energyUnit)}
-        target={displayTarget}
-        highlight
-      />
-      <MacroCell value={protein} unit="g" label={t("protein")} target={targets?.protein} />
-      <MacroCell value={carbs} unit="g" label={t("carbs")} target={targets?.carbs} />
-      <MacroCell value={fat} unit="g" label={t("fat")} target={targets?.fat} />
+    <div className="space-y-1.5">
+      {badgeLabel && (
+        <p className="text-[10px] text-muted-foreground/80 px-1">{badgeLabel}</p>
+      )}
+      <div className="grid grid-cols-4 gap-2 p-3 bg-muted rounded-lg">
+        <MacroCell
+          value={displayCalories}
+          unit=""
+          label={energyUnitLabel(energyUnit)}
+          target={displayTarget}
+          highlight
+        />
+        <MacroCell value={protein} unit="g" label={t("protein")} target={targets?.protein} />
+        <MacroCell value={carbs} unit="g" label={t("carbs")} target={targets?.carbs} />
+        <MacroCell value={fat} unit="g" label={t("fat")} target={targets?.fat} />
+      </div>
     </div>
   );
 }

@@ -28,6 +28,8 @@ export interface MealContextResult {
   context: string;
   /** Policy-derived target meal count for today; null when policy can't be computed (no user row). */
   totalMealsTarget: number | null;
+  /** The day's `dailyPlans.planType` (workout / swimming / rest / nutrition). */
+  planType: string | null;
 }
 
 const mealContextCache = new Map<string, { value: MealContextResult; expires: number }>();
@@ -61,7 +63,7 @@ async function buildMealContextInternal(dailyPlanId: number, userId: string): Pr
     .where(eq(dailyPlans.id, dailyPlanId));
 
   if (!currentDay) {
-    return { context: "", totalMealsTarget: null };
+    return { context: "", totalMealsTarget: null, planType: null };
   }
 
   let totalMealsTarget: number | null = null;
@@ -389,5 +391,5 @@ async function buildMealContextInternal(dailyPlanId: number, userId: string): Pr
     }
   }
 
-  return { context: lines.join("\n"), totalMealsTarget };
+  return { context: lines.join("\n"), totalMealsTarget, planType: currentDay.planType ?? null };
 }

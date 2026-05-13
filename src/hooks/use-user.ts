@@ -4,6 +4,7 @@ import {
   updateUserWeightTargets,
   markOnboardingSeen,
   getResolvedMacroTargets,
+  getResolvedMacroTargetsForDay,
   getDefaultMacroTargets,
   updateHealthProfile,
 } from "@/actions/user";
@@ -19,6 +20,19 @@ export function useResolvedMacroTargets() {
   return useQuery({
     queryKey: ["macro.resolved"],
     queryFn: () => getResolvedMacroTargets(),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Day-aware variant. When `planType` is supplied, returns macro targets
+ * adjusted for that day's carb-cycle multiplier plus the active cycling
+ * label so callers can render a badge.
+ */
+export function useResolvedMacroTargetsForDay(planType: string | null | undefined) {
+  return useQuery({
+    queryKey: ["macro.resolved.day", planType ?? null],
+    queryFn: () => getResolvedMacroTargetsForDay(planType ?? null),
     staleTime: 60_000,
   });
 }

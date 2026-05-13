@@ -18,7 +18,7 @@ import { useBulkCompleteMeals } from "@/hooks/use-bulk-completion";
 import { useGenerateDailyMeals, useApplyDailyMeals } from "@/hooks/use-meal-ai";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
-import { useUserProfile, useResolvedMacroTargets } from "@/hooks/use-user";
+import { useUserProfile, useResolvedMacroTargetsForDay } from "@/hooks/use-user";
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { computeMealMacros } from "@/lib/meal-macros";
@@ -53,7 +53,9 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
   const monthGate = useMonthGate();
   const isMonthBlocked = planDate ? monthGate.isBlockedForDate(planDate) : false;
   const { data: profile } = useUserProfile();
-  const { data: targets } = useResolvedMacroTargets();
+  const { data: dayTargets } = useResolvedMacroTargetsForDay(dailyPlanType ?? null);
+  const targets = dayTargets?.targets ?? null;
+  const cyclingLabel = dayTargets?.cyclingLabel ?? "off";
 
   const suggestedMeals: AIMeal[] | null = generateMeals.data?.suggestedMeals ?? null;
   const currentMealsFromAI: AIMeal[] = generateMeals.data?.currentMeals ?? [];
@@ -201,6 +203,8 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
         protein={Math.round(totalProtein)}
         carbs={Math.round(totalCarbs)}
         fat={Math.round(totalFat)}
+        planType={dailyPlanType ?? null}
+        cyclingLabel={cyclingLabel}
       />
 
       <div className="space-y-1.5">

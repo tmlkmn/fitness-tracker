@@ -62,6 +62,17 @@ export interface ExpectedTargets {
   protein?: number;
   carbs?: number;
   fat?: number;
+  /**
+   * Optional per-day-type breakdown. When present, the weekly validator
+   * checks each day against its own planType's target instead of comparing
+   * the weekly average to a single value.
+   */
+  perDayType?: Partial<Record<"workout" | "swimming" | "rest" | "nutrition", {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  }>>;
 }
 
 export interface ValidateWeeklyPlanOptions {
@@ -359,9 +370,25 @@ export function validateWeeklyPlan(
     }
   }
 
-  // ─── Weekly average vs expected calorie target ────────────────────────
+  // ─── Per-day or weekly-average kcal target drift ──────────────────────
   let weeklyKcalDrift = false;
-  if (expectedTargets?.calories) {
+  if (expectedTargets?.perDayType) {
+    // Per-day-type check — carb cycling distributes targets across days,
+    // so comparing each day to its planType target is the correct shape.
+    for (const d of rawDays) {
+      const dayTotal = d.meals.reduce((sum, m) => sum + (m.calories ?? 0), 0);
+      if (dayTotal === 0) continue;
+      const dayTarget = expectedTargets.perDayType[d.planType as "workout" | "swimming" | "rest" | "nutrition"];
+      if (!dayTarget) continue;
+      const drift = Math.abs(dayTotal - dayTarget.calories) / dayTarget.calories;
+      if (drift > TARGET_AVG_TOLERANCE) {
+        weeklyKcalDrift = true;
+        warnings.push(
+          `day ${d.dayOfWeek} (${d.planType}) kcal ${dayTotal} drifts ${(drift * 100).toFixed(0)}% from target ${dayTarget.calories} (tolerance ±${TARGET_AVG_TOLERANCE * 100}%)`,
+        );
+      }
+    }
+  } else if (expectedTargets?.calories) {
     const dailyTotals = rawDays
       .map((d) => d.meals.reduce((sum, m) => sum + (m.calories ?? 0), 0))
       .filter((t) => t > 0);
