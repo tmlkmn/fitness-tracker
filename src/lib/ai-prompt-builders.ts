@@ -105,13 +105,18 @@ export interface WorkoutReplacementPromptInput {
   planType: string | null;
   mode: "Replacement" | "Generation";
   userNote: string | null;
+  /** Optional proactive block: weekly muscle-volume bands that post-validation will check. */
+  volumeBandsBlock?: string;
+  /** Optional proactive block: previous week per-muscle/per-pattern breakdown. */
+  previousVolumeBlock?: string;
 }
 
 export function buildWorkoutReplacementPrompt(input: WorkoutReplacementPromptInput): string {
-  const { locale, userContext, workoutContext, planType, mode, userNote } = input;
+  const { locale, userContext, workoutContext, planType, mode, userNote, volumeBandsBlock, previousVolumeBlock } = input;
+  const targetsBlocks = `${volumeBandsBlock ?? ""}${previousVolumeBlock ?? ""}`;
   const base = locale === "en"
-    ? `${userContext}\n\n${workoutContext}\n\nToday's planType: "${planType ?? "workout"}" — use only sections allowed for this planType.\nMode: ${mode}\n\n${mode === "Replacement" ? "Rebuild today's workout and apply" : "Build today's workout from scratch; apply"} progressive overload vs previous weeks: more volume, harder movements, or new variations. Target the same muscle groups but ensure progression.`
-    : `${userContext}\n\n${workoutContext}\n\nBugünün planType: "${planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\nMod: ${mode}\n\nBu günün antrenman programını ${mode === "Replacement" ? "yeniden oluştur ve" : "sıfırdan oluştur;"} önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
+    ? `${userContext}\n\n${workoutContext}${targetsBlocks}\n\nToday's planType: "${planType ?? "workout"}" — use only sections allowed for this planType.\nMode: ${mode}\n\n${mode === "Replacement" ? "Rebuild today's workout and apply" : "Build today's workout from scratch; apply"} progressive overload vs previous weeks: more volume, harder movements, or new variations. Target the same muscle groups but ensure progression.`
+    : `${userContext}\n\n${workoutContext}${targetsBlocks}\n\nBugünün planType: "${planType ?? "workout"}" — sadece bu planType için izin verilen section'ları kullan.\nMod: ${mode}\n\nBu günün antrenman programını ${mode === "Replacement" ? "yeniden oluştur ve" : "sıfırdan oluştur;"} önceki haftalara göre progresif yüklenme uygula: daha fazla hacim, daha zorlu hareketler, veya yeni varyasyonlar ekle. Aynı kas grubunu hedefle ama gelişim sağla.`;
   return appendUserNote(base, userNote);
 }
 

@@ -51,6 +51,8 @@ interface AiWorkoutModalProps {
   loading: boolean;
   applying: boolean;
   error: string | null;
+  /** Soft warnings from validators — shown above the suggestion list, never block apply. */
+  validationWarnings?: string[];
   onGenerate: (userNote?: string) => void;
   onApply: () => void;
 }
@@ -134,6 +136,7 @@ export function AiWorkoutModal({
   loading,
   applying,
   error,
+  validationWarnings,
   onGenerate,
   onApply,
 }: AiWorkoutModalProps) {
@@ -310,6 +313,19 @@ export function AiWorkoutModal({
               {[...Array(3)].map((_, i) => (
                 <Skeleton key={i} className="h-8 w-full" />
               ))}
+            </div>
+          )}
+
+          {!loading && suggestedExercises && validationWarnings && validationWarnings.length > 0 && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-1">
+              <p className="text-xs font-medium text-amber-500">
+                {t("warningsTitle")}
+              </p>
+              <ul className="text-[11px] text-muted-foreground space-y-0.5 list-disc list-inside">
+                {validationWarnings.map((w, i) => (
+                  <li key={i} className="wrap-break-word">{w}</li>
+                ))}
+              </ul>
             </div>
           )}
 

@@ -182,6 +182,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
             loading={generate.isPending}
             applying={apply.isPending}
             error={error}
+            validationWarnings={generate.data?.validationWarnings}
             onGenerate={handleGenerate}
             onApply={handleApply}
           />
@@ -384,6 +385,7 @@ export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: W
           loading={generate.isPending}
           applying={apply.isPending}
           error={error}
+          validationWarnings={generate.data?.validationWarnings}
           onGenerate={handleGenerate}
           onApply={handleApply}
         />

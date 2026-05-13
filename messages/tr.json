@@ -696,6 +696,7 @@
       "currentProgram": "Mevcut Program",
       "noExercises": "Egzersiz yok",
       "suggestedProgram": "Önerilen Program",
+      "warningsTitle": "Validatör uyarıları (uygulamayı engellemez)",
       "exercisesSection": "Egzersizler",
       "trainingLocation": "Antrenman yeri:",
       "gym": "Salon",

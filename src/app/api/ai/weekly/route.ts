@@ -16,7 +16,7 @@ import {
   runWeeklyGeneration,
   mergeWeeklyResults,
 } from "@/lib/ai-weekly-service";
-import { getMuscleVolumeBands } from "@/lib/muscle-volume-validator";
+import { categorizeWarnings } from "@/lib/ai-warning-telemetry";
 
 export const maxDuration = 300;
 
@@ -94,26 +94,15 @@ export async function POST(request: Request) {
           else if (prompts.workout) emit({ type: "status", step: "workout" });
         }
 
-        // Bands scale with fitness level / goal / deload / training day count
-        // so the muscle-volume validator doesn't fire false MEV warnings for
-        // a 3-day beginner program or a deload week. Training day count comes
-        // from the underlying training shape (not the AI output schema).
-        const trainingDayCount = Object.values(req.underlyingTrainingDayModes).filter(
-          (m) => m === "workout" || m === "swimming",
-        ).length;
-        const muscleVolumeBands = getMuscleVolumeBands({
-          fitnessLevel: req.userRow?.fitnessLevel ?? null,
-          fitnessGoal: req.userRow?.fitnessGoal ?? null,
-          deloadWeek: req.deloadWeek,
-          trainingDayCount,
-        });
-
+        // Bands + previous-week breakdown are computed in the resolve phase
+        // (single source) and reused for both proactive prompt blocks and
+        // post-validation. The route just forwards them to runWeeklyGeneration.
         const outcome = await runWeeklyGeneration(prompts, {
           locale,
           onStep: sequentialActive
             ? (s) => emit({ type: "status", step: s })
             : undefined,
-          muscleVolumeBands,
+          muscleVolumeBands: req.muscleVolumeBands,
           previousWeekBreakdown: req.previousWeekBreakdown,
           isDeloadWeek: req.deloadWeek,
         });
@@ -136,18 +125,25 @@ export async function POST(request: Request) {
           const carbCyclingProfile = req.resolvedTargets?.cyclingProfile.label ?? "off";
           const supplementKcal = req.supplementBudget.calories;
           const supplementsCount = req.supplementBudget.supplementsCount;
+          const allWarnings = [
+            ...(outcome.nutritionResult?.warnings ?? []),
+            ...(outcome.workoutResult?.warnings ?? []),
+          ];
+          const warningCategories = categorizeWarnings(allWarnings);
+          const hasCategorizedWarnings = Object.keys(warningCategories).length > 0;
           const metaPayload = {
             retryFlags: outcome.retryFlags,
             deloadWeek,
             carbCyclingProfile,
             supplementKcal,
             supplementsCount,
+            warningCategories,
           };
           const cyclingActive = carbCyclingProfile !== "off";
           const supplementsActive = supplementsCount > 0;
           await logAiUsage(userId, "weekly", {
-            status: flagsAny ? "success_with_warnings" : "success",
-            errorMessage: flagsAny || deloadWeek || cyclingActive || supplementsActive ? JSON.stringify(metaPayload) : undefined,
+            status: flagsAny || hasCategorizedWarnings ? "success_with_warnings" : "success",
+            errorMessage: flagsAny || hasCategorizedWarnings || deloadWeek || cyclingActive || supplementsActive ? JSON.stringify(metaPayload) : undefined,
             inputTokens: totalInputTokens,
             outputTokens: totalOutputTokens,
             durationMs: Date.now() - startTime,

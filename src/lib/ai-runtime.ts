@@ -12,6 +12,7 @@
 
 import type Anthropic from "@anthropic-ai/sdk";
 import { getAIClient, AI_MODELS } from "@/lib/ai";
+import { categorizeWarnings } from "@/lib/ai-warning-telemetry";
 
 export type AIModelKind = "fast" | "smart";
 
@@ -264,6 +265,7 @@ export async function executeAIWithRetries<TCallResult extends CallResultWithUsa
  * Build a JSON-serialized telemetry payload for `logAiUsage.errorMessage`.
  * Returns undefined when there is nothing meaningful to log (no warnings and
  * no retry activity), so successful single-shot calls don't pollute logs.
+ * Includes a category-count rollup of warnings for admin dashboard parsing.
  */
 export function buildExecMetadata<T>(
   exec: ExecuteResult<T>,
@@ -274,7 +276,10 @@ export function buildExecMetadata<T>(
   if (!hasWarnings && !hasRetryActivity) return undefined;
 
   const payload: Record<string, unknown> = {};
-  if (hasWarnings) payload.warnings = warnings;
+  if (hasWarnings) {
+    payload.warnings = warnings;
+    payload.warningCategories = categorizeWarnings(warnings);
+  }
   if (hasRetryActivity) {
     payload.attempts = exec.attempts;
     if (exec.retryParseFailures > 0) payload.retryParseFailures = exec.retryParseFailures;

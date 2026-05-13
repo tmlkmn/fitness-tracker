@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { exercises, exerciseAlternatives, dailyPlans } from "@/db/schema";
+import { exercises, exerciseAlternatives, dailyPlans, weeklyPlans, users } from "@/db/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
@@ -59,6 +59,22 @@ import {
 } from "@/lib/ai-shape-validators";
 import { parseAiJson } from "@/lib/ai-json-repair";
 import { buildFallbackSections, type FallbackPlanType } from "@/lib/workout-fallback-sections";
+import { buildWeeklyAggregateForDailyValidation } from "@/lib/daily-workout-aggregate";
+import {
+  assessMuscleVolume,
+  getMuscleVolumeBands,
+} from "@/lib/muscle-volume-validator";
+import {
+  assessPerMuscleProgressiveOverload,
+  assessPerPatternProgressiveOverload,
+  bucketSetsByPattern,
+  type BucketOverloadAssessment,
+} from "@/lib/progressive-overload-validator";
+import { loadPreviousWeekVolumeBreakdown } from "@/lib/ai-weekly-service";
+import {
+  buildVolumeBandsBlock,
+  buildPreviousVolumeBlock,
+} from "@/lib/workout-targets-block";
 
 // Types for AI-generated exercise data
 export interface AIExercise {
@@ -125,6 +141,19 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
     ]);
 
   const mode: "Replacement" | "Generation" = currentDayExercises.length > 0 ? "Replacement" : "Generation";
+
+  // Proactive prompt blocks — same bands + previous-week breakdown the
+  // post-validation will check against. Computed once here and reused by
+  // appendAggregateWarnings after the AI call so the user sees consistent
+  // numbers in both the AI's plan and the warning text.
+  const proactive = await loadProactiveWorkoutContext(user.id, dailyPlanId);
+  const volumeBandsBlock = proactive
+    ? buildVolumeBandsBlock(proactive.bands, locale)
+    : "";
+  const previousVolumeBlock = proactive
+    ? buildPreviousVolumeBlock(proactive.previousBreakdown, locale)
+    : "";
+
   const userMessage = buildWorkoutReplacementPrompt({
     locale,
     userContext,
@@ -132,6 +161,8 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
     planType,
     mode,
     userNote: userNote ?? null,
+    volumeBandsBlock,
+    previousVolumeBlock,
   });
 
   const startTime = Date.now();
@@ -208,12 +239,31 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
       );
       if (fallback.length > 0) {
         validation.warnings.push(
-          `[fallback] injected ${missingBookends.join(",")} template(s) after retry — AI omitted these section(s)`,
+          `[daily-fallback] injected ${missingBookends.join(",")} template(s) after retry — AI omitted these section(s)`,
         );
         suggestedExercises = [
           ...(fallback as unknown as AIExercise[]),
           ...suggestedExercises,
         ];
+      }
+    }
+
+    // Weekly-aggregate parity check — combine the AI's suggestion with the
+    // other 6 days of the user's current week and run the same validators
+    // the weekly flow uses (muscle volume bands, per-muscle/per-pattern
+    // progressive overload). Soft warnings only; the user still chooses
+    // whether to apply. Skipped when the daily plan has no parent weekly
+    // (free-standing day).
+    if (planType === "workout" || planType === "swimming") {
+      try {
+        await appendAggregateWarnings({
+          userId: user.id,
+          dailyPlanId,
+          suggestedExercises,
+          warnings: validation.warnings,
+        });
+      } catch (err) {
+        console.warn("[AI Workout] aggregate validation failed:", err);
       }
     }
 
@@ -229,7 +279,11 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
       promptVersion: PROMPT_VERSION,
     });
 
-    return { currentExercises: currentDayExercises, suggestedExercises };
+    return {
+      currentExercises: currentDayExercises,
+      suggestedExercises,
+      validationWarnings: validation.warnings.slice(),
+    };
   } catch (error) {
     const { status, errorMessage } = discriminateAiError(error);
     await logAiUsage(user.id, "workout", {
@@ -243,6 +297,120 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
     });
     console.error("[AI Workout] Error generating workout replacement:", error);
     throw new Error("AI_UNAVAILABLE");
+  }
+}
+
+/**
+ * Pre-AI-call helper: load the bands + previous-week breakdown the daily
+ * workout flow needs for both proactive prompt injection and post-validation.
+ * Returns null when the daily plan has no parent weekly (free-standing day)
+ * — caller skips both injection and aggregate warnings.
+ */
+async function loadProactiveWorkoutContext(
+  userId: string,
+  dailyPlanId: number,
+): Promise<{
+  bands: ReturnType<typeof getMuscleVolumeBands>;
+  previousBreakdown: Awaited<ReturnType<typeof loadPreviousWeekVolumeBreakdown>>;
+  weeklyPlanId: number;
+  weekNumber: number;
+} | null> {
+  const [planRow] = await db
+    .select({ weeklyPlanId: dailyPlans.weeklyPlanId })
+    .from(dailyPlans)
+    .where(eq(dailyPlans.id, dailyPlanId));
+  if (!planRow?.weeklyPlanId) return null;
+
+  const [weekRow] = await db
+    .select({ id: weeklyPlans.id, weekNumber: weeklyPlans.weekNumber })
+    .from(weeklyPlans)
+    .where(eq(weeklyPlans.id, planRow.weeklyPlanId));
+  if (!weekRow) return null;
+
+  const allDays = await db
+    .select({ planType: dailyPlans.planType })
+    .from(dailyPlans)
+    .where(eq(dailyPlans.weeklyPlanId, planRow.weeklyPlanId));
+  const trainingDayCount = allDays.filter(
+    (d) => d.planType === "workout" || d.planType === "swimming",
+  ).length;
+
+  const [profile] = await db
+    .select({
+      fitnessLevel: users.fitnessLevel,
+      fitnessGoal: users.fitnessGoal,
+    })
+    .from(users)
+    .where(eq(users.id, userId));
+
+  const bands = getMuscleVolumeBands({
+    fitnessLevel: profile?.fitnessLevel ?? null,
+    fitnessGoal: profile?.fitnessGoal ?? null,
+    deloadWeek: false,
+    trainingDayCount,
+  });
+
+  const previousBreakdown = await loadPreviousWeekVolumeBreakdown(
+    userId,
+    weekRow.weekNumber,
+  );
+
+  return {
+    bands,
+    previousBreakdown,
+    weeklyPlanId: planRow.weeklyPlanId,
+    weekNumber: weekRow.weekNumber,
+  };
+}
+
+async function appendAggregateWarnings(input: {
+  userId: string;
+  dailyPlanId: number;
+  suggestedExercises: AIExercise[];
+  warnings: string[];
+}): Promise<void> {
+  const { dailyPlanId, suggestedExercises, warnings } = input;
+  const aggregate = await buildWeeklyAggregateForDailyValidation(
+    dailyPlanId,
+    suggestedExercises,
+  );
+  if (!aggregate) return;
+
+  const proactive = await loadProactiveWorkoutContext(input.userId, dailyPlanId);
+  if (!proactive) return;
+
+  const volReport = await assessMuscleVolume(aggregate.plan, proactive.bands);
+  for (const w of volReport.warnings) {
+    warnings.push(`[daily-muscle-volume] ${w}`);
+  }
+
+  // No prior week → progressive overload check sits out.
+  if (proactive.previousBreakdown.total <= 0) return;
+
+  const perMuscle = assessPerMuscleProgressiveOverload({
+    current: volReport.totals,
+    previous: proactive.previousBreakdown.byMuscle,
+    isDeloadWeek: false,
+  });
+  pushBucketWarnings(warnings, perMuscle, "daily-muscle-overload");
+
+  const currentByPattern = bucketSetsByPattern(aggregate.plan);
+  const perPattern = assessPerPatternProgressiveOverload({
+    current: currentByPattern,
+    previous: proactive.previousBreakdown.byPattern,
+    isDeloadWeek: false,
+  });
+  pushBucketWarnings(warnings, perPattern, "daily-pattern-overload");
+}
+
+function pushBucketWarnings(
+  warnings: string[],
+  assessment: BucketOverloadAssessment,
+  tag: string,
+): void {
+  if (assessment.ok || assessment.issues.length === 0) return;
+  for (const issue of assessment.issues) {
+    warnings.push(`[${tag}] ${issue.warning}`);
   }
 }
 

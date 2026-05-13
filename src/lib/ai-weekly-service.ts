@@ -63,7 +63,12 @@ import {
   getMuscleVolumeBands,
   MUSCLE_RAW_TO_GROUP,
   type MuscleGroup,
+  type MuscleVolumeBandsResult,
 } from "@/lib/muscle-volume-validator";
+import {
+  buildVolumeBandsBlock,
+  buildPreviousVolumeBlock,
+} from "@/lib/workout-targets-block";
 import {
   assessPerMuscleProgressiveOverload,
   assessPerPatternProgressiveOverload,
@@ -525,6 +530,8 @@ export interface ResolvedWeeklyRequest {
   previousWorkingSets: number;
   /** Per-muscle and per-pattern breakdown of the prior week's working sets. */
   previousWeekBreakdown: PreviousWeekVolumeBreakdown;
+  /** Dynamic muscle-volume bands for this user/week — single source for prompts + post-validation. */
+  muscleVolumeBands: MuscleVolumeBandsResult;
   /**
    * The real workout/swimming/rest backdrop for this week, regardless of
    * generateMode. Nutrition-only requests force `expectedDayModes` to all
@@ -666,6 +673,19 @@ export async function resolveWeeklyGenerationRequest(
     : { total: 0, byMuscle: { chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0 } as Record<MuscleGroup, number>, byPattern: { lower: 0, push: 0, pull: 0, full_body: 0, mixed: 0 } as Record<Pattern, number> };
   const previousWorkingSets = previousWeekBreakdown.total;
 
+  // Dynamic muscle-volume bands. Single source for both proactive prompt
+  // injection and reactive post-validation. Training day count comes from
+  // the underlying shape so nutrition-only paths also size correctly.
+  const trainingDayCount = Object.values(underlyingTrainingDayModes).filter(
+    (m) => m === "workout" || m === "swimming",
+  ).length;
+  const muscleVolumeBands = getMuscleVolumeBands({
+    fitnessLevel: userRow?.fitnessLevel ?? null,
+    fitnessGoal: userRow?.fitnessGoal ?? null,
+    deloadWeek,
+    trainingDayCount,
+  });
+
   return {
     userId,
     locale,
@@ -686,6 +706,7 @@ export async function resolveWeeklyGenerationRequest(
     deloadWeek,
     previousWorkingSets,
     previousWeekBreakdown,
+    muscleVolumeBands,
     underlyingTrainingDayModes,
   };
 }
@@ -702,7 +723,7 @@ const EMPTY_BREAKDOWN: PreviousWeekVolumeBreakdown = {
   byPattern: { lower: 0, push: 0, pull: 0, full_body: 0, mixed: 0 },
 };
 
-async function loadPreviousWeekVolumeBreakdown(
+export async function loadPreviousWeekVolumeBreakdown(
   userId: string,
   currentWeekNumber: number,
 ): Promise<PreviousWeekVolumeBreakdown> {
@@ -820,7 +841,16 @@ export interface WeeklyPrompts {
 }
 
 export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
-  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, adjustedTargets, expectedTargets, supplementBudget, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek, previousWorkingSets, underlyingTrainingDayModes } = req;
+  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, adjustedTargets, expectedTargets, supplementBudget, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek, previousWorkingSets, previousWeekBreakdown, muscleVolumeBands, underlyingTrainingDayModes } = req;
+  // Proactive workout-prompt blocks: bands the validator will check post-hoc
+  // + previous-week per-muscle/per-pattern reference for progression. Empty
+  // strings when nutrition-only or first-week user (no prior breakdown).
+  const workoutVolumeBlock = doWorkout
+    ? buildVolumeBandsBlock(muscleVolumeBands, locale)
+    : "";
+  const previousVolumeBlock = doWorkout
+    ? buildPreviousVolumeBlock(previousWeekBreakdown, locale)
+    : "";
   const isNutritionOnly = userRow?.serviceType === "nutrition";
   const userAllergens = parseUserAllergens(userRow?.foodAllergens);
   const deloadWorkoutBlock = deloadWeek ? `\n\n${buildDeloadWorkoutBlock(locale)}` : "";
@@ -912,7 +942,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       }
 
       const workoutDayModesBlock = buildWorkoutOnlyDayModesBlock(expectedDayModes, pastDowsSet);
-      const workoutUserMsg = `${weeklyContext}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}`;
+      const workoutUserMsg = `${weeklyContext}${workoutVolumeBlock}${previousVolumeBlock}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}`;
 
       workout = {
         systemPrompt: getWorkoutOnlyWeeklyPrompt(locale),
@@ -927,7 +957,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     } else {
       // Workout-only mode: full 7-day plan
       const workoutDayModesBlock = buildDayModesBlock(expectedDayModes, pastDowsSet);
-      const workoutUserMsg = `${weeklyContext}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}`;
+      const workoutUserMsg = `${weeklyContext}${workoutVolumeBlock}${previousVolumeBlock}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}`;
 
       workout = {
         systemPrompt: getWorkoutOnlyWeeklyPrompt(locale),

@@ -696,6 +696,7 @@
       "currentProgram": "Current Program",
       "noExercises": "No exercises",
       "suggestedProgram": "Suggested Program",
+      "warningsTitle": "Validator warnings (won't block apply)",
       "exercisesSection": "Exercises",
       "trainingLocation": "Training location:",
       "gym": "Gym",
