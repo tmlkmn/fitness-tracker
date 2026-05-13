@@ -903,7 +903,7 @@ ${WORKOUT_PROGRESSION_BLOCK_EN}
 - Distribute muscle groups evenly (Push/Pull/Legs or Upper/Lower split)
 - Compound first, isolation second
 - Write technique cues and intensity techniques in notes (≤10-15 words)
-- Swim day: use warmup + swimming + cooldown sections; main swim block (durationMinutes with distance/time).
+- Swim day: use warmup + swimming + cooldown sections; main swim block (durationMinutes with distance/time). Fill each swimming exercise's "intensity" with one of "low" | "moderate" | "high" — nutrition carb pump scales to this.
 
 ## Nutrition Rules
 - Daily calorie and protein targets come from the GOAL-DRIVEN STRATEGY block — not your estimate
@@ -993,7 +993,7 @@ ${WORKOUT_PROGRESSION_BLOCK_TR}
 - Kas gruplarını dengeli dağıt (Push/Pull/Legs veya Upper/Lower split)
 - Compound önce, izolasyon sonra
 - notes alanına teknik ipuçları ve yoğunluk teknikleri yaz (10-15 kelimeyi geçme)
-- Yüzme günü: warmup + swimming + cooldown sectionları kullan; ana yüzme bloğu (durationMinutes ile mesafe/süre).
+- Yüzme günü: warmup + swimming + cooldown sectionları kullan; ana yüzme bloğu (durationMinutes ile mesafe/süre). Her swimming exercise için "intensity" alanını "low" | "moderate" | "high"tan biriyle doldur — beslenme tarafı carb pump'ı buna göre ayarlar.
 
 ## Beslenme Kuralları
 - Günlük kalori ve protein hedefleri HEDEF-ODAKLI STRATEJİ bloğundan gelir — kendi tahminin değil, blok geçerli

@@ -49,6 +49,8 @@ interface SupplementData {
   proteinPerServing?: string | null;
   carbsPerServing?: string | null;
   fatPerServing?: string | null;
+  frequencyDays?: number[] | null;
+  dosesPerDay?: number | null;
 }
 
 interface SupplementFormDialogProps {
@@ -104,6 +106,27 @@ export function SupplementFormDialog({
   const [fatPerServing, setFatPerServing] = useState(
     numStrToInput(supplement?.fatPerServing ?? null),
   );
+  const [frequencyDays, setFrequencyDays] = useState<number[] | null>(
+    supplement?.frequencyDays ?? null,
+  );
+  const [dosesPerDay, setDosesPerDay] = useState<number>(
+    supplement?.dosesPerDay ?? 1,
+  );
+
+  const toggleFrequencyDay = (dow: number) => {
+    setFrequencyDays((prev) => {
+      // Treat null (every day) as the full set so toggling acts on a real array.
+      const base = prev ?? [0, 1, 2, 3, 4, 5, 6];
+      const next = base.includes(dow)
+        ? base.filter((d) => d !== dow)
+        : [...base, dow].sort();
+      // If all 7 selected, normalize back to null (= every day).
+      if (next.length === 7) return null;
+      // Don't allow empty — fall back to every day.
+      if (next.length === 0) return null;
+      return next;
+    });
+  };
 
   const isPending = create.isPending || update.isPending;
 
@@ -136,6 +159,8 @@ export function SupplementFormDialog({
       proteinPerServing: parseOptionalNumber(proteinPerServing),
       carbsPerServing: parseOptionalNumber(carbsPerServing),
       fatPerServing: parseOptionalNumber(fatPerServing),
+      frequencyDays,
+      dosesPerDay,
     };
 
     const onSuccess = () => onOpenChange(false);
@@ -296,6 +321,46 @@ export function SupplementFormDialog({
                   onChange={(e) => setFatPerServing(e.target.value)}
                 />
               </div>
+            </div>
+          </div>
+          <div className="space-y-2 rounded-md border border-border/60 p-2.5">
+            <p className="text-xs font-medium">{t("frequencyTitle")}</p>
+            <div className="flex flex-wrap gap-1">
+              {(["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] as const).map((label, dow) => {
+                const active = frequencyDays === null || frequencyDays.includes(dow);
+                return (
+                  <button
+                    key={dow}
+                    type="button"
+                    onClick={() => toggleFrequencyDay(dow)}
+                    className={`flex-1 min-w-9 px-2 py-1 rounded-md text-[11px] border transition-colors ${
+                      active
+                        ? "bg-primary/15 border-primary/40 text-primary"
+                        : "bg-muted/50 border-transparent text-muted-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground">{t("frequencyHint")}</p>
+            <div className="space-y-1.5">
+              <Label htmlFor="supDoses" className="text-xs">
+                {t("dosesPerDayLabel")}
+              </Label>
+              <Input
+                id="supDoses"
+                type="number"
+                step="1"
+                min="1"
+                max="6"
+                value={dosesPerDay}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  setDosesPerDay(Number.isFinite(n) && n > 0 ? n : 1);
+                }}
+              />
             </div>
           </div>
           <div className="space-y-1.5">

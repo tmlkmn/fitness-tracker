@@ -133,6 +133,7 @@ async function buildMealContextInternal(dailyPlanId: number, userId: string): Pr
         sets: exercises.sets,
         reps: exercises.reps,
         durationMinutes: exercises.durationMinutes,
+        intensity: exercises.intensity,
       })
       .from(exercises)
       .where(eq(exercises.dailyPlanId, currentDay.id))
@@ -295,17 +296,40 @@ async function buildMealContextInternal(dailyPlanId: number, userId: string): Pr
         lines.push(`  ${label}: ${exs.join(", ")}`);
       }
 
-      // Estimate workout intensity
-      const mainExercises = todayExercises.filter(
-        (e) => e.section === "main",
-      );
-      const totalSets = mainExercises.reduce(
-        (sum, e) => sum + (e.sets ?? 0),
-        0,
-      );
-      lines.push(
-        `  Tahmini yoğunluk: ${totalSets} ana set (${totalSets >= 20 ? "yüksek" : totalSets >= 12 ? "orta" : "düşük"} hacim)`,
-      );
+      // Estimate workout intensity. Swimming sections use the explicit
+      // `intensity` tag (low/moderate/high) when present so carb pump scales
+      // to actual session demand; non-swimming days fall back to set count.
+      if (currentDay.planType === "swimming") {
+        const swimExs = todayExercises.filter((e) => e.section === "swimming");
+        const tagged = swimExs
+          .map((e) => e.intensity)
+          .filter((v): v is "low" | "moderate" | "high" =>
+            v === "low" || v === "moderate" || v === "high",
+          );
+        if (tagged.length > 0) {
+          const score = (lvl: "low" | "moderate" | "high") =>
+            lvl === "low" ? 1 : lvl === "moderate" ? 2 : 3;
+          const avg = tagged.reduce((s, v) => s + score(v), 0) / tagged.length;
+          const label = avg >= 2.5 ? "yüksek" : avg >= 1.5 ? "orta" : "düşük";
+          const multiplier = avg >= 2.5 ? 1.15 : avg >= 1.5 ? 1.0 : 0.9;
+          lines.push(
+            `  Yüzme yoğunluğu: ${label} (carb pump çarpanı x${multiplier.toFixed(2)})`,
+          );
+        } else {
+          lines.push("  Yüzme yoğunluğu: belirtilmemiş (orta varsayılan)");
+        }
+      } else {
+        const mainExercises = todayExercises.filter(
+          (e) => e.section === "main",
+        );
+        const totalSets = mainExercises.reduce(
+          (sum, e) => sum + (e.sets ?? 0),
+          0,
+        );
+        lines.push(
+          `  Tahmini yoğunluk: ${totalSets} ana set (${totalSets >= 20 ? "yüksek" : totalSets >= 12 ? "orta" : "düşük"} hacim)`,
+        );
+      }
     } else if (currentDay.planType !== "rest") {
       lines.push("  Henüz antrenman programı atanmamış");
     }

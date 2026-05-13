@@ -18,6 +18,10 @@ interface SupplementInput {
   proteinPerServing?: number | null;
   carbsPerServing?: number | null;
   fatPerServing?: number | null;
+  /** Subset of dow indices (0=Mon … 6=Sun). null/undefined → every day. */
+  frequencyDays?: number[] | null;
+  /** Doses per active day (1 = once daily, 2 = twice, …). */
+  dosesPerDay?: number | null;
 }
 
 async function verifySupplementOwnership(supplementId: number, userId: string) {
@@ -35,6 +39,14 @@ function toNumericString(n: number | null | undefined): string | null {
 }
 
 function macroFields(data: SupplementInput) {
+  const freqDays =
+    Array.isArray(data.frequencyDays) && data.frequencyDays.length > 0 && data.frequencyDays.length < 7
+      ? data.frequencyDays.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+      : null;
+  const doses =
+    data.dosesPerDay != null && Number.isFinite(data.dosesPerDay)
+      ? Math.max(1, Math.min(6, Math.round(data.dosesPerDay)))
+      : 1;
   return {
     presetKey: data.presetKey ?? null,
     servingsPerDose: toNumericString(data.servingsPerDose ?? null),
@@ -45,6 +57,8 @@ function macroFields(data: SupplementInput) {
     proteinPerServing: toNumericString(data.proteinPerServing ?? null),
     carbsPerServing: toNumericString(data.carbsPerServing ?? null),
     fatPerServing: toNumericString(data.fatPerServing ?? null),
+    frequencyDays: freqDays,
+    dosesPerDay: doses,
   };
 }
 

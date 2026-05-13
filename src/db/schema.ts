@@ -229,6 +229,9 @@ export const exercises = pgTable(
     notes: text("notes"),
     isCompleted: boolean("is_completed").default(false),
     sortOrder: integer("sort_order").notNull().default(0),
+    // Intensity tag — currently only emitted for swimming sections, used to
+    // weight nutrition carb-pump targets. Null for non-swimming or untagged.
+    intensity: text("intensity"),
   },
   (t) => [
     check(
@@ -242,6 +245,10 @@ export const exercises = pgTable(
     check(
       "exercises_duration_minutes_check",
       sql`${t.durationMinutes} IS NULL OR (${t.durationMinutes} >= 1 AND ${t.durationMinutes} <= 90)`,
+    ),
+    check(
+      "exercises_intensity_check",
+      sql`${t.intensity} IS NULL OR ${t.intensity} IN ('low', 'moderate', 'high')`,
     ),
   ],
 );
@@ -260,6 +267,11 @@ export const supplements = pgTable("supplements", {
   proteinPerServing: numeric("protein_per_serving"),
   carbsPerServing: numeric("carbs_per_serving"),
   fatPerServing: numeric("fat_per_serving"),
+  // Day-of-week subset the supplement is taken on (0 = Mon … 6 = Sun).
+  // null = every day. Stored as jsonb so we can hold a sparse array.
+  frequencyDays: jsonb("frequency_days"),
+  // Doses per active day. 1 = once a day, 2 = morning + evening, etc.
+  dosesPerDay: integer("doses_per_day").default(1).notNull(),
 });
 
 export const supplementCompletions = pgTable(

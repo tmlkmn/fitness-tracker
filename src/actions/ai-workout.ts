@@ -71,6 +71,7 @@ export interface AIExercise {
   restSeconds: number | null;
   durationMinutes: number | null;
   notes: string | null;
+  intensity?: "low" | "moderate" | "high" | null;
 }
 
 export interface AIExerciseVariation {

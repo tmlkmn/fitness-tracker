@@ -18,6 +18,8 @@ export interface AIExerciseItem {
   restSeconds: number | null;
   durationMinutes: number | null;
   notes: string | null;
+  /** Optional intensity tag — currently emitted by swimming sections only. */
+  intensity: "low" | "moderate" | "high" | null;
 }
 
 export interface AIWeeklyDay {
@@ -143,6 +145,12 @@ const TURKISH_DAY_NAMES_MAP: Record<string, number> = {
   cumartesi: 5,
   pazar: 6,
 };
+
+/** Coerce raw AI `intensity` into the typed enum or null. */
+function sanitizeIntensity(value: unknown): "low" | "moderate" | "high" | null {
+  if (value === "low" || value === "moderate" || value === "high") return value;
+  return null;
+}
 
 function resolveDayOfWeek(dayName: string, aiDayOfWeek: number, index: number): number {
   const normalized = dayName.toLowerCase().trim();
@@ -354,6 +362,7 @@ export function validateWeeklyPlan(
           restSeconds: safeNumber(ex.restSeconds),
           durationMinutes: safeNumber(ex.durationMinutes),
           notes: safeNullableText(ex.notes),
+          intensity: sanitizeIntensity(ex.intensity),
         }))
       : [];
 

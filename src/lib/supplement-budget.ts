@@ -66,6 +66,8 @@ export async function getDailySupplementBudget(
       proteinPerServing: supplements.proteinPerServing,
       carbsPerServing: supplements.carbsPerServing,
       fatPerServing: supplements.fatPerServing,
+      frequencyDays: supplements.frequencyDays,
+      dosesPerDay: supplements.dosesPerDay,
     })
     .from(supplements)
     .where(eq(supplements.weeklyPlanId, wpId));
@@ -88,29 +90,43 @@ export async function getDailySupplementBudget(
       servingsPerDose: r.servingsPerDose,
     });
     const servings = r.servingsPerDose ? parseFloat(r.servingsPerDose) || 1 : 1;
+    // Frequency: null → every day; array → those specific dow indices.
+    const freqDays = Array.isArray(r.frequencyDays)
+      ? (r.frequencyDays as number[]).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+      : null;
+    const activeDays = freqDays === null ? 7 : freqDays.length;
+    const dosesPerDay = Math.max(1, r.dosesPerDay ?? 1);
+    // Average daily contribution = (active_days × doses × per_dose) / 7.
+    // For a supp taken Mon/Wed/Fri once a day, only 3/7 of the macros land
+    // on any given calendar day on average. Pre-Tur-3.2 this was always 7/7.
+    const weight = (activeDays * dosesPerDay) / 7;
+    const dailyCalories = single.calories * weight;
+    const dailyProtein = single.protein * weight;
+    const dailyCarbs = single.carbs * weight;
+    const dailyFat = single.fat * weight;
     const hasMacros =
-      single.calories > 0 || single.protein > 0 || single.carbs > 0 || single.fat > 0;
+      dailyCalories > 0 || dailyProtein > 0 || dailyCarbs > 0 || dailyFat > 0;
     if (hasMacros) supplementsCount += 1;
-    calories += single.calories;
-    protein += single.protein;
-    carbs += single.carbs;
-    fat += single.fat;
+    calories += dailyCalories;
+    protein += dailyProtein;
+    carbs += dailyCarbs;
+    fat += dailyFat;
     list.push({
       name: r.name,
       dosage: r.dosage,
       servings,
-      calories: single.calories,
-      protein: single.protein,
-      carbs: single.carbs,
-      fat: single.fat,
+      calories: Math.round(dailyCalories),
+      protein: Math.round(dailyProtein * 10) / 10,
+      carbs: Math.round(dailyCarbs * 10) / 10,
+      fat: Math.round(dailyFat * 10) / 10,
     });
   }
 
   return {
-    calories,
-    protein,
-    carbs,
-    fat,
+    calories: Math.round(calories),
+    protein: Math.round(protein * 10) / 10,
+    carbs: Math.round(carbs * 10) / 10,
+    fat: Math.round(fat * 10) / 10,
     supplementsCount,
     list,
   };

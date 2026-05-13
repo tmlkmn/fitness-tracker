@@ -2046,6 +2046,9 @@
       "proteinLabel": "Protein (g)",
       "carbsLabel": "Karb (g)",
       "fatLabel": "Yağ (g)",
+      "frequencyTitle": "Kullanım Sıklığı",
+      "frequencyHint": "Aktif günleri seç; tümü seçiliyse her gün kullanılır.",
+      "dosesPerDayLabel": "Günlük doz sayısı",
       "timings": {
         "sabah": "Sabah",
         "kahvalti": "Kahvaltı ile",

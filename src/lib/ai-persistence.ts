@@ -58,6 +58,7 @@ export function exercisesToInsertValues(
     restSeconds: ex.restSeconds,
     durationMinutes: ex.durationMinutes,
     notes: ex.notes,
+    intensity: (ex as { intensity?: string | null }).intensity ?? null,
     isCompleted: false,
     sortOrder: sortOffset + i,
   }));

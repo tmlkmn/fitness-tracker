@@ -38,6 +38,8 @@ export function SupplementTimeline({ weeklyPlanId, date, readOnly }: SupplementT
     proteinPerServing?: string | null;
     carbsPerServing?: string | null;
     fatPerServing?: string | null;
+    frequencyDays?: number[] | null;
+    dosesPerDay?: number | null;
   } | null>(null);
 
   if (isLoading) {
@@ -127,6 +129,8 @@ export function SupplementTimeline({ weeklyPlanId, date, readOnly }: SupplementT
                         proteinPerServing: sup.proteinPerServing,
                         carbsPerServing: sup.carbsPerServing,
                         fatPerServing: sup.fatPerServing,
+                        frequencyDays: (sup as { frequencyDays?: number[] | null }).frequencyDays ?? null,
+                        dosesPerDay: (sup as { dosesPerDay?: number | null }).dosesPerDay ?? null,
                       });
                     }
                   }

@@ -283,6 +283,7 @@ export interface DailyExerciseItem {
   restSeconds: number | null;
   durationMinutes: number | null;
   notes: string | null;
+  intensity: "low" | "moderate" | "high" | null;
 }
 
 export interface ValidateDailyExercisesOptions {
@@ -373,6 +374,9 @@ export function sanitizeDailyExercises(
         sectionLabel = options.forcedSectionLabel;
       }
 
+      const intensity = ex.intensity === "low" || ex.intensity === "moderate" || ex.intensity === "high"
+        ? ex.intensity
+        : null;
       return {
         section,
         sectionLabel,
@@ -383,6 +387,7 @@ export function sanitizeDailyExercises(
         restSeconds: sanitizeRestSeconds(ex.restSeconds, ctx, warnings),
         durationMinutes: sanitizeDurationMinutes(ex.durationMinutes, ctx, warnings),
         notes: safeNullableText(ex.notes),
+        intensity,
       };
     })
     .filter((ex): ex is DailyExerciseItem => ex !== null);

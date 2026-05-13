@@ -1,0 +1,2 @@
+ALTER TABLE "exercises" ADD COLUMN "intensity" text;--> statement-breakpoint
+ALTER TABLE "exercises" ADD CONSTRAINT "exercises_intensity_check" CHECK ("exercises"."intensity" IS NULL OR "exercises"."intensity" IN ('low', 'moderate', 'high'));

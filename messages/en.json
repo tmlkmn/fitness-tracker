@@ -2045,6 +2045,9 @@
       "proteinLabel": "Protein (g)",
       "carbsLabel": "Carbs (g)",
       "fatLabel": "Fat (g)",
+      "frequencyTitle": "Usage frequency",
+      "frequencyHint": "Pick active days; selecting all means every day.",
+      "dosesPerDayLabel": "Doses per day",
       "timings": {
         "sabah": "Morning",
         "kahvalti": "With breakfast",

@@ -52,6 +52,7 @@ import {
   buildDeloadNutritionBlock,
 } from "@/lib/deload-policy";
 import { defaultDayModesForLevel } from "@/lib/day-modes-default";
+import { assessMuscleVolume } from "@/lib/muscle-volume-validator";
 import type { Locale } from "@/lib/locale";
 
 const CALL_TIMEOUT = AI_TIMEOUTS.weeklyCall;
@@ -145,6 +146,7 @@ const SUBMIT_WEEKLY_PLAN_TOOL = {
                   restSeconds:     { type: ["integer", "null"] },
                   durationMinutes: { type: ["number", "null"] },
                   notes:           { type: ["string", "null"] },
+                  intensity:       { type: ["string", "null"], enum: ["low", "moderate", "high", null] },
                 },
                 required: ["section", "sectionLabel", "name"] as string[],
               },
@@ -872,6 +874,27 @@ export async function runWeeklyGeneration(
       nutritionCallPromise,
       workoutCallPromise,
     ]);
+  }
+
+  // Muscle-group volume check — soft warning only. Runs once after the
+  // workout call resolves (no retry pressure on this layer; the progressive-
+  // overload validator handles week-to-week regression separately).
+  if (workoutRaw) {
+    try {
+      const volReport = await assessMuscleVolume(workoutRaw.validationResult.plan);
+      if (volReport.warnings.length > 0) {
+        workoutRaw.validationResult.warnings.push(
+          ...volReport.warnings.map((w) => `[muscle-volume] ${w}`),
+        );
+        console.warn("[AI Weekly] muscle volume warnings:", {
+          totals: volReport.totals,
+          unknownExerciseCount: volReport.unknownExerciseCount,
+          warnings: volReport.warnings,
+        });
+      }
+    } catch (err) {
+      console.warn("[AI Weekly] muscle volume check failed:", err);
+    }
   }
 
   let inputTokens = 0;
