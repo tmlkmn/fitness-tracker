@@ -47,6 +47,7 @@ interface AiMealModalProps {
   planType: string;
   currentMeals: AIMeal[];
   suggestedMeals: AIMeal[] | null;
+  validationWarnings?: string[];
   loading: boolean;
   applying: boolean;
   error: string | null;
@@ -227,6 +228,7 @@ export function AiMealModal({
   planType,
   currentMeals,
   suggestedMeals,
+  validationWarnings,
   loading,
   applying,
   error,
@@ -376,6 +378,19 @@ export function AiMealModal({
                 {[...Array(4)].map((_, i) => (
                   <Skeleton key={i} className="h-10 w-full" />
                 ))}
+              </div>
+            )}
+
+            {!loading && suggestedMeals && validationWarnings && validationWarnings.length > 0 && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-1">
+                <p className="text-xs font-medium text-amber-500">
+                  {t("warningsTitle")}
+                </p>
+                <ul className="text-[11px] text-muted-foreground space-y-0.5 list-disc list-inside">
+                  {validationWarnings.map((w, i) => (
+                    <li key={i} className="wrap-break-word">{w}</li>
+                  ))}
+                </ul>
               </div>
             )}
 

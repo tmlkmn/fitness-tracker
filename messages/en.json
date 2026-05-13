@@ -921,6 +921,7 @@
       "tabSaved": "Saved",
       "currentMeals": "Current Meals",
       "suggestedMeals": "Suggested Meals",
+      "warningsTitle": "Validator warnings (won't block apply)",
       "noMeals": "No meals",
       "ingredientsLabel": "Available ingredients (optional):",
       "ingredientsPlaceholder": "E.g. eggs, oats, chicken, broccoli, pasta...",

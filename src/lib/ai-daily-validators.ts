@@ -98,7 +98,7 @@ export function sanitizeDailyMeals(
       const content = safeString(m.content).trim();
       if (content === "") {
         emptyContentMeals.push(i);
-        warnings.push(`${ctx}: empty content`);
+        warnings.push(`[daily-meal-empty] ${ctx}: empty content`);
       }
       const sanitized: DailyMealItem = {
         mealTime: safeString(m.mealTime, "08:00"),
@@ -131,7 +131,7 @@ function detectMealCountGap(
   const below = minMealsExpected != null && sanitized.meals.length < minMealsExpected;
   if (below) {
     warnings.push(
-      `meal count ${sanitized.meals.length} below expected minimum ${minMealsExpected}`,
+      `[daily-meal-count] meal count ${sanitized.meals.length} below expected minimum ${minMealsExpected}`,
     );
   }
   return below;
@@ -148,7 +148,7 @@ function detectAllergenHits(
     const found = detectAllergens(m.content, userAllergens);
     if (found.length > 0) {
       hits.push({ mealIndex: i, allergens: found });
-      warnings.push(`meal[${i}]: allergen match — ${found.join(", ")}`);
+      warnings.push(`[daily-meal-allergen] meal[${i}]: allergen match — ${found.join(", ")}`);
     }
   });
   return hits;
@@ -169,7 +169,7 @@ function detectMacroDrift(
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 },
   );
-  return computeMacroDrift(totals, expected, "daily", warnings);
+  return computeMacroDrift(totals, expected, "[daily-meal-drift]", warnings);
 }
 
 /** Detects count/quality gaps + allergen hits + macro drift. */

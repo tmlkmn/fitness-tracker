@@ -182,6 +182,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
             planType={dailyPlanType ?? "rest"}
             currentMeals={currentMealsForModal}
             suggestedMeals={suggestedMeals}
+            validationWarnings={generateMeals.data?.validationWarnings}
             loading={generateMeals.isPending}
             applying={applyMeals.isPending}
             error={aiError}
@@ -360,6 +361,7 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
           planType={dailyPlanType ?? "rest"}
           currentMeals={currentMealsForModal}
           suggestedMeals={suggestedMeals}
+          validationWarnings={generateMeals.data?.validationWarnings}
           loading={generateMeals.isPending}
           applying={applyMeals.isPending}
           error={aiError}

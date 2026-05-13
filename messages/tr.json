@@ -922,6 +922,7 @@
       "tabSaved": "Kayıtlı",
       "currentMeals": "Mevcut Öğünler",
       "suggestedMeals": "Önerilen Öğünler",
+      "warningsTitle": "Validatör uyarıları (uygulamayı engellemez)",
       "noMeals": "Öğün yok",
       "ingredientsLabel": "Evdeki malzemeler (opsiyonel):",
       "ingredientsPlaceholder": "Örn: yumurta, yulaf, tavuk, brokoli, makarna...",

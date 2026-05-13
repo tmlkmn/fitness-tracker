@@ -189,7 +189,11 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
       promptVersion: PROMPT_VERSION,
     });
 
-    return { suggestedMeals, currentMeals };
+    return {
+      suggestedMeals,
+      currentMeals,
+      validationWarnings: validation.warnings.slice(),
+    };
   } catch (error) {
     const { status, errorMessage } = discriminateAiError(error);
     await logAiUsage(user.id, "daily-meal", {
