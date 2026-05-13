@@ -1,6 +1,13 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
+import {
+  getAIClient,
+  AI_MODELS,
+  checkRateLimit,
+  logAiUsage,
+  discriminateAiError,
+  PROMPT_VERSION,
+} from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { getCoachChatPrompt } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
@@ -21,16 +28,16 @@ export async function POST(request: Request) {
 
   try {
     await checkRateLimit(userId, "chat");
-  } catch {
-    return new Response(
-      locale === "en"
-        ? "Daily chat limit reached (max 15/day)."
-        : "Günlük sohbet limitine ulaştınız (max 15/gün).",
-      { status: 429 },
-    );
+  } catch (err) {
+    const msg = err instanceof Error && err.message.startsWith("COOLDOWN:")
+      ? (locale === "en"
+          ? `Please wait ${err.message.split(":")[1]} seconds before sending again.`
+          : `Lütfen ${err.message.split(":")[1]} saniye bekleyin.`)
+      : (locale === "en"
+          ? "Daily chat limit reached (max 15/day)."
+          : "Günlük sohbet limitine ulaştınız (max 15/gün).");
+    return new Response(msg, { status: 429 });
   }
-
-  await logAiUsage(userId, "chat");
 
   const body = await request.json();
   const rawMessages = body.messages;
@@ -89,6 +96,7 @@ export async function POST(request: Request) {
     messages.push({ role, content });
   }
 
+  const startTime = Date.now();
   const client = getAIClient();
   const stream = client.messages.stream({
     model: AI_MODELS.smart,
@@ -107,6 +115,9 @@ export async function POST(request: Request) {
     async start(controller) {
       const encoder = new TextEncoder();
       let stopReason: string | null = null;
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let logged = false;
       try {
         for await (const event of stream) {
           if (
@@ -116,6 +127,12 @@ export async function POST(request: Request) {
             controller.enqueue(encoder.encode(event.delta.text));
           } else if (event.type === "message_delta" && event.delta.stop_reason) {
             stopReason = event.delta.stop_reason;
+          } else if (event.type === "message_start") {
+            inputTokens = event.message.usage?.input_tokens ?? 0;
+            outputTokens = event.message.usage?.output_tokens ?? 0;
+          } else if (event.type === "message_delta") {
+            const u = (event as { usage?: { output_tokens?: number } }).usage;
+            if (u?.output_tokens != null) outputTokens = u.output_tokens;
           }
         }
         if (stopReason === "max_tokens") {
@@ -127,9 +144,39 @@ export async function POST(request: Request) {
             ),
           );
         }
+        await logAiUsage(userId, "chat", {
+          status: "success",
+          inputTokens,
+          outputTokens,
+          durationMs: Date.now() - startTime,
+          model: AI_MODELS.smart,
+          promptVersion: PROMPT_VERSION,
+        });
+        logged = true;
       } catch (err) {
         console.error("AI chat stream error:", err);
+        const { status, errorMessage } = discriminateAiError(err);
+        await logAiUsage(userId, "chat", {
+          status,
+          errorMessage,
+          inputTokens,
+          outputTokens,
+          durationMs: Date.now() - startTime,
+          model: AI_MODELS.smart,
+          promptVersion: PROMPT_VERSION,
+        });
+        logged = true;
       } finally {
+        if (!logged) {
+          // Defensive: stream ended without throwing but log never wrote.
+          await logAiUsage(userId, "chat", {
+            status: "api_error",
+            errorMessage: "stream ended without completion",
+            durationMs: Date.now() - startTime,
+            model: AI_MODELS.smart,
+            promptVersion: PROMPT_VERSION,
+          });
+        }
         controller.close();
       }
     },

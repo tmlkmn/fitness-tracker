@@ -3,7 +3,14 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { progressLogs, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
+import {
+  getAIClient,
+  AI_MODELS,
+  checkRateLimit,
+  logAiUsage,
+  discriminateAiError,
+  PROMPT_VERSION,
+} from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { getProgressAnalysisPrompt } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
@@ -21,16 +28,16 @@ export async function POST() {
 
   try {
     await checkRateLimit(userId, "analyze");
-  } catch {
-    return new Response(
-      locale === "en"
-        ? "Daily analysis limit reached (max 3/day)."
-        : "Günlük analiz limitine ulaştınız (max 3/gün).",
-      { status: 429 },
-    );
+  } catch (err) {
+    const msg = err instanceof Error && err.message.startsWith("COOLDOWN:")
+      ? (locale === "en"
+          ? `Please wait ${err.message.split(":")[1]} seconds before retrying.`
+          : `Lütfen ${err.message.split(":")[1]} saniye bekleyin.`)
+      : (locale === "en"
+          ? "Daily analysis limit reached (max 3/day)."
+          : "Günlük analiz limitine ulaştınız (max 3/gün).");
+    return new Response(msg, { status: 429 });
   }
-
-  await logAiUsage(userId, "analyze");
 
   // Fetch progress data — limited to 10 for token savings
   const logs = await db
@@ -109,6 +116,7 @@ ${segmentRows ? `\nSegment Detayları:\n${segmentRows}` : ""}
 
 Bu verileri analiz et ve kullanıcıya detaylı geri bildirim ver.`;
 
+  const startTime = Date.now();
   const client = getAIClient();
   const stream = client.messages.stream({
     model: AI_MODELS.smart,
@@ -126,6 +134,9 @@ Bu verileri analiz et ve kullanıcıya detaylı geri bildirim ver.`;
   const readableStream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let logged = false;
       try {
         for await (const event of stream) {
           if (
@@ -133,11 +144,46 @@ Bu verileri analiz et ve kullanıcıya detaylı geri bildirim ver.`;
             event.delta.type === "text_delta"
           ) {
             controller.enqueue(encoder.encode(event.delta.text));
+          } else if (event.type === "message_start") {
+            inputTokens = event.message.usage?.input_tokens ?? 0;
+            outputTokens = event.message.usage?.output_tokens ?? 0;
+          } else if (event.type === "message_delta") {
+            const u = (event as { usage?: { output_tokens?: number } }).usage;
+            if (u?.output_tokens != null) outputTokens = u.output_tokens;
           }
         }
+        await logAiUsage(userId, "analyze", {
+          status: "success",
+          inputTokens,
+          outputTokens,
+          durationMs: Date.now() - startTime,
+          model: AI_MODELS.smart,
+          promptVersion: PROMPT_VERSION,
+        });
+        logged = true;
       } catch (err) {
-        console.error("AI stream error:", err);
+        console.error("AI analyze stream error:", err);
+        const { status, errorMessage } = discriminateAiError(err);
+        await logAiUsage(userId, "analyze", {
+          status,
+          errorMessage,
+          inputTokens,
+          outputTokens,
+          durationMs: Date.now() - startTime,
+          model: AI_MODELS.smart,
+          promptVersion: PROMPT_VERSION,
+        });
+        logged = true;
       } finally {
+        if (!logged) {
+          await logAiUsage(userId, "analyze", {
+            status: "api_error",
+            errorMessage: "stream ended without completion",
+            durationMs: Date.now() - startTime,
+            model: AI_MODELS.smart,
+            promptVersion: PROMPT_VERSION,
+          });
+        }
         controller.close();
       }
     },
