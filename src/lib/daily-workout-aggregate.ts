@@ -144,6 +144,7 @@ export async function buildWeeklyAggregateForDailyValidation(
     weekTitle: "Daily-aggregate-synthetic",
     phase: "daily",
     notes: null,
+    strategyNote: null,
     days,
   };
   return {

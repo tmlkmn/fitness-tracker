@@ -1152,6 +1152,11 @@ export function AiWeeklyPlanModal({
                   {savedPlanToPreview.phase}
                 </Badge>
               </div>
+              {savedPlanToPreview.strategyNote && (
+                <p className="text-[11px] text-muted-foreground italic wrap-break-word leading-relaxed">
+                  {savedPlanToPreview.strategyNote}
+                </p>
+              )}
               {savedPlanToPreview.notes && (
                 <p className="text-xs text-muted-foreground wrap-break-word whitespace-pre-wrap leading-relaxed">
                   {savedPlanToPreview.notes}
@@ -1204,6 +1209,11 @@ export function AiWeeklyPlanModal({
                   {suggestedPlan.phase}
                 </Badge>
               </div>
+              {suggestedPlan.strategyNote && (
+                <p className="text-[11px] text-muted-foreground italic wrap-break-word leading-relaxed">
+                  {suggestedPlan.strategyNote}
+                </p>
+              )}
               {suggestedPlan.notes && (
                 <p className="text-xs text-muted-foreground wrap-break-word whitespace-pre-wrap leading-relaxed">
                   {suggestedPlan.notes}

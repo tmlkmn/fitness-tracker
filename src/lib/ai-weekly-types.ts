@@ -35,6 +35,13 @@ export interface AIWeeklyPlan {
   weekTitle: string;
   phase: string;
   notes: string | null;
+  /**
+   * Brief AI-generated rationale (max 250 chars) explaining how the user's
+   * fitness level / goal / deload state / cycling profile shaped THIS plan.
+   * Shown directly under `weekTitle` in the preview so users see the "why".
+   * Nullable: legacy plans and quick fallbacks may omit it.
+   */
+  strategyNote: string | null;
   days: AIWeeklyDay[];
 }
 
@@ -147,6 +154,26 @@ const TURKISH_DAY_NAMES_MAP: Record<string, number> = {
 };
 
 /** Coerce raw AI `intensity` into the typed enum or null. */
+const MAX_STRATEGY_NOTE_CHARS = 250;
+
+/**
+ * Coerce + cap the optional strategyNote field. AI is instructed to keep it
+ * under 250 chars; if it overshoots we truncate to keep the UI tidy and emit
+ * `[weekly-strategy-too-long]` so admin dashboard sees prompt-discipline drift.
+ */
+function sanitizeStrategyNote(value: unknown, warnings: string[]): string | null {
+  if (typeof value !== "string") return null;
+  const raw = value.trim();
+  if (raw === "") return null;
+  if (raw.length > MAX_STRATEGY_NOTE_CHARS) {
+    warnings.push(
+      `[weekly-strategy-too-long] strategyNote ${raw.length} chars > ${MAX_STRATEGY_NOTE_CHARS} — truncated`,
+    );
+    return raw.slice(0, MAX_STRATEGY_NOTE_CHARS).trimEnd() + "…";
+  }
+  return raw;
+}
+
 function sanitizeIntensity(value: unknown): "low" | "moderate" | "high" | null {
   if (value === "low" || value === "moderate" || value === "high") return value;
   return null;
@@ -262,6 +289,7 @@ function assessOverloadAgainstPrevious(
     weekTitle: "",
     phase: "",
     notes: null,
+    strategyNote: null,
     days: rawDays,
   });
   const assessment = assessProgressiveOverload({
@@ -314,6 +342,7 @@ export function validateWeeklyPlan(
         weekTitle: safeString(obj.weekTitle, "Haftalık Plan"),
         phase: safeString(obj.phase, "custom"),
         notes: safeNullableText(obj.notes),
+        strategyNote: sanitizeStrategyNote(obj.strategyNote, warnings),
         days: filledDays,
       },
       warnings,
@@ -516,6 +545,7 @@ export function validateWeeklyPlan(
       weekTitle: String(obj.weekTitle ?? "Haftalık Plan"),
       phase: String(obj.phase ?? "custom"),
       notes: obj.notes != null ? String(obj.notes) : null,
+      strategyNote: sanitizeStrategyNote(obj.strategyNote, warnings),
       days: rawDays,
     },
     warnings,

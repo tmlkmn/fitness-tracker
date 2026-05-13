@@ -180,6 +180,20 @@ const TOKEN_DISCIPLINE_BLOCK_EN = `## Token Discipline (CRITICAL — prevents JS
 - notes (weekly): max 25 words
 - Long text truncates JSON response at the 8000-token limit — KEEP IT SHORT`;
 
+const STRATEGY_NOTE_BLOCK_TR = `## strategyNote (kullanıcıya görünür strateji açıklaması)
+- "strategyNote" alanını 1-2 cümle, MAKS 40 kelime / 250 karakter doldur
+- KULLANICININ fitness seviyesi, hedefi, deload/carb-cycling durumu nasıl BU plana dönüştü — somut sayılarla yaz
+- 2. tekil şahıs ("Seni hipertrofiye taşımak için 4 antrenman günü, push/pull/lower split kuruldu.")
+- Pazarlamacı dili YOK ("muazzam", "harika"), generic AI cümleleri YOK
+- Türkçe yaz`;
+
+const STRATEGY_NOTE_BLOCK_EN = `## strategyNote (user-visible strategy rationale)
+- Fill "strategyNote" with 1-2 sentences, MAX 40 words / 250 chars
+- Explain how the user's fitness level, goal, deload/carb-cycling state shaped THIS plan — use concrete numbers
+- 2nd-person ("Building this for hypertrophy with a 4-day push/pull/lower split.")
+- NO marketing language ("amazing", "perfect"), NO generic AI sentences
+- Write in English`;
+
 const WORKOUT_SLEEP_HYDRATION_BLOCK_TR = `## Uyku ve Hidrasyon Analizi
 - Uyku verileri verilmişse:
   • Ortalama <7 saat: Antrenman yoğunluğunu %10-15 azalt, dinlenme süreleri artır
@@ -936,6 +950,8 @@ ${WORKOUT_SLEEP_HYDRATION_BLOCK_EN}
 
 ${TOKEN_DISCIPLINE_BLOCK_EN}
 
+${STRATEGY_NOTE_BLOCK_EN}
+
 ${JSON_FIELD_RULES_EN}
 
 ${EXERCISE_NAMING_RULES_EN}
@@ -955,6 +971,7 @@ ${EXERCISE_NAMING_RULES_EN}
   "weekTitle": "string",
   "phase": "string",
   "notes": "string (weekly goal and progression note)",
+  "strategyNote": "string (1-2 sentences explaining how level/goal/deload shaped this plan)",
   "days": [
     {
       "dayOfWeek": 0,
@@ -1026,6 +1043,8 @@ ${WORKOUT_SLEEP_HYDRATION_BLOCK_TR}
 
 ${TOKEN_DISCIPLINE_BLOCK_TR}
 
+${STRATEGY_NOTE_BLOCK_TR}
+
 ${JSON_FIELD_RULES_TR}
 
 ${EXERCISE_NAMING_RULES_TR}
@@ -1045,6 +1064,7 @@ ${EXERCISE_NAMING_RULES_TR}
   "weekTitle": "string",
   "phase": "string",
   "notes": "string (haftalık hedef ve progresyon notu)",
+  "strategyNote": "string (seviye/hedef/deload durumunu plana nasıl çevirdiğini anlatan 1-2 cümle)",
   "days": [
     {
       "dayOfWeek": 0,
@@ -1171,6 +1191,8 @@ ${MEAL_CONTENT_FORMAT_BLOCK_EN}
 
 ${TOKEN_DISCIPLINE_BLOCK_EN}
 
+${STRATEGY_NOTE_BLOCK_EN}
+
 ${JSON_FIELD_RULES_EN}
 
 ## Technical Rules
@@ -1191,6 +1213,7 @@ ${JSON_FIELD_RULES_EN}
   "weekTitle": "string",
   "phase": "string",
   "notes": "string (weekly nutrition goal and notes)",
+  "strategyNote": "string (1-2 sentences explaining how goal/lifestyle shaped this nutrition plan)",
   "days": [
     {
       "dayOfWeek": 0,
@@ -1235,6 +1258,8 @@ ${MEAL_CONTENT_FORMAT_BLOCK_TR}
 
 ${TOKEN_DISCIPLINE_BLOCK_TR}
 
+${STRATEGY_NOTE_BLOCK_TR}
+
 ${JSON_FIELD_RULES_TR}
 
 ## Teknik Kurallar
@@ -1255,6 +1280,7 @@ ${JSON_FIELD_RULES_TR}
   "weekTitle": "string",
   "phase": "string",
   "notes": "string (haftalık beslenme hedefi ve notlar)",
+  "strategyNote": "string (kullanıcının hedefi/yaşam tarzı bu beslenme planına nasıl döndü, 1-2 cümle)",
   "days": [
     {
       "dayOfWeek": 0,
@@ -1394,6 +1420,8 @@ ${WORKOUT_SLEEP_HYDRATION_BLOCK_EN}
 
 ${TOKEN_DISCIPLINE_BLOCK_EN}
 
+${STRATEGY_NOTE_BLOCK_EN}
+
 ${JSON_FIELD_RULES_EN}
 
 ${EXERCISE_NAMING_RULES_EN}
@@ -1412,6 +1440,7 @@ ${EXERCISE_NAMING_RULES_EN}
   "weekTitle": "string",
   "phase": "string",
   "notes": "string (weekly goal and progression note)",
+  "strategyNote": "string (1-2 sentences explaining how level/goal/deload shaped this workout split)",
   "days": [
     {
       "dayOfWeek": 0,
@@ -1469,6 +1498,8 @@ ${WORKOUT_SLEEP_HYDRATION_BLOCK_TR}
 
 ${TOKEN_DISCIPLINE_BLOCK_TR}
 
+${STRATEGY_NOTE_BLOCK_TR}
+
 ${JSON_FIELD_RULES_TR}
 
 ${EXERCISE_NAMING_RULES_TR}
@@ -1487,6 +1518,7 @@ ${EXERCISE_NAMING_RULES_TR}
   "weekTitle": "string",
   "phase": "string",
   "notes": "string (haftalık hedef ve progresyon notu)",
+  "strategyNote": "string (kullanıcının seviyesi/hedefi/deload durumu bu antrenman split'ine nasıl döndü, 1-2 cümle)",
   "days": [
     {
       "dayOfWeek": 0,

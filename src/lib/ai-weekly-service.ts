@@ -127,6 +127,11 @@ const SUBMIT_WEEKLY_PLAN_TOOL = {
       weekTitle: { type: "string" },
       phase:     { type: "string" },
       notes:     { type: ["string", "null"] },
+      strategyNote: {
+        type: ["string", "null"],
+        description:
+          "1-2 cümle (maks 250 char) strateji açıklaması — kullanıcının fitness seviyesi, hedefi, deload/carb-cycling durumu nasıl bu plana dönüştü? 2. tekil şahıs, somut ('Seni hipertrofiye taşımak için 4 antrenman günü, push/pull/lower split kuruldu.'). Generic AI-speak kullanma. Locale: kullanıcının dilinde yaz.",
+      },
       days: {
         type: "array",
         minItems: 1,
@@ -471,10 +476,15 @@ function mergePlans(
   }
 
   const titleSource = nutritionResult?.plan ?? workoutResult?.plan;
+  // strategyNote prefers the workout leg's narrative (it's the structural
+  // backbone of the week); fall back to nutrition leg or null.
+  const strategyNote =
+    workoutResult?.plan?.strategyNote ?? nutritionResult?.plan?.strategyNote ?? null;
   return {
     weekTitle: titleSource?.weekTitle ?? "Haftalık Plan",
     phase: titleSource?.phase ?? "custom",
     notes: titleSource?.notes ?? null,
+    strategyNote,
     days,
   };
 }
