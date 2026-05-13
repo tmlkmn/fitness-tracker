@@ -220,6 +220,7 @@ interface AiWeeklyPlanModalProps {
     generateMode?: "both" | "nutrition" | "workout",
     dayModes?: Record<number, "workout" | "swimming" | "rest">,
     pastDows?: number[],
+    highAccuracyMode?: boolean,
   ) => void;
   onApply: () => void;
   onApplySaved: (plan: AIWeeklyPlan) => void;
@@ -474,6 +475,7 @@ export function AiWeeklyPlanModal({
   const [ingredientMode, setIngredientMode] = useState<"all" | "specific">("all");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [generateMode, setGenerateMode] = useState<"both" | "nutrition" | "workout">("both");
+  const [highAccuracyMode, setHighAccuracyMode] = useState(false);
 
   const { data: quotaData } = useAiQuota();
   const weeklyQuota = getQuota(quotaData, "weekly");
@@ -599,6 +601,7 @@ export function AiWeeklyPlanModal({
       generateMode,
       effectiveDayModes,
       Array.from(pastDows),
+      generateMode === "both" ? highAccuracyMode : false,
     );
     // Quota invalidation happens in the mutation's onSettled callback after
     // usage_log is written — invalidating here would refresh stale quota.
@@ -710,7 +713,10 @@ export function AiWeeklyPlanModal({
                     ]).map(({ value, label }) => (
                       <button
                         key={value}
-                        onClick={() => setGenerateMode(value)}
+                        onClick={() => {
+                          setGenerateMode(value);
+                          if (value !== "both") setHighAccuracyMode(false);
+                        }}
                         className={`flex-1 px-2 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
                           generateMode === value
                             ? "bg-primary/15 border-primary/40 text-primary"
@@ -721,6 +727,24 @@ export function AiWeeklyPlanModal({
                       </button>
                     ))}
                   </div>
+                  {generateMode === "both" && (
+                    <label className="mt-2 flex items-start gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 accent-primary cursor-pointer"
+                        checked={highAccuracyMode}
+                        onChange={(e) => setHighAccuracyMode(e.target.checked)}
+                      />
+                      <span className="flex flex-col">
+                        <span className="text-[11px] font-medium text-foreground">
+                          {t("highAccuracyModeLabel")}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground leading-tight">
+                          {t("highAccuracyModeHelp")}
+                        </span>
+                      </span>
+                    </label>
+                  )}
                 </div>
               )}
 

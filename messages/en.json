@@ -404,6 +404,8 @@
       "modeBoth": "Nutrition + Workout",
       "modeNutrition": "Nutrition only",
       "modeWorkout": "Workout only",
+      "highAccuracyModeLabel": "High accuracy mode (sequential generation)",
+      "highAccuracyModeHelp": "Workout is generated first, then nutrition is aligned to it. Takes longer (~4-8 min) but consistency across days improves.",
       "dayTypeLabel": "Daily plan type",
       "dayTypeHint": "(tap to change)",
       "dayTooltipPast": "{label}: this day has passed — AI will not suggest content",

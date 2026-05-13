@@ -183,11 +183,12 @@ export default function TakvimPage() {
     mode?: "both" | "nutrition" | "workout",
     dayModes?: Record<number, "workout" | "swimming" | "rest">,
     pastDows?: number[],
+    highAccuracyMode?: boolean,
   ) => {
     const m = mode ?? generateMode;
     setGenerateMode(m);
     setLastPastDows(pastDows);
-    generateWeekly.mutate({ dateStr: selectedDate, userNote, generateMode: m, dayModes, pastDows });
+    generateWeekly.mutate({ dateStr: selectedDate, userNote, generateMode: m, dayModes, pastDows, highAccuracyMode });
   };
 
   const handleApplyWeekly = () => {

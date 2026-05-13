@@ -28,6 +28,7 @@ const RequestBodySchema = z.object({
     z.enum(["workout", "swimming", "rest", "nutrition"]),
   ).optional(),
   pastDows: z.array(z.number().int().min(0).max(6)).optional(),
+  highAccuracyMode: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -80,10 +81,22 @@ export async function POST(request: Request) {
         const req = await resolveWeeklyGenerationRequest(parsedBody, userId, locale);
         const prompts = buildWeeklyPrompts(req);
 
-        if (prompts.nutrition) emit({ type: "status", step: "nutrition" });
-        else if (prompts.workout) emit({ type: "status", step: "workout" });
+        const highAccuracyMode = Boolean(parsedBody.highAccuracyMode);
+        const sequentialActive =
+          highAccuracyMode && prompts.nutrition !== null && prompts.workout !== null;
 
-        const outcome = await runWeeklyGeneration(prompts);
+        if (!sequentialActive) {
+          if (prompts.nutrition) emit({ type: "status", step: "nutrition" });
+          else if (prompts.workout) emit({ type: "status", step: "workout" });
+        }
+
+        const outcome = await runWeeklyGeneration(prompts, {
+          highAccuracyMode,
+          locale,
+          onStep: sequentialActive
+            ? (s) => emit({ type: "status", step: s })
+            : undefined,
+        });
         totalInputTokens += outcome.inputTokens;
         totalOutputTokens += outcome.outputTokens;
 
@@ -99,9 +112,10 @@ export async function POST(request: Request) {
 
         try {
           const flagsAny = Object.values(outcome.retryFlags).some(Boolean);
+          const metaPayload = { retryFlags: outcome.retryFlags, highAccuracyMode };
           await logAiUsage(userId, "weekly", {
             status: flagsAny ? "success_with_warnings" : "success",
-            errorMessage: flagsAny ? JSON.stringify({ retryFlags: outcome.retryFlags }) : undefined,
+            errorMessage: flagsAny || highAccuracyMode ? JSON.stringify(metaPayload) : undefined,
             inputTokens: totalInputTokens,
             outputTokens: totalOutputTokens,
             durationMs: Date.now() - startTime,

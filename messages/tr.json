@@ -404,6 +404,8 @@
       "modeBoth": "Beslenme + Antrenman",
       "modeNutrition": "Sadece Beslenme",
       "modeWorkout": "Sadece Antrenman",
+      "highAccuracyModeLabel": "Yüksek doğruluk modu (sırayla oluştur)",
+      "highAccuracyModeHelp": "Önce antrenman, sonra ona uygun beslenme oluşturulur. Daha uzun sürer (~4-8 dk) ama günler arası tutarlık artar.",
       "dayTypeLabel": "Günlük plan tipi",
       "dayTypeHint": "(üzerine basarak değiştir)",
       "dayTooltipPast": "{label}: bu gün geçti — AI öneri sunmayacak",

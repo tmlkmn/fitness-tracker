@@ -30,6 +30,11 @@ import {
 } from "@/lib/ai-weekly-prompt-blocks";
 import { AI_MAX_TOKENS, AI_TIMEOUTS } from "@/lib/ai-config";
 import { parseUserAllergens } from "@/lib/allergen-detect";
+import {
+  summarizeProducedWorkout,
+  buildProducedWorkoutBlock,
+  isProducedWorkoutEmpty,
+} from "@/lib/ai-workout-summary";
 import type { Locale } from "@/lib/locale";
 
 const CALL_TIMEOUT = AI_TIMEOUTS.weeklyCall;
@@ -662,14 +667,62 @@ export interface WeeklyGenerationOutcome {
   };
 }
 
-export async function runWeeklyGeneration(prompts: WeeklyPrompts): Promise<WeeklyGenerationOutcome> {
-  const nutritionCallPromise = prompts.nutrition ? runAiCall(prompts.nutrition) : null;
-  const workoutCallPromise = prompts.workout ? runAiCall(prompts.workout) : null;
+export interface RunWeeklyGenerationOptions {
+  /**
+   * When true and both prompts are present, the workout call runs first.
+   * Its produced volume summary is appended to the nutrition user message,
+   * then nutrition runs. Doubles best-case latency in exchange for nutrition
+   * that's aware of the actual produced workout.
+   */
+  highAccuracyMode?: boolean;
+  /** Locale used to render the produced workout summary block. */
+  locale?: Locale;
+  /** Reports the active call leg as the orchestrator transitions through it. */
+  onStep?: (step: "workout" | "nutrition") => void;
+}
 
-  const [nutritionRaw, workoutRaw] = await Promise.all([
-    nutritionCallPromise,
-    workoutCallPromise,
-  ]);
+export async function runWeeklyGeneration(
+  prompts: WeeklyPrompts,
+  opts: RunWeeklyGenerationOptions = {},
+): Promise<WeeklyGenerationOutcome> {
+  const sequential = Boolean(
+    opts.highAccuracyMode && prompts.nutrition && prompts.workout,
+  );
+
+  let nutritionRaw: AiCallResult | null = null;
+  let workoutRaw: AiCallResult | null = null;
+
+  if (sequential && prompts.workout && prompts.nutrition) {
+    opts.onStep?.("workout");
+    workoutRaw = await runAiCall(prompts.workout);
+
+    if (isProducedWorkoutEmpty(workoutRaw.validationResult.plan)) {
+      throw new Error(
+        "AI antrenman üretemedi; yüksek doğruluk modunda beslenme atlandı. Lütfen tekrar deneyin veya hızlı modu seçin.",
+      );
+    }
+
+    const summaries = summarizeProducedWorkout(
+      workoutRaw.validationResult.plan,
+      opts.locale ?? "tr",
+    );
+    const block = buildProducedWorkoutBlock(summaries, opts.locale ?? "tr");
+    const augmentedNutrition: CallSpec = {
+      ...prompts.nutrition,
+      userMessage: `${prompts.nutrition.userMessage}\n\n${block}`,
+    };
+
+    opts.onStep?.("nutrition");
+    nutritionRaw = await runAiCall(augmentedNutrition);
+  } else {
+    const nutritionCallPromise = prompts.nutrition ? runAiCall(prompts.nutrition) : null;
+    const workoutCallPromise = prompts.workout ? runAiCall(prompts.workout) : null;
+
+    [nutritionRaw, workoutRaw] = await Promise.all([
+      nutritionCallPromise,
+      workoutCallPromise,
+    ]);
+  }
 
   let inputTokens = 0;
   let outputTokens = 0;
