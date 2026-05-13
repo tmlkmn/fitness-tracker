@@ -1,6 +1,6 @@
 "use client";
 
-import { Zap, Moon, Check } from "lucide-react";
+import { Zap, Moon, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 import type { DeloadRecommendation } from "@/lib/deload-policy";
@@ -13,10 +13,11 @@ interface DeloadRecommendationBannerProps {
 
 /**
  * Prominent banner shown above the deload checkbox when the recovery signal
- * is "hard" or "soft". Severity drives icon + color; reason chips are derived
- * from the recommendation's `reasons` array (i18n keys already exist under
- * `calendar.aiWeekly.deloadReason*`). When the checkbox is already checked
- * the CTA collapses to a small "active" badge — no second toggle path.
+ * is "hard" or "soft". Hierarchy is reasons-first: the user sees WHY a
+ * deload week is recommended (consecutive load, sleep, completion) before
+ * the technical definition of what a deload changes. The definition lives
+ * below in a smaller "what is deload?" line — kept accessible but not
+ * competing with the personalized reasons for attention.
  */
 export function DeloadRecommendationBanner({
   recommendation,
@@ -38,48 +39,59 @@ export function DeloadRecommendationBanner({
     ? "deloadRecommendedHardTitle"
     : "deloadRecommendedSoftTitle";
 
-  const reasonChips: string[] = [];
+  const reasonLines: string[] = [];
   if (recommendation.reasons.includes("cadence")) {
-    reasonChips.push(
+    reasonLines.push(
       t("deloadReasonCadence", { weeks: recommendation.consecutiveTrainingWeeks }),
     );
   }
   if (recommendation.reasons.includes("sleep_quality")) {
-    reasonChips.push(t("deloadReasonSleepQuality"));
+    reasonLines.push(t("deloadReasonSleepQuality"));
   }
   if (recommendation.reasons.includes("sleep_duration")) {
-    reasonChips.push(t("deloadReasonSleepDuration"));
+    reasonLines.push(t("deloadReasonSleepDuration"));
   }
   if (recommendation.reasons.includes("completion")) {
-    reasonChips.push(t("deloadReasonCompletion"));
+    reasonLines.push(t("deloadReasonCompletion"));
   }
 
   return (
-    <div className={`rounded-lg border p-3 space-y-2 ${containerCls}`}>
+    <div className={`rounded-lg border p-3 space-y-2.5 ${containerCls}`}>
       <div className="flex items-start gap-2">
         <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${titleCls}`} />
-        <div className="flex-1 min-w-0">
-          <p className={`text-xs font-semibold ${titleCls}`}>
-            {t(titleKey)}
-          </p>
-          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-            {t("deloadToggleHelp")}
-          </p>
-        </div>
+        <p className={`text-xs font-semibold flex-1 min-w-0 ${titleCls}`}>
+          {t(titleKey)}
+        </p>
       </div>
 
-      {reasonChips.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {reasonChips.map((chip, i) => (
-            <span
-              key={i}
-              className="inline-block rounded-full bg-background/60 border border-border/50 px-2 py-0.5 text-[10px] text-muted-foreground"
-            >
-              {chip}
-            </span>
-          ))}
+      {reasonLines.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-[11px] font-medium text-foreground">
+            {tBanner("reasonsTitle")}
+          </p>
+          <ul className="space-y-0.5">
+            {reasonLines.map((line, i) => (
+              <li
+                key={i}
+                className="text-[11px] text-muted-foreground leading-relaxed flex items-start gap-1.5"
+              >
+                <span aria-hidden className="text-muted-foreground/60 mt-[0.5em]">
+                  •
+                </span>
+                <span className="flex-1 min-w-0 wrap-break-word">{line}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
+
+      <div className="flex items-start gap-1.5 rounded-md bg-background/50 px-2 py-1.5">
+        <Info className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground/70" />
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          <span className="font-medium">{tBanner("definitionTitle")}</span>{" "}
+          {t("deloadToggleHelp")}
+        </p>
+      </div>
 
       {checked ? (
         <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-500">

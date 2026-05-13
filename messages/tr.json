@@ -419,6 +419,8 @@
       "dayTypeLabel": "Günlük plan tipi",
       "dayTypeHint": "(üzerine basarak değiştir)",
       "deloadBanner": {
+        "reasonsTitle": "Neden deload önerildi:",
+        "definitionTitle": "Deload nedir?",
         "applyAction": "Bu haftayı deload olarak işaretle",
         "activeBadge": "Deload aktif"
       },

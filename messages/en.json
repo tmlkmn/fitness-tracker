@@ -419,6 +419,8 @@
       "dayTypeLabel": "Daily plan type",
       "dayTypeHint": "(tap to change)",
       "deloadBanner": {
+        "reasonsTitle": "Why deload is recommended:",
+        "definitionTitle": "What is a deload?",
         "applyAction": "Apply this week as deload",
         "activeBadge": "Deload active"
       },
