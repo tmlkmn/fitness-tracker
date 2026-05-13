@@ -1606,6 +1606,15 @@
         "intermediate": "Intermediate",
         "advanced": "Advanced"
       },
+      "fitnessLevelNudge": {
+        "title": "Your data suggests upgrading to {level}",
+        "reasonHistory": "{weeks} weeks of training history",
+        "reasonCompletion": "{rate}% completion rate",
+        "reasonVolume": "~{sets} sets/week",
+        "applyAction": "Switch to {level}",
+        "applyHint": "Click Save to persist the change",
+        "dismiss": "Dismiss"
+      },
       "fitnessGoals": {
         "loss": { "label": "Weight Loss", "description": "Fat loss + calorie deficit" },
         "recomp": { "label": "Fat Loss + Muscle Retention", "description": "Body recomposition, maintenance calories" },

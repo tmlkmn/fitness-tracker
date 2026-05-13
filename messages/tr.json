@@ -1607,6 +1607,15 @@
         "intermediate": "Orta düzey",
         "advanced": "İleri düzey"
       },
+      "fitnessLevelNudge": {
+        "title": "Verilerine göre {level} seviyeye geçebilirsin",
+        "reasonHistory": "{weeks} hafta antrenman geçmişi",
+        "reasonCompletion": "%{rate} tamamlama oranı",
+        "reasonVolume": "haftada ~{sets} set",
+        "applyAction": "{level} seviyesine geç",
+        "applyHint": "Değişiklik 'Kaydet'e bastığında geçerli olur",
+        "dismiss": "Kapat"
+      },
       "fitnessGoals": {
         "loss": { "label": "Kilo Verme", "description": "Yağ yakma + kalori açığı" },
         "recomp": { "label": "Yağ Yakma + Kas Koruma", "description": "Vücut rekompozisyonu, idame kalori" },

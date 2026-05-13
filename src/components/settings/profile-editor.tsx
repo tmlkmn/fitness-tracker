@@ -5,8 +5,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { updateUserProfile } from "@/actions/user";
 import { useUserProfile } from "@/hooks/use-user";
+import { useFitnessLevelSuggestion } from "@/hooks/use-fitness-level-suggestion";
 import { Button } from "@/components/ui/button";
 import { Loader2, ShieldAlert } from "lucide-react";
+import { FitnessLevelNudge } from "@/components/settings/fitness-level-nudge";
 
 const ALLERGEN_TAGS = [
   "Süt ürünleri",
@@ -51,6 +53,7 @@ export function ProfileEditor({ profile, userEmail, onClose }: Props) {
   const queryClient = useQueryClient();
   const t = useTranslations("settings.profileEditor");
   const [saving, setSaving] = useState(false);
+  const { data: levelSuggestion } = useFitnessLevelSuggestion();
 
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
@@ -132,7 +135,10 @@ export function ProfileEditor({ profile, userEmail, onClose }: Props) {
         serviceType,
         foodAllergens,
       });
-      await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["user-profile"] }),
+        queryClient.invalidateQueries({ queryKey: ["user.fitness-level-suggestion"] }),
+      ]);
       onClose?.();
     } finally {
       setSaving(false);
@@ -237,6 +243,13 @@ export function ProfileEditor({ profile, userEmail, onClose }: Props) {
 
       {serviceType === "full" && (
         <div className="space-y-1.5">
+          {levelSuggestion && (
+            <FitnessLevelNudge
+              suggestion={levelSuggestion}
+              applied={fitnessLevel === levelSuggestion.suggested}
+              onApply={(level) => setFitnessLevel(level)}
+            />
+          )}
           <label className="text-xs text-muted-foreground">
             {t("fitnessLevel")} <span className="text-red-400">*</span>
           </label>
