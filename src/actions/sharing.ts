@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { verifyWeeklyPlanOwnership } from "@/lib/ownership";
 import { sendNotification } from "@/lib/notifications";
+import { getServerTranslator } from "@/lib/i18n-server";
 import { addDaysStr, getTurkeyTodayStr, isWeekPast } from "@/lib/utils";
 
 export async function shareWeeklyPlan(
@@ -64,13 +65,12 @@ export async function shareWeeklyPlan(
     .from(users)
     .where(eq(users.id, sharedWithUserId));
   const recipientLocale = recipient?.locale === "en" ? "en" : "tr";
+  const t = await getServerTranslator(recipientLocale, "triggerNotifications.planShared");
   await sendNotification({
     userId: sharedWithUserId,
     type: "plan_shared",
-    title: recipientLocale === "en" ? "New Plan Shared" : "Yeni Plan Paylaşımı",
-    body: recipientLocale === "en"
-      ? `${sharer.name} shared the "${plan.title}" plan with you.`
-      : `${sharer.name} sizinle "${plan.title}" planını paylaştı.`,
+    title: t("title"),
+    body: t("body", { sharerName: sharer.name, planTitle: plan.title }),
     link: recipientLocale === "en" ? "/en/shared" : "/tr/paylasilan",
     metadata: { weeklyPlanId, sharedByUserId: user.id },
   });

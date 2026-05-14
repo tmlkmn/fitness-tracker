@@ -9,6 +9,7 @@ import { getAuthAdmin } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { sendNotification } from "@/lib/notifications";
+import { getServerTranslator } from "@/lib/i18n-server";
 import { logAudit } from "@/lib/audit";
 import { normalizeLocale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
@@ -63,13 +64,12 @@ export async function inviteUser(
     .from(users)
     .where(eq(users.email, email));
   if (newUser) {
+    const t = await getServerTranslator(locale, "triggerNotifications.userInvited");
     await sendNotification({
       userId: newUser.id,
       type: "user_invited",
-      title: locale === "en" ? "Welcome to FitMusc!" : "FitMusc'a Hoş Geldiniz!",
-      body: locale === "en"
-        ? "Your account has been created. Sign in to get started."
-        : "Hesabınız oluşturuldu. Giriş yaparak başlayabilirsiniz.",
+      title: t("title"),
+      body: t("body"),
       link: "/",
       skipEmail: true,
     });
@@ -279,23 +279,27 @@ export async function extendMembership(
   logAudit({ adminId: admin.id, action: "membership.extend", entityType: "user", entityId: userId, details: { newType, customEndDate, endDate: updateData.membershipEndDate } }).catch(() => {});
 
   const userLocale = normalizeLocale(user.locale);
-  const isEn = userLocale === "en";
   const endDateFormatted = updateData.membershipEndDate
     ? formatDate(updateData.membershipEndDate as Date, userLocale)
     : null;
 
   invalidateAdminOpsCache();
 
+  const tExt = await getServerTranslator(
+    userLocale,
+    newType === "unlimited"
+      ? "triggerNotifications.membershipExtendedUnlimited"
+      : "triggerNotifications.membershipExtendedDate",
+  );
   await sendNotification({
     userId,
     type: "membership_extended",
-    title: isEn ? "Your Membership Was Renewed!" : "Üyeliğiniz Yenilendi!",
-    body: newType === "unlimited"
-      ? (isEn ? "Your membership has been updated to unlimited." : "Üyeliğiniz sınırsız olarak güncellendi.")
-      : (isEn
-          ? `Your membership has been renewed. New end date: ${endDateFormatted}`
-          : `Üyeliğiniz yenilendi. Yeni bitiş tarihi: ${endDateFormatted}`),
-    link: isEn ? "/en/settings" : "/tr/ayarlar",
+    title: tExt("title"),
+    body:
+      newType === "unlimited"
+        ? tExt("body")
+        : tExt("body", { endDate: endDateFormatted ?? "" }),
+    link: userLocale === "en" ? "/en/settings" : "/tr/ayarlar",
   });
 
   revalidatePath("/admin");

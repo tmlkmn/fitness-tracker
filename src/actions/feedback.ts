@@ -7,6 +7,8 @@ import { getAuthUser, getAuthAdmin } from "@/lib/auth-utils";
 import { sendNotification } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
 import { invalidateAdminOpsCache } from "@/lib/admin-ops-cache";
+import { getServerTranslator } from "@/lib/i18n-server";
+import { normalizeLocale } from "@/lib/locale";
 
 // ── Types ──
 
@@ -65,13 +67,14 @@ export async function submitFeedback(data: {
 
   const preview = data.message.slice(0, 100);
   for (const admin of adminRows) {
-    const isEn = admin.locale === "en";
+    const adminLocale = normalizeLocale(admin.locale);
+    const t = await getServerTranslator(adminLocale, "triggerNotifications.newFeedback");
     await sendNotification({
       userId: admin.id,
       type: "new_feedback",
-      title: isEn ? "New Feedback" : "Yeni Geri Bildirim",
-      body: `${user.name}: ${preview}`,
-      link: isEn ? "/en/admin/feedback" : "/tr/admin/geri-bildirim",
+      title: t("title"),
+      body: t("body", { userName: user.name, preview }),
+      link: adminLocale === "en" ? "/en/admin/feedback" : "/tr/admin/geri-bildirim",
     });
   }
 
@@ -145,11 +148,12 @@ export async function respondToFeedback(feedbackId: number, response: string) {
     .select({ locale: users.locale })
     .from(users)
     .where(eq(users.id, fb.userId));
-  const isEn = recipient?.locale === "en";
+  const recipientLocale = normalizeLocale(recipient?.locale);
+  const t = await getServerTranslator(recipientLocale, "triggerNotifications.feedbackResponse");
   await sendNotification({
     userId: fb.userId,
     type: "feedback_response",
-    title: isEn ? "Response to Your Feedback" : "Geri Bildiriminize Yanıt",
+    title: t("title"),
     body: response.slice(0, 200),
     skipEmail: false,
   });
