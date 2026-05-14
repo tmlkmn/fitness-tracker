@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calculator, Save, Target } from "lucide-react";
+import { Save, Target } from "lucide-react";
 import { toast } from "sonner";
-import { useUserProfile, useDefaultMacroTargets } from "@/hooks/use-user";
+import { useUserProfile } from "@/hooks/use-user";
 import { updateMacroTargets } from "@/actions/user";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -17,7 +17,6 @@ export function MacroTargetsCard() {
   const t = useTranslations("meals.macroTargets");
   const { data: profile, isLoading: profileLoading } = useUserProfile();
   const qc = useQueryClient();
-  const computeDefaults = useDefaultMacroTargets();
   const [calories, setCalories] = useState("");
   const [protein, setProtein] = useState("");
   const [carbs, setCarbs] = useState("");
@@ -31,29 +30,6 @@ export function MacroTargetsCard() {
     setCarbs(profile.targetCarbsG ?? "");
     setFat(profile.targetFatG ?? "");
   }, [profile]);
-
-  const handleAuto = async () => {
-    try {
-      const defaults = await computeDefaults.mutateAsync();
-      if (!defaults) {
-        const missing: string[] = [];
-        if (!profile?.height) missing.push(t("fieldHeight"));
-        if (!profile?.weight || parseFloat(profile.weight) <= 0) missing.push(t("fieldWeight"));
-        if (!profile?.age) missing.push(t("fieldAge"));
-        const missingText = missing.length
-          ? t("missingPrefix", { fields: missing.join(", ") })
-          : "";
-        toast.error(`${missingText}${t("missingSuffix")}`);
-        return;
-      }
-      setCalories(String(defaults.calories));
-      setProtein(String(defaults.protein));
-      setCarbs(String(defaults.carbs));
-      setFat(String(defaults.fat));
-    } catch {
-      toast.error(t("computeFailed"));
-    }
-  };
 
   const handleSave = async () => {
     const calorieVal = calories ? parseInt(calories) : null;
@@ -98,10 +74,7 @@ export function MacroTargetsCard() {
               </div>
             ))}
           </div>
-          <div className="flex gap-2">
-            <Skeleton className="h-8 flex-1" />
-            <Skeleton className="h-8 flex-1" />
-          </div>
+          <Skeleton className="h-8 w-full" />
         </CardContent>
       </Card>
     );
@@ -178,28 +151,16 @@ export function MacroTargetsCard() {
             />
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="flex-1 gap-1.5"
-            onClick={handleAuto}
-          >
-            <Calculator className="h-3.5 w-3.5" />
-            {t("auto")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            className="flex-1 gap-1.5"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            <Save className="h-3.5 w-3.5" />
-            {saving ? t("saving") : t("save")}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          size="sm"
+          className="w-full gap-1.5"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          <Save className="h-3.5 w-3.5" />
+          {saving ? t("saving") : t("save")}
+        </Button>
       </CardContent>
     </Card>
   );

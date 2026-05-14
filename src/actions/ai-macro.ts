@@ -229,7 +229,7 @@ export async function generateAIMacroTargets(
   try {
     const msg = await client.messages.create({
       model: AI_MODELS.smart,
-      max_tokens: 256,
+      max_tokens: 384,
       system: [
         {
           type: "text",
@@ -245,8 +245,13 @@ export async function generateAIMacroTargets(
       .map((b) => (b as { type: "text"; text: string }).text)
       .join("");
 
-    // JSON parse — strip possible markdown fences
-    const jsonStr = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+    // Extract JSON object even if the model adds prose or fences around it.
+    const firstBrace = rawText.indexOf("{");
+    const lastBrace = rawText.lastIndexOf("}");
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+      throw new SyntaxError("No JSON object found in AI response");
+    }
+    const jsonStr = rawText.slice(firstBrace, lastBrace + 1);
     const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
 
     const calories = Math.round(Number(parsed.calories));
@@ -277,6 +282,11 @@ export async function generateAIMacroTargets(
     };
   } catch (error) {
     const { status, errorMessage } = discriminateAiError(error);
+    console.error("[macro-ai] failed:", {
+      status,
+      errorMessage,
+      rawText: rawText.slice(0, 300),
+    });
     await logAiUsage(user.id, "macro-ai", {
       status,
       errorMessage,
