@@ -8,7 +8,6 @@ import {
   Settings,
   LogOut,
   Loader2,
-  Shield,
   Clock,
   Pill,
   Sparkles,
@@ -29,6 +28,7 @@ import { SettingsMenuItem } from "@/components/settings/settings-menu-item";
 import { PwaInstallCard } from "@/components/layout/pwa-install-card";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 import { LocaleToggle } from "@/components/settings/locale-toggle";
+import { AdminQuickAccessCard } from "@/components/admin/admin-quick-access-card";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -115,6 +115,9 @@ useEffect(() => {
           </Card>
         )}
 
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {(user as any)?.role === "admin" && <AdminQuickAccessCard />}
+
         <ProfileSummaryCard />
 
         <SettingsGroup label={t("groups.profileHealth")}>
@@ -189,17 +192,6 @@ useEffect(() => {
         <LocaleToggle />
 
         <PwaInstallCard />
-
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        {(user as any)?.role === "admin" && (
-          <Link
-            href="/admin"
-            className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md border border-primary/50 text-primary text-sm font-medium hover:bg-primary/10 transition-colors"
-          >
-            <Shield className="h-4 w-4" />
-            {tNav("adminPanel")}
-          </Link>
-        )}
 
         <button
           onClick={handleSignOut}

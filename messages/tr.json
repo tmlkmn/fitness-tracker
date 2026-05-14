@@ -1675,6 +1675,13 @@
     "menuItem": {
       "missingInfoLabel": "Eksik bilgi"
     },
+    "adminQuickAccess": {
+      "title": "Admin Paneli",
+      "subtitle": "Operasyonlar & kullanıcı yönetimi",
+      "expiring": "Bitiyor",
+      "feedback": "Geri bildirim",
+      "aiCost": "AI bugün"
+    },
     "membershipTypes": {
       "unlimited": "Sınırsız",
       "1-month": "1 Ay",
@@ -1987,6 +1994,10 @@
     },
     "remindersCard": {
       "title": "Hatırlatıcılar",
+      "tabTemplates": "Şablonlar",
+      "tabSchedule": "Plan",
+      "tabCustom": "Özel",
+      "onboardingHint": "Henüz hatırlatıcın yok. Şablonlardan birine dokunup 30 saniyede aktive et.",
       "mealRemindersLabel": "Öğün Hatırlatıcıları",
       "minutesBeforeLabel": "Kaç dk önce:",
       "minute5": "5 dk",

@@ -12,6 +12,7 @@ import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
 import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans, useEmptyWeeksBetween } from "@/hooks/use-plans";
 import { useReadinessRange } from "@/hooks/use-readiness";
+import { ShareWeeklyPlanButton } from "@/components/sharing/share-weekly-plan-button";
 import { useGenerateWeeklyPlan, useApplyWeeklyPlan, useDeleteWeeklyPlan } from "@/hooks/use-weekly-ai";
 import { useUserProfile } from "@/hooks/use-user";
 import { useMonthGate } from "@/hooks/use-month-gate";
@@ -387,6 +388,10 @@ export default function TakvimPage() {
                   <ShoppingCart className="h-3.5 w-3.5" />
                 </Button>
               </Link>
+            )}
+            {/* Share: visible when a weekly plan exists and week is not past */}
+            {data?.weeklyPlan && !isPastWeek && (
+              <ShareWeeklyPlanButton weeklyPlanId={data.weeklyPlan.id} />
             )}
           </div>
         )}

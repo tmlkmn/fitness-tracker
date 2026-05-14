@@ -1674,6 +1674,13 @@
     "menuItem": {
       "missingInfoLabel": "Missing info"
     },
+    "adminQuickAccess": {
+      "title": "Admin Panel",
+      "subtitle": "Operations & user management",
+      "expiring": "Expiring",
+      "feedback": "Feedback",
+      "aiCost": "AI today"
+    },
     "membershipTypes": {
       "unlimited": "Unlimited",
       "1-month": "1 Month",
@@ -1986,6 +1993,10 @@
     },
     "remindersCard": {
       "title": "Reminders",
+      "tabTemplates": "Templates",
+      "tabSchedule": "Schedule",
+      "tabCustom": "Custom",
+      "onboardingHint": "No reminders yet. Tap a template to activate it in 30 seconds.",
       "mealRemindersLabel": "Meal Reminders",
       "minutesBeforeLabel": "Minutes before:",
       "minute5": "5 min",
