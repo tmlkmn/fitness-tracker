@@ -230,9 +230,9 @@ export function readinessBandColor(band: ReadinessBand): string {
     case "low":
       return "bg-destructive";
     case "moderate":
-      return "bg-amber-500";
+      return "bg-warning";
     case "good":
-      return "bg-emerald-500";
+      return "bg-success";
     case "excellent":
       return "bg-primary";
   }

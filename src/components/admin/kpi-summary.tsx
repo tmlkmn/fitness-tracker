@@ -61,9 +61,9 @@ function attentionClasses(level: AttentionLevel, isZero: boolean): {
     };
   }
   return {
-    card: "border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10",
-    icon: "text-amber-500",
-    value: "text-amber-500",
+    card: "border-warning/40 bg-warning/5 hover:bg-warning/10",
+    icon: "text-warning",
+    value: "text-warning",
   };
 }
 

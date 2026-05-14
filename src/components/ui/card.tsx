@@ -1,6 +1,22 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Card pattern convention (applies across the app — see also Dialog):
+ *
+ *   - CardHeader: title + at most ONE icon-button on the right
+ *     (overflow goes into a "..." dropdown, not a row of buttons).
+ *   - CardContent: primary content. Inline secondary actions allowed.
+ *   - CardFooter / dialog DialogFooter: action buttons on the RIGHT.
+ *     Destructive action on the left, primary action on the far right.
+ *     Use variant="ghost" or "outline" for cancel/secondary.
+ *
+ * Semantic color tokens: use `success`, `warning`, `info`, `destructive`
+ * (and their `-foreground` pairs) rather than raw `amber-500`, `blue-400`,
+ * etc. Raw color utilities are reserved for decorative/categorical use
+ * (e.g., per-plan-type icons) where state semantics don't apply.
+ */
+
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div

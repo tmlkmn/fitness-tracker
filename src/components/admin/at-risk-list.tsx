@@ -27,7 +27,7 @@ function urgencyClass(tag: RiskTag, isActive: boolean): string {
   if (isActive) {
     return priority >= 3
       ? "bg-destructive text-destructive-foreground border-destructive"
-      : "bg-amber-500 text-white border-amber-500";
+      : "bg-warning text-warning-foreground border-warning";
   }
   return "bg-muted text-muted-foreground border-transparent hover:bg-accent";
 }
@@ -70,7 +70,7 @@ export function AtRiskList({ users }: { users: AtRiskUser[] }) {
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertTriangle className="h-4 w-4 text-warning" />
           <h2 className="text-sm font-semibold">{t("title")}</h2>
         </div>
         <p className="text-xs text-muted-foreground tabular-nums">

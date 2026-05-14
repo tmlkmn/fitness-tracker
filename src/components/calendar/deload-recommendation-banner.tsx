@@ -35,11 +35,11 @@ export function DeloadRecommendationBanner({
   const isHard = recommendation.severity === "hard";
   const containerCls = isHard
     ? "border-destructive/40 bg-destructive/5"
-    : "border-amber-500/40 bg-amber-500/10";
-  const titleCls = isHard ? "text-destructive" : "text-amber-500";
+    : "border-warning/40 bg-warning/10";
+  const titleCls = isHard ? "text-destructive" : "text-warning";
   const severityBadgeCls = isHard
     ? "bg-destructive/15 text-destructive border-destructive/30"
-    : "bg-amber-500/15 text-amber-500 border-amber-500/30";
+    : "bg-warning/15 text-warning border-warning/30";
   const titleKey = isHard
     ? "deloadRecommendedHardTitle"
     : "deloadRecommendedSoftTitle";
@@ -137,7 +137,7 @@ export function DeloadRecommendationBanner({
       </div>
 
       {checked ? (
-        <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-500">
+        <div className="flex items-center gap-1.5 text-[11px] font-medium text-success">
           <Check className="h-3.5 w-3.5" />
           {tBanner("activeBadge")}
         </div>

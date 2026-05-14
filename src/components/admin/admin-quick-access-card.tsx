@@ -37,17 +37,17 @@ export function AdminQuickAccessCard() {
           </div>
           <div className="grid grid-cols-3 gap-2 pt-1">
             <KpiStat
-              icon={<AlertTriangle className="h-3 w-3 text-amber-500" />}
+              icon={<AlertTriangle className="h-3 w-3 text-warning" />}
               label={t("expiring")}
               value={isLoading ? null : (kpi?.expiringWithin7d ?? 0).toString()}
             />
             <KpiStat
-              icon={<MessageSquare className="h-3 w-3 text-blue-400" />}
+              icon={<MessageSquare className="h-3 w-3 text-info" />}
               label={t("feedback")}
               value={isLoading ? null : (kpi?.openFeedback ?? 0).toString()}
             />
             <KpiStat
-              icon={<DollarSign className="h-3 w-3 text-emerald-500" />}
+              icon={<DollarSign className="h-3 w-3 text-success" />}
               label={t("aiCost")}
               value={
                 isLoading

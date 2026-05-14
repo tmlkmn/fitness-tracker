@@ -11,19 +11,19 @@ import type { RiskTag, AtRiskUser } from "@/actions/admin-operations-types";
 
 const RISK_STYLES: Record<RiskTag, { className: string; icon: typeof Moon }> = {
   expiring: {
-    className: "text-red-300 bg-red-500/15",
+    className: "text-destructive bg-destructive/15",
     icon: CalendarClock,
   },
   pending_feedback: {
-    className: "text-amber-300 bg-amber-500/15",
+    className: "text-warning bg-warning/15",
     icon: MessageSquare,
   },
   inactive: {
-    className: "text-blue-300 bg-blue-500/15",
+    className: "text-info bg-info/15",
     icon: Moon,
   },
   low_compliance: {
-    className: "text-orange-300 bg-orange-500/15",
+    className: "text-warning bg-warning/10",
     icon: TrendingDown,
   },
 };

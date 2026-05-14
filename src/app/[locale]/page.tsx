@@ -256,10 +256,10 @@ export default function HomePage() {
 
         {profile && (!profile.height || !profile.weight || !profile.targetWeight) && (
           <Link href="/profil-tamamla">
-            <Card className="border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-colors cursor-pointer">
+            <Card className="border-warning/30 bg-warning/5 hover:bg-warning/10 transition-colors cursor-pointer">
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0">
-                  <AlertCircle className="h-5 w-5 text-yellow-500" />
+                <div className="h-9 w-9 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
+                  <AlertCircle className="h-5 w-5 text-warning" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{t("completeProfile")}</p>
