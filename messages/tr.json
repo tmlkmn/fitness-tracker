@@ -1299,6 +1299,7 @@
   },
   "admin": {
     "title": "Kullanıcı Yönetimi",
+    "breadcrumbRoot": "Admin",
     "inviteButton": "Davet Et",
     "feedback": "Geri Bildirimler",
     "aiWarnings": "AI Uyarıları",
@@ -1511,6 +1512,7 @@
       "empty": "Tüm kullanıcılar takipte. Şu an risk sinyali yok.",
       "viewDetail": "Detay",
       "clearFilters": "Temizle",
+      "totalsLine": "{total} · {urgent} acil",
       "filters": {
         "expiring": "Üyelik biten",
         "inactive": "İnaktif",
@@ -1529,11 +1531,15 @@
     "kpi": {
       "title": "Özet",
       "activeUsers": "Aktif Kullanıcı",
-      "aiCostToday": "Bugün AI ($)",
+      "aiCostToday": "Bugün AI",
       "aiCostWeek": "Bu Hafta AI ($)",
       "newUsersThisWeek": "Bu Hafta Yeni",
+      "newUsersThisWeekShort": "Bu hafta",
+      "weekLabel": "Hafta",
       "openFeedback": "Açık Feedback",
-      "expiring": "Üyelik Bitiyor"
+      "expiring": "Üyelik Bitiyor",
+      "expiringZeroHint": "Önümüzdeki 7 gün temiz",
+      "feedbackZeroHint": "Tümü yanıtlandı"
     },
     "nav": {
       "title": "Hızlı Erişim",
@@ -1582,6 +1588,12 @@
       "notFound": "Kullanıcı bulunamadı.",
       "memberSince": "Üye olalı {days} gün",
       "joinDate": "Üye: {date}",
+      "groups": {
+        "membership": "Üyelik",
+        "contact": "İletişim",
+        "dangerZone": "Tehlikeli Bölge"
+      },
+      "dangerZoneHint": "Bu kullanıcı 30+ gündür dondurulmuş. Hesabı silmek tüm verilerini kalıcı olarak kaldırır.",
       "timelineEvents": {
         "lastSession": "Son giriş",
         "lastAi": "Son AI",

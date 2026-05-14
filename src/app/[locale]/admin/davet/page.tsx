@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { UserPlus, Loader2, CheckCircle, Copy, Check } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
+import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import type { Locale } from "@/lib/locale";
 
 const MEMBERSHIP_KEYS: { value: MembershipType; tKey: string }[] = [
@@ -44,6 +45,7 @@ function CopyButton({ text }: { text: string }) {
 export default function DavetPage() {
   const tInvite = useTranslations("admin.invite");
   const tMembership = useTranslations("admin.membership");
+  const tAdmin = useTranslations("admin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [membershipType, setMembershipType] = useState<MembershipType>("1-month");
@@ -155,18 +157,25 @@ export default function DavetPage() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardContent className="p-6 space-y-6">
-          <div className="text-center space-y-2">
-            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-              <UserPlus className="h-7 w-7 text-primary" />
+    <div className="min-h-dvh">
+      <AdminBreadcrumb
+        segments={[
+          { label: tAdmin("breadcrumbRoot"), href: "/admin" },
+          { label: tInvite("title") },
+        ]}
+      />
+      <div className="flex items-center justify-center p-4">
+        <Card className="w-full max-w-sm">
+          <CardContent className="p-6 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                <UserPlus className="h-7 w-7 text-primary" />
+              </div>
+              <h1 className="text-xl font-bold">{tInvite("title")}</h1>
+              <p className="text-sm text-muted-foreground">
+                {tInvite("description")}
+              </p>
             </div>
-            <h1 className="text-xl font-bold">{tInvite("title")}</h1>
-            <p className="text-sm text-muted-foreground">
-              {tInvite("description")}
-            </p>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -290,6 +299,7 @@ export default function DavetPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

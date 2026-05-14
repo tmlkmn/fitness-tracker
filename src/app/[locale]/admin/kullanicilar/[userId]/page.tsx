@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getUserAdminDetail } from "@/actions/admin-user-detail";
 import { UserDetailView } from "@/components/admin/user-detail-view";
+import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 
 export default async function AdminUserDetailPage({
   params,
@@ -12,6 +13,8 @@ export default async function AdminUserDetailPage({
 }>) {
   const { locale, userId } = await params;
   const t = await getTranslations("admin.userDetail");
+  const tAdmin = await getTranslations("admin");
+  const tList = await getTranslations("admin.usersList");
 
   let detail;
   try {
@@ -24,6 +27,13 @@ export default async function AdminUserDetailPage({
     if (msg === "User not found") {
       return (
         <div className="min-h-dvh pb-8">
+          <AdminBreadcrumb
+            segments={[
+              { label: tAdmin("breadcrumbRoot"), href: "/admin" },
+              { label: tList("title"), href: "/admin/kullanicilar" },
+              { label: t("notFound") },
+            ]}
+          />
           <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
             <Link
               href={{ pathname: "/admin/kullanicilar" }}
@@ -42,5 +52,16 @@ export default async function AdminUserDetailPage({
     throw e;
   }
 
-  return <UserDetailView detail={detail} />;
+  return (
+    <>
+      <AdminBreadcrumb
+        segments={[
+          { label: tAdmin("breadcrumbRoot"), href: "/admin" },
+          { label: tList("title"), href: "/admin/kullanicilar" },
+          { label: detail.user.name },
+        ]}
+      />
+      <UserDetailView detail={detail} />
+    </>
+  );
 }

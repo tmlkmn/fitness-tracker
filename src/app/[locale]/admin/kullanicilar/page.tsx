@@ -22,6 +22,7 @@ import {
 import { ExtendDialog } from "@/components/admin/extend-dialog";
 import { ConfirmFreezeDialog } from "@/components/admin/confirm-freeze-dialog";
 import { UserCard } from "@/components/admin/user-card";
+import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 
 type StatusFilter =
   | "all"
@@ -160,6 +161,12 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-dvh pb-8">
+      <AdminBreadcrumb
+        segments={[
+          { label: t("breadcrumbRoot"), href: "/admin" },
+          { label: tList("title") },
+        ]}
+      />
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

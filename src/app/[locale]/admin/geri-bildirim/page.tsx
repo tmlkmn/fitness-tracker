@@ -20,6 +20,7 @@ import {
   XCircle,
   ArrowLeft,
 } from "lucide-react";
+import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 
 const CATEGORY_CONFIG: Record<string, { tKey: string; icon: typeof MessageSquare; className: string }> = {
   suggestion: { tKey: "suggestion", icon: Lightbulb, className: "text-blue-400 bg-blue-400/10" },
@@ -150,6 +151,7 @@ export default function AdminFeedbackPage() {
   const router = useRouter();
   const t = useTranslations("admin.feedbackPage");
   const tCommon = useTranslations("common");
+  const tAdmin = useTranslations("admin");
   const formatTimeAgo = useTimeAgo();
   const [feedbackList, setFeedbackList] = useState<FeedbackWithUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,6 +218,12 @@ export default function AdminFeedbackPage() {
 
   return (
     <div className="min-h-dvh pb-8">
+      <AdminBreadcrumb
+        segments={[
+          { label: tAdmin("breadcrumbRoot"), href: "/admin" },
+          { label: t("title") },
+        ]}
+      />
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-6">
         <div className="flex items-center gap-3">
           <Link

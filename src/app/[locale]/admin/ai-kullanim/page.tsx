@@ -25,6 +25,7 @@ import {
   useTimeAgo,
   useFeatureLabel,
 } from "@/components/admin/admin-labels";
+import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 
 function formatUsd(v: number): string {
   if (v >= 100) return v.toFixed(0);
@@ -79,6 +80,12 @@ export default function AdminAiUsagePage() {
 
   return (
     <div className="min-h-dvh pb-8">
+      <AdminBreadcrumb
+        segments={[
+          { label: t("breadcrumbRoot"), href: "/admin" },
+          { label: tAi("title") },
+        ]}
+      />
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center gap-3">
           <Link

@@ -9,12 +9,28 @@ import type { AtRiskUser, RiskTag } from "@/actions/admin-operations-types";
 import { RISK_PRIORITY } from "@/actions/admin-operations-types";
 import { RiskBadge } from "./risk-badge";
 
+// Sorted by RISK_PRIORITY descending — most urgent first
 const FILTER_TAGS: RiskTag[] = [
   "expiring",
+  "pending_feedback",
   "inactive",
   "low_compliance",
-  "pending_feedback",
 ];
+
+// Visual urgency classes per tag, mapped via RISK_PRIORITY level:
+//   priority 4 (expiring)         → destructive (most urgent)
+//   priority 3 (pending_feedback) → destructive (also high urgency)
+//   priority 2 (inactive)         → amber
+//   priority 1 (low_compliance)   → amber
+function urgencyClass(tag: RiskTag, isActive: boolean): string {
+  const priority = RISK_PRIORITY[tag];
+  if (isActive) {
+    return priority >= 3
+      ? "bg-destructive text-destructive-foreground border-destructive"
+      : "bg-amber-500 text-white border-amber-500";
+  }
+  return "bg-muted text-muted-foreground border-transparent hover:bg-accent";
+}
 
 export function AtRiskList({ users }: { users: AtRiskUser[] }) {
   const t = useTranslations("admin.atRisk");
@@ -42,11 +58,24 @@ export function AtRiskList({ users }: { users: AtRiskUser[] }) {
     return m;
   }, [users]);
 
+  const urgentCount = useMemo(
+    () =>
+      users.filter((u) =>
+        u.risks.some((r) => RISK_PRIORITY[r] >= 3),
+      ).length,
+    [users],
+  );
+
   return (
     <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-amber-400" />
-        <h2 className="text-sm font-semibold">{t("title")}</h2>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <h2 className="text-sm font-semibold">{t("title")}</h2>
+        </div>
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {t("totalsLine", { total: users.length, urgent: urgentCount })}
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -60,14 +89,17 @@ export function AtRiskList({ users }: { users: AtRiskUser[] }) {
               type="button"
               onClick={() => toggle(tag)}
               disabled={isDisabled}
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-accent"
-              } disabled:opacity-40 disabled:cursor-not-allowed`}
+              aria-pressed={isActive}
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors border ${urgencyClass(tag, isActive)} disabled:opacity-40 disabled:cursor-not-allowed`}
             >
-              {t(`filters.${camelCase(tag)}` as never)}
-              <span className="tabular-nums">({count})</span>
+              <span>{t(`filters.${camelCase(tag)}` as never)}</span>
+              <span
+                className={`inline-flex items-center justify-center min-w-5 h-4 px-1 rounded-full text-[10px] tabular-nums font-semibold ${
+                  isActive ? "bg-white/25" : "bg-background/80 text-foreground"
+                }`}
+              >
+                {count}
+              </span>
             </button>
           );
         })}

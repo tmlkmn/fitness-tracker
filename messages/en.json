@@ -1298,6 +1298,7 @@
   },
   "admin": {
     "title": "User Management",
+    "breadcrumbRoot": "Admin",
     "inviteButton": "Invite",
     "feedback": "Feedback",
     "aiWarnings": "AI Warnings",
@@ -1510,6 +1511,7 @@
       "empty": "All users on track. No risk signals right now.",
       "viewDetail": "Details",
       "clearFilters": "Clear",
+      "totalsLine": "{total} · {urgent} urgent",
       "filters": {
         "expiring": "Membership ending",
         "inactive": "Inactive",
@@ -1528,11 +1530,15 @@
     "kpi": {
       "title": "Summary",
       "activeUsers": "Active Users",
-      "aiCostToday": "AI Today ($)",
+      "aiCostToday": "AI Today",
       "aiCostWeek": "AI This Week ($)",
       "newUsersThisWeek": "New This Week",
+      "newUsersThisWeekShort": "This week",
+      "weekLabel": "Week",
       "openFeedback": "Open Feedback",
-      "expiring": "Membership Ending"
+      "expiring": "Membership Ending",
+      "expiringZeroHint": "Next 7 days clear",
+      "feedbackZeroHint": "All answered"
     },
     "nav": {
       "title": "Quick Links",
@@ -1581,6 +1587,12 @@
       "notFound": "User not found.",
       "memberSince": "Member for {days} days",
       "joinDate": "Joined: {date}",
+      "groups": {
+        "membership": "Membership",
+        "contact": "Contact",
+        "dangerZone": "Danger Zone"
+      },
+      "dangerZoneHint": "This user has been frozen for 30+ days. Deleting permanently removes all their data.",
       "timelineEvents": {
         "lastSession": "Last sign-in",
         "lastAi": "Last AI",

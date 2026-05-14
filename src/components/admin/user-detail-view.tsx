@@ -150,78 +150,87 @@ export function UserDetailView({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-              {u.status !== "Admin" && (
-                <button
-                  type="button"
-                  onClick={() => setExtendOpen(true)}
-                  disabled={pending}
-                  className="inline-flex items-center justify-center gap-2 h-9 rounded-md border border-input text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
-                >
-                  <CalendarClock className="h-4 w-4" />
-                  {t("actions.updateMembership")}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setNudgeOpen(true)}
-                disabled={pending || u.status === "Admin"}
-                className="inline-flex items-center justify-center gap-2 h-9 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-              >
-                <Send className="h-4 w-4" />
-                {tDetail("sendNudge")}
-              </button>
-              {(u.status === "Bekliyor" || u.status === "Süresi Dolmuş") && (
-                <button
-                  type="button"
-                  onClick={onResend}
-                  disabled={pending}
-                  className="inline-flex items-center justify-center gap-2 h-9 rounded-md border border-input text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
-                >
-                  {pending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RotateCw className="h-4 w-4" />
-                  )}
-                  {t("actions.resendInvite")}
-                </button>
-              )}
-              {u.status !== "Admin" && !u.isFrozen && (
-                <button
-                  type="button"
-                  onClick={() => setFreezeDialog("freeze")}
-                  disabled={pending}
-                  className="inline-flex items-center justify-center gap-2 h-9 rounded-md border border-input text-blue-400 text-sm font-medium hover:bg-blue-500/10 transition-colors disabled:opacity-50"
-                >
-                  <Snowflake className="h-4 w-4" />
-                  {tFreeze("freezeButton")}
-                </button>
-              )}
-              {u.status === "Dondurulmuş" && (
-                <button
-                  type="button"
-                  onClick={() => setFreezeDialog("unfreeze")}
-                  disabled={pending}
-                  className="inline-flex items-center justify-center gap-2 h-9 rounded-md border border-input text-green-400 text-sm font-medium hover:bg-green-500/10 transition-colors disabled:opacity-50"
-                >
-                  <Play className="h-4 w-4" />
-                  {tFreeze("unfreezeButton")}
-                </button>
-              )}
-              {u.status !== "Admin" && canDelete && (
-                <button
-                  type="button"
-                  onClick={onRemove}
-                  disabled={pending}
-                  className="inline-flex items-center justify-center gap-2 h-9 rounded-md border border-destructive/40 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {t("actions.delete")}
-                </button>
-              )}
-            </div>
           </CardContent>
         </Card>
+
+        {/* Action groups: Membership + Contact */}
+        {u.status !== "Admin" && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">
+                  {tDetail("groups.membership")}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExtendOpen(true)}
+                    disabled={pending}
+                    className="inline-flex items-center justify-center gap-2 h-9 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    <CalendarClock className="h-4 w-4" />
+                    {t("actions.updateMembership")}
+                  </button>
+                  {!u.isFrozen ? (
+                    <button
+                      type="button"
+                      onClick={() => setFreezeDialog("freeze")}
+                      disabled={pending}
+                      className="inline-flex items-center justify-center gap-2 h-9 rounded-md border border-input text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+                    >
+                      <Snowflake className="h-4 w-4" />
+                      {tFreeze("freezeButton")}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setFreezeDialog("unfreeze")}
+                      disabled={pending}
+                      className="inline-flex items-center justify-center gap-2 h-9 rounded-md border border-input text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+                    >
+                      <Play className="h-4 w-4" />
+                      {tFreeze("unfreezeButton")}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-3 border-t border-border/60">
+                <p className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">
+                  {tDetail("groups.contact")}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNudgeOpen(true)}
+                    disabled={pending}
+                    className="inline-flex items-center justify-center gap-2 h-9 rounded-md border border-input text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                    {tDetail("sendNudge")}
+                  </button>
+                  {(u.status === "Bekliyor" || u.status === "Süresi Dolmuş") ? (
+                    <button
+                      type="button"
+                      onClick={onResend}
+                      disabled={pending}
+                      className="inline-flex items-center justify-center gap-2 h-9 rounded-md border border-input text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50"
+                    >
+                      {pending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RotateCw className="h-4 w-4" />
+                      )}
+                      {t("actions.resendInvite")}
+                    </button>
+                  ) : (
+                    <div /> /* keep grid balanced */
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <ActivityTimeline
           lastSessionAt={detail.lastSessionAt}
@@ -243,6 +252,30 @@ export function UserDetailView({
         />
 
         <RecentFeedbackCard items={detail.recentFeedback} />
+
+        {u.status !== "Admin" && canDelete && (
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardContent className="p-4 space-y-2">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-semibold tracking-wider uppercase text-destructive">
+                  {tDetail("groups.dangerZone")}
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {tDetail("dangerZoneHint")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onRemove}
+                disabled={pending}
+                className="inline-flex items-center justify-center gap-2 h-9 w-full rounded-md border border-destructive/40 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                {t("actions.delete")}
+              </button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {extendOpen && (
