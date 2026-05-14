@@ -2221,8 +2221,12 @@
     "shortLabel": "Hazırlık",
     "dashboardCard": {
       "title": "Bugünkü Hazırlık",
+      "subtitle": "Bugün ne kadar zorlamalıyım?",
       "passiveBadge": "Pasif",
       "fullBadge": "Tam",
+      "passiveBadgeHint": "Uyku, su ve dünkü uyumdan hesaplandı",
+      "fullBadgeHint": "Subjektif girdin dahil edildi",
+      "tapToLog": "Hissini gir — daha doğru skor için",
       "viewDetail": "Detay",
       "scoreOf": "{score}/100"
     },

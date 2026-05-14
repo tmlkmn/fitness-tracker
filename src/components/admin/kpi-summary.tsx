@@ -22,6 +22,51 @@ interface KpiPairedCardProps {
     | { pathname: "/admin/kullanicilar"; query?: Record<string, string> }
     | { pathname: "/admin/ai-kullanim" }
     | { pathname: "/admin/geri-bildirim" };
+  sparkline?: number[];
+}
+
+/**
+ * Tiny inline-SVG sparkline. Server-renderable (no recharts). Expects
+ * `values` to have at least 2 points; renders nothing otherwise.
+ */
+function MiniSparkline({
+  values,
+  width = 64,
+  height = 16,
+}: {
+  values: number[];
+  width?: number;
+  height?: number;
+}) {
+  if (values.length < 2) return null;
+  const max = Math.max(...values, 0.000001);
+  const stepX = width / (values.length - 1);
+  const points = values
+    .map((v, i) => {
+      const x = i * stepX;
+      const y = height - (v / max) * (height - 2) - 1;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
+      preserveAspectRatio="none"
+      aria-hidden
+      className="shrink-0"
+    >
+      <polyline
+        points={points}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 interface KpiAlertCardProps {
@@ -74,6 +119,7 @@ function KpiPairedCard({
   subtitleValue,
   icon: Icon,
   href,
+  sparkline,
 }: KpiPairedCardProps) {
   return (
     <Link href={href} className="block">
@@ -83,7 +129,14 @@ function KpiPairedCard({
             <Icon className="h-3.5 w-3.5 text-muted-foreground" />
             <p className="text-[11px] text-muted-foreground truncate">{label}</p>
           </div>
-          <p className="text-xl font-bold tabular-nums leading-tight">{value}</p>
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-xl font-bold tabular-nums leading-tight">{value}</p>
+            {sparkline && sparkline.length >= 2 && (
+              <span className="text-muted-foreground/70">
+                <MiniSparkline values={sparkline} />
+              </span>
+            )}
+          </div>
           <p className="text-[10px] text-muted-foreground tabular-nums">
             {subtitleLabel}: <span className="text-foreground/80">{subtitleValue}</span>
           </p>
@@ -148,6 +201,7 @@ export async function KpiSummary({ kpi }: { kpi: AdminKpiSummary | null }) {
           subtitleValue={`$${formatUsd(kpi.aiCostWeekUsd)}`}
           icon={DollarSign}
           href={{ pathname: "/admin/ai-kullanim" }}
+          sparkline={kpi.aiCostDaily.map((d) => d.costUsd)}
         />
         <KpiAlertCard
           label={t("expiring")}

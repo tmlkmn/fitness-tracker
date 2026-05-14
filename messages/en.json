@@ -2220,8 +2220,12 @@
     "shortLabel": "Readiness",
     "dashboardCard": {
       "title": "Today's Readiness",
+      "subtitle": "How hard should I push today?",
       "passiveBadge": "Passive",
       "fullBadge": "Full",
+      "passiveBadgeHint": "Computed from sleep, water, and yesterday's compliance",
+      "fullBadgeHint": "Your subjective input is included",
+      "tapToLog": "Log how you feel — for a more accurate score",
       "viewDetail": "Details",
       "scoreOf": "{score}/100"
     },

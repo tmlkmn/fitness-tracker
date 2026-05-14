@@ -13,6 +13,50 @@ interface DeloadRecommendationBannerProps {
   onAccept: () => void;
 }
 
+function SparklineLine({
+  values,
+  colorClass,
+  width = 56,
+  height = 12,
+}: {
+  values: number[];
+  colorClass: string;
+  width?: number;
+  height?: number;
+}) {
+  const max = 100;
+  const min = 0;
+  const range = max - min;
+  const stepX = width / (values.length - 1);
+  const points = values
+    .map((v, i) => {
+      const clamped = Math.max(min, Math.min(max, v));
+      const x = i * stepX;
+      const y = height - ((clamped - min) / range) * (height - 2) - 1;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
+      preserveAspectRatio="none"
+      aria-hidden
+      className={`shrink-0 ${colorClass}`}
+    >
+      <polyline
+        points={points}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /**
  * Prominent banner shown above the deload checkbox when the recovery signal
  * is "hard" or "soft". Hierarchy is reasons-first: the user sees WHY a
@@ -65,6 +109,7 @@ export function DeloadRecommendationBanner({
     const avg = Math.round(recommendation.readiness7d.average ?? 0);
     const band = bandOf(avg);
     const barColor = readinessBandColor(band);
+    const series = recommendation.readiness7d.series;
     reasonLines.push({
       key: "low_readiness",
       node: (
@@ -76,12 +121,16 @@ export function DeloadRecommendationBanner({
             })}
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-md bg-background/70 px-2 py-0.5">
-            <span className="relative h-1.5 w-12 overflow-hidden rounded-full bg-muted">
-              <span
-                className={`absolute inset-y-0 left-0 ${barColor}`}
-                style={{ width: `${Math.max(4, Math.min(100, avg))}%` }}
-              />
-            </span>
+            {series.length >= 2 ? (
+              <SparklineLine values={series} colorClass={titleCls} />
+            ) : (
+              <span className="relative h-1.5 w-12 overflow-hidden rounded-full bg-muted">
+                <span
+                  className={`absolute inset-y-0 left-0 ${barColor}`}
+                  style={{ width: `${Math.max(4, Math.min(100, avg))}%` }}
+                />
+              </span>
+            )}
             <span className="text-[10px] font-semibold tabular-nums text-foreground">
               {avg}
             </span>

@@ -17,10 +17,16 @@ export interface AtRiskUser {
   oldestOpenFeedbackDays: number | null;
 }
 
+export interface AiCostDailyPoint {
+  date: string;
+  costUsd: number;
+}
+
 export interface AdminKpiSummary {
   activeUsers: number;
   aiCostTodayUsd: number;
   aiCostWeekUsd: number;
+  aiCostDaily: AiCostDailyPoint[];
   newUsersThisWeek: number;
   openFeedback: number;
   expiringWithin7d: number;

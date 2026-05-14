@@ -333,7 +333,7 @@ export async function getAdminKpiSummary(): Promise<AdminKpiSummary> {
   const startOfWeek = new Date(now.getTime() - 7 * DAY_MS);
   const sevenDaysFromNow = new Date(now.getTime() + 7 * DAY_MS);
 
-  const [activeRow, costToday, costWeek, newUsers, openFb, expiring] =
+  const [activeRow, costToday, costWeek, costDailyRaw, newUsers, openFb, expiring] =
     await Promise.all([
       db
         .select({ count: sql<number>`count(*)::int` })
@@ -358,6 +358,14 @@ export async function getAdminKpiSummary(): Promise<AdminKpiSummary> {
         .from(aiUsageLogs)
         .where(gte(aiUsageLogs.createdAt, startOfWeek)),
       db
+        .select({
+          day: sql<string>`to_char(date_trunc('day', ${aiUsageLogs.createdAt}), 'YYYY-MM-DD')`,
+          sum: sql<string>`coalesce(sum(${aiUsageLogs.estCostUsd}), 0)::text`,
+        })
+        .from(aiUsageLogs)
+        .where(gte(aiUsageLogs.createdAt, startOfWeek))
+        .groupBy(sql`date_trunc('day', ${aiUsageLogs.createdAt})`),
+      db
         .select({ count: sql<number>`count(*)::int` })
         .from(users)
         .where(gte(users.createdAt, startOfWeek)),
@@ -379,10 +387,22 @@ export async function getAdminKpiSummary(): Promise<AdminKpiSummary> {
         ),
     ]);
 
+  // Fill last 7 days with zero-padding so the sparkline always has 7 points
+  const costByDate = new Map(
+    costDailyRaw.map((r) => [r.day, Number(r.sum)]),
+  );
+  const aiCostDaily: { date: string; costUsd: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * DAY_MS);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    aiCostDaily.push({ date: key, costUsd: costByDate.get(key) ?? 0 });
+  }
+
   const result: AdminKpiSummary = {
     activeUsers: activeRow[0]?.count ?? 0,
     aiCostTodayUsd: Number(costToday[0]?.sum ?? 0),
     aiCostWeekUsd: Number(costWeek[0]?.sum ?? 0),
+    aiCostDaily,
     newUsersThisWeek: newUsers[0]?.count ?? 0,
     openFeedback: openFb[0]?.count ?? 0,
     expiringWithin7d: expiring[0]?.count ?? 0,

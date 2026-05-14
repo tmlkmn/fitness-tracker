@@ -25,6 +25,8 @@ export interface DeloadEvaluationInput {
   readiness7d: {
     average: number | null;
     samples: number;
+    /** Per-day passive scores (chronological, may have fewer than 7 entries). */
+    series: number[];
   };
 }
 
@@ -45,10 +47,11 @@ export interface DeloadRecommendation {
   reasons: DeloadReasonCode[];
   consecutiveTrainingWeeks: number;
   cadence: number;
-  /** Surfaced so the banner can render the actual avg/samples. */
+  /** Surfaced so the banner can render the actual avg/samples + trend. */
   readiness7d: {
     average: number | null;
     samples: number;
+    series: number[];
   };
 }
 

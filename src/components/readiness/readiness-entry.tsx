@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Activity, Edit3, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,11 +12,26 @@ export function ReadinessEntry({
   autoOpen = false,
 }: Readonly<{ autoOpen?: boolean }>) {
   const t = useTranslations("readiness.entry");
-  const { data: log } = useTodayReadinessLog();
-  const [open, setOpen] = useState(autoOpen);
+  const { data: log, isLoading } = useTodayReadinessLog();
+  const [open, setOpen] = useState(false);
   const pulse = useSuccessPulse();
+  const autoOpenConsumedRef = useRef(false);
 
   const hasEntry = log != null && (log.energyRating != null || log.painScore != null);
+
+  // Auto-open the form ONLY if there's no entry yet for today. Gated on the
+  // query resolving (isLoading=false) so we don't open prematurely while
+  // log is still undefined; gated on a ref so the effect runs at most once
+  // per mount even when log refetches or pulses re-render the tree.
+  useEffect(() => {
+    if (autoOpenConsumedRef.current) return;
+    if (!autoOpen || isLoading) return;
+    autoOpenConsumedRef.current = true;
+    if (!hasEntry) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOpen(true);
+    }
+  }, [autoOpen, isLoading, hasEntry]);
 
   return (
     <>
