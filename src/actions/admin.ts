@@ -12,6 +12,10 @@ import { sendNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { normalizeLocale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
+import { getUserStatus, type UserStatus } from "@/lib/user-status";
+import { invalidateAdminOpsCache } from "@/lib/admin-ops-cache";
+
+export type { UserStatus };
 
 export type MembershipType = "unlimited" | "1-month" | "3-month" | "6-month" | "1-year" | "custom";
 
@@ -72,13 +76,12 @@ export async function inviteUser(
   }
 
   revalidatePath("/admin");
+  invalidateAdminOpsCache();
 
   logAudit({ adminId: admin.id, action: "user.invite", entityType: "user", entityId: newUser?.id, details: { email, name, membershipType: membership.type } }).catch(() => {});
 
   return { success: true, tempPassword };
 }
-
-export type UserStatus = "Admin" | "Aktif" | "Bekliyor" | "Süresi Dolmuş" | "Üyelik Dolmuş" | "Dondurulmuş";
 
 export interface UserWithStatus {
   id: string;
@@ -91,22 +94,6 @@ export interface UserWithStatus {
   membershipEndDate: Date | null;
   frozenAt: Date | null;
   isFrozen: boolean;
-}
-
-function getUserStatus(user: typeof users.$inferSelect): UserStatus {
-  if (user.role === "admin") return "Admin";
-  if (user.frozenAt !== null) return "Dondurulmuş";
-  if (user.isApproved && !user.mustChangePassword) {
-    // Check membership expiry for active users
-    if (user.membershipEndDate && new Date(user.membershipEndDate) <= new Date()) {
-      return "Üyelik Dolmuş";
-    }
-    return "Aktif";
-  }
-  if (user.inviteExpiresAt && new Date(user.inviteExpiresAt) <= new Date()) {
-    return "Süresi Dolmuş";
-  }
-  return "Bekliyor";
 }
 
 export async function listAllUsers(): Promise<UserWithStatus[]> {
@@ -158,6 +145,7 @@ export async function resendInvite(userId: string) {
   await sendInviteEmail(user.email, tempPassword, normalizeLocale(user.locale));
   logAudit({ adminId: admin.id, action: "user.resend_invite", entityType: "user", entityId: userId, details: { email: user.email } }).catch(() => {});
   revalidatePath("/admin");
+  invalidateAdminOpsCache();
   return { success: true };
 }
 
@@ -185,6 +173,7 @@ export async function removeUserAction(userId: string) {
   logAudit({ adminId: admin.id, action: "user.remove", entityType: "user", entityId: userId }).catch(() => {});
 
   revalidatePath("/admin");
+  invalidateAdminOpsCache();
   return { success: true };
 }
 
@@ -205,6 +194,7 @@ export async function freezeUserAction(userId: string) {
 
   logAudit({ adminId: admin.id, action: "user.freeze", entityType: "user", entityId: userId }).catch(() => {});
   revalidatePath("/admin");
+  invalidateAdminOpsCache();
   return { success: true };
 }
 
@@ -223,6 +213,7 @@ export async function unfreezeUserAction(userId: string) {
 
   logAudit({ adminId: admin.id, action: "user.unfreeze", entityType: "user", entityId: userId }).catch(() => {});
   revalidatePath("/admin");
+  invalidateAdminOpsCache();
   return { success: true };
 }
 
@@ -293,6 +284,8 @@ export async function extendMembership(
     ? formatDate(updateData.membershipEndDate as Date, userLocale)
     : null;
 
+  invalidateAdminOpsCache();
+
   await sendNotification({
     userId,
     type: "membership_extended",
@@ -306,6 +299,7 @@ export async function extendMembership(
   });
 
   revalidatePath("/admin");
+  invalidateAdminOpsCache();
   return { success: true };
 }
 

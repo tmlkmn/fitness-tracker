@@ -52,6 +52,12 @@ export const routing = defineRouting({
     "/admin/davet": { tr: "/admin/davet", en: "/admin/invite" },
     "/admin/ai-warnings": "/admin/ai-warnings",
     "/admin/geri-bildirim": { tr: "/admin/geri-bildirim", en: "/admin/feedback" },
+    "/admin/kullanicilar": { tr: "/admin/kullanicilar", en: "/admin/users" },
+    "/admin/kullanicilar/[userId]": {
+      tr: "/admin/kullanicilar/[userId]",
+      en: "/admin/users/[userId]",
+    },
+    "/admin/ai-kullanim": { tr: "/admin/ai-kullanim", en: "/admin/ai-usage" },
 
     // Static / legal
     "/gizlilik": { tr: "/gizlilik", en: "/privacy" },

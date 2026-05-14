@@ -1488,6 +1488,113 @@
         "errorEmpty": "Yanıt boş olamaz.",
         "errorSubmit": "Yanıt gönderilemedi."
       }
+    },
+    "ops": {
+      "title": "Operasyon Paneli",
+      "subtitle": "Bugün dikkat gerektirenler"
+    },
+    "atRisk": {
+      "title": "Dikkat Gerektiren Kullanıcılar",
+      "empty": "Tüm kullanıcılar takipte. Şu an risk sinyali yok.",
+      "viewDetail": "Detay",
+      "clearFilters": "Temizle",
+      "filters": {
+        "expiring": "Üyelik biten",
+        "inactive": "İnaktif",
+        "lowCompliance": "Düşük Uyum",
+        "pendingFeedback": "Bekleyen Feedback"
+      },
+      "reasons": {
+        "expiringToday": "Üyelik bugün bitiyor",
+        "expiringIn": "Üyelik {days} gün sonra biter",
+        "daysInactive": "{days} gündür aktif değil",
+        "neverActive": "Hiç aktif olmadı",
+        "complianceBelow": "Uyum %{pct}",
+        "feedbackOpenFor": "Feedback {days} gündür açık"
+      }
+    },
+    "kpi": {
+      "title": "Özet",
+      "activeUsers": "Aktif Kullanıcı",
+      "aiCostToday": "Bugün AI ($)",
+      "aiCostWeek": "Bu Hafta AI ($)",
+      "newUsersThisWeek": "Bu Hafta Yeni",
+      "openFeedback": "Açık Feedback",
+      "expiring": "Üyelik Bitiyor"
+    },
+    "nav": {
+      "title": "Hızlı Erişim",
+      "users": "Tüm Kullanıcılar",
+      "aiUsage": "AI Kullanımı",
+      "warnings": "AI Uyarıları",
+      "feedback": "Geri Bildirim"
+    },
+    "usersList": {
+      "title": "Tüm Kullanıcılar",
+      "searchPlaceholder": "Ad veya e-posta ara…",
+      "filterAll": "Tümü",
+      "filterActive": "Aktif",
+      "filterPending": "Bekleyen",
+      "filterFrozen": "Dondurulmuş",
+      "filterExpired": "Üyeliği Bitmiş",
+      "noResults": "Eşleşen kullanıcı yok.",
+      "countLabel": "{count} kullanıcı"
+    },
+    "userDetail": {
+      "backToList": "Listeye Dön",
+      "profile": "Profil",
+      "risks": "Risk Sinyalleri",
+      "timeline": "Aktivite",
+      "compliance": "Uyum",
+      "complianceTab7": "7 Gün",
+      "complianceTab14": "14 Gün",
+      "complianceTab30": "30 Gün",
+      "complianceRatio": "%{pct}",
+      "complianceMeals": "{done}/{total} öğün",
+      "complianceExercises": "{done}/{total} egzersiz",
+      "complianceEmpty": "Bu pencerede planlanmış aktivite yok.",
+      "weightTrend": "Kilo Trendi (30 gün)",
+      "weightDelta": "{delta} kg",
+      "weightSlopePerWeek": "{slope} kg/hafta",
+      "weightLatest": "Son: {weight} kg",
+      "weightTarget": "Hedef: {weight} kg",
+      "weightToTarget": "Hedefe: {delta} kg",
+      "weightEmpty": "Son 30 günde kilo logu yok.",
+      "aiThisMonth": "Bu Ay AI",
+      "aiTotalCost": "Toplam: ${cost}",
+      "aiEmpty": "Bu ay AI kullanımı yok.",
+      "recentFeedback": "Son Geri Bildirimler",
+      "recentFeedbackEmpty": "Geri bildirim yok.",
+      "sendNudge": "Nudge Gönder",
+      "notFound": "Kullanıcı bulunamadı.",
+      "memberSince": "Üye olalı {days} gün",
+      "joinDate": "Üye: {date}",
+      "timelineEvents": {
+        "lastSession": "Son giriş",
+        "lastAi": "Son AI",
+        "lastProgressLog": "Son ölçüm",
+        "never": "Hiç"
+      }
+    },
+    "nudge": {
+      "title": "Nudge Gönder",
+      "subjectLabel": "Konu",
+      "subjectPlaceholder": "Programa dön",
+      "messageLabel": "Mesaj",
+      "messagePlaceholder": "Hey! Programa devam etmen için seni bekliyoruz...",
+      "send": "Gönder",
+      "success": "Nudge gönderildi.",
+      "error": "Nudge gönderilemedi.",
+      "subjectRequired": "Konu zorunlu.",
+      "messageRequired": "Mesaj zorunlu."
+    },
+    "aiUsage": {
+      "title": "AI Kullanımı",
+      "totalCostToday": "Bugün",
+      "totalCostWeek": "Bu Hafta",
+      "totalCostMonth": "Bu Ay",
+      "featureBreakdown": "Feature Bazında",
+      "userBreakdown": "Kullanıcı Bazında"
     }
   },
   "assistant": {

@@ -6,6 +6,7 @@ import { eq, desc } from "drizzle-orm";
 import { getAuthUser, getAuthAdmin } from "@/lib/auth-utils";
 import { sendNotification } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
+import { invalidateAdminOpsCache } from "@/lib/admin-ops-cache";
 
 // ── Types ──
 
@@ -59,6 +60,8 @@ export async function submitFeedback(data: {
     .select({ id: users.id, locale: users.locale })
     .from(users)
     .where(eq(users.role, "admin"));
+
+  invalidateAdminOpsCache();
 
   const preview = data.message.slice(0, 100);
   for (const admin of adminRows) {
@@ -151,6 +154,7 @@ export async function respondToFeedback(feedbackId: number, response: string) {
     skipEmail: false,
   });
 
+  invalidateAdminOpsCache();
   revalidatePath("/admin/geri-bildirim");
 }
 
@@ -160,5 +164,6 @@ export async function closeFeedback(feedbackId: number) {
     .update(feedbacks)
     .set({ status: "closed" })
     .where(eq(feedbacks.id, feedbackId));
+  invalidateAdminOpsCache();
   revalidatePath("/admin/geri-bildirim");
 }

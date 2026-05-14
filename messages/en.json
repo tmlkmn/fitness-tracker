@@ -1487,6 +1487,113 @@
         "errorEmpty": "Response cannot be empty.",
         "errorSubmit": "Failed to send response."
       }
+    },
+    "ops": {
+      "title": "Operations Panel",
+      "subtitle": "What needs attention today"
+    },
+    "atRisk": {
+      "title": "Users That Need Attention",
+      "empty": "All users on track. No risk signals right now.",
+      "viewDetail": "Details",
+      "clearFilters": "Clear",
+      "filters": {
+        "expiring": "Membership ending",
+        "inactive": "Inactive",
+        "lowCompliance": "Low compliance",
+        "pendingFeedback": "Pending feedback"
+      },
+      "reasons": {
+        "expiringToday": "Membership ends today",
+        "expiringIn": "Membership ends in {days} days",
+        "daysInactive": "Inactive for {days} days",
+        "neverActive": "Never active",
+        "complianceBelow": "Compliance {pct}%",
+        "feedbackOpenFor": "Feedback open for {days} days"
+      }
+    },
+    "kpi": {
+      "title": "Summary",
+      "activeUsers": "Active Users",
+      "aiCostToday": "AI Today ($)",
+      "aiCostWeek": "AI This Week ($)",
+      "newUsersThisWeek": "New This Week",
+      "openFeedback": "Open Feedback",
+      "expiring": "Membership Ending"
+    },
+    "nav": {
+      "title": "Quick Links",
+      "users": "All Users",
+      "aiUsage": "AI Usage",
+      "warnings": "AI Warnings",
+      "feedback": "Feedback"
+    },
+    "usersList": {
+      "title": "All Users",
+      "searchPlaceholder": "Search by name or email…",
+      "filterAll": "All",
+      "filterActive": "Active",
+      "filterPending": "Pending",
+      "filterFrozen": "Frozen",
+      "filterExpired": "Expired",
+      "noResults": "No matching users.",
+      "countLabel": "{count} users"
+    },
+    "userDetail": {
+      "backToList": "Back to list",
+      "profile": "Profile",
+      "risks": "Risk Signals",
+      "timeline": "Activity",
+      "compliance": "Compliance",
+      "complianceTab7": "7 Days",
+      "complianceTab14": "14 Days",
+      "complianceTab30": "30 Days",
+      "complianceRatio": "{pct}%",
+      "complianceMeals": "{done}/{total} meals",
+      "complianceExercises": "{done}/{total} exercises",
+      "complianceEmpty": "No scheduled activity in this window.",
+      "weightTrend": "Weight Trend (30 days)",
+      "weightDelta": "{delta} kg",
+      "weightSlopePerWeek": "{slope} kg/week",
+      "weightLatest": "Latest: {weight} kg",
+      "weightTarget": "Target: {weight} kg",
+      "weightToTarget": "To target: {delta} kg",
+      "weightEmpty": "No weight log in the last 30 days.",
+      "aiThisMonth": "AI This Month",
+      "aiTotalCost": "Total: ${cost}",
+      "aiEmpty": "No AI usage this month.",
+      "recentFeedback": "Recent Feedback",
+      "recentFeedbackEmpty": "No feedback.",
+      "sendNudge": "Send Nudge",
+      "notFound": "User not found.",
+      "memberSince": "Member for {days} days",
+      "joinDate": "Joined: {date}",
+      "timelineEvents": {
+        "lastSession": "Last sign-in",
+        "lastAi": "Last AI",
+        "lastProgressLog": "Last measurement",
+        "never": "Never"
+      }
+    },
+    "nudge": {
+      "title": "Send Nudge",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Get back on the program",
+      "messageLabel": "Message",
+      "messagePlaceholder": "Hey! We're waiting for you to keep going...",
+      "send": "Send",
+      "success": "Nudge sent.",
+      "error": "Failed to send nudge.",
+      "subjectRequired": "Subject is required.",
+      "messageRequired": "Message is required."
+    },
+    "aiUsage": {
+      "title": "AI Usage",
+      "totalCostToday": "Today",
+      "totalCostWeek": "This Week",
+      "totalCostMonth": "This Month",
+      "featureBreakdown": "By Feature",
+      "userBreakdown": "By User"
     }
   },
   "assistant": {
