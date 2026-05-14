@@ -616,6 +616,38 @@ export const sleepLogs = pgTable("sleep_logs", {
   uniqueIndex("sleep_log_user_date_idx").on(table.userId, table.logDate),
 ]);
 
+// ── Readiness Logs ──
+// Subjective daily wellness rating. Both energyRating (1=low, 5=high) and
+// painScore (1=none, 5=severe) are nullable so the form can submit either
+// one alone. Pasif readiness score is computed without this row; this table
+// only stores the *optional* subjective layer.
+export const readinessLogs = pgTable(
+  "readiness_logs",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    logDate: date("log_date").notNull(),
+    energyRating: integer("energy_rating"),
+    painScore: integer("pain_score"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("readiness_log_user_date_idx").on(t.userId, t.logDate),
+    check(
+      "readiness_energy_check",
+      sql`${t.energyRating} IS NULL OR (${t.energyRating} >= 1 AND ${t.energyRating} <= 5)`,
+    ),
+    check(
+      "readiness_pain_check",
+      sql`${t.painScore} IS NULL OR (${t.painScore} >= 1 AND ${t.painScore} <= 5)`,
+    ),
+  ],
+);
+
 // ── Audit Logs ──
 
 export const auditLogs = pgTable("audit_logs", {

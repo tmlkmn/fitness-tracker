@@ -1771,6 +1771,7 @@
       "description": "Pick which cards you want on your home screen. Preferences are stored on this device.",
       "cards": {
         "rings": { "label": "Daily Rings", "description": "Calorie, protein, and task completion rings" },
+        "readiness": { "label": "Readiness Score", "description": "How hard should I push today card" },
         "water_sleep": { "label": "Water & Sleep", "description": "Daily water and sleep widgets" },
         "macro_trend": { "label": "Macro Trend", "description": "7-day macro sparkline" },
         "stats": { "label": "Daily Summary", "description": "Workout and nutrition progress cards" },
@@ -2167,6 +2168,72 @@
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving..."
+    }
+  },
+  "readiness": {
+    "title": "Readiness",
+    "shortLabel": "Readiness",
+    "dashboardCard": {
+      "title": "Today's Readiness",
+      "passiveBadge": "Passive",
+      "fullBadge": "Full",
+      "viewDetail": "Details",
+      "scoreOf": "{score}/100"
+    },
+    "bands": {
+      "low": "Very low",
+      "moderate": "Low",
+      "good": "Good",
+      "excellent": "Excellent"
+    },
+    "recommendation": {
+      "low": "Consider rest or very light activity — don't push today.",
+      "moderate": "Drop the volume or focus on technique. Today isn't a max-effort day.",
+      "good": "Run the plan as scheduled. It's a good day.",
+      "excellent": "Cleared for hard work. Push your goals today."
+    },
+    "form": {
+      "title": "How are you feeling today?",
+      "subtitle": "Takes 5 seconds. You can update it any time.",
+      "energyLabel": "Energy today",
+      "energyLow": "Low",
+      "energyHigh": "High",
+      "painLabel": "Pain / stiffness",
+      "painNone": "None",
+      "painSevere": "Severe",
+      "notesLabel": "Notes (optional)",
+      "notesPlaceholder": "Sore muscle, mood, reason…",
+      "submit": "Update Score",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "saveError": "Save failed. Try again."
+    },
+    "entry": {
+      "promptTitle": "How are you feeling today?",
+      "promptBody": "5 seconds — personalize your readiness score.",
+      "promptCta": "Quick entry",
+      "summaryTitle": "Today's readiness",
+      "energyValue": "Energy: {value}/5",
+      "painValue": "Pain: {value}/5",
+      "edit": "Edit"
+    },
+    "breakdown": {
+      "title": "Breakdown",
+      "sleep": "Sleep",
+      "compliance": "Yesterday's compliance",
+      "water": "Water",
+      "restBonus": "Rest bonus",
+      "subjective": "How you feel",
+      "trendPenalty": "Trend",
+      "noData": "No data",
+      "outOf": "{value}/{max}"
+    },
+    "deload": {
+      "lowReadiness": "Low readiness (last 7d avg {avg}/100, {samples} days)"
+    },
+    "reminder": {
+      "title": "Log Today's Readiness",
+      "body": "How are you feeling today? 5 seconds of input improves your plan."
     }
   },
   "supplements": {

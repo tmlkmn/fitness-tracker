@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { Utensils, Dumbbell, Pill, HeartPulse } from "lucide-react";
 import { WaterTracker } from "@/components/water/water-tracker";
 import { SleepEntry } from "@/components/sleep/sleep-entry";
+import { ReadinessEntry } from "@/components/readiness/readiness-entry";
 import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
 import { getTranslations } from "next-intl/server";
 import { normalizeLocale } from "@/lib/locale";
@@ -37,7 +38,7 @@ export default async function GunPage({ params, searchParams }: PageProps) {
     tab ?? "",
   )
     ? (tab as ValidTab)
-    : focus === "sleep"
+    : focus === "sleep" || focus === "readiness"
       ? "wellness"
       : "meals";
 
@@ -141,6 +142,11 @@ export default async function GunPage({ params, searchParams }: PageProps) {
                     autoOpen={focus === "sleep"}
                   />
                 </div>
+                {!isPast && (
+                  <div id="readiness" className="scroll-mt-20">
+                    <ReadinessEntry autoOpen={focus === "readiness"} />
+                  </div>
+                )}
               </>
             )}
           </TabsContent>

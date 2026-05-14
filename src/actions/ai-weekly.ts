@@ -131,6 +131,30 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
     if (parts.length > 0) lines.push(`Uyku (son ${recentSleep.length} gün): ${parts.join(", ")}`);
   }
 
+  // ─── 2b. Readiness (subjective recovery state) ──
+  try {
+    const { getReadiness7dAverage, computeTodayReadiness } = await import(
+      "@/actions/readiness"
+    );
+    const [readinessAvg, today] = await Promise.all([
+      getReadiness7dAverage(),
+      computeTodayReadiness(),
+    ]);
+    const readinessParts: string[] = [];
+    readinessParts.push(`Bugün: ${today.score}/100 (${today.band})`);
+    if (readinessAvg.average != null && readinessAvg.samples >= 3) {
+      readinessParts.push(
+        `son 7g ort: ${Math.round(readinessAvg.average)}/100 (${readinessAvg.samples} gün)`,
+      );
+    }
+    if (today.hasSubjective) {
+      readinessParts.push("kullanıcı subjektif input girdi");
+    }
+    lines.push(`Hazırlık skoru — ${readinessParts.join(", ")}`);
+  } catch {
+    // readiness data optional — silently skip if anything fails
+  }
+
   // ─── 3. Previous weeks' programs (skip workout details for nutrition-only) ──
   if (user?.serviceType !== "nutrition") {
     const prevWeeks = await db

@@ -1772,6 +1772,7 @@
       "description": "Ana sayfada görmek istediğin kartları seç. Tercihler bu cihazda saklanır.",
       "cards": {
         "rings": { "label": "Günlük Halkalar", "description": "Kalori, protein ve görev tamamlama halkaları" },
+        "readiness": { "label": "Hazırlık Skoru", "description": "Bugün ne kadar zorlamalıyım kartı" },
         "water_sleep": { "label": "Su ve Uyku", "description": "Günlük su ve uyku widget'ları" },
         "macro_trend": { "label": "Makro Trendi", "description": "Son 7 gün makro sparkline" },
         "stats": { "label": "Günlük Özet", "description": "Antrenman ve beslenme ilerleme kartları" },
@@ -2168,6 +2169,72 @@
       "cancel": "İptal",
       "save": "Kaydet",
       "saving": "Kaydediliyor..."
+    }
+  },
+  "readiness": {
+    "title": "Hazırlık",
+    "shortLabel": "Hazırlık",
+    "dashboardCard": {
+      "title": "Bugünkü Hazırlık",
+      "passiveBadge": "Pasif",
+      "fullBadge": "Tam",
+      "viewDetail": "Detay",
+      "scoreOf": "{score}/100"
+    },
+    "bands": {
+      "low": "Çok düşük",
+      "moderate": "Düşük",
+      "good": "İyi",
+      "excellent": "Mükemmel"
+    },
+    "recommendation": {
+      "low": "Rest veya çok hafif aktiviteyi düşün — bugün zorlama.",
+      "moderate": "Hacmi azalt veya teknik odaklı çalış. Tam yüklenme bugün için değil.",
+      "good": "Planı normal uygula. Bugün iyi bir gün.",
+      "excellent": "Yoğun çalışmaya uygun. Hedeflerini bugün zorla."
+    },
+    "form": {
+      "title": "Bugün nasıl hissediyorsun?",
+      "subtitle": "5 saniye sürer. İstediğin zaman güncelleyebilirsin.",
+      "energyLabel": "Enerji bugün",
+      "energyLow": "Düşük",
+      "energyHigh": "Yüksek",
+      "painLabel": "Ağrı / tutukluk",
+      "painNone": "Hiç yok",
+      "painSevere": "Şiddetli",
+      "notesLabel": "Not (opsiyonel)",
+      "notesPlaceholder": "Tutulan kas, mood, sebep…",
+      "submit": "Skoru Güncelle",
+      "saving": "Kaydediliyor…",
+      "cancel": "İptal",
+      "saveError": "Kayıt başarısız oldu. Tekrar dene."
+    },
+    "entry": {
+      "promptTitle": "Bugün nasıl hissediyorsun?",
+      "promptBody": "5 saniye — hazırlık skorunu kişiselleştir.",
+      "promptCta": "Hızlı giriş",
+      "summaryTitle": "Bugünkü hazırlık",
+      "energyValue": "Enerji: {value}/5",
+      "painValue": "Ağrı: {value}/5",
+      "edit": "Düzenle"
+    },
+    "breakdown": {
+      "title": "Detay",
+      "sleep": "Uyku",
+      "compliance": "Dünkü uyum",
+      "water": "Su",
+      "restBonus": "Rest bonusu",
+      "subjective": "Hissin",
+      "trendPenalty": "Trend",
+      "noData": "Veri yok",
+      "outOf": "{value}/{max}"
+    },
+    "deload": {
+      "lowReadiness": "Düşük hazırlık (son 7g ort. {avg}/100, {samples} gün)"
+    },
+    "reminder": {
+      "title": "Bugünkü Hazırlığını Logla",
+      "body": "Bugün nasıl hissediyorsun? 5 saniyelik girdi hafta planını iyileştirir."
     }
   },
   "supplements": {

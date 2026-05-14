@@ -16,6 +16,20 @@ import { normalizeLocale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
 import { getReminderTemplateText, isReminderTemplateKey } from "@/lib/reminder-templates";
 
+async function getTodayDailyPlanIdForUser(
+  userId: string,
+): Promise<number | null> {
+  const { getTurkeyTodayStr } = await import("@/lib/utils");
+  const todayStr = getTurkeyTodayStr();
+  const [row] = await db
+    .select({ id: dailyPlans.id })
+    .from(dailyPlans)
+    .innerJoin(weeklyPlans, eq(weeklyPlans.id, dailyPlans.weeklyPlanId))
+    .where(and(eq(weeklyPlans.userId, userId), eq(dailyPlans.date, todayStr)))
+    .limit(1);
+  return row?.id ?? null;
+}
+
 function getCurrentTimeInTz(timezone: string): { hhmm: string; dayOfWeek: number; dateStr: string } {
   const now = new Date();
   const parts = new Intl.DateTimeFormat("sv-SE", {
@@ -255,12 +269,25 @@ async function fireReminder(reminder: {
     body = text.body;
   }
 
+  // Readiness template routes the user straight to today's wellness tab
+  // with the form auto-open via ?focus=readiness, so logging takes one tap.
+  let link = "/ayarlar";
+  if (reminder.templateKey === "readiness") {
+    const locale = normalizeLocale(reminder.userLocale);
+    const today = await getTodayDailyPlanIdForUser(reminder.userId);
+    if (today != null) {
+      link = locale === "en"
+        ? `/en/day/${today}?focus=readiness`
+        : `/tr/gun/${today}?focus=readiness`;
+    }
+  }
+
   await sendNotification({
     userId: reminder.userId,
     type: `reminder_${reminder.type}`,
     title,
     body,
-    link: "/ayarlar",
+    link,
     skipEmail: reminder.skipEmail ?? true,
   });
 

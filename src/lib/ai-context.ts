@@ -391,6 +391,31 @@ export async function buildUserContext(
     }
   }
 
+  // Readiness — subjective recovery state (skip in slim mode above).
+  try {
+    const { getReadiness7dAverage, computeTodayReadiness } = await import(
+      "@/actions/readiness"
+    );
+    const [readinessAvg, today] = await Promise.all([
+      getReadiness7dAverage(),
+      computeTodayReadiness(),
+    ]);
+    const isEn = locale === "en";
+    const subjNote = today.hasSubjective
+      ? isEn ? " (user-entered)" : " (kullanıcı girdi)"
+      : "";
+    const avgNote =
+      readinessAvg.average != null && readinessAvg.samples >= 3
+        ? isEn
+          ? `, last 7d avg: ${Math.round(readinessAvg.average)}/100 (${readinessAvg.samples} days)`
+          : `, son 7g ort: ${Math.round(readinessAvg.average)}/100 (${readinessAvg.samples} gün)`
+        : "";
+    const lead = isEn ? "Readiness — today" : "Hazırlık — bugün";
+    lines.push(`${lead}: ${today.score}/100${subjNote}${avgNote}`);
+  } catch {
+    // optional — skip on any failure
+  }
+
   const result = lines.join("\n");
   contextCache.set(cacheKey, { text: result, timestamp: Date.now() });
   return result;

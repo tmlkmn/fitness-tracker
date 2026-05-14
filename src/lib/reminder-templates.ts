@@ -6,7 +6,8 @@ export type ReminderTemplateKey =
   | "posture"
   | "supplement"
   | "sleep"
-  | "steps";
+  | "steps"
+  | "readiness";
 
 export interface ReminderTemplate {
   key: ReminderTemplateKey;
@@ -67,6 +68,12 @@ export const REMINDER_TEMPLATES: ReminderTemplate[] = [
     defaultIntervalStart: "09:00",
     defaultIntervalEnd: "23:00",
   },
+  {
+    key: "readiness",
+    icon: "Activity",
+    defaultTime: "20:00",
+    defaultRecurrence: "daily",
+  },
 ];
 
 const REMINDER_TEMPLATE_TEXT: Record<
@@ -96,6 +103,16 @@ const REMINDER_TEMPLATE_TEXT: Record<
   steps: {
     tr: { title: "Yürüyüş Molası", body: "Kalk ve biraz yürü, 10 dk hareket et." },
     en: { title: "Walk Break", body: "Get up and walk for 10 minutes." },
+  },
+  readiness: {
+    tr: {
+      title: "Bugünkü Hazırlığını Logla",
+      body: "Bugün nasıl hissediyorsun? 5 saniyelik girdi hafta planını iyileştirir.",
+    },
+    en: {
+      title: "Log Today's Readiness",
+      body: "How are you feeling today? 5 seconds of input improves your plan.",
+    },
   },
 };
 

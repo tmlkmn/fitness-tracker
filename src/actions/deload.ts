@@ -15,6 +15,7 @@ import {
   evaluateDeloadCandidacy,
   type DeloadRecommendation,
 } from "@/lib/deload-policy";
+import { getReadiness7dAverage } from "@/actions/readiness";
 
 const RECENT_PHASES_LIMIT = 6;
 const SLEEP_LOOKBACK_DAYS = 7;
@@ -45,7 +46,7 @@ export async function getDeloadRecommendation(
   const monday = getMondayStr(dateStr);
   const sleepFloor = daysAgoStr(monday, SLEEP_LOOKBACK_DAYS);
 
-  const [userRow, recentPlans, recentSleep] = await Promise.all([
+  const [userRow, recentPlans, recentSleep, readiness7d] = await Promise.all([
     db
       .select({ fitnessLevel: users.fitnessLevel })
       .from(users)
@@ -75,6 +76,7 @@ export async function getDeloadRecommendation(
           lt(sleepLogs.logDate, monday),
         ),
       ),
+    getReadiness7dAverage(),
   ]);
 
   const fitnessLevel = userRow?.fitnessLevel ?? null;
@@ -117,5 +119,6 @@ export async function getDeloadRecommendation(
     recentPhases,
     sleep7d: { qualityAvg, durationAvg, samples: sleepSamples },
     lastWeekCompletionRate,
+    readiness7d,
   });
 }

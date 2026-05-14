@@ -1,5 +1,6 @@
 export const DASHBOARD_CARDS = [
   { key: "rings", label: "Günlük Halkalar", description: "Kalori, protein ve görev tamamlama halkaları" },
+  { key: "readiness", label: "Hazırlık Skoru", description: "Bugün ne kadar zorlamalıyım kartı" },
   { key: "water_sleep", label: "Su ve Uyku", description: "Günlük su ve uyku widget'ları" },
   { key: "macro_trend", label: "Makro Trendi", description: "Son 7 gün makro sparkline" },
   { key: "stats", label: "Günlük Özet", description: "Antrenman ve beslenme ilerleme kartları" },

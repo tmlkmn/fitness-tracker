@@ -26,6 +26,7 @@ export function DeloadRecommendationBanner({
 }: DeloadRecommendationBannerProps) {
   const t = useTranslations("calendar.aiWeekly");
   const tBanner = useTranslations("calendar.aiWeekly.deloadBanner");
+  const tReadiness = useTranslations("readiness.deload");
 
   if (recommendation.severity === "none") return null;
 
@@ -53,6 +54,14 @@ export function DeloadRecommendationBanner({
   }
   if (recommendation.reasons.includes("completion")) {
     reasonLines.push(t("deloadReasonCompletion"));
+  }
+  if (recommendation.reasons.includes("low_readiness")) {
+    reasonLines.push(
+      tReadiness("lowReadiness", {
+        avg: Math.round(recommendation.readiness7d.average ?? 0),
+        samples: recommendation.readiness7d.samples,
+      }),
+    );
   }
 
   return (

@@ -21,6 +21,11 @@ export interface DeloadEvaluationInput {
   };
   /** 0..1; null when no exercises tracked last week. */
   lastWeekCompletionRate: number | null;
+  /** 0..100 average readiness across the last 7d; null = insufficient data. */
+  readiness7d: {
+    average: number | null;
+    samples: number;
+  };
 }
 
 export type DeloadSeverity = "hard" | "soft" | "none";
@@ -30,6 +35,7 @@ export type DeloadReasonCode =
   | "sleep_quality"
   | "sleep_duration"
   | "completion"
+  | "low_readiness"
   | "fresh_start"
   | "just_deloaded";
 
@@ -39,12 +45,19 @@ export interface DeloadRecommendation {
   reasons: DeloadReasonCode[];
   consecutiveTrainingWeeks: number;
   cadence: number;
+  /** Surfaced so the banner can render the actual avg/samples. */
+  readiness7d: {
+    average: number | null;
+    samples: number;
+  };
 }
 
 const SLEEP_QUALITY_THRESHOLD = 3.0;
 const SLEEP_DURATION_THRESHOLD_MIN = 390;
 const COMPLETION_THRESHOLD = 0.6;
 const SLEEP_MIN_SAMPLES = 4;
+const READINESS_FLOOR = 50;
+const READINESS_MIN_SAMPLES = 4;
 const DELOAD_PHASE_TAG = "deload";
 
 /**
@@ -90,6 +103,7 @@ export function evaluateDeloadCandidacy(input: DeloadEvaluationInput): DeloadRec
       reasons: ["fresh_start"],
       consecutiveTrainingWeeks,
       cadence,
+      readiness7d: input.readiness7d,
     };
   }
 
@@ -100,6 +114,7 @@ export function evaluateDeloadCandidacy(input: DeloadEvaluationInput): DeloadRec
       reasons: ["just_deloaded"],
       consecutiveTrainingWeeks,
       cadence,
+      readiness7d: input.readiness7d,
     };
   }
 
@@ -129,6 +144,13 @@ export function evaluateDeloadCandidacy(input: DeloadEvaluationInput): DeloadRec
   ) {
     reasons.push("completion");
   }
+  if (
+    input.readiness7d.samples >= READINESS_MIN_SAMPLES &&
+    input.readiness7d.average != null &&
+    input.readiness7d.average < READINESS_FLOOR
+  ) {
+    reasons.push("low_readiness");
+  }
 
   const hasHard = reasons.includes("cadence");
   const softReasons = reasons.filter((r) => r !== "cadence");
@@ -144,7 +166,14 @@ export function evaluateDeloadCandidacy(input: DeloadEvaluationInput): DeloadRec
     recommended = true;
   }
 
-  return { recommended, severity, reasons, consecutiveTrainingWeeks, cadence };
+  return {
+    recommended,
+    severity,
+    reasons,
+    consecutiveTrainingWeeks,
+    cadence,
+    readiness7d: input.readiness7d,
+  };
 }
 
 /**
