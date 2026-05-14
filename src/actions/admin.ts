@@ -55,7 +55,7 @@ export async function inviteUser(
     },
   });
 
-  await sendInviteEmail(email, tempPassword, locale);
+  await sendInviteEmail(email, name, tempPassword, locale);
 
   // Send welcome in-app notification (skip email since invite email already sent)
   const [newUser] = await db
@@ -142,7 +142,7 @@ export async function resendInvite(userId: string) {
     .set({ mustChangePassword: true, inviteExpiresAt, isApproved: false })
     .where(eq(users.id, userId));
 
-  await sendInviteEmail(user.email, tempPassword, normalizeLocale(user.locale));
+  await sendInviteEmail(user.email, user.name, tempPassword, normalizeLocale(user.locale));
   logAudit({ adminId: admin.id, action: "user.resend_invite", entityType: "user", entityId: userId, details: { email: user.email } }).catch(() => {});
   revalidatePath("/admin");
   invalidateAdminOpsCache();
