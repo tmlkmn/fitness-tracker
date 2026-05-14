@@ -77,7 +77,7 @@ export async function createReminderFromTemplate(templateKey: string) {
       .set({ isEnabled: true })
       .where(eq(reminders.id, existing[0].id));
   } else {
-    const text = getReminderTemplateText(template.key, getUserLocale(user));
+    const text = await getReminderTemplateText(template.key, getUserLocale(user));
     await db.insert(reminders).values({
       userId: user.id,
       type: "custom",

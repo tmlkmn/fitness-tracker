@@ -261,7 +261,7 @@ async function fireReminder(reminder: {
   let title = reminder.title;
   let body = reminder.body ?? reminder.title;
   if (reminder.templateKey && isReminderTemplateKey(reminder.templateKey)) {
-    const text = getReminderTemplateText(
+    const text = await getReminderTemplateText(
       reminder.templateKey,
       normalizeLocale(reminder.userLocale),
     );

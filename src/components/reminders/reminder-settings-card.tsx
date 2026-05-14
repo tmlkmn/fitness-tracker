@@ -43,15 +43,14 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from "@/hooks/use-notification-preferences";
-import { REMINDER_TEMPLATES, getReminderTemplateText } from "@/lib/reminder-templates";
+import { REMINDER_TEMPLATES } from "@/lib/reminder-templates";
 import { ReminderItem } from "./reminder-item";
 import { AddReminderDialog } from "./add-reminder-dialog";
-import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
+import { useTranslations } from "next-intl";
 
 export function ReminderSettingsCard() {
   const t = useTranslations("settings.remindersCard");
-  const locale = useLocale() as Locale;
+  const tTpl = useTranslations("reminderTemplates");
   const { data: allReminders, isLoading: remindersLoading } = useReminders();
   const { data: prefs } = useNotificationPreferences();
   const updatePrefs = useUpdateNotificationPreferences();
@@ -252,7 +251,7 @@ export function ReminderSettingsCard() {
                 const existingReminder = templateReminders.find(
                   (r) => r.templateKey === tpl.key,
                 );
-                const text = getReminderTemplateText(tpl.key, locale);
+                const text = { title: tTpl(`${tpl.key}.title`), body: tTpl(`${tpl.key}.body`) };
                 const Icon = TEMPLATE_ICONS[tpl.icon] ?? Clock;
                 let scheduleLabel = "";
                 if (isActive && existingReminder) {

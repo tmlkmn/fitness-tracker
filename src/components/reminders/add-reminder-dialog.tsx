@@ -21,16 +21,15 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useCreateReminder } from "@/hooks/use-reminders";
-import { REMINDER_TEMPLATES, getReminderTemplateText, type ReminderTemplate } from "@/lib/reminder-templates";
+import { REMINDER_TEMPLATES, type ReminderTemplate } from "@/lib/reminder-templates";
 import { DynamicIcon } from "@/lib/icon-map";
-import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
+import { useTranslations } from "next-intl";
 
 const DAY_VALUES = [1, 2, 3, 4, 5, 6, 0] as const;
 
 export function AddReminderDialog() {
   const t = useTranslations("settings.reminderDialog");
-  const locale = useLocale() as Locale;
+  const tTpl = useTranslations("reminderTemplates");
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -77,7 +76,7 @@ export function AddReminderDialog() {
   };
 
   const applyTemplate = (tpl: ReminderTemplate) => {
-    const text = getReminderTemplateText(tpl.key, locale);
+    const text = { title: tTpl(`${tpl.key}.title`), body: tTpl(`${tpl.key}.body`) };
     setTitle(text.title);
     setBody(text.body);
     setRecurrence(tpl.defaultRecurrence);
@@ -112,7 +111,7 @@ export function AddReminderDialog() {
             <Label className="text-xs text-muted-foreground">{t("quickTemplates")}</Label>
             <div className="flex flex-wrap gap-1.5">
               {REMINDER_TEMPLATES.map((tpl) => {
-                const text = getReminderTemplateText(tpl.key, locale);
+                const text = { title: tTpl(`${tpl.key}.title`), body: tTpl(`${tpl.key}.body`) };
                 return (
                   <button
                     key={tpl.key}

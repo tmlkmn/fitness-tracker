@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/locale";
+import { getServerTranslator } from "@/lib/i18n-server";
 
 export type ReminderTemplateKey =
   | "water"
@@ -8,6 +9,16 @@ export type ReminderTemplateKey =
   | "sleep"
   | "steps"
   | "readiness";
+
+const REMINDER_TEMPLATE_KEYS: readonly ReminderTemplateKey[] = [
+  "water",
+  "stretching",
+  "posture",
+  "supplement",
+  "sleep",
+  "steps",
+  "readiness",
+];
 
 export interface ReminderTemplate {
   key: ReminderTemplateKey;
@@ -76,53 +87,22 @@ export const REMINDER_TEMPLATES: ReminderTemplate[] = [
   },
 ];
 
-const REMINDER_TEMPLATE_TEXT: Record<
-  ReminderTemplateKey,
-  Record<Locale, { title: string; body: string }>
-> = {
-  water: {
-    tr: { title: "Su İç", body: "Bir bardak su içmeyi unutma!" },
-    en: { title: "Drink Water", body: "Don't forget to drink a glass of water!" },
-  },
-  stretching: {
-    tr: { title: "Esneme Yap", body: "Kısa bir esneme molası ver, kaslarını gevşet." },
-    en: { title: "Stretch", body: "Take a short stretching break and relax your muscles." },
-  },
-  posture: {
-    tr: { title: "Duruş Kontrolü", body: "Oturuşunu kontrol et, sırtını düzelt." },
-    en: { title: "Posture Check", body: "Check your posture and straighten your back." },
-  },
-  supplement: {
-    tr: { title: "Supplement Zamanı", body: "Günlük supplementlerini almayı unutma." },
-    en: { title: "Supplement Time", body: "Don't forget your daily supplements." },
-  },
-  sleep: {
-    tr: { title: "Uyku Hazırlığı", body: "Yatmadan 30 dk önce ekranları kapat." },
-    en: { title: "Sleep Prep", body: "Turn off screens 30 minutes before bed." },
-  },
-  steps: {
-    tr: { title: "Yürüyüş Molası", body: "Kalk ve biraz yürü, 10 dk hareket et." },
-    en: { title: "Walk Break", body: "Get up and walk for 10 minutes." },
-  },
-  readiness: {
-    tr: {
-      title: "Bugünkü Hazırlığını Logla",
-      body: "Bugün nasıl hissediyorsun? 5 saniyelik girdi hafta planını iyileştirir.",
-    },
-    en: {
-      title: "Log Today's Readiness",
-      body: "How are you feeling today? 5 seconds of input improves your plan.",
-    },
-  },
-};
-
 export function isReminderTemplateKey(value: unknown): value is ReminderTemplateKey {
-  return typeof value === "string" && value in REMINDER_TEMPLATE_TEXT;
+  return (
+    typeof value === "string" &&
+    (REMINDER_TEMPLATE_KEYS as readonly string[]).includes(value)
+  );
 }
 
-export function getReminderTemplateText(
+/**
+ * Server-only: read template title/body from i18n. Client components should
+ * call `useTranslations("reminderTemplates")` and read `${key}.title` /
+ * `${key}.body` directly — that avoids an async hop in render.
+ */
+export async function getReminderTemplateText(
   key: ReminderTemplateKey,
   locale: Locale,
-): { title: string; body: string } {
-  return REMINDER_TEMPLATE_TEXT[key][locale];
+): Promise<{ title: string; body: string }> {
+  const t = await getServerTranslator(locale, "reminderTemplates");
+  return { title: t(`${key}.title`), body: t(`${key}.body`) };
 }
