@@ -7,5 +7,6 @@ export function useSupplementsForDay(dailyPlanId: number) {
     queryFn: () => getSupplementsForDailyPlan(dailyPlanId),
     enabled: !!dailyPlanId,
     staleTime: 60_000,
+    meta: { persist: true },
   });
 }

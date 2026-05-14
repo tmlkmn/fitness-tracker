@@ -21,7 +21,8 @@
     "networkStatus": {
       "reconnected": "Connection restored",
       "offline": "You're offline",
-      "queued": "{count} pending",
+      "queued": "{count} waiting to sync",
+      "syncing": "Syncing {count} change(s)…",
       "retry": "Retry"
     },
     "pwa": {

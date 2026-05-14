@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { getMealsByDay, toggleMealCompleted } from "@/actions/meals";
-import { hapticSuccess, hapticTap, hapticError } from "@/lib/haptics";
+import { getMealsByDay } from "@/actions/meals";
+import { hapticSuccess, hapticTap } from "@/lib/haptics";
+import { enqueueOutbox } from "@/lib/outbox";
+import { drainOutbox } from "@/lib/outbox-drain";
 
 type Meal = Awaited<ReturnType<typeof getMealsByDay>>[number];
 
@@ -10,19 +12,26 @@ export function useMeals(dailyPlanId: number) {
     queryKey: ["meals.byDay", dailyPlanId],
     queryFn: () => getMealsByDay(dailyPlanId),
     enabled: !!dailyPlanId,
+    meta: { persist: true },
   });
 }
 
 export function useToggleMeal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       isCompleted,
     }: {
       id: number;
       isCompleted: boolean;
-    }) => toggleMealCompleted(id, isCompleted),
+    }) => {
+      // Outbox-first: always enqueue, never throw on network.
+      // The drainer handles online replay; optimistic UI stays intact regardless.
+      await enqueueOutbox("meal", { id, isCompleted });
+      void drainOutbox(qc);
+      return { queued: true } as const;
+    },
     onMutate: async ({ id, isCompleted }) => {
       if (isCompleted) hapticSuccess();
       else hapticTap();
@@ -32,21 +41,12 @@ export function useToggleMeal() {
       for (const [key, data] of queries) {
         snapshots.push([key, data]);
         if (data) {
-          qc.setQueryData<Meal[]>(key as string[], data.map((m) =>
+          qc.setQueryData<Meal[]>(key, data.map((m) =>
             m.id === id ? { ...m, isCompleted } : m
           ));
         }
       }
       return { snapshots };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.snapshots) {
-        for (const [key, data] of context.snapshots) {
-          qc.setQueryData(key, data);
-        }
-      }
-      hapticError();
-      toast.error("Öğün durumu güncellenemedi");
     },
     onSuccess: (_data, variables, context) => {
       const { id, isCompleted } = variables;
@@ -62,21 +62,16 @@ export function useToggleMeal() {
         action: {
           label: "Geri Al",
           onClick: () => {
-            toggleMealCompleted(id, !isCompleted)
-              .then(() => {
+            void enqueueOutbox("meal", { id, isCompleted: !isCompleted }).then(
+              () => {
+                void drainOutbox(qc);
                 qc.invalidateQueries({ queryKey: ["meals.byDay"] });
                 qc.invalidateQueries({ queryKey: ["today-dashboard"] });
-              })
-              .catch(() => {
-                toast.error("Geri alma başarısız");
-              });
+              },
+            );
           },
         },
       });
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
-      qc.invalidateQueries({ queryKey: ["today-dashboard"] });
     },
   });
 }

@@ -21,7 +21,8 @@
     "networkStatus": {
       "reconnected": "Bağlantı yeniden sağlandı",
       "offline": "Çevrimdışısın",
-      "queued": "{count} bekliyor",
+      "queued": "{count} kayıt senkron bekliyor",
+      "syncing": "{count} kayıt senkronize ediliyor…",
       "retry": "Tekrar Dene"
     },
     "pwa": {

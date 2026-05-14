@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { getExercisesByDay, toggleExerciseCompleted } from "@/actions/exercises";
-import { hapticSuccess, hapticError, hapticTap } from "@/lib/haptics";
+import { getExercisesByDay } from "@/actions/exercises";
+import { hapticSuccess, hapticTap } from "@/lib/haptics";
+import { enqueueOutbox } from "@/lib/outbox";
+import { drainOutbox } from "@/lib/outbox-drain";
 
 type Exercise = Awaited<ReturnType<typeof getExercisesByDay>>[number];
 
@@ -10,44 +12,39 @@ export function useExercises(dailyPlanId: number) {
     queryKey: ["exercises", dailyPlanId],
     queryFn: () => getExercisesByDay(dailyPlanId),
     enabled: !!dailyPlanId,
+    meta: { persist: true },
   });
 }
 
 export function useToggleExercise() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       isCompleted,
     }: {
       id: number;
       isCompleted: boolean;
-    }) => toggleExerciseCompleted(id, isCompleted),
+    }) => {
+      await enqueueOutbox("exercise", { id, isCompleted });
+      void drainOutbox(qc);
+      return { queued: true } as const;
+    },
     onMutate: async ({ id, isCompleted }) => {
       if (isCompleted) hapticSuccess();
       else hapticTap();
       await qc.cancelQueries({ queryKey: ["exercises"] });
-      // Optimistically update all exercise query caches
       const queries = qc.getQueriesData<Exercise[]>({ queryKey: ["exercises"] });
       const snapshots: Array<[readonly unknown[], Exercise[] | undefined]> = [];
       for (const [key, data] of queries) {
         snapshots.push([key, data]);
         if (data) {
-          qc.setQueryData<Exercise[]>(key as string[], data.map((e) =>
+          qc.setQueryData<Exercise[]>(key, data.map((e) =>
             e.id === id ? { ...e, isCompleted } : e
           ));
         }
       }
       return { snapshots };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.snapshots) {
-        for (const [key, data] of context.snapshots) {
-          qc.setQueryData(key, data);
-        }
-      }
-      hapticError();
-      toast.error("Egzersiz durumu güncellenemedi");
     },
     onSuccess: (_data, variables, context) => {
       const { id, isCompleted } = variables;
@@ -63,21 +60,17 @@ export function useToggleExercise() {
         action: {
           label: "Geri Al",
           onClick: () => {
-            toggleExerciseCompleted(id, !isCompleted)
-              .then(() => {
-                qc.invalidateQueries({ queryKey: ["exercises"] });
-                qc.invalidateQueries({ queryKey: ["today-dashboard"] });
-              })
-              .catch(() => {
-                toast.error("Geri alma başarısız");
-              });
+            void enqueueOutbox("exercise", {
+              id,
+              isCompleted: !isCompleted,
+            }).then(() => {
+              void drainOutbox(qc);
+              qc.invalidateQueries({ queryKey: ["exercises"] });
+              qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+            });
           },
         },
       });
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["exercises"] });
-      qc.invalidateQueries({ queryKey: ["today-dashboard"] });
     },
   });
 }

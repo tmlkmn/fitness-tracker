@@ -1,6 +1,6 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { NetworkOnly, Serwist } from "serwist";
+import { BackgroundSyncPlugin, NetworkOnly, Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -19,6 +19,14 @@ const filteredCache = defaultCache.filter((entry) => {
   return true;
 });
 
+// Background Sync queue for offline toggle replays. When the SW catches a
+// failed POST to /api/sync/*, it stashes the request in IndexedDB and retries
+// on the browser's `sync` event (Chrome) or, on iOS Safari, when the page
+// re-runs the in-page drainer. State-based idempotency makes replay safe.
+const syncQueuePlugin = new BackgroundSyncPlugin("fitmusc-outbox", {
+  maxRetentionTime: 24 * 60, // 24 hours, in minutes
+});
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -34,6 +42,11 @@ const serwist = new Serwist({
     {
       matcher: /\/giris/,
       handler: new NetworkOnly(),
+    },
+    {
+      matcher: /\/api\/sync\/.*/,
+      method: "POST",
+      handler: new NetworkOnly({ plugins: [syncQueuePlugin] }),
     },
     ...filteredCache,
   ],

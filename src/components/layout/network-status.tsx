@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { WifiOff, Wifi, RefreshCw } from "lucide-react";
-import { useIsFetching, useIsMutating, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { useOutboxCount } from "@/hooks/use-outbox";
+import { drainOutbox } from "@/lib/outbox-drain";
 
 export function NetworkStatus() {
   const t = useTranslations("layout.networkStatus");
@@ -12,8 +14,7 @@ export function NetworkStatus() {
   const wasOfflineRef = useRef(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const qc = useQueryClient();
-  const fetching = useIsFetching();
-  const mutating = useIsMutating();
+  const queuedCount = useOutboxCount();
 
   useEffect(() => {
     let cancelled = false;
@@ -78,27 +79,38 @@ export function NetworkStatus() {
     };
   }, []);
 
-  if (isOnline && !showReconnected) return null;
+  // Show the banner if: offline, OR online with pending outbox, OR just reconnected
+  const shouldShow = !isOnline || queuedCount > 0 || showReconnected;
+  if (!shouldShow) return null;
 
-  const queuedCount = fetching + mutating;
+  const bannerKind = !isOnline ? "offline" : queuedCount > 0 ? "syncing" : "ok";
 
   return (
     <div
       role="status"
       aria-live="polite"
       className={`fixed left-0 right-0 z-100 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium shadow-md animate-in slide-in-from-top duration-200 ${
-        isOnline
+        bannerKind === "ok"
           ? "bg-success text-success-foreground"
-          : "bg-destructive text-destructive-foreground"
+          : bannerKind === "syncing"
+            ? "bg-amber-500 text-black"
+            : "bg-destructive text-destructive-foreground"
       }`}
       style={{ top: "env(safe-area-inset-top, 0px)" }}
     >
-      {isOnline ? (
+      {bannerKind === "ok" && (
         <>
           <Wifi className="h-4 w-4" />
           {t("reconnected")}
         </>
-      ) : (
+      )}
+      {bannerKind === "syncing" && (
+        <>
+          <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />
+          <span>{t("syncing", { count: queuedCount })}</span>
+        </>
+      )}
+      {bannerKind === "offline" && (
         <>
           <WifiOff className="h-4 w-4 shrink-0" />
           <span>{t("offline")}</span>
@@ -109,7 +121,7 @@ export function NetworkStatus() {
           )}
           <button
             type="button"
-            onClick={() => qc.refetchQueries()}
+            onClick={() => void drainOutbox(qc)}
             className="ml-2 inline-flex items-center gap-1 rounded-md bg-white/15 hover:bg-white/25 px-2 py-0.5 text-xs font-medium transition-colors"
           >
             <RefreshCw className="h-3 w-3" />
