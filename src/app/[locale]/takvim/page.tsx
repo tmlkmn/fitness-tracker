@@ -456,18 +456,24 @@ export default function TakvimPage() {
             readOnly={isPastDay}
           />
         ) : (
-          <div className="text-center py-8 space-y-3">
+          <div className="text-center py-6 space-y-4">
             <Dumbbell className="h-12 w-12 mx-auto opacity-20 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              {t("noPlanForDate")}
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">
+                {t("noPlanForDate")}
+              </p>
+              {!isPastDay && !isMonthBlocked && (
+                <p className="text-xs text-muted-foreground">
+                  {t("emptyStateAiHint")}
+                </p>
+              )}
+            </div>
             {!isPastDay && (
-              <div className="flex gap-2 justify-center">
+              <div className="flex flex-col items-center gap-2">
                 {!isMonthBlocked && (
                   <Button
-                    variant="outline"
                     size="sm"
-                    className="gap-1.5"
+                    className="gap-1.5 min-w-50 bg-linear-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                     onClick={() => handleWeeklyModalOpenChange(true)}
                     disabled={hasEmptyWeekGap}
                   >
@@ -476,9 +482,9 @@ export default function TakvimPage() {
                   </Button>
                 )}
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="gap-1.5"
+                  className="gap-1.5 text-muted-foreground hover:text-foreground"
                   onClick={handleCreatePlanForDate}
                   disabled={creatingPlan || hasEmptyWeekGap}
                 >

@@ -370,6 +370,7 @@
     "emptyWeekGapDescription": "First create plans for the weeks below:",
     "weekSuffix": "week",
     "noPlanForDate": "No plan found for this date.",
+    "emptyStateAiHint": "AI generates a full weekly plan in 30 seconds — tailored to your macro targets and fitness level.",
     "manualAdd": "Add Manually",
     "creating": "Creating...",
     "aiUnavailable": "AI feature is currently unavailable. Please try again later.",

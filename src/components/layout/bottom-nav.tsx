@@ -33,7 +33,7 @@ const navItems = [
   },
   {
     href: "/ayarlar" as const,
-    matchPaths: ["/ayarlar", "/alisveris"],
+    matchPaths: ["/ayarlar"],
     icon: Settings,
     labelKey: "settings" as const,
   },

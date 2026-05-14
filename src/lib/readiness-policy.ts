@@ -174,7 +174,7 @@ function scoreTrendPenalty(trend: ReadinessInput["trend7d"]): number {
   return trend.current < trend.previous ? TREND_PENALTY : 0;
 }
 
-function bandOf(score: number): ReadinessBand {
+export function bandOf(score: number): ReadinessBand {
   if (score < 40) return "low";
   if (score < 65) return "moderate";
   if (score < 85) return "good";

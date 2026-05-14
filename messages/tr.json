@@ -370,6 +370,7 @@
     "emptyWeekGapDescription": "Önce aşağıdaki haftaların planlarını oluşturun:",
     "weekSuffix": "haftası",
     "noPlanForDate": "Bu tarih için plan bulunamadı.",
+    "emptyStateAiHint": "AI 30 saniyede tam haftalık plan üretir — makro hedeflerine ve fitness seviyene göre.",
     "manualAdd": "Manuel Ekle",
     "creating": "Oluşturuluyor...",
     "aiUnavailable": "AI özelliği şu anda kullanılamıyor. Daha sonra tekrar deneyin.",

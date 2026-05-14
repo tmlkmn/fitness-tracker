@@ -1,9 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Zap, Moon, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 import type { DeloadRecommendation } from "@/lib/deload-policy";
+import { bandOf, readinessBandColor } from "@/lib/readiness-policy";
 
 interface DeloadRecommendationBannerProps {
   recommendation: DeloadRecommendation;
@@ -40,28 +42,50 @@ export function DeloadRecommendationBanner({
     ? "deloadRecommendedHardTitle"
     : "deloadRecommendedSoftTitle";
 
-  const reasonLines: string[] = [];
+  const reasonLines: Array<{ key: string; node: ReactNode }> = [];
   if (recommendation.reasons.includes("cadence")) {
-    reasonLines.push(
-      t("deloadReasonCadence", { weeks: recommendation.consecutiveTrainingWeeks }),
-    );
+    reasonLines.push({
+      key: "cadence",
+      node: t("deloadReasonCadence", { weeks: recommendation.consecutiveTrainingWeeks }),
+    });
   }
   if (recommendation.reasons.includes("sleep_quality")) {
-    reasonLines.push(t("deloadReasonSleepQuality"));
+    reasonLines.push({ key: "sleep_quality", node: t("deloadReasonSleepQuality") });
   }
   if (recommendation.reasons.includes("sleep_duration")) {
-    reasonLines.push(t("deloadReasonSleepDuration"));
+    reasonLines.push({ key: "sleep_duration", node: t("deloadReasonSleepDuration") });
   }
   if (recommendation.reasons.includes("completion")) {
-    reasonLines.push(t("deloadReasonCompletion"));
+    reasonLines.push({ key: "completion", node: t("deloadReasonCompletion") });
   }
   if (recommendation.reasons.includes("low_readiness")) {
-    reasonLines.push(
-      tReadiness("lowReadiness", {
-        avg: Math.round(recommendation.readiness7d.average ?? 0),
-        samples: recommendation.readiness7d.samples,
-      }),
-    );
+    const avg = Math.round(recommendation.readiness7d.average ?? 0);
+    const band = bandOf(avg);
+    const barColor = readinessBandColor(band);
+    reasonLines.push({
+      key: "low_readiness",
+      node: (
+        <span className="flex items-center gap-2 flex-wrap">
+          <span className="flex-1 min-w-0">
+            {tReadiness("lowReadiness", {
+              avg,
+              samples: recommendation.readiness7d.samples,
+            })}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-background/70 px-2 py-0.5">
+            <span className="relative h-1.5 w-12 overflow-hidden rounded-full bg-muted">
+              <span
+                className={`absolute inset-y-0 left-0 ${barColor}`}
+                style={{ width: `${Math.max(4, Math.min(100, avg))}%` }}
+              />
+            </span>
+            <span className="text-[10px] font-semibold tabular-nums text-foreground">
+              {avg}
+            </span>
+          </span>
+        </span>
+      ),
+    });
   }
 
   return (
@@ -79,15 +103,15 @@ export function DeloadRecommendationBanner({
             {tBanner("reasonsTitle")}
           </p>
           <ul className="space-y-0.5">
-            {reasonLines.map((line, i) => (
+            {reasonLines.map((line) => (
               <li
-                key={i}
+                key={line.key}
                 className="text-[11px] text-muted-foreground leading-relaxed flex items-start gap-1.5"
               >
                 <span aria-hidden className="text-muted-foreground/60 mt-[0.5em]">
                   •
                 </span>
-                <span className="flex-1 min-w-0 wrap-break-word">{line}</span>
+                <span className="flex-1 min-w-0 wrap-break-word">{line.node}</span>
               </li>
             ))}
           </ul>

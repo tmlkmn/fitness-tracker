@@ -342,6 +342,8 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
+        {isVisible("readiness") && <ReadinessDashboardCard />}
+
         {weekLoading ? (
           <Card>
             <CardContent className="p-4 space-y-2">
@@ -411,87 +413,71 @@ export default function HomePage() {
 
         {isVisible("stats") && (
           profileLoading || weeksLoading || todayLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-3">
-                    <Skeleton className="h-3 w-16 mb-2" />
-                    <Skeleton className="h-6 w-12" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Card>
+              <CardContent className="p-3">
+                <div className="grid grid-cols-4 gap-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1.5">
+                      <Skeleton className="h-3.5 w-3.5 rounded" />
+                      <Skeleton className="h-2.5 w-12" />
+                      <Skeleton className="h-4 w-10" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-list">
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Scale className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">{t("currentWeight")}</span>
-              </div>
-              <p className="text-lg font-bold">
-                {profile?.weight ? `${profile.weight}` : "—"}
-                <span className="text-xs font-normal text-muted-foreground ml-1">kg</span>
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">{t("target")}</span>
-              </div>
-              <p className="text-lg font-bold text-primary">
-                {profile?.targetWeight ? `${profile.targetWeight}` : "—"}
-                <span className="text-xs font-normal text-muted-foreground ml-1">kg</span>
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">{t("program")}</span>
-              </div>
-              <p className="text-lg font-bold">
-                {weeks?.length ?? 0}
-                <span className="text-xs font-normal text-muted-foreground ml-1">{t("weeks")}</span>
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-1">
-                {profile?.serviceType === "nutrition" ? (
-                  <>
-                    <Utensils className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">{t("today")}</span>
-                  </>
-                ) : (
-                  <>
-                    <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">{t("today")}</span>
-                  </>
-                )}
-              </div>
-              <p className="text-lg font-bold">
-                {profile?.serviceType === "nutrition"
-                  ? (mealsTotal > 0
-                      ? `${Math.round((mealsDone / mealsTotal) * 100)}%`
-                      : "—")
-                  : (exercisesTotal > 0
-                      ? `${Math.round((exercisesDone / exercisesTotal) * 100)}%`
-                      : "—")}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card>
+              <CardContent className="p-3">
+                <div className="grid grid-cols-4 gap-2 divide-x divide-border/60">
+                  <div className="flex flex-col items-center gap-0.5 px-1">
+                    <Scale className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground leading-tight text-center">{t("currentWeight")}</span>
+                    <p className="text-sm font-semibold tabular-nums">
+                      {profile?.weight ? `${profile.weight}` : "—"}
+                      <span className="text-[10px] font-normal text-muted-foreground ml-0.5">kg</span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center gap-0.5 px-1">
+                    <Target className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[10px] text-muted-foreground leading-tight text-center">{t("target")}</span>
+                    <p className="text-sm font-semibold text-primary tabular-nums">
+                      {profile?.targetWeight ? `${profile.targetWeight}` : "—"}
+                      <span className="text-[10px] font-normal text-muted-foreground ml-0.5">kg</span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center gap-0.5 px-1">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground leading-tight text-center">{t("program")}</span>
+                    <p className="text-sm font-semibold tabular-nums">
+                      {weeks?.length ?? 0}
+                      <span className="text-[10px] font-normal text-muted-foreground ml-0.5">{t("weeks")}</span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center gap-0.5 px-1">
+                    {profile?.serviceType === "nutrition" ? (
+                      <Utensils className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : (
+                      <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                    <span className="text-[10px] text-muted-foreground leading-tight text-center">{t("today")}</span>
+                    <p className="text-sm font-semibold tabular-nums">
+                      {profile?.serviceType === "nutrition"
+                        ? (mealsTotal > 0
+                            ? `${Math.round((mealsDone / mealsTotal) * 100)}%`
+                            : "—")
+                        : (exercisesTotal > 0
+                            ? `${Math.round((exercisesDone / exercisesTotal) * 100)}%`
+                            : "—")}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )
         )}
 
         {isVisible("rings") && <DailyRingsCard />}
-
-        {isVisible("readiness") && <ReadinessDashboardCard />}
 
         {isVisible("water_sleep") && (
         <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
