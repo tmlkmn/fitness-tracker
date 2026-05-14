@@ -2795,5 +2795,127 @@
       "activity": "Activity",
       "footer": "After saving your profile, you can create your weekly program from the calendar page. All information can be changed later from Settings."
     }
+  },
+  "emailTemplates": {
+    "common": {
+      "footerHtml": "This email was sent by FitMusc.<br>You can change your notification settings <a href=\"{settingsUrl}\" style=\"color:#22c55e;text-decoration:none;\">here</a>."
+    },
+    "invite": {
+      "subject": "Welcome — your account is ready 👋",
+      "title": "Welcome, {userName}! 👋",
+      "intro": "Your account is ready. Sign in below and let's plan your first week.",
+      "emailLabel": "Email",
+      "tempPasswordLabel": "Temporary Password",
+      "afterLogin": "You'll set a new password on first sign-in.",
+      "validity": "Temporary password valid for 24 hours.",
+      "button": "Sign In →"
+    },
+    "reset": {
+      "subject": "Let's reset your password",
+      "title": "Password Reset",
+      "introHtml": "Click below to set a new password. Link valid for <strong style=\"color:#ffffff;\">1 hour</strong>.",
+      "button": "Reset Password →",
+      "footer": "Didn't request this? You can ignore this email — your account is safe."
+    },
+    "expiry": {
+      "subject7d": "Your membership ends in 1 week",
+      "subject3d": "3 days left — time to renew",
+      "subject1d": "Tomorrow is your last day",
+      "subjectExpired": "Your membership has ended",
+      "headingActive": "Membership Reminder",
+      "headingExpired": "Your Membership Has Ended",
+      "greeting": "Hey {userName},",
+      "counterDays": "{daysLeft, plural, one {# Day} other {# Days}}",
+      "counterExpired": "Expired",
+      "counterSubActive": "Your membership ends on {endDate}",
+      "counterSubExpired": "Your membership ended on {endDate}",
+      "cta7d": "One week left — let's keep your streak going.",
+      "cta3d": "3 days left. Reach out to your admin to get renewed.",
+      "cta1d": "Tomorrow your account pauses. Last chance to renew.",
+      "ctaExpired": "Your account needs a renewal to come back online.",
+      "renewNote": "Reach your admin — it's a 2-minute fix.",
+      "button": "Go to My Account →"
+    },
+    "notificationWrapper": {
+      "detailsBtn": "View Details →"
+    }
+  },
+  "reminderTemplates": {
+    "water": {
+      "title": "Hydrate 💧",
+      "body": "A glass of water — your muscles and brain will thank you."
+    },
+    "stretching": {
+      "title": "Stretch break",
+      "body": "2 minutes: shoulders, neck, hips. Loosen up before the stiffness sets in."
+    },
+    "posture": {
+      "title": "Sit tall 🪑",
+      "body": "Pull your shoulders back, tuck your chin. Your back will thank you."
+    },
+    "supplement": {
+      "title": "Supplements ready",
+      "body": "Take today's dose — consistency is what moves the needle."
+    },
+    "sleep": {
+      "title": "Wind down 🌙",
+      "body": "30 minutes: dim the lights, close the screens. Good sleep sets up tomorrow's session."
+    },
+    "steps": {
+      "title": "Walk it off",
+      "body": "10 minutes of walking — you'll come back to your desk sharper."
+    },
+    "readiness": {
+      "title": "How are you today?",
+      "body": "5 seconds: rate your energy and pain. Tomorrow's plan adapts to you."
+    }
+  },
+  "triggerNotifications": {
+    "planShared": {
+      "title": "New plan shared",
+      "body": "{sharerName} sent you \"{planTitle}\" — take a look."
+    },
+    "newFeedback": {
+      "title": "New feedback",
+      "body": "{userName}: {preview}"
+    },
+    "feedbackResponse": {
+      "title": "Reply to your feedback"
+    },
+    "userInvited": {
+      "title": "Welcome to FitMusc!",
+      "body": "Your account is ready — sign in and let's get started."
+    },
+    "membershipExtendedUnlimited": {
+      "title": "Membership renewed 🎉",
+      "body": "You now have unlimited access."
+    },
+    "membershipExtendedDate": {
+      "title": "Membership renewed 🎉",
+      "body": "New end date: {endDate}. Keep going!"
+    },
+    "membershipExpiring7d": {
+      "title": "1 week left on your membership",
+      "body": "7 days remaining — give your admin a heads-up."
+    },
+    "membershipExpiring3d": {
+      "title": "3 days left",
+      "body": "Reach out to your admin to renew."
+    },
+    "membershipExpiring1d": {
+      "title": "Last day tomorrow",
+      "body": "Your account pauses tomorrow. Request a renewal now."
+    },
+    "membershipExpired": {
+      "title": "Membership ended",
+      "body": "Reach out to your admin to come back."
+    },
+    "reminderMeal": {
+      "body": "In {minutes} min: {mealLabel} 🍽️"
+    },
+    "reminderWorkout": {
+      "title": "Workout coming up 💪",
+      "body": "Starts in {minutes} min. Get ready!"
+    }
   }
 }

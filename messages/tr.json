@@ -2796,5 +2796,127 @@
       "activity": "Aktivite",
       "footer": "Profilini kaydettikten sonra takvim sayfasından haftalık programını oluşturabilirsin. Tüm bilgiler daha sonra Ayarlar'dan değiştirilebilir."
     }
+  },
+  "emailTemplates": {
+    "common": {
+      "footerHtml": "Bu e-posta FitMusc tarafından gönderildi.<br>Bildirim ayarlarını <a href=\"{settingsUrl}\" style=\"color:#22c55e;text-decoration:none;\">buradan</a> değiştirebilirsin."
+    },
+    "invite": {
+      "subject": "Hoş geldin — hesabın hazır 👋",
+      "title": "Hoş geldin, {userName}! 👋",
+      "intro": "Hesabın hazır. Aşağıdaki bilgilerle giriş yap ve ilk haftanı planlamaya başlayalım.",
+      "emailLabel": "E-posta",
+      "tempPasswordLabel": "Geçici Şifre",
+      "afterLogin": "İlk girişte yeni bir şifre belirleyeceksin.",
+      "validity": "Geçici şifre 24 saat geçerli.",
+      "button": "Giriş Yap →"
+    },
+    "reset": {
+      "subject": "Şifreni yenileyelim",
+      "title": "Şifre Sıfırlama",
+      "introHtml": "Aşağıdaki butona tıkla, yeni bir şifre belirle. Link <strong style=\"color:#ffffff;\">1 saat</strong> geçerli.",
+      "button": "Şifremi Sıfırla →",
+      "footer": "Bu maili sen istemediysen göz ardı edebilirsin — hesabın güvende."
+    },
+    "expiry": {
+      "subject7d": "Üyeliğin 1 hafta sonra doluyor",
+      "subject3d": "3 gün kaldı — yenilemeyi düşün",
+      "subject1d": "Yarın son gün",
+      "subjectExpired": "Üyeliğin sona erdi",
+      "headingActive": "Üyelik Hatırlatması",
+      "headingExpired": "Üyelik Süreniz Doldu",
+      "greeting": "Selam {userName},",
+      "counterDays": "{daysLeft} Gün",
+      "counterExpired": "Süresi Doldu",
+      "counterSubActive": "Üyeliğin {endDate} tarihinde sona erecek",
+      "counterSubExpired": "Üyeliğin {endDate} tarihinde sona erdi",
+      "cta7d": "Yenileme için bir hafta var — kesintisiz devam edelim mi?",
+      "cta3d": "3 gün kaldı. Yöneticine ulaş, yenileme hazır olsun.",
+      "cta1d": "Yarın hesabın askıya alınacak. Yenileme için son şans.",
+      "ctaExpired": "Hesabına yeniden erişmek için yenileme gerekiyor.",
+      "renewNote": "Yöneticinle iletişime geç — birkaç dakika içinde halledilir.",
+      "button": "Hesabıma git →"
+    },
+    "notificationWrapper": {
+      "detailsBtn": "Detayları Gör →"
+    }
+  },
+  "reminderTemplates": {
+    "water": {
+      "title": "Su zamanı 💧",
+      "body": "Bir bardak su iç — kasların ve beynin teşekkür eder."
+    },
+    "stretching": {
+      "title": "Esneme molası",
+      "body": "2 dakikalık esneme: omuzlar, boyun, kalçalar. Otururken sertleşme bitsin."
+    },
+    "posture": {
+      "title": "Dik dur 🪑",
+      "body": "Omuzlarını geriye al, çeneni topla. Sırtın sana teşekkür edecek."
+    },
+    "supplement": {
+      "title": "Supplementler hazır",
+      "body": "Bugünün dozunu al — devamlılık fark yaratır."
+    },
+    "sleep": {
+      "title": "Yatma zamanı yaklaşıyor 🌙",
+      "body": "30 dakika sonra ışıkları kıs, ekranları kapat. İyi bir uyku yarınki seansı belirler."
+    },
+    "steps": {
+      "title": "Kalk, yürü",
+      "body": "10 dakikalık yürüyüş — masaya 10 dk daha verimli dönersin."
+    },
+    "readiness": {
+      "title": "Bugün nasıl geçti?",
+      "body": "5 saniye: enerji ve ağrını işaretle. Yarın planı sana göre güncellensin."
+    }
+  },
+  "triggerNotifications": {
+    "planShared": {
+      "title": "Yeni plan paylaşıldı",
+      "body": "{sharerName} sana \"{planTitle}\" planını gönderdi — incele."
+    },
+    "newFeedback": {
+      "title": "Yeni geri bildirim",
+      "body": "{userName}: {preview}"
+    },
+    "feedbackResponse": {
+      "title": "Geri bildirimine yanıt"
+    },
+    "userInvited": {
+      "title": "FitMusc'a hoş geldin!",
+      "body": "Hesabın hazır — giriş yap, başlayalım."
+    },
+    "membershipExtendedUnlimited": {
+      "title": "Üyeliğin yenilendi 🎉",
+      "body": "Artık süresiz erişimin var."
+    },
+    "membershipExtendedDate": {
+      "title": "Üyeliğin yenilendi 🎉",
+      "body": "Yeni bitiş tarihin: {endDate}. Çalışmaya devam!"
+    },
+    "membershipExpiring7d": {
+      "title": "Üyeliğin bir hafta sonra doluyor",
+      "body": "7 gün kaldı — yöneticine ulaşmayı unutma."
+    },
+    "membershipExpiring3d": {
+      "title": "3 gün kaldı",
+      "body": "Yenileme için yöneticine ulaş."
+    },
+    "membershipExpiring1d": {
+      "title": "Yarın son gün",
+      "body": "Hesabın yarın askıya alınacak. Hemen yenileme talep et."
+    },
+    "membershipExpired": {
+      "title": "Üyeliğin sona erdi",
+      "body": "Geri dönmek için yöneticine ulaş."
+    },
+    "reminderMeal": {
+      "body": "{minutes} dk sonra: {mealLabel} 🍽️"
+    },
+    "reminderWorkout": {
+      "title": "Antrenman zamanı yaklaşıyor 💪",
+      "body": "{minutes} dk sonra başlıyoruz. Hazırlan!"
+    }
   }
 }
