@@ -3,13 +3,28 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutDashboard } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { DASHBOARD_CARDS } from "@/lib/dashboard-prefs";
+import { DASHBOARD_CARDS, type DashboardCardKey } from "@/lib/dashboard-prefs";
 import { useDashboardPrefs } from "@/hooks/use-dashboard-prefs";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export function DashboardPrefsCard() {
   const { toggle, isVisible, hydrated } = useDashboardPrefs();
   const t = useTranslations("settings.dashboardPrefs");
+
+  const handleToggle = (key: DashboardCardKey, wasVisible: boolean) => {
+    toggle(key);
+    if (wasVisible) {
+      const cardLabel = t(`cards.${key}.label`);
+      toast(t("hiddenToast", { card: cardLabel }), {
+        action: {
+          label: t("undoLabel"),
+          onClick: () => toggle(key),
+        },
+        duration: 5000,
+      });
+    }
+  };
 
   return (
     <Card>
@@ -29,7 +44,7 @@ export function DashboardPrefsCard() {
             <button
               key={card.key}
               type="button"
-              onClick={() => toggle(card.key)}
+              onClick={() => handleToggle(card.key, visible)}
               className="w-full flex items-start gap-3 px-2 py-2 rounded-md hover:bg-accent transition-colors text-left"
             >
               <div

@@ -101,22 +101,34 @@ export default async function GunPage({ params, searchParams }: PageProps) {
       )}
       <div className="p-4">
         <Tabs defaultValue={initialTab}>
-          <TabsList className="grid grid-cols-4 w-full mb-4">
-            <TabsTrigger value="meals" className="gap-1.5">
+          <TabsList className="grid grid-cols-4 w-full mb-4 h-auto p-1">
+            <TabsTrigger
+              value="meals"
+              className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
+            >
               <Utensils className="h-4 w-4" />
-              {t("tabs.nutrition")}
+              <span className="text-[10px] xs:text-xs truncate max-w-full">{t("tabs.nutrition")}</span>
             </TabsTrigger>
-            <TabsTrigger value="workout" className="gap-1.5">
+            <TabsTrigger
+              value="workout"
+              className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
+            >
               <Dumbbell className="h-4 w-4" />
-              {t("tabs.workout")}
+              <span className="text-[10px] xs:text-xs truncate max-w-full">{t("tabs.workout")}</span>
             </TabsTrigger>
-            <TabsTrigger value="supplements" className="gap-1.5">
+            <TabsTrigger
+              value="supplements"
+              className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
+            >
               <Pill className="h-4 w-4" />
-              {t("tabs.supplements")}
+              <span className="text-[10px] xs:text-xs truncate max-w-full">{t("tabs.supplements")}</span>
             </TabsTrigger>
-            <TabsTrigger value="wellness" className="gap-1.5">
+            <TabsTrigger
+              value="wellness"
+              className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
+            >
               <HeartPulse className="h-4 w-4" />
-              {t("tabs.wellness")}
+              <span className="text-[10px] xs:text-xs truncate max-w-full">{t("tabs.wellness")}</span>
             </TabsTrigger>
           </TabsList>
           <TabsContent value="meals" className="space-y-3">

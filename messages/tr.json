@@ -424,7 +424,9 @@
         "reasonsTitle": "Neden deload önerildi:",
         "definitionTitle": "Deload nedir?",
         "applyAction": "Bu haftayı deload olarak işaretle",
-        "activeBadge": "Deload aktif"
+        "activeBadge": "Deload aktif",
+        "severityHigh": "Yüksek öncelik",
+        "severitySoft": "Yumuşak sinyal"
       },
       "levelHint": {
         "beginnerTitle": "Başlangıç seviyesi — haftada {count} antrenman önerilir",
@@ -1802,6 +1804,8 @@
     "dashboardPrefs": {
       "title": "Dashboard Kartları",
       "description": "Ana sayfada görmek istediğin kartları seç. Tercihler bu cihazda saklanır.",
+      "hiddenToast": "{card} gizlendi",
+      "undoLabel": "Geri Al",
       "cards": {
         "rings": { "label": "Günlük Halkalar", "description": "Kalori, protein ve görev tamamlama halkaları" },
         "readiness": { "label": "Hazırlık Skoru", "description": "Bugün ne kadar zorlamalıyım kartı" },

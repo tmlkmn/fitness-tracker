@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Loader2, X, Activity } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,28 +18,50 @@ function ChipRow({
   onChange,
   lowLabel,
   highLabel,
+  groupLabel,
 }: Readonly<{
   value: number | null;
   onChange: (next: number | null) => void;
   lowLabel: string;
   highLabel: string;
+  groupLabel: string;
 }>) {
+  const buttonsRef = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const handleKeyDown = (e: React.KeyboardEvent, idx: number) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const next =
+      e.key === "ArrowRight" ? (idx + 1) % 5 : (idx + 4) % 5;
+    buttonsRef.current[next]?.focus();
+  };
+
   return (
     <div className="space-y-1.5">
-      <div className="flex justify-between gap-1.5">
-        {[1, 2, 3, 4, 5].map((n) => {
+      <div
+        className="flex justify-between gap-1.5"
+        role="radiogroup"
+        aria-label={groupLabel}
+      >
+        {[1, 2, 3, 4, 5].map((n, idx) => {
           const active = value === n;
           return (
             <button
               key={n}
+              ref={(el) => {
+                buttonsRef.current[idx] = el;
+              }}
               type="button"
+              role="radio"
+              aria-checked={active}
+              tabIndex={active || (value === null && n === 1) ? 0 : -1}
               onClick={() => onChange(active ? null : n)}
-              className={`flex-1 h-10 rounded-md text-sm font-semibold transition-colors tabular-nums ${
+              onKeyDown={(e) => handleKeyDown(e, idx)}
+              className={`flex-1 h-10 rounded-md text-sm font-semibold transition-colors tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                 active
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-accent"
               }`}
-              aria-pressed={active}
             >
               {n}
             </button>
@@ -116,6 +138,7 @@ export function ReadinessFormDialog({
                 onChange={setEnergy}
                 lowLabel={t("energyLow")}
                 highLabel={t("energyHigh")}
+                groupLabel={t("energyLabel")}
               />
             </div>
 
@@ -128,6 +151,7 @@ export function ReadinessFormDialog({
                 onChange={setPain}
                 lowLabel={t("painNone")}
                 highLabel={t("painSevere")}
+                groupLabel={t("painLabel")}
               />
             </div>
 

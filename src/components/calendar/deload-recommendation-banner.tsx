@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Zap, Moon, Check, Info } from "lucide-react";
+import { TrendingDown, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 import type { DeloadRecommendation } from "@/lib/deload-policy";
@@ -34,13 +34,16 @@ export function DeloadRecommendationBanner({
 
   const isHard = recommendation.severity === "hard";
   const containerCls = isHard
-    ? "border-amber-500/40 bg-amber-500/10"
-    : "border-blue-500/40 bg-blue-500/10";
-  const titleCls = isHard ? "text-amber-500" : "text-blue-500";
-  const Icon = isHard ? Zap : Moon;
+    ? "border-destructive/40 bg-destructive/5"
+    : "border-amber-500/40 bg-amber-500/10";
+  const titleCls = isHard ? "text-destructive" : "text-amber-500";
+  const severityBadgeCls = isHard
+    ? "bg-destructive/15 text-destructive border-destructive/30"
+    : "bg-amber-500/15 text-amber-500 border-amber-500/30";
   const titleKey = isHard
     ? "deloadRecommendedHardTitle"
     : "deloadRecommendedSoftTitle";
+  const severityKey = isHard ? "severityHigh" : "severitySoft";
 
   const reasonLines: Array<{ key: string; node: ReactNode }> = [];
   if (recommendation.reasons.includes("cadence")) {
@@ -91,10 +94,17 @@ export function DeloadRecommendationBanner({
   return (
     <div className={`rounded-lg border p-3 space-y-2.5 ${containerCls}`}>
       <div className="flex items-start gap-2">
-        <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${titleCls}`} />
-        <p className={`text-xs font-semibold flex-1 min-w-0 ${titleCls}`}>
-          {t(titleKey)}
-        </p>
+        <TrendingDown className={`h-4 w-4 shrink-0 mt-0.5 ${titleCls}`} />
+        <div className="flex-1 min-w-0 flex flex-wrap items-center gap-1.5">
+          <p className={`text-xs font-semibold ${titleCls}`}>
+            {t(titleKey)}
+          </p>
+          <span
+            className={`inline-flex items-center rounded-full border px-1.5 py-0 text-[10px] font-medium ${severityBadgeCls}`}
+          >
+            {tBanner(severityKey)}
+          </span>
+        </div>
       </div>
 
       {reasonLines.length > 0 && (

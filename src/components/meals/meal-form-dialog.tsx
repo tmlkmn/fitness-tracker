@@ -328,66 +328,70 @@ export function MealFormDialog({
             </div>
 
             {/* Macros */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <p className="text-xs text-muted-foreground">{t("nutritionFacts")}</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                <div className="space-y-0.5">
-                  <Label htmlFor="calories" className="text-[10px] text-muted-foreground/70">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="calories" className="text-[11px] text-muted-foreground">
                     {t("calories")}
                   </Label>
                   <Input
                     id="calories"
                     type="number"
+                    inputMode="decimal"
                     min="0"
                     placeholder="350"
                     value={calories}
                     onChange={(e) => setCalories(e.target.value)}
-                    className="h-8 px-2 text-xs"
+                    className="h-10 px-2.5 text-sm tabular-nums"
                   />
                 </div>
-                <div className="space-y-0.5">
-                  <Label htmlFor="protein" className="text-[10px] text-muted-foreground/70">
+                <div className="space-y-1">
+                  <Label htmlFor="protein" className="text-[11px] text-muted-foreground">
                     {t("protein")}
                   </Label>
                   <Input
                     id="protein"
                     type="number"
+                    inputMode="decimal"
                     min="0"
                     step="0.1"
                     placeholder="25g"
                     value={protein}
                     onChange={(e) => setProtein(e.target.value)}
-                    className="h-8 px-2 text-xs"
+                    className="h-10 px-2.5 text-sm tabular-nums"
                   />
                 </div>
-                <div className="space-y-0.5">
-                  <Label htmlFor="carbs" className="text-[10px] text-muted-foreground/70">
-                    {t("carbs")}.
+                <div className="space-y-1">
+                  <Label htmlFor="carbs" className="text-[11px] text-muted-foreground">
+                    {t("carbs")}
                   </Label>
                   <Input
                     id="carbs"
                     type="number"
+                    inputMode="decimal"
                     min="0"
                     step="0.1"
                     placeholder="40g"
                     value={carbs}
                     onChange={(e) => setCarbs(e.target.value)}
-                    className="h-8 px-2 text-xs"
+                    className="h-10 px-2.5 text-sm tabular-nums"
                   />
                 </div>
-                <div className="space-y-0.5">
-                  <Label htmlFor="fat" className="text-[10px] text-muted-foreground/70">
+                <div className="space-y-1">
+                  <Label htmlFor="fat" className="text-[11px] text-muted-foreground">
                     {t("fat")}
                   </Label>
                   <Input
                     id="fat"
                     type="number"
+                    inputMode="decimal"
                     min="0"
                     step="0.1"
                     placeholder="15g"
                     value={fat}
                     onChange={(e) => setFat(e.target.value)}
-                    className="h-8 px-2 text-xs"
+                    className="h-10 px-2.5 text-sm tabular-nums"
                   />
                 </div>
               </div>

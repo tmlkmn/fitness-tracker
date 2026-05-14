@@ -424,7 +424,9 @@
         "reasonsTitle": "Why deload is recommended:",
         "definitionTitle": "What is a deload?",
         "applyAction": "Apply this week as deload",
-        "activeBadge": "Deload active"
+        "activeBadge": "Deload active",
+        "severityHigh": "High priority",
+        "severitySoft": "Soft signal"
       },
       "levelHint": {
         "beginnerTitle": "Beginner level — {count} workout days/week recommended",
@@ -1801,6 +1803,8 @@
     "dashboardPrefs": {
       "title": "Dashboard Cards",
       "description": "Pick which cards you want on your home screen. Preferences are stored on this device.",
+      "hiddenToast": "{card} hidden",
+      "undoLabel": "Undo",
       "cards": {
         "rings": { "label": "Daily Rings", "description": "Calorie, protein, and task completion rings" },
         "readiness": { "label": "Readiness Score", "description": "How hard should I push today card" },

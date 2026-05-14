@@ -142,13 +142,30 @@ export function SleepFormDialog({
             <Label className="text-xs text-muted-foreground">
               {tForm("qualityLabel")}
             </Label>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((v) => (
+            <div
+              className="flex items-center gap-1"
+              role="radiogroup"
+              aria-label={tForm("qualityLabel")}
+            >
+              {[1, 2, 3, 4, 5].map((v, idx, arr) => (
                 <button
                   key={v}
                   type="button"
+                  role="radio"
+                  aria-checked={v === quality}
+                  tabIndex={v === quality ? 0 : -1}
                   onClick={() => setQuality(v)}
-                  className="p-1 transition-colors"
+                  onKeyDown={(e) => {
+                    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                    e.preventDefault();
+                    const nextIdx =
+                      e.key === "ArrowRight"
+                        ? (idx + 1) % arr.length
+                        : (idx + arr.length - 1) % arr.length;
+                    setQuality(arr[nextIdx]);
+                  }}
+                  className="p-1 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  aria-label={`${v}/5`}
                 >
                   <Moon
                     className={`h-6 w-6 ${
