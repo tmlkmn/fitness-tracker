@@ -11,6 +11,7 @@ import { AiWeeklyPlanModal } from "@/components/calendar/ai-weekly-plan-modal";
 import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
 import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans, useEmptyWeeksBetween } from "@/hooks/use-plans";
+import { useReadinessRange } from "@/hooks/use-readiness";
 import { useGenerateWeeklyPlan, useApplyWeeklyPlan, useDeleteWeeklyPlan } from "@/hooks/use-weekly-ai";
 import { useUserProfile } from "@/hooks/use-user";
 import { useMonthGate } from "@/hooks/use-month-gate";
@@ -165,6 +166,14 @@ export default function TakvimPage() {
 
   // Empty week gap detection for future weeks
   const { data: emptyWeeks } = useEmptyWeeksBetween(todayStr, weekStartStr, isFutureWeek);
+
+  // Per-day readiness band for the current week strip (passive score only).
+  const { data: readinessRange } = useReadinessRange(weekStartStr, weekEndStr);
+  const readinessByDate = useMemo(() => {
+    const map = new Map<string, "low" | "moderate" | "good" | "excellent">();
+    for (const r of readinessRange ?? []) map.set(r.logDate, r.band);
+    return map;
+  }, [readinessRange]);
   const hasEmptyWeekGap = isFutureWeek && (emptyWeeks?.length ?? 0) > 0;
 
   // Month gate: block AI generation for future months until current month full
@@ -309,6 +318,7 @@ export default function TakvimPage() {
               onNextWeek={handleNextWeek}
               datesWithPlans={datesWithPlans}
               weekStartsOn={weekStartsOn}
+              readinessByDate={readinessByDate}
             />
             <div className="flex gap-2">
               <Button

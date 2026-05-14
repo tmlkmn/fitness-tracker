@@ -10,6 +10,7 @@ import type { ReadinessLogRow } from "@/actions/readiness";
 interface ReadinessFormDialogProps {
   onClose: () => void;
   initial?: ReadinessLogRow | null;
+  onSaved?: () => void;
 }
 
 function ChipRow({
@@ -56,6 +57,7 @@ function ChipRow({
 export function ReadinessFormDialog({
   onClose,
   initial,
+  onSaved,
 }: Readonly<ReadinessFormDialogProps>) {
   const t = useTranslations("readiness.form");
   const [energy, setEnergy] = useState<number | null>(
@@ -75,6 +77,7 @@ export function ReadinessFormDialog({
         painScore: pain,
         notes: notes.trim() || null,
       });
+      onSaved?.();
       onClose();
     } catch {
       setError(t("saveError"));

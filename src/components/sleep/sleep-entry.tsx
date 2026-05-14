@@ -8,6 +8,7 @@ import { Moon, Plus, Pencil, Trash2 } from "lucide-react";
 import { useSleepByDate, useDeleteSleep } from "@/hooks/use-sleep";
 import { SleepFormDialog } from "./sleep-form-dialog";
 import { useTranslations } from "next-intl";
+import { useSuccessPulse } from "@/hooks/use-success-pulse";
 
 interface SleepEntryProps {
   date: string;
@@ -31,6 +32,7 @@ export function SleepEntry({ date, readOnly, autoOpen }: SleepEntryProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const autoOpenHandledRef = useRef(false);
+  const pulse = useSuccessPulse();
 
   useEffect(() => {
     if (!autoOpen || autoOpenHandledRef.current || readOnly) return;
@@ -49,7 +51,7 @@ export function SleepEntry({ date, readOnly, autoOpen }: SleepEntryProps) {
 
   return (
     <>
-      <Card ref={cardRef}>
+      <Card ref={cardRef} key={pulse.pulseKey || undefined} className={pulse.pulseClass}>
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
             <Moon className="h-4 w-4 text-indigo-400" />
@@ -151,6 +153,7 @@ export function SleepEntry({ date, readOnly, autoOpen }: SleepEntryProps) {
               }
             : undefined
         }
+        onSaved={() => pulse.trigger()}
       />
     </>
   );

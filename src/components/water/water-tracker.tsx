@@ -9,6 +9,7 @@ import {
   useDailyWaterTarget,
 } from "@/hooks/use-water";
 import { useTranslations } from "next-intl";
+import { useSuccessPulse } from "@/hooks/use-success-pulse";
 
 interface WaterTrackerProps {
   date: string;
@@ -20,6 +21,7 @@ export function WaterTracker({ date, readOnly }: WaterTrackerProps) {
   const { data: log } = useWaterLog(date);
   const { data: personalizedTarget } = useDailyWaterTarget(date);
   const increment = useIncrementWater();
+  const pulse = useSuccessPulse();
 
   const glasses = log?.glasses ?? 0;
   // Prefer the persisted target on the row; fall back to the personalized
@@ -32,11 +34,14 @@ export function WaterTracker({ date, readOnly }: WaterTrackerProps) {
 
   const handleIncrement = (delta: number) => {
     if (readOnly || increment.isPending) return;
-    increment.mutate({ dateStr: date, delta });
+    increment.mutate(
+      { dateStr: date, delta },
+      { onSuccess: () => pulse.trigger() },
+    );
   };
 
   return (
-    <Card>
+    <Card key={pulse.pulseKey || undefined} className={pulse.pulseClass}>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <Droplets className="h-4 w-4 text-blue-400" />

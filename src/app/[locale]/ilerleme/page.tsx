@@ -36,6 +36,7 @@ import {
   Activity,
   Ruler,
   Dumbbell,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useActivityStats } from "@/hooks/use-activity-stats";
@@ -207,6 +208,29 @@ export default function IlerlemePage() {
 
         {/* AI Analysis — only show with 2+ measurements */}
         {logs && logs.length >= 2 && <ProgressAiAnalysis />}
+
+        {/* AI Analysis empty hint — exactly 1 measurement */}
+        {logs && logs.length === 1 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-3 flex items-start gap-3">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">{t("aiHint.title")}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t("aiHint.body")}
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs" onClick={handleAdd}>
+                  <Plus className="h-3 w-3" />
+                  {t("addMeasurement")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Su & Uyku Charts */}
         <WaterChart />

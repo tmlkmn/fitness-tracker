@@ -1023,9 +1023,14 @@ export function AiWeeklyPlanModal({
               <Button
                 onClick={handleGenerate}
                 disabled={loading || (weeklyQuota?.remaining === 0)}
-                className="w-full"
+                variant={weeklyQuota?.remaining === 0 ? "outline" : "default"}
+                className={`w-full ${weeklyQuota?.remaining === 0 ? "border-amber-500/40 text-amber-500" : ""}`}
               >
-                <Sparkles className="h-4 w-4 mr-2" />
+                {weeklyQuota?.remaining === 0 ? (
+                  <Clock className="h-4 w-4 mr-2" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-2" />
+                )}
                 {weeklyQuota?.remaining === 0
                   ? t("limitReached")
                   : weeklyQuota

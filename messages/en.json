@@ -459,7 +459,7 @@
       "tagsLabel": "Pick your wishes for this week:",
       "noteLabel": "Add an extra request:",
       "notePlaceholder": "E.g. shoulder pain, only lower body...",
-      "limitReached": "Daily limit reached",
+      "limitReached": "Quota full • Resets tomorrow",
       "generate": "Get Suggestion",
       "generateWithQuota": "Get Suggestion ({remaining}/{limit})",
       "savedSuggestions": "Saved Suggestions",
@@ -536,6 +536,10 @@
       "target": "kg target"
     },
     "addMeasurement": "Add New Measurement",
+    "aiHint": {
+      "title": "1 measurement away from AI analysis",
+      "body": "Add a 2nd measurement to unlock trend direction, time-to-goal estimate, and weekly delta recommendations."
+    },
     "deleteConfirm": "Are you sure you want to delete this measurement record? This action cannot be undone.",
     "cancel": "Cancel",
     "badges": {
@@ -657,7 +661,7 @@
       "title": "AI Analysis",
       "analyze": "Analyze",
       "analyzing": "Analyzing...",
-      "limitReached": "Limit reached",
+      "limitReached": "Quota full • Resets tomorrow",
       "refresh": "Refresh",
       "dailyLimit": "You've reached the daily analysis limit (max 3/day).",
       "unavailable": "AI analysis is currently unavailable.",
@@ -871,6 +875,10 @@
       "workout": "Workout Day",
       "swimming": "Swimming Day",
       "rest": "Rest Day"
+    },
+    "pastDayBanner": {
+      "title": "Past day — view only",
+      "cta": "Go to today"
     }
   },
   "meals": {
@@ -1113,12 +1121,16 @@
       "loadingShort": "Loading...",
       "emptyFrequent": "No frequently used meals yet",
       "emptyFrequentShort": "No frequent meals yet",
+      "emptyFrequentHint": "Add the same meal 2+ times and it'll show up here.",
       "emptyHistory": "No meals found from previous days",
       "emptyHistoryShort": "No history meals found",
+      "emptyHistoryHint": "Add meals in the last 30 days and they'll appear here.",
       "emptySaved": "No favorite meals saved yet",
       "emptySavedShort": "No saved meals found",
+      "emptySavedHint": "Star a meal to save it — then re-add it quickly from here.",
       "emptyDaily": "No saved daily plans",
       "emptyDailyShort": "No saved daily plans",
+      "emptyDailyHint": "When you save a daily plan it shows here for fast copying.",
       "close": "Close",
       "moreCount": "+{count} more…",
       "moreCountShort": "+{count} more",
@@ -1612,7 +1624,7 @@
     },
     "input": {
       "placeholder": "Ask a question...",
-      "limitReached": "You've reached your daily message limit"
+      "limitReached": "Quota full • Resets tomorrow"
     },
     "generating": {
       "defaultTitle": "AI is preparing your plan",
@@ -2003,6 +2015,11 @@
       "pushUnsupported": "Your browser does not support push notifications.",
       "pushBlocked": "Push notifications were blocked in browser settings. Allow them in browser settings.",
       "pushActive": "Push notifications active",
+      "pushRequestingPermission": "Requesting browser permission…",
+      "pushEnabledToast": "Push notifications enabled",
+      "pushDeniedToast": "Browser permission denied",
+      "pushDeniedDescription": "You need to allow notifications for this site in your browser settings.",
+      "pushFailedToast": "Push subscription failed — please try again",
       "quietHoursLabel": "Quiet Hours",
       "quietHoursStart": "Start",
       "quietHoursEnd": "End",

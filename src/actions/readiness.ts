@@ -14,8 +14,10 @@ import { and, eq, gte, lte, sql, desc, inArray } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
   computeReadinessScore,
+  bandOf,
   type ReadinessInput,
   type ReadinessResult,
+  type ReadinessBand,
 } from "@/lib/readiness-policy";
 import { getTurkeyTodayStr, addDaysStr } from "@/lib/utils";
 
@@ -406,4 +408,90 @@ export async function getReadiness7dAverage(): Promise<Readiness7dAverage> {
   const average =
     scores.reduce((sum, x) => sum + x, 0) / scores.length;
   return { average, samples: scores.length };
+}
+
+export interface ReadinessDayScore {
+  logDate: string;
+  score: number;
+  band: ReadinessBand;
+}
+
+/**
+ * Per-day passive readiness score for the inclusive [startDate, endDate]
+ * range. Used by the calendar week-strip to render a band-colored strip
+ * under each day. Days without sleep + subjective data are omitted from
+ * the result rather than returning a neutral score, so the UI can
+ * distinguish "no data" from "low readiness".
+ */
+export async function getReadinessByDateRange(
+  startDate: string,
+  endDate: string,
+): Promise<ReadinessDayScore[]> {
+  const user = await getAuthUser();
+  const [sleepRows, readinessRows] = await Promise.all([
+    db
+      .select({
+        logDate: sleepLogs.logDate,
+        durationMinutes: sleepLogs.durationMinutes,
+        quality: sleepLogs.quality,
+      })
+      .from(sleepLogs)
+      .where(
+        and(
+          eq(sleepLogs.userId, user.id),
+          gte(sleepLogs.logDate, startDate),
+          lte(sleepLogs.logDate, endDate),
+        ),
+      ),
+    db
+      .select({
+        logDate: readinessLogs.logDate,
+        energyRating: readinessLogs.energyRating,
+        painScore: readinessLogs.painScore,
+      })
+      .from(readinessLogs)
+      .where(
+        and(
+          eq(readinessLogs.userId, user.id),
+          gte(readinessLogs.logDate, startDate),
+          lte(readinessLogs.logDate, endDate),
+        ),
+      ),
+  ]);
+
+  const readinessByDate = new Map(
+    readinessRows.map((r) => [r.logDate as string, r]),
+  );
+  const out: ReadinessDayScore[] = [];
+
+  for (const s of sleepRows) {
+    const date = s.logDate as string;
+    const subj = readinessByDate.get(date);
+    const result = computeReadinessScore({
+      sleep24h: { durationMinutes: s.durationMinutes, quality: s.quality },
+      waterYesterday: null,
+      complianceYesterday: { ratio: null, wasRest: false, hadPlan: false },
+      subjective: subj
+        ? { energyRating: subj.energyRating, painScore: subj.painScore }
+        : null,
+      trend7d: { current: null, previous: null },
+    });
+    out.push({ logDate: date, score: result.score, band: result.band });
+  }
+
+  // Readiness-only days (subjective entered without sleep log)
+  for (const r of readinessRows) {
+    const date = r.logDate as string;
+    if (sleepRows.some((s) => s.logDate === date)) continue;
+    const result = computeReadinessScore({
+      sleep24h: null,
+      waterYesterday: null,
+      complianceYesterday: { ratio: null, wasRest: false, hadPlan: false },
+      subjective: { energyRating: r.energyRating, painScore: r.painScore },
+      trend7d: { current: null, previous: null },
+    });
+    out.push({ logDate: date, score: result.score, band: bandOf(result.score) });
+  }
+
+  return out.sort((a, b) => a.logDate.localeCompare(b.logDate));
 }

@@ -6,6 +6,10 @@ import { getWeekDayLabels, type WeekStart } from "@/lib/week";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
+import {
+  readinessBandColor,
+  type ReadinessBand,
+} from "@/lib/readiness-policy";
 
 interface WeekStripProps {
   weekStartDate: Date;
@@ -15,6 +19,7 @@ interface WeekStripProps {
   onNextWeek: () => void;
   datesWithPlans?: Set<string>;
   weekStartsOn?: WeekStart;
+  readinessByDate?: Map<string, ReadinessBand>;
 }
 
 function formatMonthRange(start: Date, locale: Locale): string {
@@ -36,6 +41,7 @@ export function WeekStrip({
   onNextWeek,
   datesWithPlans,
   weekStartsOn = "monday",
+  readinessByDate,
 }: WeekStripProps) {
   const t = useTranslations("calendar");
   const locale = useLocale() as Locale;
@@ -77,18 +83,24 @@ export function WeekStrip({
           const isSelected = dateStr === selectedDate;
           const isToday = dateStr === todayStr;
           const hasPlan = datesWithPlans?.has(dateStr) ?? false;
+          const band = readinessByDate?.get(dateStr);
           return (
             <button
               key={dateStr}
               onClick={() => onSelectDate(dateStr)}
               className={cn(
-                "relative flex flex-col items-center py-2 rounded-xl transition-all text-center",
+                "relative flex flex-col items-center py-2 pb-2.5 rounded-xl transition-all text-center overflow-hidden",
                 isSelected
                   ? "bg-primary text-primary-foreground"
                   : isToday
                     ? "bg-primary/15 text-primary"
                     : "hover:bg-accent"
               )}
+              aria-label={
+                band
+                  ? `${dateStr} — readiness ${band}`
+                  : dateStr
+              }
             >
               <span className="text-[10px] font-medium uppercase opacity-70">
                 {label}
@@ -96,8 +108,17 @@ export function WeekStrip({
               <span className={cn("text-lg font-bold", isToday && !isSelected && "text-primary")}>
                 {dayNum}
               </span>
-              {hasPlan && !isSelected && (
+              {hasPlan && !isSelected && !band && (
                 <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+              )}
+              {band && (
+                <span
+                  className={cn(
+                    "absolute bottom-0 left-1 right-1 h-1 rounded-full",
+                    isSelected ? "bg-primary-foreground/70" : readinessBandColor(band),
+                  )}
+                  aria-hidden
+                />
               )}
             </button>
           );

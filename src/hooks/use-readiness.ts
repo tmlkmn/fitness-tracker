@@ -4,6 +4,7 @@ import {
   getTodayReadinessLog,
   upsertReadinessLog,
   computeTodayReadiness,
+  getReadinessByDateRange,
 } from "@/actions/readiness";
 
 export function useReadinessByDate(dateStr: string) {
@@ -32,6 +33,14 @@ export function useTodayReadinessScore() {
   });
 }
 
+export function useReadinessRange(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: ["readiness.range", startDate, endDate],
+    queryFn: () => getReadinessByDateRange(startDate, endDate),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useUpsertReadiness() {
   const qc = useQueryClient();
   return useMutation({
@@ -44,6 +53,7 @@ export function useUpsertReadiness() {
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["readiness.today.log"] });
       qc.invalidateQueries({ queryKey: ["readiness.today.score"] });
+      qc.invalidateQueries({ queryKey: ["readiness.range"] });
       if (vars.logDate) {
         qc.invalidateQueries({
           queryKey: ["readiness.byDate", vars.logDate],

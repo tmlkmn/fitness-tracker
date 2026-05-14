@@ -20,6 +20,7 @@ import {
 } from "@/hooks/use-notification-preferences";
 import { subscribeToPush } from "@/lib/push-subscribe";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 function PushStatus() {
   const t = useTranslations("settings.notificationPrefs");
@@ -137,15 +138,22 @@ export function NotificationPreferencesCard() {
 
   const handlePushToggle = async (enabled: boolean) => {
     if (enabled) {
-      // Request permission and subscribe
       setPushLoading(true);
+      const toastId = toast.loading(t("pushRequestingPermission"));
       try {
         const success = await subscribeToPush();
         if (success) {
           toggle("pushEnabled", true);
-          setPushKey((k) => k + 1); // re-render PushStatus
+          setPushKey((k) => k + 1);
+          toast.success(t("pushEnabledToast"), { id: toastId });
+        } else {
+          const denied =
+            typeof Notification !== "undefined" && Notification.permission === "denied";
+          toast.error(denied ? t("pushDeniedToast") : t("pushFailedToast"), {
+            id: toastId,
+            description: denied ? t("pushDeniedDescription") : undefined,
+          });
         }
-        // If permission denied or failed, don't toggle on
       } finally {
         setPushLoading(false);
       }
@@ -196,18 +204,31 @@ export function NotificationPreferencesCard() {
             onCheckedChange={(v) => toggle("emailEnabled", v)}
           />
         </div>
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">{t("pushLabel")}</Label>
-          {pushLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Switch
-              checked={prefs?.pushEnabled ?? false}
-              onCheckedChange={handlePushToggle}
-            />
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm">{t("pushLabel")}</Label>
+            {pushLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Switch
+                checked={prefs?.pushEnabled ?? false}
+                onCheckedChange={handlePushToggle}
+              />
+            )}
+          </div>
+          {pushLoading && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="text-[11px] text-muted-foreground"
+            >
+              {t("pushRequestingPermission")}
+            </p>
+          )}
+          {!pushLoading && (prefs?.pushEnabled ?? false) && (
+            <PushStatus key={pushKey} />
           )}
         </div>
-        {(prefs?.pushEnabled ?? false) && <PushStatus key={pushKey} />}
 
         <div className="pt-3 border-t border-border/60 space-y-3">
           <div className="flex items-center justify-between">

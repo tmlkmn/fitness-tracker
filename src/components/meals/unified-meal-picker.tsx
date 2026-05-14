@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, UtensilsCrossed, Clock, Star, History, ClipboardList } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Search, Clock, Star, History, ClipboardList } from "lucide-react";
 import {
   getMealPickerData,
   type MealCandidate,
@@ -157,11 +158,24 @@ function DailyPlanCard({
   );
 }
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({
+  icon: Icon,
+  message,
+  hint,
+}: {
+  icon: LucideIcon;
+  message: string;
+  hint?: string;
+}) {
   return (
-    <div className="text-center py-8 space-y-2">
-      <UtensilsCrossed className="h-8 w-8 mx-auto text-muted-foreground opacity-20" />
-      <p className="text-sm text-muted-foreground">{message}</p>
+    <div className="text-center py-8 px-4 space-y-2">
+      <Icon className="h-8 w-8 mx-auto text-muted-foreground opacity-30" />
+      <p className="text-sm font-medium">{message}</p>
+      {hint && (
+        <p className="text-[11px] text-muted-foreground leading-relaxed max-w-[16rem] mx-auto">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }
@@ -299,7 +313,11 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message={t("emptyFrequentShort")} />
+                    <EmptyState
+                      icon={Clock}
+                      message={t("emptyFrequentShort")}
+                      hint={t("emptyFrequentHint")}
+                    />
                   )}
                 </TabsContent>
 
@@ -313,7 +331,11 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message={t("emptyHistoryShort")} />
+                    <EmptyState
+                      icon={History}
+                      message={t("emptyHistoryShort")}
+                      hint={t("emptyHistoryHint")}
+                    />
                   )}
                 </TabsContent>
 
@@ -327,7 +349,11 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message={t("emptySavedShort")} />
+                    <EmptyState
+                      icon={Star}
+                      message={t("emptySavedShort")}
+                      hint={t("emptySavedHint")}
+                    />
                   )}
                 </TabsContent>
 
@@ -341,7 +367,11 @@ export function UnifiedMealPicker({
                       />
                     ))
                   ) : (
-                    <EmptyState message={t("emptyDailyShort")} />
+                    <EmptyState
+                      icon={ClipboardList}
+                      message={t("emptyDailyShort")}
+                      hint={t("emptyDailyHint")}
+                    />
                   )}
                 </TabsContent>
               </>

@@ -6,6 +6,7 @@ import { Activity, Edit3, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTodayReadinessLog } from "@/hooks/use-readiness";
 import { ReadinessFormDialog } from "./readiness-form-dialog";
+import { useSuccessPulse } from "@/hooks/use-success-pulse";
 
 export function ReadinessEntry({
   autoOpen = false,
@@ -13,12 +14,13 @@ export function ReadinessEntry({
   const t = useTranslations("readiness.entry");
   const { data: log } = useTodayReadinessLog();
   const [open, setOpen] = useState(autoOpen);
+  const pulse = useSuccessPulse();
 
   const hasEntry = log != null && (log.energyRating != null || log.painScore != null);
 
   return (
     <>
-      <Card>
+      <Card key={pulse.pulseKey || undefined} className={pulse.pulseClass}>
         <CardContent className="p-4 space-y-2">
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-primary" />
@@ -70,6 +72,7 @@ export function ReadinessEntry({
         <ReadinessFormDialog
           onClose={() => setOpen(false)}
           initial={log ?? undefined}
+          onSaved={() => pulse.trigger()}
         />
       )}
     </>

@@ -459,7 +459,7 @@
       "tagsLabel": "Bu hafta için isteklerini seç:",
       "noteLabel": "Ekstra bir isteğin varsa yaz:",
       "notePlaceholder": "Örn: Omzum ağrıyor, sadece alt vücut çalışayım...",
-      "limitReached": "Günlük limit doldu",
+      "limitReached": "Kota doldu • Yarın yenilenir",
       "generate": "Öneri Al",
       "generateWithQuota": "Öneri Al ({remaining}/{limit})",
       "savedSuggestions": "Kayıtlı Öneriler",
@@ -536,6 +536,10 @@
       "target": "kg hedef"
     },
     "addMeasurement": "Yeni Ölçüm Ekle",
+    "aiHint": {
+      "title": "AI analizine 1 ölçüm kaldı",
+      "body": "2. ölçümünü ekleyince trend yönü, hedefe kalan süre ve haftalık değişim önerileri açılır."
+    },
     "deleteConfirm": "Bu ölçüm kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
     "cancel": "İptal",
     "badges": {
@@ -657,7 +661,7 @@
       "title": "AI Analiz",
       "analyze": "Analiz Et",
       "analyzing": "Analiz ediliyor...",
-      "limitReached": "Limit doldu",
+      "limitReached": "Kota doldu • Yarın yenilenir",
       "refresh": "Yenile",
       "dailyLimit": "Günlük analiz limitine ulaştınız (max 3/gün).",
       "unavailable": "AI analizi şu anda kullanılamıyor.",
@@ -871,6 +875,10 @@
       "workout": "Antrenman Günü",
       "swimming": "Yüzme Günü",
       "rest": "Dinlenme Günü"
+    },
+    "pastDayBanner": {
+      "title": "Geçmiş gün — sadece görüntüleme",
+      "cta": "Bugüne git"
     }
   },
   "meals": {
@@ -1114,12 +1122,16 @@
       "loadingShort": "Yükleniyor...",
       "emptyFrequent": "Henüz sık kullandığın öğün yok",
       "emptyFrequentShort": "Henüz sık kullanılan öğün yok",
+      "emptyFrequentHint": "Aynı öğünü 2+ kez ekledikten sonra burada görünür.",
       "emptyHistory": "Önceki günlerden öğün bulunamadı",
       "emptyHistoryShort": "Geçmiş öğün bulunamadı",
+      "emptyHistoryHint": "Son 30 günde öğün ekledikten sonra burada görünür.",
       "emptySaved": "Henüz favori öğün kaydetmedin",
       "emptySavedShort": "Kayıtlı öğün bulunamadı",
+      "emptySavedHint": "Bir öğünü yıldız ikonuyla kaydet, sonra buradan hızlıca tekrar ekle.",
       "emptyDaily": "Kayıtlı günlük plan yok",
       "emptyDailyShort": "Kayıtlı günlük plan bulunamadı",
+      "emptyDailyHint": "Bir günlük planı kaydettiğinde burada hızlı kopyalama için görünür.",
       "close": "Kapat",
       "moreCount": "+{count} daha…",
       "moreCountShort": "+{count} daha",
@@ -1613,7 +1625,7 @@
     },
     "input": {
       "placeholder": "Bir soru sorun...",
-      "limitReached": "Günlük mesaj limitine ulaştınız"
+      "limitReached": "Kota doldu • Yarın yenilenir"
     },
     "generating": {
       "defaultTitle": "AI programını hazırlıyor",
@@ -2004,6 +2016,11 @@
       "pushUnsupported": "Tarayıcınız push bildirimlerini desteklemiyor.",
       "pushBlocked": "Push bildirimleri tarayıcı ayarlarından engellendi. Tarayıcı ayarlarından izin verin.",
       "pushActive": "Push bildirimleri aktif",
+      "pushRequestingPermission": "Tarayıcı izni isteniyor…",
+      "pushEnabledToast": "Push bildirimleri aktif",
+      "pushDeniedToast": "Tarayıcı izinleri reddedildi",
+      "pushDeniedDescription": "Tarayıcı ayarlarından bu siteye bildirim izni vermen gerekiyor.",
+      "pushFailedToast": "Push kaydı başarısız — lütfen tekrar dene",
       "quietHoursLabel": "Sessiz Saatler",
       "quietHoursStart": "Başlangıç",
       "quietHoursEnd": "Bitiş",

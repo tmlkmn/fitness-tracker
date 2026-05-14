@@ -24,6 +24,7 @@ interface SleepFormDialogProps {
     quality: number | null;
     notes: string | null;
   };
+  onSaved?: () => void;
 }
 
 function computeDuration(bedtime: string, wakeTime: string): number | null {
@@ -41,6 +42,7 @@ export function SleepFormDialog({
   onOpenChange,
   date,
   initial,
+  onSaved,
 }: SleepFormDialogProps) {
   const t = useTranslations("sleep");
   const tForm = useTranslations("sleep.form");
@@ -79,7 +81,12 @@ export function SleepFormDialog({
     if (!bedtime || !wakeTime) return;
     upsert.mutate(
       { logDate: date, bedtime, wakeTime, quality, notes: notes || null },
-      { onSuccess: () => onOpenChange(false) },
+      {
+        onSuccess: () => {
+          onOpenChange(false);
+          onSaved?.();
+        },
+      },
     );
   };
 
