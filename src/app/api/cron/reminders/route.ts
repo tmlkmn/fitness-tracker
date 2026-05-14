@@ -15,6 +15,7 @@ import { sendMembershipExpiryEmail } from "@/lib/email";
 import { normalizeLocale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
 import { getReminderTemplateText, isReminderTemplateKey } from "@/lib/reminder-templates";
+import { getServerTranslator } from "@/lib/i18n-server";
 
 async function getTodayDailyPlanIdForUser(
   userId: string,
@@ -207,22 +208,16 @@ export async function GET(request: NextRequest) {
       firedCount += firedMeals;
     } else if (reminder.type === "workout") {
       const workoutTime = reminder.defaultWorkoutTime ?? "19:00";
-      const targetTime = subtractMinutes(
-        workoutTime,
-        reminder.minutesBefore ?? 10
-      );
+      const minutes = reminder.minutesBefore ?? 10;
+      const targetTime = subtractMinutes(workoutTime, minutes);
       if (targetTime === hhmm) {
         const locale = normalizeLocale(reminder.userLocale);
-        const isEn = locale === "en";
+        const t = await getServerTranslator(locale, "triggerNotifications.reminderWorkout");
         await sendNotification({
           userId: reminder.userId,
           type: "reminder_workout",
-          title: reminder.title,
-          body:
-            reminder.body ??
-            (isEn
-              ? `Workout in ${reminder.minutesBefore ?? 10} minutes!`
-              : `${reminder.minutesBefore ?? 10} dk sonra antrenman zamanı!`),
+          title: reminder.title || t("title"),
+          body: reminder.body ?? t("body", { minutes }),
           link: undefined,
           skipEmail: reminder.skipEmail ?? true,
         });
@@ -318,7 +313,8 @@ async function handleMealReminder(
   currentHhmm: string,
   dateStr: string
 ): Promise<number> {
-  const isEn = normalizeLocale(reminder.userLocale) === "en";
+  const locale = normalizeLocale(reminder.userLocale);
+  const tMeal = await getServerTranslator(locale, "triggerNotifications.reminderMeal");
   // Find today's daily plan for this user
   const todayPlans = await db
     .select({
@@ -353,10 +349,8 @@ async function handleMealReminder(
       await sendNotification({
         userId: reminder.userId,
         type: "reminder_meal",
-        title: isEn ? `${meal.mealLabel} Reminder` : `${meal.mealLabel} Hatırlatıcı`,
-        body: isEn
-          ? `In ${offset} minutes: ${meal.mealLabel}`
-          : `${offset} dk sonra: ${meal.mealLabel}`,
+        title: meal.mealLabel,
+        body: tMeal("body", { minutes: offset, mealLabel: meal.mealLabel }),
         link: undefined,
         skipEmail: reminder.skipEmail ?? true,
       });
@@ -427,41 +421,26 @@ async function checkMembershipExpiry(): Promise<number> {
     }
 
     const userLocale = normalizeLocale(user.locale);
-    const isEn = userLocale === "en";
-    let title: string;
-    let body: string;
-
-    if (daysLeft <= 0) {
-      title = isEn ? "Your Membership Has Expired" : "Üyelik Süreniz Doldu";
-      body = isEn
-        ? "Your membership has expired. Contact your administrator for access."
-        : "Üyelik süreniz doldu. Erişim için yöneticinizle iletişime geçin.";
-    } else if (daysLeft <= 1) {
-      title = isEn ? "Your Membership Expires Tomorrow!" : "Üyeliğiniz Yarın Doluyor!";
-      body = isEn
-        ? "Your membership expires tomorrow. Request a renewal for uninterrupted access."
-        : "Üyelik süreniz yarın doluyor. Kesintisiz erişim için yenileme talep edin.";
-    } else if (daysLeft <= 3) {
-      title = isEn
-        ? `Your Membership Expires in ${daysLeft} Days`
-        : `Üyeliğiniz ${daysLeft} Gün İçinde Doluyor`;
-      body = isEn
-        ? `Your membership expires in ${daysLeft} days. Contact your administrator to renew.`
-        : `Üyelik süreniz ${daysLeft} gün sonra doluyor. Yenileme için yöneticinize ulaşın.`;
-    } else {
-      title = isEn ? "Membership Reminder" : "Üyelik Hatırlatması";
-      body = isEn
-        ? `Your membership expires in ${daysLeft} days.`
-        : `Üyelik süreniz ${daysLeft} gün sonra doluyor.`;
-    }
+    const namespaceKey =
+      daysLeft <= 0
+        ? "membershipExpired"
+        : daysLeft <= 1
+          ? "membershipExpiring1d"
+          : daysLeft <= 3
+            ? "membershipExpiring3d"
+            : "membershipExpiring7d";
+    const tExpiry = await getServerTranslator(
+      userLocale,
+      `triggerNotifications.${namespaceKey}`,
+    );
 
     // In-app + push notification (skip email — we'll send a custom one)
     await sendNotification({
       userId: user.id,
       type: daysLeft <= 0 ? "membership_expired" : "membership_expiring",
-      title,
-      body,
-      link: isEn ? "/en/settings" : "/tr/ayarlar",
+      title: tExpiry("title"),
+      body: tExpiry("body"),
+      link: userLocale === "en" ? "/en/settings" : "/tr/ayarlar",
       skipEmail: true,
     });
 
