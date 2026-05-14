@@ -156,17 +156,16 @@ export async function sendNotificationEmail(
   link?: string,
   locale: Locale = "tr",
 ) {
-  const isEn = locale === "en";
-  const detailsBtn = isEn ? "View Details →" : "Detayları Gör →";
+  const t = await getServerTranslator(locale, "emailTemplates.notificationWrapper");
   const html = await emailLayout(`
     <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">${title}</h2>
     <p style="color:#d4d4d4;font-size:14px;line-height:22px;margin:0;">
       ${body}
     </p>
-    ${link ? emailButton(`${appUrl}${link}`, detailsBtn) : ""}
+    ${link ? emailButton(`${appUrl}${link}`, t("detailsBtn")) : ""}
   `, locale);
 
-  await sendEmail(to, `FitMusc — ${subject}`, html);
+  await sendEmail(to, subject, html);
 }
 
 export async function sendMembershipExpiryEmail(
@@ -176,44 +175,36 @@ export async function sendMembershipExpiryEmail(
   endDateStr: string,
   locale: Locale = "tr",
 ) {
-  const isEn = locale === "en";
   const isExpired = daysLeft <= 0;
-  const borderColor = isExpired ? "#ef4444" : daysLeft <= 1 ? "#ef4444" : "#f59e0b";
-  const countdownColor = isExpired ? "#ef4444" : daysLeft <= 1 ? "#ef4444" : "#f59e0b";
+  const isUrgent = isExpired || daysLeft <= 1;
+  const accentColor = isUrgent ? "#ef4444" : "#f59e0b";
+  const settingsPath = locale === "en" ? "/en/settings" : "/tr/ayarlar";
 
-  const settingsPath = isEn ? "/en/settings" : "/tr/ayarlar";
+  const t = await getServerTranslator(locale, "emailTemplates.expiry");
 
-  const subject = isEn
-    ? (isExpired ? "Your Membership Has Expired" : `Your Membership Expires in ${daysLeft} Days`)
-    : (isExpired ? "Üyelik Süreniz Doldu" : `Üyeliğiniz ${daysLeft} Gün İçinde Doluyor`);
+  const subjectKey = isExpired
+    ? "subjectExpired"
+    : daysLeft <= 1
+      ? "subject1d"
+      : daysLeft <= 3
+        ? "subject3d"
+        : "subject7d";
+  const ctaKey = isExpired
+    ? "ctaExpired"
+    : daysLeft <= 1
+      ? "cta1d"
+      : daysLeft <= 3
+        ? "cta3d"
+        : "cta7d";
 
-  const heading = isEn
-    ? (isExpired ? "Your Membership Has Expired" : "Membership Reminder")
-    : (isExpired ? "Üyelik Süreniz Doldu" : "Üyelik Hatırlatması");
-
-  const greeting = isEn ? `Hi ${userName},` : `Merhaba ${userName},`;
-
-  const counter = isEn
-    ? (isExpired ? "Expired" : `${daysLeft} ${daysLeft === 1 ? "Day" : "Days"}`)
-    : (isExpired ? "Süresi Doldu" : `${daysLeft} Gün`);
-
-  const counterSub = isEn
-    ? (isExpired ? `Your membership expired on ${endDateStr}` : `Your membership expires on ${endDateStr}`)
-    : (isExpired ? `Üyeliğiniz ${endDateStr} tarihinde sona erdi` : `Üyeliğiniz ${endDateStr} tarihinde sona erecek`);
-
-  const cta = isEn
-    ? (isExpired
-        ? "Your account requires a renewal to regain access."
-        : "Renew your membership to keep uninterrupted access!")
-    : (isExpired
-        ? "Hesabınıza erişim için üyeliğinizin yenilenmesi gerekmektedir."
-        : "Kesintisiz erişim için üyeliğinizi yenilemeyi unutmayın!");
-
-  const renewNote = isEn
-    ? "Contact your administrator to renew."
-    : "Yenilemek için yöneticinizle iletişime geçin.";
-
-  const button = isEn ? "Go to My Account →" : "Hesabıma Git →";
+  const heading = t(isExpired ? "headingExpired" : "headingActive");
+  const greeting = t("greeting", { userName });
+  const counter = isExpired
+    ? t("counterExpired")
+    : t("counterDays", { daysLeft });
+  const counterSub = isExpired
+    ? t("counterSubExpired", { endDate: endDateStr })
+    : t("counterSubActive", { endDate: endDateStr });
 
   const html = await emailLayout(`
     <h2 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;">
@@ -223,10 +214,10 @@ export async function sendMembershipExpiryEmail(
       ${greeting}
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-           style="background-color:#0a0a0b;border-radius:8px;border:1px solid ${borderColor};margin:0 0 20px 0;">
+           style="background-color:#0a0a0b;border-radius:8px;border:1px solid ${accentColor};margin:0 0 20px 0;">
       <tr>
         <td style="padding:16px;text-align:center;">
-          <p style="color:${countdownColor};font-size:32px;font-weight:700;margin:0;">
+          <p style="color:${accentColor};font-size:32px;font-weight:700;margin:0;">
             ${counter}
           </p>
           <p style="color:#a3a3a3;font-size:13px;margin:4px 0 0 0;">
@@ -236,13 +227,13 @@ export async function sendMembershipExpiryEmail(
       </tr>
     </table>
     <p style="color:#d4d4d4;font-size:14px;line-height:22px;margin:0 0 8px 0;">
-      ${cta}
+      ${t(ctaKey)}
     </p>
     <p style="color:#a3a3a3;font-size:13px;line-height:20px;margin:0;">
-      ${renewNote}
+      ${t("renewNote")}
     </p>
-    ${emailButton(`${appUrl}${settingsPath}`, button)}
+    ${emailButton(`${appUrl}${settingsPath}`, t("button"))}
   `, locale);
 
-  await sendEmail(to, `FitMusc — ${subject}`, html);
+  await sendEmail(to, t(subjectKey), html);
 }
