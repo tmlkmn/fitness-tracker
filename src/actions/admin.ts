@@ -15,6 +15,7 @@ import { normalizeLocale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
 import { getUserStatus, type UserStatus } from "@/lib/user-status";
 import { invalidateAdminOpsCache } from "@/lib/admin-ops-cache";
+import { PRICING, type BillingTier } from "@/lib/billing/tier-config";
 
 export type { UserStatus };
 
@@ -686,3 +687,170 @@ export async function getAiWarningsAnalytics(): Promise<AiWarningsAnalytics> {
     categoryBreakdown,
   };
 }
+
+// ─── Billing admin ────────────────────────────────────────────────────────
+
+/**
+ * Permanently moves a user onto a billing tier without payment — for comped
+ * staff/internal accounts. No auto-expiry; use grantComplimentary for a
+ * time-boxed free extension instead.
+ */
+export async function migrateUserToBilling(
+  userId: string,
+  tier: BillingTier,
+) {
+  const admin = await getAuthAdmin();
+  const [user] = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, userId));
+  if (!user) throw new Error("User not found");
+  if (user.role === "admin") throw new Error("Cannot modify admin user");
+
+  await db
+    .update(users)
+    .set({
+      billingProvider: "admin",
+      billingTier: tier,
+      subscriptionStatus: "active",
+      isApproved: true,
+    })
+    .where(eq(users.id, userId));
+
+  logAudit({
+    adminId: admin.id,
+    action: "billing.migrate",
+    entityType: "user",
+    entityId: userId,
+    details: { tier },
+  }).catch(() => {});
+  revalidatePath("/admin");
+  invalidateAdminOpsCache();
+  return { success: true };
+}
+
+/**
+ * Grants a time-boxed complimentary extension via the legacy membership
+ * fields, so getAuthUser + the expiry cron auto-revoke it when it lapses.
+ */
+export async function grantComplimentary(userId: string, days: number) {
+  const admin = await getAuthAdmin();
+  if (!Number.isInteger(days) || days < 1 || days > 3650) {
+    throw new Error("Invalid duration");
+  }
+  const [user] = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, userId));
+  if (!user) throw new Error("User not found");
+  if (user.role === "admin") throw new Error("Cannot modify admin user");
+
+  const endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  await db
+    .update(users)
+    .set({
+      membershipType: "custom",
+      membershipEndDate: endDate,
+      membershipNotifiedAt: null,
+      isApproved: true,
+    })
+    .where(eq(users.id, userId));
+
+  logAudit({
+    adminId: admin.id,
+    action: "billing.grant_complimentary",
+    entityType: "user",
+    entityId: userId,
+    details: { days, endDate },
+  }).catch(() => {});
+  revalidatePath("/admin");
+  invalidateAdminOpsCache();
+  return { success: true };
+}
+
+export interface BillingStats {
+  active: number;
+  trialing: number;
+  pastDue: number;
+  cancelled: number;
+  pro: number;
+  elite: number;
+  // Monthly recurring revenue estimate in USD (list prices).
+  mrrUsd: number;
+  recentFailed: {
+    id: string;
+    name: string;
+    email: string;
+    paymentFailedAt: Date | null;
+  }[];
+}
+
+export async function getBillingStats(): Promise<BillingStats> {
+  await getAuthAdmin();
+
+  const rows = await db
+    .select({
+      subscriptionStatus: users.subscriptionStatus,
+      billingTier: users.billingTier,
+      billingInterval: users.billingInterval,
+    })
+    .from(users);
+
+  const stats: BillingStats = {
+    active: 0,
+    trialing: 0,
+    pastDue: 0,
+    cancelled: 0,
+    pro: 0,
+    elite: 0,
+    mrrUsd: 0,
+    recentFailed: [],
+  };
+
+  for (const r of rows) {
+    switch (r.subscriptionStatus) {
+      case "active":
+        stats.active++;
+        break;
+      case "trialing":
+        stats.trialing++;
+        break;
+      case "past_due":
+        stats.pastDue++;
+        break;
+      case "cancelled":
+        stats.cancelled++;
+        break;
+    }
+    // MRR — count revenue-bearing states only.
+    if (
+      (r.subscriptionStatus === "active" ||
+        r.subscriptionStatus === "past_due") &&
+      (r.billingTier === "pro" || r.billingTier === "elite")
+    ) {
+      if (r.billingTier === "pro") stats.pro++;
+      else stats.elite++;
+      const interval = r.billingInterval === "yearly" ? "yearly" : "monthly";
+      const price = PRICING[r.billingTier][interval];
+      stats.mrrUsd += interval === "yearly" ? price / 12 : price;
+    }
+  }
+  stats.mrrUsd = Math.round(stats.mrrUsd * 100) / 100;
+
+  const failed = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      paymentFailedAt: users.paymentFailedAt,
+    })
+    .from(users)
+    .where(isNotNull(users.paymentFailedAt))
+    .orderBy(desc(users.paymentFailedAt))
+    .limit(10);
+  stats.recentFailed = failed;
+
+  return stats;
+}
+
+

@@ -6,6 +6,7 @@ import {
   Bot,
   AlertTriangle,
   MessageSquare,
+  CreditCard,
 } from "lucide-react";
 
 export async function AdminQuickNav() {
@@ -35,6 +36,12 @@ export async function AdminQuickNav() {
       label: t("feedback"),
       Icon: MessageSquare,
       tone: "text-purple-400",
+    },
+    {
+      href: { pathname: "/admin/billing" } as const,
+      label: t("billing"),
+      Icon: CreditCard,
+      tone: "text-sky-400",
     },
   ];
 

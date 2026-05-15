@@ -1,8 +1,20 @@
 User-agent: *
-Allow: /tanitim
-Allow: /gizlilik
-Allow: /kvkk
-Allow: /kullanim-sartlari
+Allow: /tr/tanitim
+Allow: /en/about
+Allow: /tr/fiyatlandirma
+Allow: /en/pricing
+Allow: /tr/gizlilik
+Allow: /en/privacy
+Allow: /tr/kvkk
+Allow: /en/kvkk
+Allow: /tr/kullanim-sartlari
+Allow: /en/terms
+Allow: /tr/iade-politikasi
+Allow: /en/refund-policy
+Allow: /tr/cerez-politikasi
+Allow: /en/cookie-policy
+Allow: /tr/iletisim
+Allow: /en/contact
 Disallow: /
 
 Sitemap: https://fitmusc.com/sitemap.xml

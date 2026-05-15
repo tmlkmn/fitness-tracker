@@ -20,6 +20,7 @@ const geistMono = Geist_Mono({
 
 import { QueryProvider } from "@/lib/query-client";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { Footer } from "@/components/layout/footer";
 import { QuickActionFab } from "@/components/layout/quick-action-fab";
 import { Toaster } from "@/components/ui/sonner";
 import { SwRegister } from "./sw-register";
@@ -170,6 +171,7 @@ export default async function LocaleLayout({
                 <PullToRefresh>
                   <main className="pb-24 max-w-lg md:max-w-2xl mx-auto">
                     <ViewTransition default="page-fade">{children}</ViewTransition>
+                    <Footer />
                   </main>
                 </PullToRefresh>
                 <QuickActionFab />
