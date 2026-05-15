@@ -3141,6 +3141,10 @@
       "title": "Payment failed",
       "body": "Your payment didn't go through. Update your payment method to keep access."
     },
+    "adminPaymentFailed": {
+      "title": "User payment failed",
+      "body": "Payment failed for {userName} ({userEmail})."
+    },
     "trialEnding": {
       "title": "Your trial is ending",
       "body": "{daysLeft} days left in your trial. Pick a plan to keep going."

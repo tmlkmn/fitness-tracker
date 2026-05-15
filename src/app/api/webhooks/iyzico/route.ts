@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { users, invoices } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { recordWebhookEvent } from "@/lib/billing/webhook-events";
+import { notifyAdminsOfPaymentFailure } from "@/lib/billing/notify-admins";
 import { sendNotification } from "@/lib/notifications";
 import { getServerTranslator } from "@/lib/i18n-server";
 import { normalizeLocale } from "@/lib/locale";
@@ -146,7 +147,9 @@ export async function POST(request: NextRequest) {
       title: t("title"),
       body: t("body"),
       link: loc === "en" ? "/en/settings/billing" : "/tr/ayarlar/odeme",
+      forceEmail: true,
     });
+    await notifyAdminsOfPaymentFailure(user.id);
   }
 
   return NextResponse.json({ ok: true });

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { users, sessions, aiUsageLogs } from "@/db/schema";
+import { users, sessions, aiUsageLogs, invoices, webhookEvents } from "@/db/schema";
 import { eq, sql, gte, and, inArray, isNotNull, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { sendInviteEmail } from "@/lib/email";
@@ -851,6 +851,63 @@ export async function getBillingStats(): Promise<BillingStats> {
   stats.recentFailed = failed;
 
   return stats;
+}
+
+export interface InvoiceLogRow {
+  id: number;
+  userName: string;
+  userEmail: string;
+  provider: string;
+  amount: string;
+  currency: string;
+  status: string;
+  pdfUrl: string | null;
+  issuedAt: Date;
+}
+
+export async function getRecentInvoices(): Promise<InvoiceLogRow[]> {
+  await getAuthAdmin();
+  return db
+    .select({
+      id: invoices.id,
+      userName: users.name,
+      userEmail: users.email,
+      provider: invoices.provider,
+      amount: invoices.amount,
+      currency: invoices.currency,
+      status: invoices.status,
+      pdfUrl: invoices.pdfUrl,
+      issuedAt: invoices.issuedAt,
+    })
+    .from(invoices)
+    .innerJoin(users, eq(invoices.userId, users.id))
+    .orderBy(desc(invoices.issuedAt))
+    .limit(50);
+}
+
+export interface WebhookLogRow {
+  id: number;
+  provider: string;
+  eventName: string | null;
+  externalId: string;
+  processedAt: Date;
+  payload: unknown;
+}
+
+export async function getRecentWebhookEvents(): Promise<WebhookLogRow[]> {
+  await getAuthAdmin();
+  return db
+    .select({
+      id: webhookEvents.id,
+      provider: webhookEvents.provider,
+      eventName: webhookEvents.eventName,
+      externalId: webhookEvents.externalId,
+      processedAt: webhookEvents.processedAt,
+      payload: webhookEvents.payload,
+    })
+    .from(webhookEvents)
+    .orderBy(desc(webhookEvents.processedAt))
+    .limit(50);
 }
 
 

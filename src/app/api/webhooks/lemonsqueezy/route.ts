@@ -6,6 +6,7 @@ import { users, invoices } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { recordWebhookEvent } from "@/lib/billing/webhook-events";
 import { resolveVariant } from "@/lib/billing/lemonsqueezy";
+import { notifyAdminsOfPaymentFailure } from "@/lib/billing/notify-admins";
 import { sendNotification } from "@/lib/notifications";
 import { getServerTranslator } from "@/lib/i18n-server";
 import { normalizeLocale } from "@/lib/locale";
@@ -83,8 +84,10 @@ async function notifyBillingEvent(
     title: t("title"),
     body: t("body"),
     link: loc === "en" ? "/en/settings/billing" : "/tr/ayarlar/odeme",
-    // Payment failures must reach the user even outside the in-app channel.
     skipEmail: key === "subscriptionStarted",
+    // Payment failures and cancellations are critical — they must reach the
+    // user by email regardless of preferences or quiet hours.
+    forceEmail: key === "paymentFailed" || key === "subscriptionCancelled",
   });
 }
 
@@ -235,6 +238,7 @@ async function handlePaymentEvent(
       .set({ subscriptionStatus: "past_due", paymentFailedAt: new Date() })
       .where(eq(users.id, user.id));
     await notifyBillingEvent(user.id, user.locale, "paymentFailed");
+    await notifyAdminsOfPaymentFailure(user.id);
   }
 
   return NextResponse.json({ ok: true });

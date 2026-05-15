@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { getBillingStats } from "@/actions/admin";
+import {
+  getBillingStats,
+  getRecentInvoices,
+  getRecentWebhookEvents,
+} from "@/actions/admin";
 import { AdminBillingTools } from "@/components/admin/admin-billing-tools";
 
 export const metadata: Metadata = {
@@ -22,8 +26,12 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 }
 
 export default async function AdminBillingPage() {
-  // getBillingStats() runs getAuthAdmin() — throws for non-admins.
-  const stats = await getBillingStats();
+  // Each of these runs getAuthAdmin() — throws for non-admins.
+  const [stats, invoiceLog, webhookLog] = await Promise.all([
+    getBillingStats(),
+    getRecentInvoices(),
+    getRecentWebhookEvents(),
+  ]);
 
   return (
     <div className="px-4 py-6 space-y-5">
@@ -86,6 +94,81 @@ export default async function AdminBillingPage() {
       </Card>
 
       <AdminBillingTools />
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h2 className="text-sm font-semibold">Fatura Geçmişi</h2>
+          {invoiceLog.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Kayıt yok.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {invoiceLog.map((inv) => (
+                <li
+                  key={inv.id}
+                  className="flex items-center justify-between py-2 text-sm"
+                >
+                  <div>
+                    <p className="font-medium">{inv.userName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {inv.provider} ·{" "}
+                      {new Date(inv.issuedAt).toLocaleDateString("tr-TR")}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">
+                      {inv.amount} {inv.currency}
+                    </p>
+                    {inv.pdfUrl ? (
+                      <a
+                        href={inv.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-sky-400 hover:underline"
+                      >
+                        Fatura PDF
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        {inv.status}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h2 className="text-sm font-semibold">Webhook Kayıtları</h2>
+          {webhookLog.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Kayıt yok.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {webhookLog.map((ev) => (
+                <li key={ev.id} className="py-2 text-sm">
+                  <details>
+                    <summary className="flex cursor-pointer items-center justify-between gap-2">
+                      <span className="font-medium">
+                        {ev.eventName ?? "—"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {ev.provider} ·{" "}
+                        {new Date(ev.processedAt).toLocaleString("tr-TR")}
+                      </span>
+                    </summary>
+                    <pre className="mt-2 overflow-x-auto rounded bg-muted p-2 text-xs">
+                      {JSON.stringify(ev.payload, null, 2)}
+                    </pre>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

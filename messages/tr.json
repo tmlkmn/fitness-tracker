@@ -3141,6 +3141,10 @@
       "title": "Ödeme alınamadı",
       "body": "Ödemen başarısız oldu. Erişimini kaybetmemek için ödeme yöntemini güncelle."
     },
+    "adminPaymentFailed": {
+      "title": "Kullanıcı ödemesi başarısız",
+      "body": "{userName} ({userEmail}) kullanıcısının ödemesi başarısız oldu."
+    },
     "trialEnding": {
       "title": "Deneme süren bitiyor",
       "body": "Deneme sürene {daysLeft} gün kaldı. Kesintisiz devam için bir plan seç."

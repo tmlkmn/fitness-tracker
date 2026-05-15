@@ -42,8 +42,12 @@ export async function sendNotification(params: {
   link?: string;
   metadata?: Record<string, unknown>;
   skipEmail?: boolean;
+  // Critical transactional mail (payment failures, cancellations): bypasses
+  // the user's email preference and quiet hours so the message always lands.
+  forceEmail?: boolean;
 }): Promise<void> {
-  const { userId, type, title, body, link, metadata, skipEmail } = params;
+  const { userId, type, title, body, link, metadata, skipEmail, forceEmail } =
+    params;
 
   // Get user preferences (defaults: all enabled)
   const [prefs] = await db
@@ -56,7 +60,7 @@ export async function sendNotification(params: {
   const pushEnabled = prefs?.pushEnabled ?? true;
   const quiet = isInQuietHours(prefs?.quietHoursStart, prefs?.quietHoursEnd, prefs?.timezone);
 
-  console.log(`[notification] userId=${userId} type=${type} prefs: inApp=${inAppEnabled} email=${emailEnabled} push=${pushEnabled} skipEmail=${skipEmail} quiet=${quiet}`);
+  console.log(`[notification] userId=${userId} type=${type} prefs: inApp=${inAppEnabled} email=${emailEnabled} push=${pushEnabled} skipEmail=${skipEmail} forceEmail=${forceEmail} quiet=${quiet}`);
 
   // 1. In-app notification
   if (inAppEnabled) {
@@ -70,8 +74,9 @@ export async function sendNotification(params: {
     });
   }
 
-  // 2. Email notification (suppressed during quiet hours)
-  if (emailEnabled && !skipEmail && !quiet) {
+  // 2. Email notification. Normally gated by the user's email preference and
+  // quiet hours; forceEmail overrides both for critical transactional mail.
+  if (!skipEmail && (forceEmail || (emailEnabled && !quiet))) {
     const [user] = await db
       .select({ email: users.email, locale: users.locale })
       .from(users)
