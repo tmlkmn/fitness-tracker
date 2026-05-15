@@ -14,6 +14,16 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+// Billing address captured at iyzico checkout (KVKK invoicing requirement).
+export type BillingAddress = {
+  fullName: string;
+  line1: string;
+  city: string;
+  country: string;
+  zip?: string;
+  phone?: string;
+};
+
 // ── Auth tables (better-auth) ──
 
 export const users = pgTable(
@@ -50,6 +60,26 @@ export const users = pgTable(
     membershipStartDate: timestamp("membership_start_date"),
     membershipEndDate: timestamp("membership_end_date"),
     membershipNotifiedAt: timestamp("membership_notified_at"),
+    // ── Billing / subscription (Lemon Squeezy + iyzico) ──
+    // All nullable with no default: legacy/admin-invited rows stay null and
+    // fall into the legacy branch of getEntitlement(). New billing rows set
+    // subscriptionStatus explicitly (incl. 'none' for admin-invited users).
+    lemonSqueezyCustomerId: text("lemonsqueezy_customer_id"),
+    lemonSqueezySubscriptionId: text("lemonsqueezy_subscription_id"),
+    iyzicoCustomerRef: text("iyzico_customer_ref"),
+    iyzicoSubscriptionRef: text("iyzico_subscription_ref"),
+    subscriptionStatus: text("subscription_status"),
+    billingTier: text("billing_tier"),
+    billingInterval: text("billing_interval"),
+    billingProvider: text("billing_provider"),
+    trialEndsAt: timestamp("trial_ends_at"),
+    trialNotifiedAt: timestamp("trial_notified_at"),
+    nextBillingDate: timestamp("next_billing_date"),
+    paymentFailedAt: timestamp("payment_failed_at"),
+    cancelledAt: timestamp("cancelled_at"),
+    iyzicoIdentityNumber: text("iyzico_identity_number"),
+    billingAddress: jsonb("billing_address").$type<BillingAddress>(),
+    taxNumber: text("tax_number"),
     hasSeenOnboarding: boolean("has_seen_onboarding").default(false),
     targetCalories: integer("target_calories"),
     targetProteinG: numeric("target_protein_g"),
@@ -87,6 +117,22 @@ export const users = pgTable(
     check(
       "user_locale_check",
       sql`${t.locale} IN ('tr', 'en')`,
+    ),
+    check(
+      "user_subscription_status_check",
+      sql`${t.subscriptionStatus} IS NULL OR ${t.subscriptionStatus} IN ('none', 'trialing', 'active', 'past_due', 'cancelled', 'expired')`,
+    ),
+    check(
+      "user_billing_tier_check",
+      sql`${t.billingTier} IS NULL OR ${t.billingTier} IN ('pro', 'elite')`,
+    ),
+    check(
+      "user_billing_interval_check",
+      sql`${t.billingInterval} IS NULL OR ${t.billingInterval} IN ('monthly', 'yearly')`,
+    ),
+    check(
+      "user_billing_provider_check",
+      sql`${t.billingProvider} IS NULL OR ${t.billingProvider} IN ('lemonsqueezy', 'iyzico', 'admin')`,
     ),
   ],
 );
@@ -695,3 +741,56 @@ export const cookieConsents = pgTable("cookie_consents", {
   userAgent: text("user_agent"),
   consentedAt: timestamp("consented_at").defaultNow().notNull(),
 });
+
+// ── Billing: invoices ──
+
+export const invoices = pgTable(
+  "invoices",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    providerRef: text("provider_ref").notNull(),
+    amount: numeric("amount").notNull(),
+    currency: text("currency").notNull(),
+    status: text("status").notNull(),
+    pdfUrl: text("pdf_url"),
+    issuedAt: timestamp("issued_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("invoices_provider_ref_idx").on(t.provider, t.providerRef),
+    check(
+      "invoices_provider_check",
+      sql`${t.provider} IN ('lemonsqueezy', 'iyzico')`,
+    ),
+  ],
+);
+
+// ── Billing: webhook event log (idempotency) ──
+// A processed webhook is recorded by (provider, externalId). The unique index
+// lets handlers detect replays: a conflicting insert means "already handled".
+
+export const webhookEvents = pgTable(
+  "webhook_events",
+  {
+    id: serial("id").primaryKey(),
+    provider: text("provider").notNull(),
+    externalId: text("external_id").notNull(),
+    eventName: text("event_name"),
+    payload: jsonb("payload"),
+    processedAt: timestamp("processed_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("webhook_events_provider_external_idx").on(
+      t.provider,
+      t.externalId,
+    ),
+    check(
+      "webhook_events_provider_check",
+      sql`${t.provider} IN ('lemonsqueezy', 'iyzico')`,
+    ),
+  ],
+);

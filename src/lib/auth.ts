@@ -18,7 +18,9 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    disableSignUp: true,
+    // Public signup stays closed unless FEATURE_PUBLIC_SIGNUP is explicitly
+    // enabled — preserving the invite-only model until billing goes live.
+    disableSignUp: process.env.FEATURE_PUBLIC_SIGNUP !== "true",
     sendResetPassword: async ({ user, url }) => {
       const locale = (user as { locale?: string }).locale === "en" ? "en" : "tr";
       await sendResetEmail(user.email, url, locale);
@@ -40,6 +42,11 @@ export const auth = betterAuth({
       hasSeenOnboarding: { type: "boolean", required: false, defaultValue: false },
       locale: { type: "string", required: false, defaultValue: "tr" },
       frozenAt: { type: "date", required: false },
+      subscriptionStatus: { type: "string", required: false },
+      billingTier: { type: "string", required: false },
+      billingInterval: { type: "string", required: false },
+      trialEndsAt: { type: "date", required: false },
+      nextBillingDate: { type: "date", required: false },
     },
   },
   session: {

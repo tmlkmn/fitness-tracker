@@ -1,7 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/db";
-import { aiUsageLogs } from "@/db/schema";
+import { aiUsageLogs, users } from "@/db/schema";
 import { eq, and, gte, sql, inArray } from "drizzle-orm";
+import { getEntitlement } from "@/lib/billing/entitlement";
 
 export type AiUsageStatus =
   | "success"
@@ -127,8 +128,34 @@ function getStartOfDay(): Date {
   return start;
 }
 
+/**
+ * Resolves the per-feature daily limit for a user. Elite subscribers (and
+ * admins) get tier overrides; everyone else falls back to DAILY_LIMITS. Any
+ * lookup failure degrades gracefully to the base Pro limits.
+ */
+async function resolveDailyLimit(userId: string, feature: AIFeature): Promise<number> {
+  try {
+    const [row] = await db
+      .select({
+        role: users.role,
+        membershipType: users.membershipType,
+        membershipEndDate: users.membershipEndDate,
+        billingTier: users.billingTier,
+        subscriptionStatus: users.subscriptionStatus,
+        trialEndsAt: users.trialEndsAt,
+        nextBillingDate: users.nextBillingDate,
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (!row) return DAILY_LIMITS[feature];
+    return getEntitlement(row).limits[feature] ?? DAILY_LIMITS[feature];
+  } catch {
+    return DAILY_LIMITS[feature];
+  }
+}
+
 export async function checkRateLimit(userId: string, feature: AIFeature): Promise<void> {
-  const limit = DAILY_LIMITS[feature];
+  const limit = await resolveDailyLimit(userId, feature);
   const startOfDay = getStartOfDay();
 
   // Check cooldown first — only "success" calls count toward cooldown so a
@@ -178,7 +205,7 @@ export async function getRemainingQuota(
   userId: string,
   feature: AIFeature,
 ): Promise<{ remaining: number; limit: number }> {
-  const limit = DAILY_LIMITS[feature];
+  const limit = await resolveDailyLimit(userId, feature);
   const startOfDay = getStartOfDay();
 
   const [row] = await db

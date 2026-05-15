@@ -25,6 +25,18 @@ const PUBLIC_PATTERNS: RegExp[] = [
   /^\/terms$/,
   /^\/tanitim$/,
   /^\/about$/,
+  /^\/kayit$/,
+  /^\/signup$/,
+  /^\/deneme-bitti$/,
+  /^\/trial-expired$/,
+  /^\/fiyatlandirma$/,
+  /^\/pricing$/,
+  /^\/iade-politikasi$/,
+  /^\/refund-policy$/,
+  /^\/cerez-politikasi$/,
+  /^\/cookie-policy$/,
+  /^\/iletisim$/,
+  /^\/contact$/,
 ];
 
 function stripLocale(pathname: string): string {
