@@ -31,6 +31,11 @@ async function sendEmail(to: string, subject: string, html: string) {
   });
 }
 
+// Legal sender identity — required by Lemon Squeezy store approval and
+// anti-spam regulations. Rendered in every email footer when configured.
+const companyLegalName = process.env.COMPANY_LEGAL_NAME;
+const companyAddress = process.env.COMPANY_ADDRESS;
+
 async function emailLayout(content: string, locale: Locale = "tr") {
   const lang = locale === "en" ? "en" : "tr";
   const settingsPath = locale === "en" ? "/en/settings" : "/tr/ayarlar";
@@ -38,6 +43,12 @@ async function emailLayout(content: string, locale: Locale = "tr") {
   const footerText = tCommon("footerHtml", {
     settingsUrl: `${appUrl}${settingsPath}`,
   });
+  const companyLine =
+    companyLegalName || companyAddress
+      ? `<p style="color:#525252;font-size:11px;line-height:16px;margin:8px 0 0 0;">
+                ${[companyLegalName, companyAddress].filter(Boolean).join(" · ")}
+              </p>`
+      : "";
   return `<!DOCTYPE html>
 <html lang="${lang}">
 <head>
@@ -77,6 +88,7 @@ async function emailLayout(content: string, locale: Locale = "tr") {
               <p style="color:#666;font-size:12px;line-height:18px;margin:0;">
                 ${footerText}
               </p>
+              ${companyLine}
             </td>
           </tr>
         </table>

@@ -19,6 +19,7 @@ import {
   Target,
   Sliders,
   ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
@@ -154,6 +155,12 @@ useEffect(() => {
         </SettingsGroup>
 
         <SettingsGroup label={t("groups.app")}>
+          <SettingsMenuItem
+            icon={CreditCard}
+            title={t("items.billingTitle")}
+            subtitle={t("items.billingSubtitle")}
+            href="/ayarlar/odeme"
+          />
           <SettingsMenuItem
             icon={Sliders}
             title={t("items.preferencesTitle")}

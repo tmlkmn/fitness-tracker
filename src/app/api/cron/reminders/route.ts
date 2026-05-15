@@ -115,11 +115,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Run membership expiry check once per day (at 09:00 Istanbul time)
+  // Run membership + trial expiry checks once per day (at 09:00 Istanbul time)
   const istanbulTime = getCurrentTimeInTz("Europe/Istanbul");
   let membershipFired = 0;
+  let trialFired = 0;
   if (istanbulTime.hhmm === "09:00") {
     membershipFired = await checkMembershipExpiry();
+    trialFired = await checkTrialEnding();
   }
 
   const allReminders = await db
@@ -237,7 +239,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, fired: firedCount, membershipFired });
+  return NextResponse.json({
+    ok: true,
+    fired: firedCount,
+    membershipFired,
+    trialFired,
+  });
 }
 
 async function fireReminder(reminder: {
@@ -461,6 +468,79 @@ async function checkMembershipExpiry(): Promise<number> {
     await db
       .update(users)
       .set({ membershipNotifiedAt: now })
+      .where(eq(users.id, user.id));
+
+    fired++;
+  }
+
+  return fired;
+}
+
+async function checkTrialEnding(): Promise<number> {
+  const now = new Date();
+
+  const trialUsers = await db
+    .select({
+      id: users.id,
+      role: users.role,
+      trialEndsAt: users.trialEndsAt,
+      trialNotifiedAt: users.trialNotifiedAt,
+      locale: users.locale,
+    })
+    .from(users)
+    .where(
+      and(
+        eq(users.subscriptionStatus, "trialing"),
+        isNotNull(users.trialEndsAt),
+      ),
+    );
+
+  let fired = 0;
+
+  for (const user of trialUsers) {
+    if (!user.trialEndsAt || user.role === "admin") continue;
+
+    const daysLeft = Math.ceil(
+      (new Date(user.trialEndsAt).getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    // Only notify at 7, 3, 1, 0 day thresholds
+    if (daysLeft > 7) continue;
+    if (daysLeft > 3 && daysLeft < 7) continue;
+    if (daysLeft > 1 && daysLeft < 3) continue;
+
+    // Rate-limit: max 1 notification per ~20 hours
+    if (user.trialNotifiedAt) {
+      const hoursSinceLast =
+        (now.getTime() - new Date(user.trialNotifiedAt).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceLast < 20) continue;
+    }
+
+    const userLocale = normalizeLocale(user.locale);
+    const isOver = daysLeft <= 0;
+    const tTrial = await getServerTranslator(
+      userLocale,
+      isOver
+        ? "triggerNotifications.trialEnded"
+        : "triggerNotifications.trialEnding",
+    );
+
+    await sendNotification({
+      userId: user.id,
+      type: isOver ? "trial_ended" : "trial_ending",
+      title: tTrial("title"),
+      body: isOver ? tTrial("body") : tTrial("body", { daysLeft }),
+      link: userLocale === "en" ? "/en/pricing" : "/tr/fiyatlandirma",
+      skipEmail: false,
+    });
+
+    await db
+      .update(users)
+      .set({
+        trialNotifiedAt: now,
+        // Make the lapsed state explicit so admin views + entitlement agree.
+        ...(isOver ? { subscriptionStatus: "expired" as const } : {}),
+      })
       .where(eq(users.id, user.id));
 
     fired++;

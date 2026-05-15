@@ -311,6 +311,30 @@
       "errors": {
         "linkExpired": "Link has expired. Please try again."
       }
+    },
+    "signup": {
+      "title": "Create Account",
+      "subtitle": "Try free for 14 days, no card required",
+      "name": "Full Name",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Start Free",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "success": "Your account is ready! You can sign in now.",
+      "errors": {
+        "nameRequired": "Full name is required.",
+        "emailRequired": "Email is required.",
+        "invalidEmail": "Enter a valid email address.",
+        "passwordShort": "Password must be at least 8 characters.",
+        "emailTaken": "This email is already registered.",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "trialExpired": {
+      "title": "Your Trial Has Ended",
+      "description": "Your 14-day trial is over. Choose a plan to continue.",
+      "cta": "View Plans"
     }
   },
   "dashboard": {
@@ -351,7 +375,15 @@
       "rest": "Rest",
       "nutrition": "Nutrition"
     },
-    "dayLabels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "dayLabels": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
     "weightStats": "kg",
     "weightTarget": "Target: {weight} kg"
   },
@@ -514,13 +546,34 @@
         "None (bodyweight)"
       ],
       "days": [
-        { "label": "Mon", "full": "Monday" },
-        { "label": "Tue", "full": "Tuesday" },
-        { "label": "Wed", "full": "Wednesday" },
-        { "label": "Thu", "full": "Thursday" },
-        { "label": "Fri", "full": "Friday" },
-        { "label": "Sat", "full": "Saturday" },
-        { "label": "Sun", "full": "Sunday" }
+        {
+          "label": "Mon",
+          "full": "Monday"
+        },
+        {
+          "label": "Tue",
+          "full": "Tuesday"
+        },
+        {
+          "label": "Wed",
+          "full": "Wednesday"
+        },
+        {
+          "label": "Thu",
+          "full": "Thursday"
+        },
+        {
+          "label": "Fri",
+          "full": "Friday"
+        },
+        {
+          "label": "Sat",
+          "full": "Saturday"
+        },
+        {
+          "label": "Sun",
+          "full": "Sunday"
+        }
       ]
     }
   },
@@ -931,10 +984,10 @@
       "warningPrefix": "All ",
       "warningSuffix": " for this day will be deleted. This action cannot be undone.",
       "warningCountStrong": "{count} meals",
-      "extraWarning": "All meal data, calories and macro information will be permanently deleted.",
+      "extraWarning": "All meal data, calories, and macro information will be permanently deleted.",
       "cancel": "Cancel",
-      "deleteAll": "Delete All",
-      "deleting": "Deleting..."
+      "deleting": "Deleting...",
+      "deleteAll": "Delete All"
     },
     "list": {
       "emptyTitle": "No meals for this day",
@@ -1021,13 +1074,13 @@
       }
     },
     "foodReference": {
-      "title": "Food Values",
+      "title": "Nutrition Facts",
       "tabPreset": "Preset Foods",
       "tabUser": "Mine ({count})",
       "searchPlaceholder": "Search...",
-      "categoryAll": "All",
-      "addNewFood": "Add new food",
-      "emptyUser": "No saved foods yet",
+      "all": "All",
+      "addNew": "Add new food",
+      "empty": "No saved foods yet",
       "namePlaceholder": "Food name",
       "portionPlaceholder": "Portion (e.g. 100g)",
       "caloriesPlaceholder": "Calories",
@@ -1099,16 +1152,6 @@
       "tabHistory": "History",
       "empty": "No meals found"
     },
-    "bulkDelete": {
-      "title": "Delete All Meals",
-      "warningPrefix": "All ",
-      "warningSuffix": " for this day will be deleted. This action cannot be undone.",
-      "warningCountStrong": "{count} meals",
-      "extraWarning": "All meal data, calories, and macro information will be permanently deleted.",
-      "cancel": "Cancel",
-      "deleting": "Deleting...",
-      "deleteAll": "Delete All"
-    },
     "picker": {
       "title": "Pick a Meal",
       "titleAlt": "Pick from My Meals",
@@ -1144,23 +1187,6 @@
         "swimming": "Swimming",
         "nutrition": "Nutrition"
       }
-    },
-    "foodReference": {
-      "title": "Nutrition Facts",
-      "tabPreset": "Preset Foods",
-      "tabUser": "Mine ({count})",
-      "searchPlaceholder": "Search...",
-      "all": "All",
-      "addNew": "Add new food",
-      "empty": "No saved foods yet",
-      "namePlaceholder": "Food name",
-      "portionPlaceholder": "Portion (e.g. 100g)",
-      "caloriesPlaceholder": "Calories",
-      "proteinPlaceholder": "P (g)",
-      "carbsPlaceholder": "C (g)",
-      "fatPlaceholder": "F (g)",
-      "cancel": "Cancel",
-      "save": "Save"
     },
     "macroSummary": {
       "protein": "Protein",
@@ -1209,11 +1235,31 @@
       "filterAll": "All ({count})",
       "ingredientNote": "Available ingredients at home: {list}. Only suggest meals that can be made with these ingredients",
       "ingredients": [
-        "Chicken", "Beef", "Fish", "Eggs", "Tuna",
-        "Rice", "Pasta", "Bread", "Oats", "Bulgur", "Quinoa",
-        "Broccoli", "Spinach", "Tomato", "Cucumber", "Pepper",
-        "Milk", "Yogurt", "Cheese", "Cottage cheese",
-        "Nuts", "Olives", "Olive oil", "Honey", "Avocado"
+        "Chicken",
+        "Beef",
+        "Fish",
+        "Eggs",
+        "Tuna",
+        "Rice",
+        "Pasta",
+        "Bread",
+        "Oats",
+        "Bulgur",
+        "Quinoa",
+        "Broccoli",
+        "Spinach",
+        "Tomato",
+        "Cucumber",
+        "Pepper",
+        "Milk",
+        "Yogurt",
+        "Cheese",
+        "Cottage cheese",
+        "Nuts",
+        "Olives",
+        "Olive oil",
+        "Honey",
+        "Avocado"
       ]
     }
   },
@@ -1547,7 +1593,8 @@
       "users": "All Users",
       "aiUsage": "AI Usage",
       "warnings": "AI Warnings",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "billing": "Subscriptions"
     },
     "usersList": {
       "title": "All Users",
@@ -1760,11 +1807,26 @@
         "dismiss": "Dismiss"
       },
       "fitnessGoals": {
-        "loss": { "label": "Weight Loss", "description": "Fat loss + calorie deficit" },
-        "recomp": { "label": "Fat Loss + Muscle Retention", "description": "Body recomposition, maintenance calories" },
-        "maintain": { "label": "Maintain Form", "description": "Maintain current shape" },
-        "muscle_gain": { "label": "Muscle Gain", "description": "Hypertrophy, slight calorie surplus" },
-        "weight_gain": { "label": "Weight Gain", "description": "General weight gain, fast surplus" }
+        "loss": {
+          "label": "Weight Loss",
+          "description": "Fat loss + calorie deficit"
+        },
+        "recomp": {
+          "label": "Fat Loss + Muscle Retention",
+          "description": "Body recomposition, maintenance calories"
+        },
+        "maintain": {
+          "label": "Maintain Form",
+          "description": "Maintain current shape"
+        },
+        "muscle_gain": {
+          "label": "Muscle Gain",
+          "description": "Hypertrophy, slight calorie surplus"
+        },
+        "weight_gain": {
+          "label": "Weight Gain",
+          "description": "General weight gain, fast surplus"
+        }
       },
       "allergenTags": {
         "dairy": "Dairy",
@@ -1806,14 +1868,38 @@
       "hiddenToast": "{card} hidden",
       "undoLabel": "Undo",
       "cards": {
-        "rings": { "label": "Daily Rings", "description": "Calorie, protein, and task completion rings" },
-        "readiness": { "label": "Readiness Score", "description": "How hard should I push today card" },
-        "water_sleep": { "label": "Water & Sleep", "description": "Daily water and sleep widgets" },
-        "macro_trend": { "label": "Macro Trend", "description": "7-day macro sparkline" },
-        "stats": { "label": "Daily Summary", "description": "Workout and nutrition progress cards" },
-        "quick_access": { "label": "Quick Access", "description": "Calendar, progress, shopping cards" },
-        "streak": { "label": "Streaks & Badges", "description": "Daily streak and badge cards" },
-        "friends": { "label": "Friend Streaks", "description": "Friends leaderboard" }
+        "rings": {
+          "label": "Daily Rings",
+          "description": "Calorie, protein, and task completion rings"
+        },
+        "readiness": {
+          "label": "Readiness Score",
+          "description": "How hard should I push today card"
+        },
+        "water_sleep": {
+          "label": "Water & Sleep",
+          "description": "Daily water and sleep widgets"
+        },
+        "macro_trend": {
+          "label": "Macro Trend",
+          "description": "7-day macro sparkline"
+        },
+        "stats": {
+          "label": "Daily Summary",
+          "description": "Workout and nutrition progress cards"
+        },
+        "quick_access": {
+          "label": "Quick Access",
+          "description": "Calendar, progress, shopping cards"
+        },
+        "streak": {
+          "label": "Streaks & Badges",
+          "description": "Daily streak and badge cards"
+        },
+        "friends": {
+          "label": "Friend Streaks",
+          "description": "Friends leaderboard"
+        }
       }
     },
     "healthProfile": {
@@ -1831,10 +1917,22 @@
         "prefer_not_to_say": "Prefer not to say"
       },
       "activities": {
-        "sedentary": { "label": "Mostly sitting", "hint": "Desk work, little movement" },
-        "light": { "label": "Lightly active", "hint": "Office + daily walks, light housework" },
-        "moderate": { "label": "On my feet", "hint": "Teacher, server, retail" },
-        "very_active": { "label": "Very active", "hint": "Construction, courier, physical job" }
+        "sedentary": {
+          "label": "Mostly sitting",
+          "hint": "Desk work, little movement"
+        },
+        "light": {
+          "label": "Lightly active",
+          "hint": "Office + daily walks, light housework"
+        },
+        "moderate": {
+          "label": "On my feet",
+          "hint": "Teacher, server, retail"
+        },
+        "very_active": {
+          "label": "Very active",
+          "hint": "Construction, courier, physical job"
+        }
       },
       "flags": {
         "hasEatingDisorderHistory": "I have a history of eating disorders",
@@ -1912,7 +2010,9 @@
       "mealLibraryTitle": "My Meal Library",
       "mealLibrarySubtitle": "Saved meals and daily plans",
       "sharingTitle": "Plan Sharing",
-      "sharingSubtitle": "Share your program with other users"
+      "sharingSubtitle": "Share your program with other users",
+      "billingTitle": "Subscription",
+      "billingSubtitle": "Plan, invoices and payment method"
     },
     "adminPanel": "Admin Panel",
     "signOut": "Sign Out",
@@ -2168,8 +2268,29 @@
       "statusPartial": "Partially completed",
       "statusNone": "Not completed",
       "statusEmpty": "No plan",
-      "dayLabels": ["Mon", "", "Wed", "", "Fri", "", "Sun"],
-      "monthLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+      "dayLabels": [
+        "Mon",
+        "",
+        "Wed",
+        "",
+        "Fri",
+        "",
+        "Sun"
+      ],
+      "monthLabels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ]
     },
     "friend": {
       "title": "Friend Streaks",
@@ -2395,10 +2516,22 @@
         "title": "Daily activity level",
         "intro": "On a typical day, how active are you OUTSIDE of training?",
         "options": {
-          "sedentary": { "label": "Mostly sitting", "hint": "Desk work, little movement" },
-          "light": { "label": "Lightly active", "hint": "Office + daily walks, light housework" },
-          "moderate": { "label": "On my feet", "hint": "Teacher, server, retail" },
-          "very_active": { "label": "Very active", "hint": "Construction, courier, physical job" }
+          "sedentary": {
+            "label": "Mostly sitting",
+            "hint": "Desk work, little movement"
+          },
+          "light": {
+            "label": "Lightly active",
+            "hint": "Office + daily walks, light housework"
+          },
+          "moderate": {
+            "label": "On my feet",
+            "hint": "Teacher, server, retail"
+          },
+          "very_active": {
+            "label": "Very active",
+            "hint": "Construction, courier, physical job"
+          }
         }
       },
       "flags": {
@@ -2555,29 +2688,62 @@
       "heading": "Stronger Every Day",
       "subhead": "Streak tracking and achievement badges keep you tied to your goals. When motivation runs out, your system kicks in.",
       "items": {
-        "streak": { "title": "Activity Streak", "desc": "Don't break the line" },
-        "badges": { "title": "Achievement Badges", "desc": "Complete milestones" },
-        "rings": { "title": "Activity Rings", "desc": "Apple Fitness style" },
-        "friends": { "title": "Friend Streaks", "desc": "Compete with friends" }
+        "streak": {
+          "title": "Activity Streak",
+          "desc": "Don't break the line"
+        },
+        "badges": {
+          "title": "Achievement Badges",
+          "desc": "Complete milestones"
+        },
+        "rings": {
+          "title": "Activity Rings",
+          "desc": "Apple Fitness style"
+        },
+        "friends": {
+          "title": "Friend Streaks",
+          "desc": "Compete with friends"
+        }
       }
     },
     "wellness": {
       "heading": "All Dimensions of Your Health",
       "subhead": "Not just workouts — a holistic approach to life.",
       "items": {
-        "water": { "title": "Water Tracking", "desc": "Daily water goal" },
-        "sleep": { "title": "Sleep Tracking", "desc": "Sleep quality & duration" },
-        "meals": { "title": "Meal Tracking", "desc": "Macros & calories" },
-        "shopping": { "title": "Shopping", "desc": "Automatic weekly list" }
+        "water": {
+          "title": "Water Tracking",
+          "desc": "Daily water goal"
+        },
+        "sleep": {
+          "title": "Sleep Tracking",
+          "desc": "Sleep quality & duration"
+        },
+        "meals": {
+          "title": "Meal Tracking",
+          "desc": "Macros & calories"
+        },
+        "shopping": {
+          "title": "Shopping",
+          "desc": "Automatic weekly list"
+        }
       }
     },
     "how": {
       "tag": "How It Works",
       "heading": "Get Started in 3 Steps",
       "steps": {
-        "invite": { "title": "Get an Invite", "desc": "FitMusc is invite-only. Wait for an invitation from your trainer or our team." },
-        "profile": { "title": "Build Your Profile", "desc": "Enter your height, weight, goals, and health info. AI personalization kicks in immediately." },
-        "go": { "title": "Run Toward Your Goal", "desc": "With a daily plan, an AI coach, and progress tracking, results become inevitable." }
+        "invite": {
+          "title": "Get an Invite",
+          "desc": "FitMusc is invite-only. Wait for an invitation from your trainer or our team."
+        },
+        "profile": {
+          "title": "Build Your Profile",
+          "desc": "Enter your height, weight, goals, and health info. AI personalization kicks in immediately."
+        },
+        "go": {
+          "title": "Run Toward Your Goal",
+          "desc": "With a daily plan, an AI coach, and progress tracking, results become inevitable."
+        }
       }
     },
     "miniFeatures": {
@@ -2648,13 +2814,7 @@
     "tabMeals": "Nutrition",
     "tabWorkout": "Workout",
     "noMeals": "No meals found",
-    "noWorkout": "No workout program",
-    "loading": "Loading...",
-    "planTypeDay": {
-      "workout": "Workout Day",
-      "swimming": "Swimming Day",
-      "rest": "Rest Day"
-    }
+    "noWorkout": "No workout program"
   },
   "validation": {
     "password": {
@@ -2683,13 +2843,34 @@
       "generic": "An error occurred. Please try again."
     },
     "steps": {
-      "1": { "title": "Service Type", "desc": "How can we help you?" },
-      "2": { "title": "Physical Stats", "desc": "Basic measurements for healthy goals" },
-      "3": { "title": "Health Profile", "desc": "Specify your gender and activity level" },
-      "4": { "title": "Health Notes", "desc": "Allergies, health conditions, and medications" },
-      "5": { "title": "Goals", "desc": "Let's tailor the program to you" },
-      "6": { "title": "Daily Routine", "desc": "Optional — let's set your meal times" },
-      "7": { "title": "You're Ready!", "desc": "One last step to complete your profile" }
+      "1": {
+        "title": "Service Type",
+        "desc": "How can we help you?"
+      },
+      "2": {
+        "title": "Physical Stats",
+        "desc": "Basic measurements for healthy goals"
+      },
+      "3": {
+        "title": "Health Profile",
+        "desc": "Specify your gender and activity level"
+      },
+      "4": {
+        "title": "Health Notes",
+        "desc": "Allergies, health conditions, and medications"
+      },
+      "5": {
+        "title": "Goals",
+        "desc": "Let's tailor the program to you"
+      },
+      "6": {
+        "title": "Daily Routine",
+        "desc": "Optional — let's set your meal times"
+      },
+      "7": {
+        "title": "You're Ready!",
+        "desc": "One last step to complete your profile"
+      }
     },
     "service": {
       "fullTitle": "Full Program",
@@ -2721,10 +2902,26 @@
       "unspecified": "Not specified"
     },
     "activity": {
-      "sedentary": { "label": "Mostly sitting", "hint": "Desk job, little movement", "short": "Desk job" },
-      "light": { "label": "Lightly active", "hint": "Office + daily walking, light housework", "short": "Lightly active" },
-      "moderate": { "label": "Standing job", "hint": "Teacher, server, retail", "short": "Standing job" },
-      "very_active": { "label": "Very active", "hint": "Construction, courier, physical work", "short": "Very active" }
+      "sedentary": {
+        "label": "Mostly sitting",
+        "hint": "Desk job, little movement",
+        "short": "Desk job"
+      },
+      "light": {
+        "label": "Lightly active",
+        "hint": "Office + daily walking, light housework",
+        "short": "Lightly active"
+      },
+      "moderate": {
+        "label": "Standing job",
+        "hint": "Teacher, server, retail",
+        "short": "Standing job"
+      },
+      "very_active": {
+        "label": "Very active",
+        "hint": "Construction, courier, physical work",
+        "short": "Very active"
+      }
     },
     "allergens": {
       "label": "Food Allergies",
@@ -2747,11 +2944,26 @@
       "sportHistoryLabel": "Sport History",
       "sportHistoryPlaceholder": "What sports have you done before, and for how long?",
       "options": {
-        "loss": { "label": "Weight Loss", "desc": "Fat burning + calorie deficit" },
-        "recomp": { "label": "Fat Loss + Muscle Preservation", "desc": "Body recomposition, maintenance calories" },
-        "maintain": { "label": "Maintain Form", "desc": "Maintain current condition" },
-        "muscle_gain": { "label": "Muscle Gain", "desc": "Hypertrophy, slight calorie surplus" },
-        "weight_gain": { "label": "Weight Gain", "desc": "Overall weight gain, fast surplus" }
+        "loss": {
+          "label": "Weight Loss",
+          "desc": "Fat burning + calorie deficit"
+        },
+        "recomp": {
+          "label": "Fat Loss + Muscle Preservation",
+          "desc": "Body recomposition, maintenance calories"
+        },
+        "maintain": {
+          "label": "Maintain Form",
+          "desc": "Maintain current condition"
+        },
+        "muscle_gain": {
+          "label": "Muscle Gain",
+          "desc": "Hypertrophy, slight calorie surplus"
+        },
+        "weight_gain": {
+          "label": "Weight Gain",
+          "desc": "Overall weight gain, fast surplus"
+        }
       },
       "levels": {
         "beginner": "Beginner",
@@ -2916,6 +3128,166 @@
     "reminderWorkout": {
       "title": "Workout coming up 💪",
       "body": "Starts in {minutes} min. Get ready!"
+    },
+    "subscriptionStarted": {
+      "title": "Your subscription is active 🎉",
+      "body": "Welcome to FitMusc. Enjoy every feature."
+    },
+    "subscriptionCancelled": {
+      "title": "Subscription cancelled",
+      "body": "Your access continues until the end of the current period."
+    },
+    "paymentFailed": {
+      "title": "Payment failed",
+      "body": "Your payment didn't go through. Update your payment method to keep access."
+    },
+    "trialEnding": {
+      "title": "Your trial is ending",
+      "body": "{daysLeft} days left in your trial. Pick a plan to keep going."
+    },
+    "trialEnded": {
+      "title": "Your trial has ended",
+      "body": "Your trial is over. Choose a plan to continue."
+    }
+  },
+  "billing": {
+    "title": "Subscription",
+    "currentPlan": "Current Plan",
+    "status": {
+      "trialing": "Trial",
+      "active": "Active",
+      "past_due": "Payment Due",
+      "cancelled": "Cancelled",
+      "expired": "Expired",
+      "none": "No Plan",
+      "legacy": "Membership",
+      "admin": "Admin"
+    },
+    "interval": {
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "trialEndsOn": "Trial ends: {date}",
+    "renewsOn": "Renews: {date}",
+    "endsOn": "Ends: {date}",
+    "paymentFailed": "Your payment failed. Please update your payment method.",
+    "manageSubscription": "Manage Subscription",
+    "updatePayment": "Update Payment Method",
+    "cancel": "Cancel Subscription",
+    "resume": "Resume Subscription",
+    "changePlan": "Change Plan",
+    "choosePlan": "Choose a Plan",
+    "invoices": "Invoices",
+    "noInvoices": "No invoices yet.",
+    "invoiceDownload": "Download",
+    "cancelConfirm": "Are you sure you want to cancel? You keep access until the end of the period.",
+    "trialBanner": "{daysLeft} days left in your trial.",
+    "trialBannerCta": "Pick a plan",
+    "errors": {
+      "iyzicoNotReady": "The Turkey payment method will be available soon.",
+      "noSubscription": "You have no active subscription.",
+      "generic": "The action could not be completed. Please try again."
+    },
+    "iyzicoForm": {
+      "title": "Payment Details",
+      "intro": "Enter billing details for Turkish cards.",
+      "fullName": "Full Name",
+      "identityNumber": "National ID (TCKN)",
+      "phone": "Phone",
+      "addressLine": "Address",
+      "city": "City",
+      "zip": "Postal Code",
+      "kvkkConsent": "I have read and accept the disclosure on processing of my personal data.",
+      "submit": "Continue to Payment",
+      "processing": "Loading payment form...",
+      "errors": {
+        "fullName": "Full name is required.",
+        "identityNumber": "Enter a valid national ID (11 digits).",
+        "address": "Address and city are required.",
+        "consent": "Consent is required to continue.",
+        "generic": "Could not start payment. Please try again."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Plans",
+    "subtitle": "Pick the plan that fits your goals. Cancel anytime.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "yearlySave": "2 months free",
+    "perMonth": "/mo",
+    "perYear": "/yr",
+    "mostPopular": "Most Popular",
+    "trialNote": "14-day free trial — no card required",
+    "cta": "Get Started",
+    "ctaCurrent": "Your Current Plan",
+    "inviteOnlyNote": "Signup is currently limited to invited users.",
+    "plans": {
+      "pro": {
+        "name": "Pro",
+        "tagline": "Serious training and nutrition tracking",
+        "features": [
+          "Unlimited meal & workout plans",
+          "All AI features",
+          "Progress analysis",
+          "3-channel reminders",
+          "Shopping list"
+        ]
+      },
+      "elite": {
+        "name": "Elite",
+        "tagline": "Maximum AI power and sharing",
+        "features": [
+          "Everything in Pro",
+          "2x AI usage quota",
+          "Unlimited weekly AI plans",
+          "Plan sharing (up to 3 people)",
+          "Priority support"
+        ]
+      }
+    },
+    "faqTitle": "Frequently Asked",
+    "faq": [
+      {
+        "q": "How does the trial work?",
+        "a": "You get all Pro features free for 14 days. No card required."
+      },
+      {
+        "q": "Can I cancel anytime?",
+        "a": "Yes. When you cancel you keep access until the end of the period you paid for."
+      },
+      {
+        "q": "How are payments processed?",
+        "a": "International cards via Lemon Squeezy, Turkish cards via iyzico — both secure."
+      }
+    ]
+  },
+  "footer": {
+    "links": {
+      "pricing": "Pricing",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "kvkk": "KVKK",
+      "refund": "Refund Policy",
+      "cookie": "Cookie Policy",
+      "contact": "Contact"
+    },
+    "rights": "All rights reserved."
+  },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "Write to us with any questions or requests.",
+    "name": "Full Name",
+    "email": "Email",
+    "message": "Your Message",
+    "submit": "Send",
+    "sending": "Sending...",
+    "success": "Your message has been received. We will get back to you soon.",
+    "emailLabel": "Email",
+    "errors": {
+      "required": "Please fill in all fields.",
+      "invalidEmail": "Enter a valid email address.",
+      "generic": "Could not send the message. Please try again."
     }
   }
 }

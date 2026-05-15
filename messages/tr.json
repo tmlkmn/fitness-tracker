@@ -311,6 +311,30 @@
       "errors": {
         "linkExpired": "Bağlantının süresi dolmuş. Tekrar deneyin."
       }
+    },
+    "signup": {
+      "title": "Hesap Oluştur",
+      "subtitle": "14 gün ücretsiz dene, kart gerekmez",
+      "name": "Ad Soyad",
+      "email": "E-posta",
+      "password": "Şifre",
+      "submit": "Ücretsiz Başla",
+      "haveAccount": "Zaten hesabın var mı?",
+      "signIn": "Giriş yap",
+      "success": "Hesabın oluşturuldu! Giriş yapabilirsin.",
+      "errors": {
+        "nameRequired": "Ad soyad gereklidir.",
+        "emailRequired": "E-posta gereklidir.",
+        "invalidEmail": "Geçerli bir e-posta girin.",
+        "passwordShort": "Şifre en az 8 karakter olmalı.",
+        "emailTaken": "Bu e-posta zaten kayıtlı.",
+        "generic": "Bir hata oluştu. Tekrar deneyin."
+      }
+    },
+    "trialExpired": {
+      "title": "Deneme Süren Doldu",
+      "description": "14 günlük deneme süren sona erdi. Devam etmek için bir plan seç.",
+      "cta": "Planları Gör"
     }
   },
   "dashboard": {
@@ -351,7 +375,15 @@
       "rest": "Dinlenme",
       "nutrition": "Beslenme"
     },
-    "dayLabels": ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"],
+    "dayLabels": [
+      "Pzt",
+      "Sal",
+      "Çar",
+      "Per",
+      "Cum",
+      "Cmt",
+      "Paz"
+    ],
     "weightStats": "kg",
     "weightTarget": "Hedef: {weight} kg"
   },
@@ -514,13 +546,34 @@
         "Hiçbiri (vücut ağırlığı)"
       ],
       "days": [
-        { "label": "Pzt", "full": "Pazartesi" },
-        { "label": "Sal", "full": "Salı" },
-        { "label": "Çar", "full": "Çarşamba" },
-        { "label": "Per", "full": "Perşembe" },
-        { "label": "Cum", "full": "Cuma" },
-        { "label": "Cmt", "full": "Cumartesi" },
-        { "label": "Paz", "full": "Pazar" }
+        {
+          "label": "Pzt",
+          "full": "Pazartesi"
+        },
+        {
+          "label": "Sal",
+          "full": "Salı"
+        },
+        {
+          "label": "Çar",
+          "full": "Çarşamba"
+        },
+        {
+          "label": "Per",
+          "full": "Perşembe"
+        },
+        {
+          "label": "Cum",
+          "full": "Cuma"
+        },
+        {
+          "label": "Cmt",
+          "full": "Cumartesi"
+        },
+        {
+          "label": "Paz",
+          "full": "Pazar"
+        }
       ]
     }
   },
@@ -928,14 +981,13 @@
     },
     "bulkDelete": {
       "title": "Tüm Öğünleri Sil",
-      "warning": "Bu güne ait <strong>{count} öğünün tamamı</strong> silinecektir. Bu işlem geri alınamaz.",
       "warningPrefix": "Bu güne ait ",
       "warningSuffix": " silinecektir. Bu işlem geri alınamaz.",
       "warningCountStrong": "{count} öğünün tamamı",
       "extraWarning": "Tüm öğün verileri, kalori ve makro bilgileri kalıcı olarak silinecektir.",
       "cancel": "Vazgeç",
-      "deleteAll": "Tümünü Sil",
-      "deleting": "Siliniyor..."
+      "deleting": "Siliniyor...",
+      "deleteAll": "Tümünü Sil"
     },
     "list": {
       "emptyTitle": "Bu güne ait öğün yok",
@@ -1026,9 +1078,9 @@
       "tabPreset": "Hazır Besinler",
       "tabUser": "Benim ({count})",
       "searchPlaceholder": "Ara...",
-      "categoryAll": "Tümü",
-      "addNewFood": "Yeni besin ekle",
-      "emptyUser": "Henüz kayıtlı besin yok",
+      "all": "Tümü",
+      "addNew": "Yeni besin ekle",
+      "empty": "Henüz kayıtlı besin yok",
       "namePlaceholder": "Besin adı",
       "portionPlaceholder": "Porsiyon (örn: 100g)",
       "caloriesPlaceholder": "Kalori",
@@ -1100,16 +1152,6 @@
       "tabHistory": "Geçmiş",
       "empty": "Öğün bulunamadı"
     },
-    "bulkDelete": {
-      "title": "Tüm Öğünleri Sil",
-      "warningPrefix": "Bu güne ait ",
-      "warningSuffix": " silinecektir. Bu işlem geri alınamaz.",
-      "warningCountStrong": "{count} öğünün tamamı",
-      "extraWarning": "Tüm öğün verileri, kalori ve makro bilgileri kalıcı olarak silinecektir.",
-      "cancel": "Vazgeç",
-      "deleting": "Siliniyor...",
-      "deleteAll": "Tümünü Sil"
-    },
     "picker": {
       "title": "Öğün Seç",
       "titleAlt": "Öğünlerimden Seç",
@@ -1145,23 +1187,6 @@
         "swimming": "Yüzme",
         "nutrition": "Beslenme"
       }
-    },
-    "foodReference": {
-      "title": "Besin Değerleri",
-      "tabPreset": "Hazır Besinler",
-      "tabUser": "Benim ({count})",
-      "searchPlaceholder": "Ara...",
-      "all": "Tümü",
-      "addNew": "Yeni besin ekle",
-      "empty": "Henüz kayıtlı besin yok",
-      "namePlaceholder": "Besin adı",
-      "portionPlaceholder": "Porsiyon (örn: 100g)",
-      "caloriesPlaceholder": "Kalori",
-      "proteinPlaceholder": "P (g)",
-      "carbsPlaceholder": "K (g)",
-      "fatPlaceholder": "Y (g)",
-      "cancel": "İptal",
-      "save": "Kaydet"
     },
     "macroSummary": {
       "protein": "Protein",
@@ -1210,11 +1235,31 @@
       "filterAll": "Tümü ({count})",
       "ingredientNote": "Evde mevcut malzemeler: {list}. Sadece bu malzemelerle yapılabilecek yemekler öner",
       "ingredients": [
-        "Tavuk", "Kırmızı et", "Balık", "Yumurta", "Ton balığı",
-        "Pirinç", "Makarna", "Ekmek", "Yulaf", "Bulgur", "Kinoa",
-        "Brokoli", "Ispanak", "Domates", "Salatalık", "Biber",
-        "Süt", "Yoğurt", "Peynir", "Lor",
-        "Kuruyemiş", "Zeytin", "Zeytinyağı", "Bal", "Avokado"
+        "Tavuk",
+        "Kırmızı et",
+        "Balık",
+        "Yumurta",
+        "Ton balığı",
+        "Pirinç",
+        "Makarna",
+        "Ekmek",
+        "Yulaf",
+        "Bulgur",
+        "Kinoa",
+        "Brokoli",
+        "Ispanak",
+        "Domates",
+        "Salatalık",
+        "Biber",
+        "Süt",
+        "Yoğurt",
+        "Peynir",
+        "Lor",
+        "Kuruyemiş",
+        "Zeytin",
+        "Zeytinyağı",
+        "Bal",
+        "Avokado"
       ]
     }
   },
@@ -1548,7 +1593,8 @@
       "users": "Tüm Kullanıcılar",
       "aiUsage": "AI Kullanımı",
       "warnings": "AI Uyarıları",
-      "feedback": "Geri Bildirim"
+      "feedback": "Geri Bildirim",
+      "billing": "Abonelikler"
     },
     "usersList": {
       "title": "Tüm Kullanıcılar",
@@ -1761,11 +1807,26 @@
         "dismiss": "Kapat"
       },
       "fitnessGoals": {
-        "loss": { "label": "Kilo Verme", "description": "Yağ yakma + kalori açığı" },
-        "recomp": { "label": "Yağ Yakma + Kas Koruma", "description": "Vücut rekompozisyonu, idame kalori" },
-        "maintain": { "label": "Form Koruma", "description": "Mevcut formu koruma" },
-        "muscle_gain": { "label": "Kas Kazanımı", "description": "Hipertrofi, hafif kalori fazlası" },
-        "weight_gain": { "label": "Kilo Alma", "description": "Genel kilo artışı, hızlı surplus" }
+        "loss": {
+          "label": "Kilo Verme",
+          "description": "Yağ yakma + kalori açığı"
+        },
+        "recomp": {
+          "label": "Yağ Yakma + Kas Koruma",
+          "description": "Vücut rekompozisyonu, idame kalori"
+        },
+        "maintain": {
+          "label": "Form Koruma",
+          "description": "Mevcut formu koruma"
+        },
+        "muscle_gain": {
+          "label": "Kas Kazanımı",
+          "description": "Hipertrofi, hafif kalori fazlası"
+        },
+        "weight_gain": {
+          "label": "Kilo Alma",
+          "description": "Genel kilo artışı, hızlı surplus"
+        }
       },
       "allergenTags": {
         "dairy": "Süt ürünleri",
@@ -1807,14 +1868,38 @@
       "hiddenToast": "{card} gizlendi",
       "undoLabel": "Geri Al",
       "cards": {
-        "rings": { "label": "Günlük Halkalar", "description": "Kalori, protein ve görev tamamlama halkaları" },
-        "readiness": { "label": "Hazırlık Skoru", "description": "Bugün ne kadar zorlamalıyım kartı" },
-        "water_sleep": { "label": "Su ve Uyku", "description": "Günlük su ve uyku widget'ları" },
-        "macro_trend": { "label": "Makro Trendi", "description": "Son 7 gün makro sparkline" },
-        "stats": { "label": "Günlük Özet", "description": "Antrenman ve beslenme ilerleme kartları" },
-        "quick_access": { "label": "Hızlı Erişim", "description": "Takvim, ilerleme, alışveriş kartları" },
-        "streak": { "label": "Seri ve Rozetler", "description": "Günlük seri ve rozet kartları" },
-        "friends": { "label": "Arkadaş Serileri", "description": "Arkadaş liderlik tablosu" }
+        "rings": {
+          "label": "Günlük Halkalar",
+          "description": "Kalori, protein ve görev tamamlama halkaları"
+        },
+        "readiness": {
+          "label": "Hazırlık Skoru",
+          "description": "Bugün ne kadar zorlamalıyım kartı"
+        },
+        "water_sleep": {
+          "label": "Su ve Uyku",
+          "description": "Günlük su ve uyku widget'ları"
+        },
+        "macro_trend": {
+          "label": "Makro Trendi",
+          "description": "Son 7 gün makro sparkline"
+        },
+        "stats": {
+          "label": "Günlük Özet",
+          "description": "Antrenman ve beslenme ilerleme kartları"
+        },
+        "quick_access": {
+          "label": "Hızlı Erişim",
+          "description": "Takvim, ilerleme, alışveriş kartları"
+        },
+        "streak": {
+          "label": "Seri ve Rozetler",
+          "description": "Günlük seri ve rozet kartları"
+        },
+        "friends": {
+          "label": "Arkadaş Serileri",
+          "description": "Arkadaş liderlik tablosu"
+        }
       }
     },
     "healthProfile": {
@@ -1832,10 +1917,22 @@
         "prefer_not_to_say": "Belirtmek istemiyorum"
       },
       "activities": {
-        "sedentary": { "label": "Çoğunlukla otururum", "hint": "Masa başı, az hareket" },
-        "light": { "label": "Hafif aktif", "hint": "Ofis + günlük yürüyüş, hafif ev işleri" },
-        "moderate": { "label": "Ayakta çalışırım", "hint": "Öğretmen, garson, perakende" },
-        "very_active": { "label": "Çok aktif", "hint": "İnşaat, kurye, fiziksel iş" }
+        "sedentary": {
+          "label": "Çoğunlukla otururum",
+          "hint": "Masa başı, az hareket"
+        },
+        "light": {
+          "label": "Hafif aktif",
+          "hint": "Ofis + günlük yürüyüş, hafif ev işleri"
+        },
+        "moderate": {
+          "label": "Ayakta çalışırım",
+          "hint": "Öğretmen, garson, perakende"
+        },
+        "very_active": {
+          "label": "Çok aktif",
+          "hint": "İnşaat, kurye, fiziksel iş"
+        }
       },
       "flags": {
         "hasEatingDisorderHistory": "Yeme bozukluğu öyküm var",
@@ -1913,7 +2010,9 @@
       "mealLibraryTitle": "Öğün Kütüphanem",
       "mealLibrarySubtitle": "Kayıtlı öğünler ve günlük planlar",
       "sharingTitle": "Plan Paylaşımı",
-      "sharingSubtitle": "Programını başka kullanıcılarla paylaş"
+      "sharingSubtitle": "Programını başka kullanıcılarla paylaş",
+      "billingTitle": "Abonelik",
+      "billingSubtitle": "Plan, fatura ve ödeme yöntemi"
     },
     "adminPanel": "Admin Paneli",
     "signOut": "Çıkış Yap",
@@ -2169,8 +2268,29 @@
       "statusPartial": "Kısmen tamamlandı",
       "statusNone": "Tamamlanmadı",
       "statusEmpty": "Plan yok",
-      "dayLabels": ["Pzt", "", "Çar", "", "Cum", "", "Paz"],
-      "monthLabels": ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
+      "dayLabels": [
+        "Pzt",
+        "",
+        "Çar",
+        "",
+        "Cum",
+        "",
+        "Paz"
+      ],
+      "monthLabels": [
+        "Oca",
+        "Şub",
+        "Mar",
+        "Nis",
+        "May",
+        "Haz",
+        "Tem",
+        "Ağu",
+        "Eyl",
+        "Eki",
+        "Kas",
+        "Ara"
+      ]
     },
     "friend": {
       "title": "Arkadaş Serileri",
@@ -2396,10 +2516,22 @@
         "title": "Günlük aktivite seviyesi",
         "intro": "Tipik bir gününüzde ANTRENMANLAR DIŞINDA ne kadar aktifsiniz?",
         "options": {
-          "sedentary": { "label": "Çoğunlukla otururum", "hint": "Masa başı, az hareket" },
-          "light": { "label": "Hafif aktif", "hint": "Ofis + günlük yürüyüş, hafif ev işleri" },
-          "moderate": { "label": "Ayakta çalışırım", "hint": "Öğretmen, garson, perakende" },
-          "very_active": { "label": "Çok aktif", "hint": "İnşaat, kurye, fiziksel iş" }
+          "sedentary": {
+            "label": "Çoğunlukla otururum",
+            "hint": "Masa başı, az hareket"
+          },
+          "light": {
+            "label": "Hafif aktif",
+            "hint": "Ofis + günlük yürüyüş, hafif ev işleri"
+          },
+          "moderate": {
+            "label": "Ayakta çalışırım",
+            "hint": "Öğretmen, garson, perakende"
+          },
+          "very_active": {
+            "label": "Çok aktif",
+            "hint": "İnşaat, kurye, fiziksel iş"
+          }
         }
       },
       "flags": {
@@ -2556,29 +2688,62 @@
       "heading": "Her Gün Daha Güçlü",
       "subhead": "Seri takibi ve başarı rozetleri sizi hedeflerinize bağlı tutar. Motivation sıfırlandığında sisteminiz devreye girer.",
       "items": {
-        "streak": { "title": "Aktivite Serisi", "desc": "Günlük çizgini kırmayın" },
-        "badges": { "title": "Başarı Rozetleri", "desc": "Milestoneları tamamlayın" },
-        "rings": { "title": "Aktivite Halkaları", "desc": "Apple Fitness tarzı" },
-        "friends": { "title": "Arkadaş Serileri", "desc": "Rekabet edin" }
+        "streak": {
+          "title": "Aktivite Serisi",
+          "desc": "Günlük çizgini kırmayın"
+        },
+        "badges": {
+          "title": "Başarı Rozetleri",
+          "desc": "Milestoneları tamamlayın"
+        },
+        "rings": {
+          "title": "Aktivite Halkaları",
+          "desc": "Apple Fitness tarzı"
+        },
+        "friends": {
+          "title": "Arkadaş Serileri",
+          "desc": "Rekabet edin"
+        }
       }
     },
     "wellness": {
       "heading": "Sağlığınızın Tüm Boyutları",
       "subhead": "Sadece antrenman değil — bütüncül bir yaşam yaklaşımı.",
       "items": {
-        "water": { "title": "Su Takibi", "desc": "Günlük su hedefi" },
-        "sleep": { "title": "Uyku Takibi", "desc": "Uyku kalitesi & süresi" },
-        "meals": { "title": "Öğün Takibi", "desc": "Makro & kalori" },
-        "shopping": { "title": "Alışveriş", "desc": "Otomatik haftalık liste" }
+        "water": {
+          "title": "Su Takibi",
+          "desc": "Günlük su hedefi"
+        },
+        "sleep": {
+          "title": "Uyku Takibi",
+          "desc": "Uyku kalitesi & süresi"
+        },
+        "meals": {
+          "title": "Öğün Takibi",
+          "desc": "Makro & kalori"
+        },
+        "shopping": {
+          "title": "Alışveriş",
+          "desc": "Otomatik haftalık liste"
+        }
       }
     },
     "how": {
       "tag": "Nasıl Çalışır",
       "heading": "3 Adımda Başlayın",
       "steps": {
-        "invite": { "title": "Davet Alın", "desc": "FitMusc invite-only bir platformdur. Antrenörünüzden veya ekibimizden davet bekleyin." },
-        "profile": { "title": "Profilinizi Oluşturun", "desc": "Boy, kilo, hedef ve sağlık bilgilerinizi girin. AI kişiselleştirme anında devreye girer." },
-        "go": { "title": "Hedefinize Koşun", "desc": "Günlük plan, AI koç ve ilerleme takibi ile sonuçlar kaçınılmaz olur." }
+        "invite": {
+          "title": "Davet Alın",
+          "desc": "FitMusc invite-only bir platformdur. Antrenörünüzden veya ekibimizden davet bekleyin."
+        },
+        "profile": {
+          "title": "Profilinizi Oluşturun",
+          "desc": "Boy, kilo, hedef ve sağlık bilgilerinizi girin. AI kişiselleştirme anında devreye girer."
+        },
+        "go": {
+          "title": "Hedefinize Koşun",
+          "desc": "Günlük plan, AI koç ve ilerleme takibi ile sonuçlar kaçınılmaz olur."
+        }
       }
     },
     "miniFeatures": {
@@ -2649,13 +2814,7 @@
     "tabMeals": "Beslenme",
     "tabWorkout": "Antrenman",
     "noMeals": "Öğün bulunamadı",
-    "noWorkout": "Antrenman programı yok",
-    "loading": "Yükleniyor...",
-    "planTypeDay": {
-      "workout": "Antrenman Günü",
-      "swimming": "Yüzme Günü",
-      "rest": "Dinlenme Günü"
-    }
+    "noWorkout": "Antrenman programı yok"
   },
   "validation": {
     "password": {
@@ -2684,13 +2843,34 @@
       "generic": "Bir hata oluştu. Tekrar deneyin."
     },
     "steps": {
-      "1": { "title": "Hizmet Tipi", "desc": "Sana nasıl yardımcı olalım?" },
-      "2": { "title": "Fiziksel Bilgiler", "desc": "Sağlıklı hedefler için temel ölçümlerin" },
-      "3": { "title": "Sağlık Profili", "desc": "Cinsiyet ve aktivite seviyeni belirt" },
-      "4": { "title": "Sağlık Notları", "desc": "Alerjiler, sağlık durumun ve ilaçların" },
-      "5": { "title": "Hedefler", "desc": "Programın sana göre şekillensin" },
-      "6": { "title": "Günlük Rutin", "desc": "İsteğe bağlı — öğün saatlerini ayarlayalım" },
-      "7": { "title": "Hazırsın!", "desc": "Profilini tamamlamak için son bir adım" }
+      "1": {
+        "title": "Hizmet Tipi",
+        "desc": "Sana nasıl yardımcı olalım?"
+      },
+      "2": {
+        "title": "Fiziksel Bilgiler",
+        "desc": "Sağlıklı hedefler için temel ölçümlerin"
+      },
+      "3": {
+        "title": "Sağlık Profili",
+        "desc": "Cinsiyet ve aktivite seviyeni belirt"
+      },
+      "4": {
+        "title": "Sağlık Notları",
+        "desc": "Alerjiler, sağlık durumun ve ilaçların"
+      },
+      "5": {
+        "title": "Hedefler",
+        "desc": "Programın sana göre şekillensin"
+      },
+      "6": {
+        "title": "Günlük Rutin",
+        "desc": "İsteğe bağlı — öğün saatlerini ayarlayalım"
+      },
+      "7": {
+        "title": "Hazırsın!",
+        "desc": "Profilini tamamlamak için son bir adım"
+      }
     },
     "service": {
       "fullTitle": "Tam Program",
@@ -2722,10 +2902,26 @@
       "unspecified": "Belirtilmedi"
     },
     "activity": {
-      "sedentary": { "label": "Çoğunlukla otururum", "hint": "Masa başı, az hareket", "short": "Masa başı" },
-      "light": { "label": "Hafif aktif", "hint": "Ofis + günlük yürüyüş, hafif ev işleri", "short": "Hafif aktif" },
-      "moderate": { "label": "Ayakta çalışırım", "hint": "Öğretmen, garson, perakende", "short": "Ayakta çalışır" },
-      "very_active": { "label": "Çok aktif", "hint": "İnşaat, kurye, fiziksel iş", "short": "Çok aktif" }
+      "sedentary": {
+        "label": "Çoğunlukla otururum",
+        "hint": "Masa başı, az hareket",
+        "short": "Masa başı"
+      },
+      "light": {
+        "label": "Hafif aktif",
+        "hint": "Ofis + günlük yürüyüş, hafif ev işleri",
+        "short": "Hafif aktif"
+      },
+      "moderate": {
+        "label": "Ayakta çalışırım",
+        "hint": "Öğretmen, garson, perakende",
+        "short": "Ayakta çalışır"
+      },
+      "very_active": {
+        "label": "Çok aktif",
+        "hint": "İnşaat, kurye, fiziksel iş",
+        "short": "Çok aktif"
+      }
     },
     "allergens": {
       "label": "Gıda Alerjilerin",
@@ -2748,11 +2944,26 @@
       "sportHistoryLabel": "Spor Geçmişi",
       "sportHistoryPlaceholder": "Daha önce hangi sporları yaptın, ne kadar süre?",
       "options": {
-        "loss": { "label": "Kilo Verme", "desc": "Yağ yakma + kalori açığı" },
-        "recomp": { "label": "Yağ Yakma + Kas Koruma", "desc": "Vücut rekompozisyonu, idame kalori" },
-        "maintain": { "label": "Form Koruma", "desc": "Mevcut formu koruma" },
-        "muscle_gain": { "label": "Kas Kazanımı", "desc": "Hipertrofi, hafif kalori fazlası" },
-        "weight_gain": { "label": "Kilo Alma", "desc": "Genel kilo artışı, hızlı surplus" }
+        "loss": {
+          "label": "Kilo Verme",
+          "desc": "Yağ yakma + kalori açığı"
+        },
+        "recomp": {
+          "label": "Yağ Yakma + Kas Koruma",
+          "desc": "Vücut rekompozisyonu, idame kalori"
+        },
+        "maintain": {
+          "label": "Form Koruma",
+          "desc": "Mevcut formu koruma"
+        },
+        "muscle_gain": {
+          "label": "Kas Kazanımı",
+          "desc": "Hipertrofi, hafif kalori fazlası"
+        },
+        "weight_gain": {
+          "label": "Kilo Alma",
+          "desc": "Genel kilo artışı, hızlı surplus"
+        }
       },
       "levels": {
         "beginner": "Yeni Başlayan",
@@ -2917,6 +3128,166 @@
     "reminderWorkout": {
       "title": "Antrenman zamanı yaklaşıyor 💪",
       "body": "{minutes} dk sonra başlıyoruz. Hazırlan!"
+    },
+    "subscriptionStarted": {
+      "title": "Aboneliğin başladı 🎉",
+      "body": "FitMusc'a hoş geldin. Tüm özelliklerin keyfini çıkar."
+    },
+    "subscriptionCancelled": {
+      "title": "Aboneliğin iptal edildi",
+      "body": "Mevcut dönemin sonuna kadar erişimin sürecek."
+    },
+    "paymentFailed": {
+      "title": "Ödeme alınamadı",
+      "body": "Ödemen başarısız oldu. Erişimini kaybetmemek için ödeme yöntemini güncelle."
+    },
+    "trialEnding": {
+      "title": "Deneme süren bitiyor",
+      "body": "Deneme sürene {daysLeft} gün kaldı. Kesintisiz devam için bir plan seç."
+    },
+    "trialEnded": {
+      "title": "Deneme süren doldu",
+      "body": "Deneme süren sona erdi. Devam etmek için bir plan seç."
+    }
+  },
+  "billing": {
+    "title": "Abonelik",
+    "currentPlan": "Mevcut Plan",
+    "status": {
+      "trialing": "Deneme",
+      "active": "Aktif",
+      "past_due": "Ödeme Bekliyor",
+      "cancelled": "İptal Edildi",
+      "expired": "Süresi Doldu",
+      "none": "Plan Yok",
+      "legacy": "Üyelik",
+      "admin": "Yönetici"
+    },
+    "interval": {
+      "monthly": "Aylık",
+      "yearly": "Yıllık"
+    },
+    "trialEndsOn": "Deneme bitişi: {date}",
+    "renewsOn": "Yenileme: {date}",
+    "endsOn": "Bitiş: {date}",
+    "paymentFailed": "Ödemen başarısız oldu. Lütfen ödeme yöntemini güncelle.",
+    "manageSubscription": "Aboneliği Yönet",
+    "updatePayment": "Ödeme Yöntemini Güncelle",
+    "cancel": "Aboneliği İptal Et",
+    "resume": "Aboneliği Sürdür",
+    "changePlan": "Plan Değiştir",
+    "choosePlan": "Plan Seç",
+    "invoices": "Faturalar",
+    "noInvoices": "Henüz fatura yok.",
+    "invoiceDownload": "İndir",
+    "cancelConfirm": "Aboneliğini iptal etmek istediğine emin misin? Dönem sonuna kadar erişimin sürer.",
+    "trialBanner": "Deneme sürene {daysLeft} gün kaldı.",
+    "trialBannerCta": "Plan seç",
+    "errors": {
+      "iyzicoNotReady": "Türkiye ödeme yöntemi yakında aktif olacak.",
+      "noSubscription": "Aktif aboneliğin yok.",
+      "generic": "İşlem tamamlanamadı. Tekrar dene."
+    },
+    "iyzicoForm": {
+      "title": "Ödeme Bilgileri",
+      "intro": "Türkiye kartları için fatura bilgilerini gir.",
+      "fullName": "Ad Soyad",
+      "identityNumber": "T.C. Kimlik No",
+      "phone": "Telefon",
+      "addressLine": "Adres",
+      "city": "Şehir",
+      "zip": "Posta Kodu",
+      "kvkkConsent": "Kişisel verilerimin işlenmesine ilişkin aydınlatma metnini okudum ve onaylıyorum.",
+      "submit": "Ödemeye Geç",
+      "processing": "Ödeme formu yükleniyor...",
+      "errors": {
+        "fullName": "Ad soyad gereklidir.",
+        "identityNumber": "Geçerli bir T.C. kimlik no girin (11 hane).",
+        "address": "Adres ve şehir gereklidir.",
+        "consent": "Devam etmek için onay gereklidir.",
+        "generic": "Ödeme başlatılamadı. Tekrar deneyin."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Planlar",
+    "subtitle": "Hedeflerine uygun planı seç. İstediğin zaman iptal et.",
+    "monthly": "Aylık",
+    "yearly": "Yıllık",
+    "yearlySave": "2 ay bedava",
+    "perMonth": "/ay",
+    "perYear": "/yıl",
+    "mostPopular": "En Popüler",
+    "trialNote": "14 gün ücretsiz deneme — kart gerekmez",
+    "cta": "Başla",
+    "ctaCurrent": "Mevcut Planın",
+    "inviteOnlyNote": "Şu anda yalnızca davetli kullanıcılar kayıt olabilir.",
+    "plans": {
+      "pro": {
+        "name": "Pro",
+        "tagline": "Ciddi antrenman ve beslenme takibi",
+        "features": [
+          "Sınırsız öğün & antrenman planı",
+          "Tüm AI özellikleri",
+          "İlerleme analizi",
+          "3 kanallı hatırlatıcılar",
+          "Alışveriş listesi"
+        ]
+      },
+      "elite": {
+        "name": "Elite",
+        "tagline": "Maksimum AI gücü ve paylaşım",
+        "features": [
+          "Pro'daki her şey",
+          "2 kat AI kullanım kotası",
+          "Sınırsız haftalık AI plan",
+          "Plan paylaşımı (3 kişiye kadar)",
+          "Öncelikli destek"
+        ]
+      }
+    },
+    "faqTitle": "Sıkça Sorulanlar",
+    "faq": [
+      {
+        "q": "Deneme süresi nasıl çalışıyor?",
+        "a": "14 gün boyunca tüm Pro özelliklerini ücretsiz kullanırsın. Kart bilgisi istenmez."
+      },
+      {
+        "q": "İstediğim zaman iptal edebilir miyim?",
+        "a": "Evet. İptal ettiğinde ödediğin dönemin sonuna kadar erişimin sürer."
+      },
+      {
+        "q": "Ödeme nasıl alınıyor?",
+        "a": "Uluslararası kartlar Lemon Squeezy, Türkiye kartları iyzico üzerinden güvenle işlenir."
+      }
+    ]
+  },
+  "footer": {
+    "links": {
+      "pricing": "Fiyatlandırma",
+      "terms": "Kullanım Şartları",
+      "privacy": "Gizlilik",
+      "kvkk": "KVKK",
+      "refund": "İade Politikası",
+      "cookie": "Çerez Politikası",
+      "contact": "İletişim"
+    },
+    "rights": "Tüm hakları saklıdır."
+  },
+  "contact": {
+    "title": "İletişim",
+    "subtitle": "Soru ve talepleriniz için bize yazın.",
+    "name": "Ad Soyad",
+    "email": "E-posta",
+    "message": "Mesajınız",
+    "submit": "Gönder",
+    "sending": "Gönderiliyor...",
+    "success": "Mesajınız alındı. En kısa sürede dönüş yapacağız.",
+    "emailLabel": "E-posta",
+    "errors": {
+      "required": "Lütfen tüm alanları doldurun.",
+      "invalidEmail": "Geçerli bir e-posta girin.",
+      "generic": "Mesaj gönderilemedi. Tekrar deneyin."
     }
   }
 }
