@@ -8,7 +8,7 @@ export type PushSubscribeResult =
   | {
       ok: false;
       /**
-       * - `unsupported` — Notification API absent (no PWA / old browser)
+       * - `unsupported` — Notification / Push API absent (no PWA / old browser)
        * - `denied` — user declined the permission prompt
        * - `config` — NEXT_PUBLIC_VAPID_PUBLIC_KEY missing from the build
        * - `error` — service worker / pushManager / server call failed
@@ -17,8 +17,43 @@ export type PushSubscribeResult =
       message?: string;
     };
 
+/**
+ * Ensures a service worker is registered AND has reached the `active` state.
+ * `pushManager.subscribe()` throws "Subscribing for push requires an active
+ * service worker" if the worker is still installing/waiting — which happens
+ * on a fresh PWA launch before the SW has finished activating.
+ */
+async function getActiveRegistration(): Promise<ServiceWorkerRegistration | null> {
+  let registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) {
+    try {
+      registration = await navigator.serviceWorker.register("/sw.js");
+    } catch {
+      registration = await navigator.serviceWorker.register("/sw-push.js");
+    }
+  }
+
+  if (!registration.active) {
+    // navigator.serviceWorker.ready resolves once an active worker controls
+    // the page. Race a timeout so the UI never hangs indefinitely.
+    const ready = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 15000)),
+    ]);
+    if (ready?.active) registration = ready;
+  }
+
+  return registration.active ? registration : null;
+}
+
 export async function subscribeToPush(): Promise<PushSubscribeResult> {
-  if (typeof Notification === "undefined") {
+  if (
+    typeof Notification === "undefined" ||
+    typeof navigator === "undefined" ||
+    !("serviceWorker" in navigator) ||
+    typeof window === "undefined" ||
+    !("PushManager" in window)
+  ) {
     return { ok: false, reason: "unsupported" };
   }
 
@@ -40,28 +75,14 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
       };
     }
 
-    let registration = await navigator.serviceWorker.getRegistration();
+    const registration = await getActiveRegistration();
     if (!registration) {
-      try {
-        registration = await navigator.serviceWorker.register("/sw.js");
-      } catch {
-        registration = await navigator.serviceWorker.register("/sw-push.js");
-      }
-      await new Promise<void>((resolve) => {
-        if (registration!.active) {
-          resolve();
-          return;
-        }
-        const sw = registration!.installing || registration!.waiting;
-        if (!sw) {
-          resolve();
-          return;
-        }
-        sw.addEventListener("statechange", () => {
-          if (sw.state === "activated") resolve();
-        });
-        setTimeout(resolve, 5000);
-      });
+      return {
+        ok: false,
+        reason: "error",
+        message:
+          "Service worker is not active yet. Reload the app and try again.",
+      };
     }
 
     const padding = "=".repeat((4 - (vapidKey.length % 4)) % 4);
@@ -72,10 +93,15 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
       keyArray[i] = rawData.charCodeAt(i);
     }
 
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: keyArray,
-    });
+    // Reuse an existing subscription if one is already present — re-subscribing
+    // with the same key is fine, but this avoids an extra round trip.
+    const existing = await registration.pushManager.getSubscription();
+    const subscription =
+      existing ??
+      (await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: keyArray,
+      }));
 
     const json = subscription.toJSON();
     const res = await fetch("/api/push/subscribe", {
