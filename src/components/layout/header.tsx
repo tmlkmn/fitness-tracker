@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeft, Dumbbell, type LucideIcon } from "lucide-react";
+import { ArrowLeft, type LucideIcon } from "lucide-react";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import React from "react";
@@ -17,7 +18,7 @@ interface HeaderProps {
 export function Header({
   title,
   subtitle,
-  icon: Icon = Dumbbell,
+  icon: Icon,
   showBack,
   backHref = "/",
   rightSlot,
@@ -34,8 +35,17 @@ export function Header({
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-        ) : (
+        ) : Icon ? (
           <Icon className="h-6 w-6 text-primary shrink-0" />
+        ) : (
+          <Image
+            src="/icon-192.png"
+            alt=""
+            width={28}
+            height={28}
+            className="rounded-lg shrink-0"
+            priority
+          />
         )}
         <div className="min-w-0">
           <h1 className="text-xl font-bold leading-none truncate">{title}</h1>

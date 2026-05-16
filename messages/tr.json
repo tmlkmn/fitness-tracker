@@ -2186,6 +2186,7 @@
       "pushDeniedToast": "Tarayıcı izinleri reddedildi",
       "pushDeniedDescription": "Tarayıcı ayarlarından bu siteye bildirim izni vermen gerekiyor.",
       "pushFailedToast": "Push kaydı başarısız — lütfen tekrar dene",
+      "pushConfigError": "Sunucu push anahtarı (VAPID) bu sürümde yapılandırılmamış. Yöneticiyle iletişime geç.",
       "quietHoursLabel": "Sessiz Saatler",
       "quietHoursStart": "Başlangıç",
       "quietHoursEnd": "Bitiş",

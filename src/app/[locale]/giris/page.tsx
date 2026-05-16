@@ -5,7 +5,8 @@ import { signIn, signOut, authClient } from "@/lib/auth-client";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dumbbell, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -86,9 +87,14 @@ export default function GirisPage() {
       <Card className="w-full max-w-sm">
         <CardContent className="p-6 space-y-6">
           <div className="text-center space-y-2">
-            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-              <Dumbbell className="h-7 w-7 text-primary" />
-            </div>
+            <Image
+              src="/icon-192.png"
+              alt="FitMusc"
+              width={56}
+              height={56}
+              className="mx-auto rounded-2xl"
+              priority
+            />
             <h1 className="text-xl font-bold">FitMusc</h1>
             <p className="text-sm text-muted-foreground">
               {t("subtitle")}

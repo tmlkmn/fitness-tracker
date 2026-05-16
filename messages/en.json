@@ -2186,6 +2186,7 @@
       "pushDeniedToast": "Browser permission denied",
       "pushDeniedDescription": "You need to allow notifications for this site in your browser settings.",
       "pushFailedToast": "Push subscription failed — please try again",
+      "pushConfigError": "The push server key (VAPID) is not configured in this build. Contact the administrator.",
       "quietHoursLabel": "Quiet Hours",
       "quietHoursStart": "Start",
       "quietHoursEnd": "End",

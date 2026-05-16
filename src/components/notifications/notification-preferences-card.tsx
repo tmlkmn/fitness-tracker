@@ -50,8 +50,8 @@ function PushStatus() {
             }
           }
           // Permission granted but no subscription — auto re-subscribe
-          const success = await subscribeToPush();
-          setStatus(success ? "active" : null);
+          const result = await subscribeToPush();
+          setStatus(result.ok ? "active" : null);
         })
         .catch(() => setStatus(null));
     } else {
@@ -141,17 +141,25 @@ export function NotificationPreferencesCard() {
       setPushLoading(true);
       const toastId = toast.loading(t("pushRequestingPermission"));
       try {
-        const success = await subscribeToPush();
-        if (success) {
+        const result = await subscribeToPush();
+        if (result.ok) {
           toggle("pushEnabled", true);
           setPushKey((k) => k + 1);
           toast.success(t("pushEnabledToast"), { id: toastId });
-        } else {
-          const denied =
-            typeof Notification !== "undefined" && Notification.permission === "denied";
-          toast.error(denied ? t("pushDeniedToast") : t("pushFailedToast"), {
+        } else if (result.reason === "denied") {
+          toast.error(t("pushDeniedToast"), {
             id: toastId,
-            description: denied ? t("pushDeniedDescription") : undefined,
+            description: t("pushDeniedDescription"),
+          });
+        } else if (result.reason === "config") {
+          toast.error(t("pushFailedToast"), {
+            id: toastId,
+            description: t("pushConfigError"),
+          });
+        } else {
+          toast.error(t("pushFailedToast"), {
+            id: toastId,
+            description: result.reason === "error" ? result.message : undefined,
           });
         }
       } finally {

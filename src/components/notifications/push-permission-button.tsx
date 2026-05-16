@@ -31,14 +31,14 @@ export function PushPermissionButton() {
             // Auto re-subscribe if permission granted but no subscription
             // (e.g., after PWA reinstall)
             if (!sub) {
-              const success = await subscribeToPush();
-              setHasSubscription(success);
+              const result = await subscribeToPush();
+              setHasSubscription(result.ok);
             }
           } else {
             setHasSubscription(false);
             // No service worker registered — register and subscribe
-            const success = await subscribeToPush();
-            setHasSubscription(success);
+            const result = await subscribeToPush();
+            setHasSubscription(result.ok);
           }
         })
         .catch(() => setHasSubscription(false));
@@ -48,8 +48,8 @@ export function PushPermissionButton() {
   const handleEnable = async () => {
     setLoading(true);
     try {
-      const success = await subscribeToPush();
-      setHasSubscription(success);
+      const result = await subscribeToPush();
+      setHasSubscription(result.ok);
       if (typeof Notification !== "undefined") {
         setPermission(Notification.permission);
       }
