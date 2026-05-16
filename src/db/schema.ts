@@ -754,6 +754,10 @@ export const invoices = pgTable(
     provider: text("provider").notNull(),
     providerRef: text("provider_ref").notNull(),
     amount: numeric("amount").notNull(),
+    // Tax breakdown — nullable: legacy rows and providers that omit the
+    // figures keep null, and the receipt falls back to subtotal = amount.
+    subtotal: numeric("subtotal"),
+    tax: numeric("tax"),
     currency: text("currency").notNull(),
     status: text("status").notNull(),
     pdfUrl: text("pdf_url"),

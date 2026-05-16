@@ -71,6 +71,11 @@ function toDate(value: unknown): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+// Lemon Squeezy money fields arrive in integer cents.
+function centsToAmount(value: unknown): string | null {
+  return typeof value === "number" ? (value / 100).toFixed(2) : null;
+}
+
 async function notifyBillingEvent(
   userId: string,
   locale: string | null,
@@ -207,7 +212,8 @@ async function handlePaymentEvent(
   }
 
   if (eventName === "subscription_payment_success") {
-    // total is in cents.
+    // Lemon Squeezy collects tax as Merchant of Record; tax/subtotal may be
+    // absent on some events — kept nullable.
     const totalCents = typeof attrs.total === "number" ? attrs.total : 0;
     await db
       .insert(invoices)
@@ -216,6 +222,8 @@ async function handlePaymentEvent(
         provider: "lemonsqueezy",
         providerRef: String(data.id),
         amount: (totalCents / 100).toFixed(2),
+        subtotal: centsToAmount(attrs.subtotal),
+        tax: centsToAmount(attrs.tax),
         currency: String(attrs.currency ?? "USD"),
         status: String(attrs.status ?? "paid"),
         pdfUrl:

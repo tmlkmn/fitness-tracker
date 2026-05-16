@@ -6,6 +6,7 @@ import { users, invoices } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { recordWebhookEvent } from "@/lib/billing/webhook-events";
 import { notifyAdminsOfPaymentFailure } from "@/lib/billing/notify-admins";
+import { splitVatInclusive } from "@/lib/billing/currency";
 import { sendNotification } from "@/lib/notifications";
 import { getServerTranslator } from "@/lib/i18n-server";
 import { normalizeLocale } from "@/lib/locale";
@@ -58,6 +59,38 @@ function statusForEvent(eventType: string): SubscriptionStatus | null {
   if (e.includes("CANCEL")) return "cancelled";
   if (e.includes("EXPIRE")) return "expired";
   return null;
+}
+
+// Records an invoice for a successful recurring charge. iyzico TRY amounts are
+// quoted VAT-inclusive (KDV), so the total is split for the receipt tax line.
+async function recordIyzicoInvoice(
+  userId: string,
+  externalId: string,
+  payload: IyzicoWebhook,
+): Promise<void> {
+  const total = payload.price ?? payload.paidPrice;
+  if (typeof total !== "number" && typeof total !== "string") return;
+
+  const totalNum =
+    typeof total === "number" ? total : Number.parseFloat(total);
+  const vat = Number.isFinite(totalNum) ? splitVatInclusive(totalNum) : null;
+
+  await db
+    .insert(invoices)
+    .values({
+      userId,
+      provider: "iyzico",
+      providerRef: externalId,
+      amount: String(total),
+      subtotal: vat?.subtotal ?? null,
+      tax: vat?.tax ?? null,
+      currency: "TRY",
+      status: "paid",
+      issuedAt: new Date(),
+    })
+    .onConflictDoNothing({
+      target: [invoices.provider, invoices.providerRef],
+    });
 }
 
 export async function POST(request: NextRequest) {
@@ -117,24 +150,7 @@ export async function POST(request: NextRequest) {
     .where(eq(users.id, user.id));
 
   if (status === "active") {
-    // A successful recurring charge — record an invoice if amount is present.
-    const total = payload.price ?? payload.paidPrice;
-    if (typeof total === "number" || typeof total === "string") {
-      await db
-        .insert(invoices)
-        .values({
-          userId: user.id,
-          provider: "iyzico",
-          providerRef: externalId,
-          amount: String(total),
-          currency: "TRY",
-          status: "paid",
-          issuedAt: new Date(),
-        })
-        .onConflictDoNothing({
-          target: [invoices.provider, invoices.providerRef],
-        });
-    }
+    await recordIyzicoInvoice(user.id, externalId, payload);
   } else if (status === "past_due") {
     const loc = normalizeLocale(user.locale);
     const t = await getServerTranslator(

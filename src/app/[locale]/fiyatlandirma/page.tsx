@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PlanComparison } from "@/components/billing/plan-comparison";
 import { isPublicSignupEnabled } from "@/lib/feature-flags";
+import { countryFromHeaders } from "@/lib/billing/gateway-router";
+import { currencyForCountry } from "@/lib/billing/currency";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("pricing");
@@ -20,6 +23,9 @@ export default async function PricingPage() {
   const locale = await getLocale();
   const isEn = locale === "en";
   const faq = t.raw("faq") as { q: string; a: string }[];
+  const displayCurrency = currencyForCountry(
+    countryFromHeaders(await headers()),
+  );
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
@@ -35,7 +41,11 @@ export default async function PricingPage() {
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </header>
 
-      <PlanComparison mode="signup" signupEnabled={isPublicSignupEnabled()} />
+      <PlanComparison
+        mode="signup"
+        signupEnabled={isPublicSignupEnabled()}
+        displayCurrency={displayCurrency}
+      />
 
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">{t("faqTitle")}</h2>

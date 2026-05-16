@@ -12,6 +12,7 @@ import {
   type BillingTier,
   type BillingInterval,
 } from "@/lib/billing/tier-config";
+import { localizedPrice, type DisplayCurrency } from "@/lib/billing/currency";
 import { useCheckout } from "@/hooks/use-billing";
 import { IyzicoCheckoutForm } from "./iyzico-checkout-form";
 
@@ -26,6 +27,9 @@ interface PlanComparisonProps {
   // Resolved server-side from locale + IP. iyzico checkout opens an inline
   // billing form; Lemon Squeezy redirects to a hosted page.
   gateway?: "lemonsqueezy" | "iyzico";
+  // Resolved server-side from the request country. When set to a non-USD
+  // currency, prices render as an approximate localized preview.
+  displayCurrency?: DisplayCurrency;
 }
 
 const TIERS: BillingTier[] = ["pro", "elite"];
@@ -35,6 +39,7 @@ export function PlanComparison({
   currentTier,
   signupEnabled = false,
   gateway = "lemonsqueezy",
+  displayCurrency,
 }: PlanComparisonProps) {
   const t = useTranslations("pricing");
   const [interval, setInterval] = useState<BillingInterval>("yearly");
@@ -43,6 +48,16 @@ export function PlanComparison({
     interval: BillingInterval;
   } | null>(null);
   const checkout = useCheckout();
+
+  const isApprox =
+    displayCurrency != null && displayCurrency.code !== "USD";
+  const formatPrice = (usd: number) => {
+    if (displayCurrency) {
+      const formatted = localizedPrice(usd, displayCurrency);
+      return displayCurrency.code === "USD" ? formatted : `≈ ${formatted}`;
+    }
+    return `$${usd.toFixed(2)}`;
+  };
 
   if (iyzicoPlan) {
     return (
@@ -119,7 +134,7 @@ export function PlanComparison({
 
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl font-bold">
-                    ${price.toFixed(2)}
+                    {formatPrice(price)}
                   </span>
                   <span className="text-sm text-muted-foreground">
                     {interval === "monthly" ? t("perMonth") : t("perYear")}
@@ -183,6 +198,11 @@ export function PlanComparison({
       {mode === "signup" && !signupEnabled && (
         <p className="text-xs text-muted-foreground text-center">
           {t("inviteOnlyNote")}
+        </p>
+      )}
+      {isApprox && (
+        <p className="text-xs text-muted-foreground text-center">
+          {t("localPriceNote")}
         </p>
       )}
       <p className="text-xs text-muted-foreground text-center">
