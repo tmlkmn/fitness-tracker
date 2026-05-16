@@ -9,11 +9,16 @@ export type PushSubscribeResult =
       ok: false;
       /**
        * - `unsupported` — Notification / Push API absent (no PWA / old browser)
-       * - `denied` — user declined the permission prompt
+       * - `denied` — notification permission is blocked for this site
+       * - `dismissed` — the permission prompt was closed or hidden without an
+       *   allow/deny decision. Chrome's "quiet" permission UI (auto-enabled
+       *   for sites with a low accept rate or after repeated dismissals)
+       *   hides the modal behind an address-bar icon; permission stays
+       *   `"default"` and can still be granted from that icon.
        * - `config` — NEXT_PUBLIC_VAPID_PUBLIC_KEY missing from the build
        * - `error` — service worker / pushManager / server call failed
        */
-      reason: "unsupported" | "denied" | "config" | "error";
+      reason: "unsupported" | "denied" | "dismissed" | "config" | "error";
       message?: string;
     };
 
@@ -58,9 +63,33 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
   }
 
   try {
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
+    // Already permanently blocked — requestPermission() resolves to "denied"
+    // silently (no prompt), so surface it directly without a pointless call.
+    if (Notification.permission === "denied") {
       return { ok: false, reason: "denied" };
+    }
+
+    // Request permission unless it is already granted (in which case
+    // requestPermission() is a no-op that resolves to "granted").
+    // Chrome's "quiet" permission UI hides the modal behind an address-bar
+    // icon and leaves the promise pending until the user acts on it — race a
+    // timeout so the caller never hangs. A timeout means the prompt was never
+    // answered, which is "dismissed" (permission still "default"), not "denied".
+    let permission: NotificationPermission = Notification.permission;
+    if (permission !== "granted") {
+      permission = await Promise.race([
+        Notification.requestPermission(),
+        new Promise<NotificationPermission>((resolve) =>
+          setTimeout(() => resolve("default"), 30_000),
+        ),
+      ]);
+    }
+
+    if (permission === "denied") {
+      return { ok: false, reason: "denied" };
+    }
+    if (permission !== "granted") {
+      return { ok: false, reason: "dismissed" };
     }
 
     // NEXT_PUBLIC_* vars are inlined at build time. If the deploy build was
