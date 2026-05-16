@@ -4,10 +4,12 @@ import { ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   getBillingStats,
+  getBillingMetrics,
   getRecentInvoices,
   getRecentWebhookEvents,
 } from "@/actions/admin";
 import { AdminBillingTools } from "@/components/admin/admin-billing-tools";
+import { BillingMetrics } from "@/components/admin/billing-metrics";
 
 export const metadata: Metadata = {
   title: "Abonelik Yönetimi",
@@ -27,8 +29,9 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 
 export default async function AdminBillingPage() {
   // Each of these runs getAuthAdmin() — throws for non-admins.
-  const [stats, invoiceLog, webhookLog] = await Promise.all([
+  const [stats, metrics, invoiceLog, webhookLog] = await Promise.all([
     getBillingStats(),
+    getBillingMetrics(),
     getRecentInvoices(),
     getRecentWebhookEvents(),
   ]);
@@ -54,16 +57,7 @@ export default async function AdminBillingPage() {
         <Stat label="Elite" value={stats.elite} />
       </div>
 
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-xs text-muted-foreground">
-            Tahmini Aylık Gelir (MRR)
-          </p>
-          <p className="text-3xl font-bold mt-1">
-            ${stats.mrrUsd.toFixed(2)}
-          </p>
-        </CardContent>
-      </Card>
+      <BillingMetrics data={metrics} />
 
       <Card>
         <CardContent className="p-4 space-y-3">
@@ -118,20 +112,12 @@ export default async function AdminBillingPage() {
                     <p className="font-medium">
                       {inv.amount} {inv.currency}
                     </p>
-                    {inv.pdfUrl ? (
-                      <a
-                        href={inv.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-sky-400 hover:underline"
-                      >
-                        Fatura PDF
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        {inv.status}
-                      </span>
-                    )}
+                    <a
+                      href={`/api/invoices/${inv.id}/pdf`}
+                      className="text-xs text-sky-400 hover:underline"
+                    >
+                      Makbuz indir
+                    </a>
                   </div>
                 </li>
               ))}

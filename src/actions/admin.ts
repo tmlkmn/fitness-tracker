@@ -16,6 +16,7 @@ import { formatDate } from "@/lib/date-format";
 import { getUserStatus, type UserStatus } from "@/lib/user-status";
 import { invalidateAdminOpsCache } from "@/lib/admin-ops-cache";
 import { PRICING, type BillingTier } from "@/lib/billing/tier-config";
+import { DISPLAY_CURRENCIES } from "@/lib/billing/currency";
 
 export type { UserStatus };
 
@@ -908,6 +909,142 @@ export async function getRecentWebhookEvents(): Promise<WebhookLogRow[]> {
     .from(webhookEvents)
     .orderBy(desc(webhookEvents.processedAt))
     .limit(50);
+}
+
+export interface MonthlyBillingPoint {
+  month: string;
+  label: string;
+  revenueUsd: number;
+  newCustomers: number;
+  cancellations: number;
+}
+
+export interface BillingMetricsData {
+  mrrUsd: number;
+  arpuUsd: number;
+  activeCount: number;
+  churnRatePct: number;
+  trialConversionPct: number;
+  monthly: MonthlyBillingPoint[];
+}
+
+/**
+ * Subscription analytics for the admin billing panel. Note: there are no
+ * historical MRR snapshots, so the monthly trend is derived from collected
+ * invoice revenue (a proxy), and churn/trial-conversion are point-in-time
+ * snapshots rather than period-accurate rates.
+ */
+export async function getBillingMetrics(): Promise<BillingMetricsData> {
+  await getAuthAdmin();
+
+  const monthKey = (d: Date): string =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+  const userRows = await db
+    .select({
+      subscriptionStatus: users.subscriptionStatus,
+      billingTier: users.billingTier,
+      billingInterval: users.billingInterval,
+      cancelledAt: users.cancelledAt,
+      trialEndsAt: users.trialEndsAt,
+    })
+    .from(users);
+
+  const invoiceRows = await db
+    .select({
+      userId: invoices.userId,
+      amount: invoices.amount,
+      currency: invoices.currency,
+      issuedAt: invoices.issuedAt,
+    })
+    .from(invoices);
+
+  let mrrUsd = 0;
+  let activeCount = 0;
+  let cancelledCount = 0;
+  let trialTotal = 0;
+  let trialConverted = 0;
+  for (const u of userRows) {
+    const revenueBearing =
+      u.subscriptionStatus === "active" ||
+      u.subscriptionStatus === "past_due";
+    if (
+      revenueBearing &&
+      (u.billingTier === "pro" || u.billingTier === "elite")
+    ) {
+      activeCount++;
+      const interval = u.billingInterval === "yearly" ? "yearly" : "monthly";
+      const price = PRICING[u.billingTier][interval];
+      mrrUsd += interval === "yearly" ? price / 12 : price;
+    }
+    if (u.subscriptionStatus === "cancelled") cancelledCount++;
+    if (u.trialEndsAt) {
+      trialTotal++;
+      if (u.subscriptionStatus === "active") trialConverted++;
+    }
+  }
+  const churnBase = activeCount + cancelledCount;
+
+  const toUsd = (amount: string, currency: string): number => {
+    const rate = DISPLAY_CURRENCIES[currency.toUpperCase()]?.rate ?? 1;
+    const n = Number.parseFloat(amount);
+    return Number.isFinite(n) ? n / rate : 0;
+  };
+
+  // First invoice per user ≈ when they became a paying customer.
+  const firstInvoiceMonth = new Map<string, string>();
+  for (const inv of invoiceRows) {
+    const m = monthKey(inv.issuedAt);
+    const seen = firstInvoiceMonth.get(inv.userId);
+    if (!seen || m < seen) firstInvoiceMonth.set(inv.userId, m);
+  }
+
+  const now = new Date();
+  const monthly: MonthlyBillingPoint[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    monthly.push({
+      month: monthKey(d),
+      label: new Intl.DateTimeFormat("tr-TR", { month: "short" }).format(d),
+      revenueUsd: 0,
+      newCustomers: 0,
+      cancellations: 0,
+    });
+  }
+  const byMonth = new Map(monthly.map((m) => [m.month, m]));
+
+  for (const inv of invoiceRows) {
+    const pt = byMonth.get(monthKey(inv.issuedAt));
+    if (pt) pt.revenueUsd += toUsd(inv.amount, inv.currency);
+  }
+  for (const m of firstInvoiceMonth.values()) {
+    const pt = byMonth.get(m);
+    if (pt) pt.newCustomers++;
+  }
+  for (const u of userRows) {
+    if (!u.cancelledAt) continue;
+    const pt = byMonth.get(monthKey(u.cancelledAt));
+    if (pt) pt.cancellations++;
+  }
+  for (const m of monthly) {
+    m.revenueUsd = Math.round(m.revenueUsd * 100) / 100;
+  }
+
+  return {
+    mrrUsd: Math.round(mrrUsd * 100) / 100,
+    arpuUsd:
+      activeCount > 0 ? Math.round((mrrUsd / activeCount) * 100) / 100 : 0,
+    activeCount,
+    churnRatePct:
+      churnBase > 0
+        ? Math.round((cancelledCount / churnBase) * 1000) / 10
+        : 0,
+    trialConversionPct:
+      trialTotal > 0
+        ? Math.round((trialConverted / trialTotal) * 1000) / 10
+        : 0,
+    monthly,
+  };
 }
 
 
