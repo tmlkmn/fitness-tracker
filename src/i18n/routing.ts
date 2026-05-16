@@ -27,6 +27,7 @@ export const routing = defineRouting({
     "/ayarlar/takviye": { tr: "/ayarlar/takviye", en: "/settings/supplements" },
     "/ayarlar/tercihler": { tr: "/ayarlar/tercihler", en: "/settings/preferences" },
     "/ayarlar/odeme": { tr: "/ayarlar/odeme", en: "/settings/billing" },
+    "/ayarlar/verilerim": { tr: "/ayarlar/verilerim", en: "/settings/my-data" },
 
     // Auth flow
     "/giris": { tr: "/giris", en: "/login" },

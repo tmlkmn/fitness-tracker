@@ -20,6 +20,7 @@ import {
   Sliders,
   ShieldCheck,
   CreditCard,
+  Database,
 } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
@@ -193,6 +194,12 @@ useEffect(() => {
             title={t("items.sharingTitle")}
             subtitle={t("items.sharingSubtitle")}
             href="/ayarlar/paylasim"
+          />
+          <SettingsMenuItem
+            icon={Database}
+            title={t("items.dataTitle")}
+            subtitle={t("items.dataSubtitle")}
+            href="/ayarlar/verilerim"
           />
         </SettingsGroup>
 
