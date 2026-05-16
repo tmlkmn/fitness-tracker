@@ -12,7 +12,12 @@ const cspScriptSrc = isDev
   : "script-src 'self' 'unsafe-inline'";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@anthropic-ai/sdk"],
+  serverExternalPackages: ["@anthropic-ai/sdk", "@react-pdf/renderer"],
+  // The receipt PDF route reads a bundled font from disk at runtime — make
+  // sure it ships inside that route's serverless function.
+  outputFileTracingIncludes: {
+    "/api/invoices/[id]/pdf": ["./public/fonts/**"],
+  },
   experimental: {
     viewTransition: true,
   },

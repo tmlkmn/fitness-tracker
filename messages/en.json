@@ -1731,6 +1731,42 @@
     "loadingLinkedMeals": "Loading...",
     "noLinkedMeals": "No referenced meals found."
   },
+  "account": {
+    "pageTitle": "My Data",
+    "pageSubtitle": "Download your data or delete your account",
+    "export": {
+      "title": "Download my data",
+      "description": "Download all your account data (plans, progress, meals, invoices and more) as a single JSON file.",
+      "button": "Download JSON"
+    },
+    "delete": {
+      "title": "Delete my account",
+      "description": "Your account and all personal data are permanently deleted. An active subscription is cancelled automatically. Invoices are kept in anonymized form to meet legal retention requirements. This action cannot be undone.",
+      "button": "Delete my account",
+      "dialogTitle": "Are you sure you want to delete your account?",
+      "dialogDescription": "All your plans, progress logs and content are permanently deleted. Type your email address to confirm.",
+      "confirmLabel": "Your email address",
+      "cancel": "Cancel",
+      "confirm": "Permanently delete",
+      "success": "Your account has been deleted.",
+      "errorMismatch": "Email address does not match.",
+      "errorGeneric": "Operation failed. Please try again."
+    }
+  },
+  "receipt": {
+    "title": "RECEIPT",
+    "receiptNo": "Receipt No",
+    "date": "Date",
+    "billedTo": "Billed To",
+    "item": "Description",
+    "taxNo": "Tax ID",
+    "subtotal": "Subtotal",
+    "tax": "Tax (VAT)",
+    "total": "Total",
+    "paidVia": "Payment Method",
+    "subscriptionItem": "FitMusc Subscription",
+    "footer": "This is an informational receipt, not a legal e-invoice."
+  },
   "settings": {
     "menuItem": {
       "missingInfoLabel": "Missing info"
@@ -2012,7 +2048,9 @@
       "sharingTitle": "Plan Sharing",
       "sharingSubtitle": "Share your program with other users",
       "billingTitle": "Subscription",
-      "billingSubtitle": "Plan, invoices and payment method"
+      "billingSubtitle": "Plan, invoices and payment method",
+      "dataTitle": "My Data",
+      "dataSubtitle": "Download your data or delete your account"
     },
     "adminPanel": "Admin Panel",
     "signOut": "Sign Out",
@@ -3184,6 +3222,7 @@
     "invoices": "Invoices",
     "noInvoices": "No invoices yet.",
     "invoiceDownload": "Download",
+    "receiptDownload": "Download receipt",
     "cancelConfirm": "Are you sure you want to cancel? You keep access until the end of the period.",
     "trialBanner": "{daysLeft} days left in your trial.",
     "trialBannerCta": "Pick a plan",
@@ -3226,6 +3265,7 @@
     "cta": "Get Started",
     "ctaCurrent": "Your Current Plan",
     "inviteOnlyNote": "Signup is currently limited to invited users.",
+    "localPriceNote": "Local currency prices are approximate. The exact amount and taxes are determined at checkout.",
     "plans": {
       "pro": {
         "name": "Pro",

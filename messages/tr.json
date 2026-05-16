@@ -1731,6 +1731,42 @@
     "loadingLinkedMeals": "Yükleniyor...",
     "noLinkedMeals": "Referans verilen öğünler bulunamadı."
   },
+  "account": {
+    "pageTitle": "Verilerim",
+    "pageSubtitle": "Verini indir veya hesabını sil",
+    "export": {
+      "title": "Verilerimi indir",
+      "description": "Tüm hesap verini (planlar, ilerleme, öğünler, faturalar ve daha fazlası) tek bir JSON dosyası olarak indir.",
+      "button": "JSON indir"
+    },
+    "delete": {
+      "title": "Hesabımı sil",
+      "description": "Hesabın ve tüm kişisel verilerin kalıcı olarak silinir. Aktif aboneliğin varsa otomatik iptal edilir. Faturalar yasal saklama yükümlülüğü gereği anonimleştirilerek korunur. Bu işlem geri alınamaz.",
+      "button": "Hesabımı sil",
+      "dialogTitle": "Hesabını silmek istediğine emin misin?",
+      "dialogDescription": "Tüm planların, ilerleme kayıtların ve içeriğin kalıcı olarak silinir. Onaylamak için e-posta adresini yaz.",
+      "confirmLabel": "E-posta adresin",
+      "cancel": "Vazgeç",
+      "confirm": "Kalıcı olarak sil",
+      "success": "Hesabın silindi.",
+      "errorMismatch": "E-posta adresi eşleşmiyor.",
+      "errorGeneric": "İşlem başarısız. Lütfen tekrar dene."
+    }
+  },
+  "receipt": {
+    "title": "MAKBUZ",
+    "receiptNo": "Makbuz No",
+    "date": "Tarih",
+    "billedTo": "Fatura Edilen",
+    "item": "Açıklama",
+    "taxNo": "Vergi No",
+    "subtotal": "Ara Toplam",
+    "tax": "Vergi (KDV)",
+    "total": "Toplam",
+    "paidVia": "Ödeme Yöntemi",
+    "subscriptionItem": "FitMusc Aboneliği",
+    "footer": "Bu bir bilgilendirme makbuzudur; yasal e-Fatura veya e-Arşiv belgesi değildir."
+  },
   "settings": {
     "menuItem": {
       "missingInfoLabel": "Eksik bilgi"
@@ -2012,7 +2048,9 @@
       "sharingTitle": "Plan Paylaşımı",
       "sharingSubtitle": "Programını başka kullanıcılarla paylaş",
       "billingTitle": "Abonelik",
-      "billingSubtitle": "Plan, fatura ve ödeme yöntemi"
+      "billingSubtitle": "Plan, fatura ve ödeme yöntemi",
+      "dataTitle": "Verilerim",
+      "dataSubtitle": "Verini indir veya hesabını sil"
     },
     "adminPanel": "Admin Paneli",
     "signOut": "Çıkış Yap",
@@ -3184,6 +3222,7 @@
     "invoices": "Faturalar",
     "noInvoices": "Henüz fatura yok.",
     "invoiceDownload": "İndir",
+    "receiptDownload": "Makbuz indir",
     "cancelConfirm": "Aboneliğini iptal etmek istediğine emin misin? Dönem sonuna kadar erişimin sürer.",
     "trialBanner": "Deneme sürene {daysLeft} gün kaldı.",
     "trialBannerCta": "Plan seç",
@@ -3226,6 +3265,7 @@
     "cta": "Başla",
     "ctaCurrent": "Mevcut Planın",
     "inviteOnlyNote": "Şu anda yalnızca davetli kullanıcılar kayıt olabilir.",
+    "localPriceNote": "Yerel para birimi fiyatları yaklaşıktır. Kesin tutar ve vergiler ödeme adımında belirlenir.",
     "plans": {
       "pro": {
         "name": "Pro",

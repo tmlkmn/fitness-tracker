@@ -47,17 +47,13 @@ export function InvoiceHistory() {
                     {formatDate(inv.issuedAt, locale)}
                   </p>
                 </div>
-                {inv.pdfUrl && (
-                  <a
-                    href={inv.pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-sm text-primary hover:underline"
-                  >
-                    <Download className="h-4 w-4" />
-                    {t("invoiceDownload")}
-                  </a>
-                )}
+                <a
+                  href={`/api/invoices/${inv.id}/pdf`}
+                  className="flex items-center gap-1 text-sm text-primary hover:underline"
+                >
+                  <Download className="h-4 w-4" />
+                  {t("receiptDownload")}
+                </a>
               </li>
             ))}
           </ul>
