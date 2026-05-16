@@ -2183,6 +2183,8 @@
       "pushDeniedDescription": "Bildirimler bu site için engellenmiş. Adres çubuğundaki kilit simgesine tıklayıp bildirim iznini “İzin ver” yapın, ardından tekrar deneyin.",
       "pushDismissedToast": "İzin penceresi görüntülenmedi",
       "pushDismissedDescription": "Tarayıcı izin penceresini gizledi veya kapatıldı. Adres çubuğundaki kilit ya da bildirim simgesine tıklayıp “Bildirimler” iznini “İzin ver” yapın, sonra bu düğmeyi tekrar deneyin.",
+      "pushSwNotReadyToast": "Servis çalışanı henüz hazır değil",
+      "pushSwNotReadyDescription": "Uygulamayı tamamen kapatıp yeniden açın, birkaç saniye bekleyin ve tekrar deneyin. iOS'ta uygulama ilk açılışta arka planda hazırlanır; bu işlem biraz sürebilir.",
       "pushFailedToast": "Push kaydı başarısız — lütfen tekrar dene",
       "pushConfigError": "Sunucu push anahtarı (VAPID) bu sürümde yapılandırılmamış. Yöneticiyle iletişime geç.",
       "quietHoursLabel": "Sessiz Saatler",

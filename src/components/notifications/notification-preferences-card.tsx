@@ -157,6 +157,12 @@ export function NotificationPreferencesCard() {
             description: t("pushDismissedDescription"),
             duration: 12000,
           });
+        } else if (result.reason === "sw") {
+          toast.error(t("pushSwNotReadyToast"), {
+            id: toastId,
+            description: t("pushSwNotReadyDescription"),
+            duration: 12000,
+          });
         } else if (result.reason === "config") {
           toast.error(t("pushFailedToast"), {
             id: toastId,

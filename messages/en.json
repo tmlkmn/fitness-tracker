@@ -2183,6 +2183,8 @@
       "pushDeniedDescription": "Notifications are blocked for this site. Click the lock icon in the address bar, set the notification permission to “Allow”, then try again.",
       "pushDismissedToast": "Permission prompt not shown",
       "pushDismissedDescription": "Your browser hid the permission prompt or it was dismissed. Click the lock or notification icon in the address bar, set “Notifications” to “Allow”, then try this button again.",
+      "pushSwNotReadyToast": "Service worker not ready yet",
+      "pushSwNotReadyDescription": "Fully close and reopen the app, wait a few seconds, then try again. On iOS the app finishes setting up in the background after the first launch, which can take a moment.",
       "pushFailedToast": "Push subscription failed — please try again",
       "pushConfigError": "The push server key (VAPID) is not configured in this build. Contact the administrator.",
       "quietHoursLabel": "Quiet Hours",

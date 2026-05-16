@@ -15,37 +15,87 @@ export type PushSubscribeResult =
        *   for sites with a low accept rate or after repeated dismissals)
        *   hides the modal behind an address-bar icon; permission stays
        *   `"default"` and can still be granted from that icon.
+       * - `sw` — the service worker did not reach the `active` state in time
+       *   (common on a cold iOS PWA launch while it is still precaching);
+       *   closing/reopening the app and retrying usually succeeds
        * - `config` — NEXT_PUBLIC_VAPID_PUBLIC_KEY missing from the build
        * - `error` — service worker / pushManager / server call failed
        */
-      reason: "unsupported" | "denied" | "dismissed" | "config" | "error";
+      reason: "unsupported" | "denied" | "dismissed" | "sw" | "config" | "error";
       message?: string;
     };
 
 /**
+ * Resolves `true` once `registration` has a worker in the `active` slot, or
+ * `false` if that has not happened within `timeoutMs`. Driven by `statechange`
+ * events rather than `navigator.serviceWorker.ready`, which is known to hang
+ * indefinitely inside iOS standalone PWAs.
+ */
+function waitForActivation(
+  registration: ServiceWorkerRegistration,
+  timeoutMs: number,
+): Promise<boolean> {
+  if (registration.active) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+
+    const timer = setTimeout(
+      () => finish(Boolean(registration.active)),
+      timeoutMs,
+    );
+
+    const onStateChange = () => {
+      if (registration.active) {
+        clearTimeout(timer);
+        finish(true);
+      }
+    };
+
+    const track = (worker: ServiceWorker | null) => {
+      worker?.addEventListener("statechange", onStateChange);
+    };
+
+    track(registration.installing);
+    track(registration.waiting);
+    registration.addEventListener("updatefound", () =>
+      track(registration.installing),
+    );
+  });
+}
+
+/**
  * Ensures a service worker is registered AND has reached the `active` state.
  * `pushManager.subscribe()` throws "Subscribing for push requires an active
- * service worker" if the worker is still installing/waiting — which happens
- * on a fresh PWA launch before the SW has finished activating.
+ * service worker" if the worker is still installing/waiting.
+ *
+ * On a cold iOS PWA launch the Serwist worker precaches the whole build during
+ * its `install` event, which routinely takes longer than a short fixed
+ * timeout — so we wait, event-driven, for activation to actually land.
  */
 async function getActiveRegistration(): Promise<ServiceWorkerRegistration | null> {
-  let registration = await navigator.serviceWorker.getRegistration();
+  let registration = (await navigator.serviceWorker.getRegistration()) ?? null;
+
   if (!registration) {
     try {
       registration = await navigator.serviceWorker.register("/sw.js");
     } catch {
-      registration = await navigator.serviceWorker.register("/sw-push.js");
+      // /sw.js unavailable (e.g. dev mode) — fall back to the push-only worker.
+      try {
+        registration = await navigator.serviceWorker.register("/sw-push.js");
+      } catch {
+        return null;
+      }
     }
   }
 
   if (!registration.active) {
-    // navigator.serviceWorker.ready resolves once an active worker controls
-    // the page. Race a timeout so the UI never hangs indefinitely.
-    const ready = await Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 15000)),
-    ]);
-    if (ready?.active) registration = ready;
+    await waitForActivation(registration, 30_000);
   }
 
   return registration.active ? registration : null;
@@ -106,12 +156,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
 
     const registration = await getActiveRegistration();
     if (!registration) {
-      return {
-        ok: false,
-        reason: "error",
-        message:
-          "Service worker is not active yet. Reload the app and try again.",
-      };
+      return { ok: false, reason: "sw" };
     }
 
     const padding = "=".repeat((4 - (vapidKey.length % 4)) % 4);
