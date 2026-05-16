@@ -980,19 +980,13 @@ function splitExercises(
 async function seed() {
   console.log("🌱 Seeding database...");
 
-  // 0. Clean existing data (order matters for foreign keys)
-  console.log("Clearing existing data...");
-  await db.delete(schema.shoppingLists);
-  await db.delete(schema.supplements);
-  await db.delete(schema.exercises);
-  await db.delete(schema.meals);
-  await db.delete(schema.progressLogs);
-  await db.delete(schema.dailyPlans);
-  await db.delete(schema.weeklyPlans);
-  await db.delete(schema.sessions);
-  await db.delete(schema.accounts);
-  await db.delete(schema.verifications);
-  await db.delete(schema.users);
+  // 0. NOTE: This seed intentionally does NOT wipe existing data. It assumes
+  // a fresh/empty database. The previous bulk-delete block was removed because
+  // it was dangerous: it only cleared a subset of tables, so on the current
+  // schema it failed mid-way (foreign key violation) and left the DB in a
+  // corrupted half-deleted state. If a destructive reset is ever genuinely
+  // needed, add it back deliberately and clear ALL tables (e.g. a single
+  // TRUNCATE ... CASCADE) so it can never partially apply.
 
   // 1. Create user with auth account
   console.log("Creating users...");
