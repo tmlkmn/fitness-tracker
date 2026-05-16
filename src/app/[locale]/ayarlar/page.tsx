@@ -31,6 +31,7 @@ import { PwaInstallCard } from "@/components/layout/pwa-install-card";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 import { LocaleToggle } from "@/components/settings/locale-toggle";
 import { AdminQuickAccessCard } from "@/components/admin/admin-quick-access-card";
+import { PageTour } from "@/components/onboarding/page-tour";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -94,6 +95,7 @@ useEffect(() => {
           </div>
         }
       />
+      <PageTour surface="settings" ready={!profileLoading} />
       <div className="p-4 space-y-4">
         {showOnboardingBanner && (
           <Card className="border-primary/30 bg-primary/5">
@@ -120,9 +122,11 @@ useEffect(() => {
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {(user as any)?.role === "admin" && <AdminQuickAccessCard />}
 
-        <ProfileSummaryCard />
+        <div data-tour="settings-profile">
+          <ProfileSummaryCard />
+        </div>
 
-        <SettingsGroup label={t("groups.profileHealth")}>
+        <SettingsGroup label={t("groups.profileHealth")} dataTour="settings-health">
           <SettingsMenuItem
             icon={ShieldCheck}
             title={t("items.healthTitle")}
@@ -146,7 +150,7 @@ useEffect(() => {
           />
         </SettingsGroup>
 
-        <SettingsGroup label={t("groups.goals")}>
+        <SettingsGroup label={t("groups.goals")} dataTour="settings-goals">
           <SettingsMenuItem
             icon={Target}
             title={t("items.macroTitle")}
@@ -155,7 +159,7 @@ useEffect(() => {
           />
         </SettingsGroup>
 
-        <SettingsGroup label={t("groups.app")}>
+        <SettingsGroup label={t("groups.app")} dataTour="settings-app">
           <SettingsMenuItem
             icon={CreditCard}
             title={t("items.billingTitle")}
@@ -182,7 +186,7 @@ useEffect(() => {
           />
         </SettingsGroup>
 
-        <SettingsGroup label={t("groups.sharingData")}>
+        <SettingsGroup label={t("groups.sharingData")} dataTour="settings-data">
           <SettingsMenuItem
             icon={BookOpen}
             title={t("items.mealLibraryTitle")}

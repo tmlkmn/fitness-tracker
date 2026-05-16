@@ -103,12 +103,10 @@ export default async function GunPage({ params, searchParams }: PageProps) {
       <PageTour surface="day" />
       <div className="p-4">
         <Tabs defaultValue={initialTab}>
-          <TabsList
-            data-tour="day-tabs"
-            className="grid grid-cols-4 w-full mb-4 h-auto p-1"
-          >
+          <TabsList className="grid grid-cols-4 w-full mb-4 h-auto p-1">
             <TabsTrigger
               value="meals"
+              data-tour="tab-meals"
               className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
             >
               <Utensils className="h-4 w-4" />
@@ -116,6 +114,7 @@ export default async function GunPage({ params, searchParams }: PageProps) {
             </TabsTrigger>
             <TabsTrigger
               value="workout"
+              data-tour="tab-workout"
               className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
             >
               <Dumbbell className="h-4 w-4" />
@@ -123,6 +122,7 @@ export default async function GunPage({ params, searchParams }: PageProps) {
             </TabsTrigger>
             <TabsTrigger
               value="supplements"
+              data-tour="tab-supplements"
               className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
             >
               <Pill className="h-4 w-4" />
@@ -130,13 +130,14 @@ export default async function GunPage({ params, searchParams }: PageProps) {
             </TabsTrigger>
             <TabsTrigger
               value="wellness"
+              data-tour="tab-wellness"
               className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
             >
               <HeartPulse className="h-4 w-4" />
               <span className="text-[10px] xs:text-xs truncate max-w-full">{t("tabs.wellness")}</span>
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="meals" className="space-y-3" data-tour="day-content">
+          <TabsContent value="meals" className="space-y-3">
             {false && dailyPlan.date && (
               <MacroTrendSparkline endDate={dailyPlan.date!} metric="calories" />
             )}

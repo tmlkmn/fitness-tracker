@@ -330,6 +330,7 @@ export default function TakvimPage() {
                 variant="ghost"
                 size="sm"
                 className="flex-1 gap-1.5 text-muted-foreground"
+                data-tour="full-calendar"
                 onClick={() => {
                   const d = new Date(selectedDate + "T00:00:00");
                   setViewYear(d.getFullYear());
@@ -364,9 +365,9 @@ export default function TakvimPage() {
                 gate blocks this future month. */}
             {!isMonthBlocked && (isFutureWeek || !data?.weeklyPlan || isWeekday) && (
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
-                className="flex-1 gap-1.5"
+                className="flex-1 gap-1.5 bg-linear-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                 onClick={() => handleWeeklyModalOpenChange(true)}
                 disabled={hasEmptyWeekGap}
                 data-tour="ai-weekly"
@@ -388,7 +389,10 @@ export default function TakvimPage() {
             )}
             {/* Shopping cart: visible when a weekly plan exists */}
             {data?.weeklyPlan && (
-              <Link href={`/alisveris?week=${data.weeklyPlan.id}`}>
+              <Link
+                href={`/alisveris?week=${data.weeklyPlan.id}`}
+                data-tour="shopping-cart"
+              >
                 <Button variant="outline" size="sm" className="gap-1.5">
                   <ShoppingCart className="h-3.5 w-3.5" />
                 </Button>
@@ -396,7 +400,9 @@ export default function TakvimPage() {
             )}
             {/* Share: visible when a weekly plan exists and week is not past */}
             {data?.weeklyPlan && !isPastWeek && (
-              <ShareWeeklyPlanButton weeklyPlanId={data.weeklyPlan.id} />
+              <div data-tour="share">
+                <ShareWeeklyPlanButton weeklyPlanId={data.weeklyPlan.id} />
+              </div>
             )}
           </div>
         )}

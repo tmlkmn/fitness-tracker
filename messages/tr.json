@@ -176,6 +176,7 @@
     "menu": "Menü",
     "feedback": "Geri Bildirim",
     "appGuide": "Uygulama Rehberi",
+    "pageGuide": "Bu sayfayı tanıt",
     "adminPanel": "Admin Paneli",
     "lightTheme": "Açık Tema",
     "darkTheme": "Koyu Tema",
@@ -2610,25 +2611,37 @@
       "done": "Tamam",
       "steps": {
         "dashboard": {
-          "today": {
+          "greeting": {
+            "title": "Karşılama Kartı",
+            "description": "Günlük selamlama, kilo bilgin ve üyelik durumun burada görünür."
+          },
+          "todayPlan": {
             "title": "Bugünün Planı",
-            "description": "Günlük öğün ve antrenman ilerlemen burada görünür. Plana gitmek için karta dokun."
+            "description": "Bugünkü öğün ve antrenman ilerlemen. Karta dokunarak günün detay sayfasına gidersin."
+          },
+          "thisWeek": {
+            "title": "Bu Hafta",
+            "description": "Haftanın günleri. Bir güne dokununca o günün detay sayfası açılır — öğünleri ve antrenmanı oradan görürsün."
+          },
+          "rings": {
+            "title": "Günlük Halkalar",
+            "description": "Kalori, protein ve görev tamamlama oranların tek bakışta."
+          },
+          "waterSleep": {
+            "title": "Su ve Uyku",
+            "description": "Günlük su tüketimini ve uyku süreni buradan takip eder, hızlıca kaydedersin."
+          },
+          "stats": {
+            "title": "Günlük Özet",
+            "description": "Mevcut kilon, hedef kilon, program süresi ve bugünkü tamamlanma yüzden."
           },
           "quickAccess": {
             "title": "Hızlı Erişim",
-            "description": "Takvim, ilerleme, asistan ve alışveriş listene buradan tek dokunuşla ulaşırsın."
+            "description": "Takvim, ilerleme, asistan, alışveriş ve paylaşılan planlara kısayollar."
           },
-          "calendar": {
-            "title": "Takvim",
-            "description": "Haftalık antrenman ve beslenme planını buradan oluşturursun. Asıl başlangıç noktan burası."
-          },
-          "assistant": {
-            "title": "AI Asistan",
-            "description": "Fitness koçuna soru sor: beslenme önerileri, egzersiz alternatifleri ve motivasyon."
-          },
-          "progress": {
-            "title": "İlerleme",
-            "description": "Kilonu ve ölçümlerini buraya kaydeder, gelişimini grafiklerle takip edersin."
+          "nav": {
+            "title": "Alt Menü",
+            "description": "Uygulamanın ana bölümleri: Ana sayfa, Takvim, Asistan, İlerleme ve Ayarlar."
           },
           "checklist": {
             "title": "İlk Adımlar",
@@ -2636,37 +2649,91 @@
           }
         },
         "calendar": {
-          "generate": {
-            "title": "Haftalık Plan Oluştur",
-            "description": "Bu butonla AI sana özel bir haftalık antrenman ve beslenme planı hazırlar."
-          },
           "weekStrip": {
-            "title": "Haftanın Günleri",
-            "description": "Günler arasında gezin; bir güne dokunarak o günün detaylarını aç."
+            "title": "Hafta Şeridi",
+            "description": "Haftanın günleri. Bir güne dokunarak o günün planını açarsın; oklarla haftalar arasında gezinirsin."
+          },
+          "fullCalendar": {
+            "title": "Tüm Takvim",
+            "description": "Aylık takvim görünümünü açar; ileri veya geri tarihlere buradan geçersin."
+          },
+          "aiWeekly": {
+            "title": "AI ile Haftalık Program",
+            "description": "En önemli buton: Plan yoksa AI sana özel haftalık antrenman ve beslenme programı OLUŞTURUR; plan varsa aynı butonla DEĞİŞTİRİRSİN."
+          },
+          "shopping": {
+            "title": "Alışveriş Listesi",
+            "description": "Bu haftanın planındaki öğünlerden otomatik oluşturulan alışveriş listesini açar."
+          },
+          "share": {
+            "title": "Planı Paylaş",
+            "description": "Haftalık planını başka bir kullanıcıyla salt-okunur olarak paylaşırsın."
           },
           "dayDetail": {
             "title": "Gün Detayı",
-            "description": "Seçtiğin günün öğünleri ve antrenmanı burada görünür."
+            "description": "Seçtiğin günün öğünleri ve antrenmanı burada görünür; tamamlayabilir veya düzenleyebilirsin."
           }
         },
         "day": {
-          "tabs": {
-            "title": "Gün Sekmeleri",
-            "description": "Öğünler, antrenman, takviyeler ve sağlık takibi arasında bu sekmelerle geçiş yap."
+          "tabMeals": {
+            "title": "Beslenme Sekmesi",
+            "description": "Günün öğünleri, kalori ve makro takibi bu sekmede."
           },
-          "track": {
-            "title": "Tamamladıkça İşaretle",
-            "description": "Öğünlerini ve egzersizlerini yaptıkça işaretle; günlük ilerlemen anında güncellenir."
+          "tabWorkout": {
+            "title": "Antrenman Sekmesi",
+            "description": "Günün egzersizleri ve setleri bu sekmede."
+          },
+          "tabSupplements": {
+            "title": "Takviye Sekmesi",
+            "description": "Gün içinde alınacak takviyeler ve zamanlaması bu sekmede."
+          },
+          "tabWellness": {
+            "title": "Sağlık Sekmesi",
+            "description": "Su tüketimi, uyku ve günlük hazırlık (readiness) kayıtlarını bu sekmeden girersin."
+          },
+          "macros": {
+            "title": "Kalori ve Makrolar",
+            "description": "Günlük kalori hedefin ile protein, karbonhidrat ve yağ doluluk oranların. Renkler hedefe ne kadar yakın olduğunu gösterir."
+          },
+          "swipe": {
+            "title": "Kartları Kaydır",
+            "description": "Bir beslenme veya antrenman kartını tamamlamak için SAĞA, silmek için SOLA kaydır. Kutucuğa dokunarak da işaretleyebilirsin."
+          },
+          "addItems": {
+            "title": "Kendin Ekle",
+            "description": "Kendi öğününü veya egzersizini buradan ekler, başka güne taşır ya da hepsini topluca silersin."
           }
         },
         "progress": {
           "chart": {
             "title": "Gelişim Grafiği",
-            "description": "Kilo ve ölçüm verilerin burada grafiklerle görselleşir."
+            "description": "Kilo ve ölçüm verilerinin zaman içindeki değişimini grafikte gösterir."
           },
           "add": {
             "title": "Ölçüm Ekle",
             "description": "Yeni kilo ve vücut ölçümlerini bu butonla kaydet."
+          }
+        },
+        "settings": {
+          "profile": {
+            "title": "Profil Özeti",
+            "description": "Boy, kilo, hedef ve fitness bilgilerinin özeti. Düzenlemek için dokun."
+          },
+          "health": {
+            "title": "Profil ve Sağlık",
+            "description": "Sağlık profilini, günlük rutinini ve takviye programını buradan yönetirsin."
+          },
+          "goals": {
+            "title": "Hedefler",
+            "description": "Kalori ve makro hedeflerini buradan ayarlar veya AI'ya hesaplatırsın."
+          },
+          "app": {
+            "title": "Uygulama",
+            "description": "Ödeme/üyelik, görünüm tercihleri, bildirimler ve hatırlatıcılar."
+          },
+          "data": {
+            "title": "Paylaşım ve Veri",
+            "description": "Öğün kütüphanen, plan paylaşımı ve kişisel verilerini dışa aktarma."
           }
         }
       }

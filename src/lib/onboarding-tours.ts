@@ -16,32 +16,58 @@ interface StepDef {
 
 const TOUR_STEPS: Record<TourSurface, StepDef[]> = {
   dashboard: [
-    { element: '[data-tour="today-plan"]', key: "today", side: "bottom" },
+    { element: '[data-tour="greeting"]', key: "greeting", side: "bottom" },
+    { element: '[data-tour="today-plan"]', key: "todayPlan", side: "bottom" },
+    { element: '[data-tour="this-week"]', key: "thisWeek", side: "bottom" },
+    { element: '[data-tour="daily-rings"]', key: "rings", side: "top" },
+    { element: '[data-tour="water-sleep"]', key: "waterSleep", side: "top" },
+    { element: '[data-tour="dashboard-stats"]', key: "stats", side: "top" },
     { element: '[data-tour="quick-access"]', key: "quickAccess", side: "top" },
-    { element: '[data-tour="nav-calendar"]', key: "calendar", side: "top" },
-    { element: '[data-tour="nav-assistant"]', key: "assistant", side: "top" },
-    { element: '[data-tour="nav-progress"]', key: "progress", side: "top" },
+    { element: '[data-tour="bottom-nav"]', key: "nav", side: "top" },
     { element: '[data-tour="getting-started"]', key: "checklist", side: "bottom" },
   ],
   calendar: [
-    { element: '[data-tour="ai-weekly"]', key: "generate", side: "bottom" },
     { element: '[data-tour="week-strip"]', key: "weekStrip", side: "bottom" },
+    { element: '[data-tour="full-calendar"]', key: "fullCalendar", side: "bottom" },
+    { element: '[data-tour="ai-weekly"]', key: "aiWeekly", side: "bottom" },
+    { element: '[data-tour="shopping-cart"]', key: "shopping", side: "bottom" },
+    { element: '[data-tour="share"]', key: "share", side: "bottom" },
     { element: '[data-tour="day-detail"]', key: "dayDetail", side: "top" },
   ],
   day: [
-    { element: '[data-tour="day-tabs"]', key: "tabs", side: "bottom" },
-    { element: '[data-tour="day-content"]', key: "track", side: "top" },
+    { element: '[data-tour="tab-meals"]', key: "tabMeals", side: "bottom" },
+    { element: '[data-tour="tab-workout"]', key: "tabWorkout", side: "bottom" },
+    { element: '[data-tour="tab-supplements"]', key: "tabSupplements", side: "bottom" },
+    { element: '[data-tour="tab-wellness"]', key: "tabWellness", side: "bottom" },
+    { element: '[data-tour="day-macro"]', key: "macros", side: "bottom" },
+    { element: '[data-tour="meal-card"]', key: "swipe", side: "top" },
+    { element: '[data-tour="day-add"]', key: "addItems", side: "top" },
   ],
   progress: [
     { element: '[data-tour="progress-chart"]', key: "chart", side: "bottom" },
     { element: '[data-tour="add-measurement"]', key: "add", side: "top" },
   ],
+  settings: [
+    { element: '[data-tour="settings-profile"]', key: "profile", side: "bottom" },
+    { element: '[data-tour="settings-health"]', key: "health", side: "bottom" },
+    { element: '[data-tour="settings-goals"]', key: "goals", side: "bottom" },
+    { element: '[data-tour="settings-app"]', key: "app", side: "top" },
+    { element: '[data-tour="settings-data"]', key: "data", side: "top" },
+  ],
 };
+
+/** How many of a surface's anchor elements are currently in the DOM. */
+export function countTourAnchors(surface: TourSurface): number {
+  if (typeof document === "undefined") return 0;
+  return TOUR_STEPS[surface].filter((s) => document.querySelector(s.element))
+    .length;
+}
 
 /**
  * Build a driver.js config for a surface. Steps whose anchor element is not
  * currently in the DOM are dropped — so a conditionally-rendered target (e.g.
- * the calendar's AI button) never leaves an orphan popover.
+ * the calendar's share/cart icons, which only exist once a plan is created)
+ * never leaves an orphan popover.
  */
 export function buildDriverConfig(
   surface: TourSurface,

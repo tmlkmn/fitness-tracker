@@ -18,6 +18,7 @@ import {
   MoreVertical,
   MessageSquarePlus,
   HelpCircle,
+  Compass,
   Shield,
   Sun,
   Moon,
@@ -29,6 +30,17 @@ import {
 import { useGlobalSearch } from "./global-search-provider";
 import { updateUserLocale } from "@/actions/locale";
 import type { Locale } from "@/lib/locale";
+import type { TourSurface } from "@/lib/onboarding-storage";
+
+/** Maps the current route to its guided-tour surface, if it has one. */
+function surfaceForPath(pathname: string): TourSurface | null {
+  if (pathname === "/") return "dashboard";
+  if (pathname.startsWith("/takvim")) return "calendar";
+  if (pathname.startsWith("/gun")) return "day";
+  if (pathname.startsWith("/ilerleme")) return "progress";
+  if (pathname.startsWith("/ayarlar")) return "settings";
+  return null;
+}
 
 export function HeaderMenu() {
   const { data: session } = useSession();
@@ -36,6 +48,7 @@ export function HeaderMenu() {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
+  const tourSurface = surfaceForPath(pathname);
   const t = useTranslations("nav");
   const currentLocale = useLocale() as Locale;
 
@@ -85,6 +98,18 @@ export function HeaderMenu() {
             <HelpCircle className="h-4 w-4" />
             {t("appGuide")}
           </DropdownMenuItem>
+          {tourSurface && (
+            <DropdownMenuItem
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent("fitmusc:start-tour", { detail: tourSurface }),
+                )
+              }
+            >
+              <Compass className="h-4 w-4" />
+              {t("pageGuide")}
+            </DropdownMenuItem>
+          )}
           {isAdmin && (
             <DropdownMenuItem asChild>
               <Link href="/admin">

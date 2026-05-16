@@ -205,16 +205,18 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
 
   return (
     <div className="space-y-3">
-      <DailyMacroSummary
-        targets={targets}
-        calories={totalCalories}
-        protein={Math.round(totalProtein)}
-        carbs={Math.round(totalCarbs)}
-        fat={Math.round(totalFat)}
-        planType={dailyPlanType ?? null}
-        cyclingLabel={cyclingLabel}
-        supplementMacros={supplementMacros}
-      />
+      <div data-tour="day-macro">
+        <DailyMacroSummary
+          targets={targets}
+          calories={totalCalories}
+          protein={Math.round(totalProtein)}
+          carbs={Math.round(totalCarbs)}
+          fat={Math.round(totalFat)}
+          planType={dailyPlanType ?? null}
+          cyclingLabel={cyclingLabel}
+          supplementMacros={supplementMacros}
+        />
+      </div>
 
       <div className="space-y-1.5">
         <div className="flex justify-between items-center">
@@ -265,23 +267,24 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
       )}
 
       <div className="stagger-list space-y-3">
-        {mealList.map((meal) => (
-          <MealCard
-            key={meal.id}
-            {...meal}
-            dailyPlanId={dailyPlanId}
-            isCompleted={meal.isCompleted ?? false}
-            readOnly={readOnly}
-            planDate={planDate}
-            onToggle={readOnly ? undefined : (id, completed) =>
-              toggleMeal.mutate({ id, isCompleted: completed })
-            }
-          />
+        {mealList.map((meal, i) => (
+          <div key={meal.id} data-tour={i === 0 ? "meal-card" : undefined}>
+            <MealCard
+              {...meal}
+              dailyPlanId={dailyPlanId}
+              isCompleted={meal.isCompleted ?? false}
+              readOnly={readOnly}
+              planDate={planDate}
+              onToggle={readOnly ? undefined : (id, completed) =>
+                toggleMeal.mutate({ id, isCompleted: completed })
+              }
+            />
+          </div>
         ))}
       </div>
 
       {!readOnly ? (
-        <div className="flex gap-2">
+        <div className="flex gap-2" data-tour="day-add">
           <Button
             variant="outline"
             size="sm"

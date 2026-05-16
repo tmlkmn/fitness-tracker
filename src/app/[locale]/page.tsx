@@ -197,7 +197,7 @@ export default function HomePage() {
         <SetupCompleteBanner />
         <GettingStartedChecklist />
         <NotificationPromptCard />
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-transparent overflow-hidden">
+        <Card data-tour="greeting" className="border-primary/20 bg-gradient-to-br from-primary/10 to-transparent overflow-hidden">
           <CardContent className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -370,7 +370,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
         ) : weekData?.dailyPlans && weekData.dailyPlans.length > 0 && (
-          <Card>
+          <Card data-tour="this-week">
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold">{t("thisWeek")}</h3>
@@ -435,7 +435,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card data-tour="dashboard-stats">
               <CardContent className="p-3">
                 <div className="grid grid-cols-4 gap-2 divide-x divide-border/60">
                   <div className="flex flex-col items-center gap-0.5 px-1">
@@ -485,10 +485,14 @@ export default function HomePage() {
           )
         )}
 
-        {isVisible("rings") && <DailyRingsCard />}
+        {isVisible("rings") && (
+          <div data-tour="daily-rings">
+            <DailyRingsCard />
+          </div>
+        )}
 
         {isVisible("water_sleep") && (
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+        <div data-tour="water-sleep" className="grid grid-cols-2 md:grid-cols-2 gap-3">
           <WaterDashboardWidget />
           <SleepDashboardWidget />
         </div>

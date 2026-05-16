@@ -176,6 +176,7 @@
     "menu": "Menu",
     "feedback": "Feedback",
     "appGuide": "App Guide",
+    "pageGuide": "Tour this page",
     "adminPanel": "Admin Panel",
     "lightTheme": "Light Theme",
     "darkTheme": "Dark Theme",
@@ -2610,25 +2611,37 @@
       "done": "Done",
       "steps": {
         "dashboard": {
-          "today": {
+          "greeting": {
+            "title": "Greeting Card",
+            "description": "Your daily greeting, weight info and membership status show here."
+          },
+          "todayPlan": {
             "title": "Today's Plan",
-            "description": "Your daily meal and workout progress shows here. Tap the card to open the plan."
+            "description": "Your meal and workout progress for today. Tap the card to open the day's detail page."
+          },
+          "thisWeek": {
+            "title": "This Week",
+            "description": "The week's days. Tap any day to open its detail page — see and complete its meals and workout there."
+          },
+          "rings": {
+            "title": "Daily Rings",
+            "description": "Your calorie, protein and task-completion rates at a glance."
+          },
+          "waterSleep": {
+            "title": "Water & Sleep",
+            "description": "Track and quickly log your daily water intake and sleep here."
+          },
+          "stats": {
+            "title": "Daily Summary",
+            "description": "Your current weight, goal weight, program length and today's completion percentage."
           },
           "quickAccess": {
             "title": "Quick Access",
-            "description": "Reach your calendar, progress, assistant and shopping list with a single tap."
+            "description": "Shortcuts to the calendar, progress, assistant, shopping and shared plans."
           },
-          "calendar": {
-            "title": "Calendar",
-            "description": "Create your weekly workout and nutrition plan here. This is your real starting point."
-          },
-          "assistant": {
-            "title": "AI Assistant",
-            "description": "Ask your fitness coach anything: nutrition tips, exercise swaps and motivation."
-          },
-          "progress": {
-            "title": "Progress",
-            "description": "Log your weight and measurements here and track your development with charts."
+          "nav": {
+            "title": "Bottom Navigation",
+            "description": "The app's main sections: Home, Calendar, Assistant, Progress and Settings."
           },
           "checklist": {
             "title": "Getting Started",
@@ -2636,37 +2649,91 @@
           }
         },
         "calendar": {
-          "generate": {
-            "title": "Create a Weekly Plan",
-            "description": "This button lets AI build a personalized weekly workout and nutrition plan for you."
-          },
           "weekStrip": {
-            "title": "Days of the Week",
-            "description": "Move between days; tap a day to open its details."
+            "title": "Week Strip",
+            "description": "The week's days. Tap a day to open its plan; use the arrows to move between weeks."
+          },
+          "fullCalendar": {
+            "title": "Full Calendar",
+            "description": "Opens the monthly calendar view to jump to past or future dates."
+          },
+          "aiWeekly": {
+            "title": "AI Weekly Program",
+            "description": "The key button: with no plan, AI CREATES a personalized weekly workout and nutrition program; with a plan, the same button CHANGES it."
+          },
+          "shopping": {
+            "title": "Shopping List",
+            "description": "Opens the shopping list generated automatically from this week's meals."
+          },
+          "share": {
+            "title": "Share Plan",
+            "description": "Share your weekly plan with another user (read-only)."
           },
           "dayDetail": {
             "title": "Day Detail",
-            "description": "The selected day's meals and workout appear here."
+            "description": "The selected day's meals and workout appear here; you can complete or edit them."
           }
         },
         "day": {
-          "tabs": {
-            "title": "Day Tabs",
-            "description": "Switch between meals, workout, supplements and wellness tracking with these tabs."
+          "tabMeals": {
+            "title": "Nutrition Tab",
+            "description": "The day's meals, calorie and macro tracking live in this tab."
           },
-          "track": {
-            "title": "Check As You Go",
-            "description": "Mark meals and exercises as you complete them; your daily progress updates instantly."
+          "tabWorkout": {
+            "title": "Workout Tab",
+            "description": "The day's exercises and sets live in this tab."
+          },
+          "tabSupplements": {
+            "title": "Supplements Tab",
+            "description": "Supplements to take during the day and their timing live in this tab."
+          },
+          "tabWellness": {
+            "title": "Wellness Tab",
+            "description": "Log your water intake, sleep and daily readiness from this tab."
+          },
+          "macros": {
+            "title": "Calories & Macros",
+            "description": "Your daily calorie goal and protein, carb and fat fill levels. Colors show how close you are to your target."
+          },
+          "swipe": {
+            "title": "Swipe the Cards",
+            "description": "Swipe a nutrition or workout card RIGHT to complete it, LEFT to delete it. You can also tap the checkbox."
+          },
+          "addItems": {
+            "title": "Add Your Own",
+            "description": "Add your own meal or exercise here, move it to another day, or delete them all at once."
           }
         },
         "progress": {
           "chart": {
             "title": "Progress Chart",
-            "description": "Your weight and measurement data is visualized here with charts."
+            "description": "Shows how your weight and measurement data change over time."
           },
           "add": {
             "title": "Add Measurement",
             "description": "Record new weight and body measurements with this button."
+          }
+        },
+        "settings": {
+          "profile": {
+            "title": "Profile Summary",
+            "description": "A summary of your height, weight, goal and fitness info. Tap to edit."
+          },
+          "health": {
+            "title": "Profile & Health",
+            "description": "Manage your health profile, daily routine and supplement schedule here."
+          },
+          "goals": {
+            "title": "Goals",
+            "description": "Set your calorie and macro targets here, or let AI calculate them."
+          },
+          "app": {
+            "title": "App",
+            "description": "Billing/membership, appearance preferences, notifications and reminders."
+          },
+          "data": {
+            "title": "Sharing & Data",
+            "description": "Your meal library, plan sharing and exporting your personal data."
           }
         }
       }

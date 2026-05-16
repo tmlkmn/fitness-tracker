@@ -3,7 +3,13 @@
 // No DB column is needed: the guided tour is a one-time UX aid, and the
 // carousel's `hasSeenOnboarding` column already provides a durable record.
 
-export const TOUR_SURFACES = ["dashboard", "calendar", "day", "progress"] as const;
+export const TOUR_SURFACES = [
+  "dashboard",
+  "calendar",
+  "day",
+  "progress",
+  "settings",
+] as const;
 export type TourSurface = (typeof TOUR_SURFACES)[number];
 
 interface OnboardingState {
