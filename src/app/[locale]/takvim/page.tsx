@@ -533,7 +533,7 @@ export default function TakvimPage() {
           loading={generateWeekly.isPending}
           applying={applyWeekly.isPending}
           error={weeklyError}
-          step={generateWeekly.step}
+          progress={generateWeekly.progress}
           onGenerate={handleGenerateWeekly}
           onApply={handleApplyWeekly}
           onApplySaved={handleApplySaved}

@@ -42,13 +42,13 @@ import {
 import { ChevronDown } from "lucide-react";
 import type { AIWeeklyPlan, AIWeeklyDay } from "@/actions/ai-weekly";
 import { MeasurementNudge } from "@/components/ai/measurement-nudge";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import {
   useSavedSuggestions,
   useSavedSuggestionDetail,
   useDeleteSavedSuggestion,
-  type GenerationStep,
+  type WeeklyProgress,
 } from "@/hooks/use-weekly-ai";
 import { useDeloadRecommendation } from "@/hooks/use-deload-recommendation";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
@@ -63,152 +63,6 @@ import { defaultUiDayModesForLevel } from "@/lib/day-modes-default";
 import { DayModeLevelHint } from "@/components/calendar/day-mode-level-hint";
 import { DeloadRecommendationBanner } from "@/components/calendar/deload-recommendation-banner";
 
-function SteppedProgress({
-  loading,
-  step,
-  generateMode,
-}: {
-  loading: boolean;
-  step: GenerationStep | null;
-  generateMode?: "both" | "nutrition" | "workout";
-}) {
-  const t = useTranslations("calendar.aiWeekly");
-  const [elapsed, setElapsed] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-
-  const allSteps: { label: string; step: GenerationStep }[] = [
-    { label: t("stepProfile"), step: "profile" },
-    { label: t("stepNutrition"), step: "nutrition" },
-    { label: t("stepWorkout"), step: "workout" },
-    { label: t("stepMerging"), step: "merging" },
-  ];
-
-  const visibleSteps = allSteps.filter((s) => {
-    if (s.step === "nutrition" && generateMode === "workout") return false;
-    if (s.step === "workout" && generateMode === "nutrition") return false;
-    return true;
-  });
-
-  const currentIndex = step ? visibleSteps.findIndex((s) => s.step === step) : 0;
-  const progressPct = visibleSteps.length > 1
-    ? Math.min(95, (currentIndex / (visibleSteps.length - 1)) * 100)
-    : currentIndex >= 0 ? 50 : 0;
-
-  // Screen wake lock
-  useEffect(() => {
-    if (!loading) {
-      wakeLockRef.current?.release().catch(() => {});
-      wakeLockRef.current = null;
-      return;
-    }
-
-    const acquireLock = () => {
-      if ("wakeLock" in navigator && document.visibilityState === "visible") {
-        navigator.wakeLock.request("screen").then((lock) => {
-          wakeLockRef.current = lock;
-        }).catch(() => {});
-      }
-    };
-
-    acquireLock();
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible" && loading) acquireLock();
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      wakeLockRef.current?.release().catch(() => {});
-      wakeLockRef.current = null;
-    };
-  }, [loading]);
-
-  // Elapsed timer
-  useEffect(() => {
-    if (!loading) {
-      setElapsed(0);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      return;
-    }
-
-    const start = Date.now();
-    intervalRef.current = setInterval(() => {
-      setElapsed(Date.now() - start);
-    }, 1000);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [loading]);
-
-  const formatTime = (ms: number) => {
-    const s = Math.floor(ms / 1000);
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return m > 0
-      ? t("elapsedMin", { minutes: m, seconds: sec })
-      : t("elapsedSec", { seconds: sec });
-  };
-
-  return (
-    <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
-      <div className="space-y-2.5">
-        {visibleSteps.map((s, i) => {
-          const isDone = i < currentIndex;
-          const isActive = i === currentIndex;
-          const isPending = i > currentIndex;
-
-          return (
-            <div key={s.step} className="flex items-center gap-2.5">
-              {isDone ? (
-                <Check className="h-4 w-4 text-primary shrink-0" />
-              ) : isActive ? (
-                <Loader2 className="h-4 w-4 text-primary shrink-0 animate-spin" />
-              ) : (
-                <div className="h-4 w-4 rounded-full border-2 border-muted shrink-0" />
-              )}
-              <span
-                className={`text-xs ${
-                  isDone
-                    ? "text-primary"
-                    : isActive
-                      ? "text-foreground font-medium"
-                      : isPending
-                        ? "text-muted-foreground"
-                        : ""
-                }`}
-              >
-                {s.label}
-                {isActive && "..."}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Progress bar based on real step */}
-      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-        <div
-          className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${progressPct}%` }}
-        />
-      </div>
-
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          {t("stepDuration")}
-        </p>
-        <p className="text-[10px] text-muted-foreground font-mono">
-          {formatTime(elapsed)}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface AiWeeklyPlanModalProps {
@@ -218,7 +72,7 @@ interface AiWeeklyPlanModalProps {
   loading: boolean;
   applying: boolean;
   error: string | null;
-  step: GenerationStep | null;
+  progress: WeeklyProgress;
   onGenerate: (
     userNote?: string,
     generateMode?: "both" | "nutrition" | "workout",
@@ -432,7 +286,7 @@ export function AiWeeklyPlanModal({
   loading,
   applying,
   error,
-  step,
+  progress,
   onGenerate,
   onApply,
   onApplySaved,
@@ -667,43 +521,56 @@ export function AiWeeklyPlanModal({
         ? t("overlayTitleWorkout")
         : t("overlayTitleBoth");
 
+  // Overlay rows are derived directly from the per-leg progress streamed by
+  // the backend — each leg advances independently (pending → active → done),
+  // never both "active" at once and never regressing. Row order matches the
+  // backend sequence: profile → workout → nutrition.
   const overlaySteps: GeneratingStep[] = (() => {
-    const profileStatus =
-      step === null || step === "profile" ? "active" : "completed";
-    const healthStatus =
-      step === null || step === "profile" ? "pending" : "completed";
-    const nutritionStatus =
-      step === "nutrition" || step === "workout"
-        ? "active"
-        : step === "merging"
-          ? "completed"
-          : "pending";
-    const workoutStatus =
-      step === "workout"
-        ? "active"
-        : step === "merging"
-          ? "completed"
-          : "pending";
+    const profileDone = progress.phase !== "profile";
+    const profileStatus: GeneratingStep["status"] = profileDone
+      ? "completed"
+      : "active";
+    const healthStatus: GeneratingStep["status"] = profileDone
+      ? "completed"
+      : "pending";
+
+    const legStep = (
+      loadingLabel: string,
+      staticLabel: string,
+      status: WeeklyProgress["workout"],
+    ): GeneratingStep => {
+      if (status === "done") return { label: staticLabel, status: "completed" };
+      if (status === "retrying")
+        return {
+          label: loadingLabel,
+          status: "active",
+          detail: t("overlayRetrying"),
+        };
+      if (status === "active") return { label: loadingLabel, status: "active" };
+      return { label: staticLabel, status: "pending" };
+    };
+
+    const base: GeneratingStep[] = [
+      { label: t("overlayProfile"), status: profileStatus },
+      { label: t("overlayHealth"), status: healthStatus },
+    ];
 
     if (generateMode === "nutrition") {
       return [
-        { label: t("overlayProfile"), status: profileStatus },
-        { label: t("overlayHealth"), status: healthStatus },
-        { label: t("overlayNutritionLoading"), status: nutritionStatus },
+        ...base,
+        legStep(t("overlayNutritionLoading"), t("overlayNutrition"), progress.nutrition),
       ];
     }
     if (generateMode === "workout") {
       return [
-        { label: t("overlayProfile"), status: profileStatus },
-        { label: t("overlayHealth"), status: healthStatus },
-        { label: t("overlayWorkoutLoading"), status: workoutStatus },
+        ...base,
+        legStep(t("overlayWorkoutLoading"), t("overlayWorkout"), progress.workout),
       ];
     }
     return [
-      { label: t("overlayProfile"), status: profileStatus },
-      { label: t("overlayHealth"), status: healthStatus },
-      { label: t("overlayNutrition"), status: nutritionStatus },
-      { label: t("overlayWorkout"), status: workoutStatus },
+      ...base,
+      legStep(t("overlayWorkoutLoading"), t("overlayWorkout"), progress.workout),
+      legStep(t("overlayNutritionLoading"), t("overlayNutrition"), progress.nutrition),
     ];
   })();
 
@@ -713,6 +580,7 @@ export function AiWeeklyPlanModal({
         open={loading}
         title={overlayTitle}
         steps={overlaySteps}
+        showElapsed
       />
       <Sheet open={open} onOpenChange={handleOpenChange}>
         <SheetContent
@@ -1184,8 +1052,7 @@ export function AiWeeklyPlanModal({
             </div>
           )}
 
-          {/* Loading state — stepped progress */}
-          {loading && <SteppedProgress loading={loading} step={step} generateMode={generateMode} />}
+          {/* Loading state is rendered by the full-screen AiGeneratingOverlay. */}
 
           {/* Phase 2: Plan result */}
           {!loading && suggestedPlan && (

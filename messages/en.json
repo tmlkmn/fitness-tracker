@@ -427,13 +427,7 @@
       "overlayNutritionLoading": "Generating nutrition plan",
       "overlayWorkout": "Workout plan",
       "overlayWorkoutLoading": "Generating workout plan",
-      "stepProfile": "Reading profile information",
-      "stepNutrition": "Generating nutrition program",
-      "stepWorkout": "Generating workout program",
-      "stepMerging": "Optimizing the program",
-      "stepDuration": "This may take 1–2 minutes",
-      "elapsedMin": "{minutes}m {seconds}s",
-      "elapsedSec": "{seconds}s",
+      "overlayRetrying": "Refining the plan…",
       "willReplace": "This will completely replace your existing weekly program. Previous meals and exercises will be deleted.",
       "modeLabel": "Plan to generate:",
       "modeBoth": "Nutrition + Workout",
@@ -1690,7 +1684,9 @@
     },
     "generating": {
       "defaultTitle": "AI is preparing your plan",
-      "subtitle": "Analyzing your data — this may take a few minutes."
+      "subtitle": "Analyzing your data — this may take a few minutes.",
+      "elapsedMin": "{minutes}m {seconds}s",
+      "elapsedSec": "{seconds}s"
     },
     "profileMissing": {
       "title": "Profile Info Missing",

@@ -336,10 +336,12 @@ interface RunAiCallOptions {
   previousWorkingSets?: number;
   /** True when the AI was asked to produce a deload week. */
   isDeloadWeek?: boolean;
+  /** Fired once when this leg enters a truncation or quality retry. */
+  onRetry?: () => void;
 }
 
 async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
-  const { systemPrompt, userMessage, expectedDayModes, effectivePastDows, maxTokens, label, expectedTargets, userAllergens, previousWorkingSets, isDeloadWeek } = opts;
+  const { systemPrompt, userMessage, expectedDayModes, effectivePastDows, maxTokens, label, expectedTargets, userAllergens, previousWorkingSets, isDeloadWeek, onRetry } = opts;
   const nonPastTotal = 7 - effectivePastDows.size;
 
   console.log(`[AI Weekly] ▶ ${label} call start (maxTokens=${maxTokens})`);
@@ -374,6 +376,7 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
   // Priority 1: truncation retry — fires only when the response is unusable.
   if (wasTruncated && nonPastTotal > 0 && nonPastMissing >= nonPastTotal) {
     truncationRetryTriggered = true;
+    onRetry?.();
     console.warn(`[AI Weekly] ⚠ ${label} truncated (${nonPastMissing}/${nonPastTotal} days empty) → retry`);
     const retry = await callAITool({
       systemPrompt,
@@ -399,6 +402,7 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
     const summary = summarizeQualityIssues(result, effectivePastDows);
     if (summary.hasAny) {
       qualityRetryTriggered = true;
+      onRetry?.();
       console.warn(`[AI Weekly] ⚠ ${label} quality issues → retry`);
       const retry = await callAITool({
         systemPrompt,
@@ -999,11 +1003,21 @@ export interface WeeklyGenerationOutcome {
   };
 }
 
+/**
+ * Fine-grained progress signal emitted as each generation leg moves through
+ * its lifecycle. `start` fires before the AI call, `retry` when the leg enters
+ * a truncation/quality retry, `done` once the leg's result is finalized.
+ */
+export type WeeklyProgressEvent = {
+  leg: "workout" | "nutrition";
+  phase: "start" | "retry" | "done";
+};
+
 export interface RunWeeklyGenerationOptions {
   /** Locale used to render the produced workout summary block. */
   locale?: Locale;
-  /** Reports the active call leg as the orchestrator transitions through it. */
-  onStep?: (step: "workout" | "nutrition") => void;
+  /** Reports per-leg lifecycle transitions so callers can stream progress. */
+  onProgress?: (ev: WeeklyProgressEvent) => void;
   /**
    * Pre-computed dynamic muscle-volume bands for this user/week. When
    * omitted the muscle-volume check is skipped (the bands come from the
@@ -1032,14 +1046,18 @@ export async function runWeeklyGeneration(
   let workoutRaw: AiCallResult | null = null;
 
   if (sequential && prompts.workout && prompts.nutrition) {
-    opts.onStep?.("workout");
-    workoutRaw = await runAiCall(prompts.workout);
+    opts.onProgress?.({ leg: "workout", phase: "start" });
+    workoutRaw = await runAiCall({
+      ...prompts.workout,
+      onRetry: () => opts.onProgress?.({ leg: "workout", phase: "retry" }),
+    });
 
     if (isProducedWorkoutEmpty(workoutRaw.validationResult.plan)) {
       throw new Error(
         "AI antrenman üretemedi; beslenme adımı atlandı. Lütfen tekrar deneyin.",
       );
     }
+    opts.onProgress?.({ leg: "workout", phase: "done" });
 
     const summaries = summarizeProducedWorkout(
       workoutRaw.validationResult.plan,
@@ -1051,11 +1069,34 @@ export async function runWeeklyGeneration(
       userMessage: `${prompts.nutrition.userMessage}\n\n${block}`,
     };
 
-    opts.onStep?.("nutrition");
-    nutritionRaw = await runAiCall(augmentedNutrition);
+    opts.onProgress?.({ leg: "nutrition", phase: "start" });
+    nutritionRaw = await runAiCall({
+      ...augmentedNutrition,
+      onRetry: () => opts.onProgress?.({ leg: "nutrition", phase: "retry" }),
+    });
+    opts.onProgress?.({ leg: "nutrition", phase: "done" });
   } else {
-    const nutritionCallPromise = prompts.nutrition ? runAiCall(prompts.nutrition) : null;
-    const workoutCallPromise = prompts.workout ? runAiCall(prompts.workout) : null;
+    if (prompts.nutrition) opts.onProgress?.({ leg: "nutrition", phase: "start" });
+    if (prompts.workout) opts.onProgress?.({ leg: "workout", phase: "start" });
+
+    const nutritionCallPromise = prompts.nutrition
+      ? runAiCall({
+          ...prompts.nutrition,
+          onRetry: () => opts.onProgress?.({ leg: "nutrition", phase: "retry" }),
+        }).then((r) => {
+          opts.onProgress?.({ leg: "nutrition", phase: "done" });
+          return r;
+        })
+      : null;
+    const workoutCallPromise = prompts.workout
+      ? runAiCall({
+          ...prompts.workout,
+          onRetry: () => opts.onProgress?.({ leg: "workout", phase: "retry" }),
+        }).then((r) => {
+          opts.onProgress?.({ leg: "workout", phase: "done" });
+          return r;
+        })
+      : null;
 
     [nutritionRaw, workoutRaw] = await Promise.all([
       nutritionCallPromise,

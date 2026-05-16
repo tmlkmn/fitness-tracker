@@ -82,26 +82,16 @@ export async function POST(request: Request) {
         const req = await resolveWeeklyGenerationRequest(parsedBody, userId, locale);
         const prompts = buildWeeklyPrompts(req);
 
-        // Sequential workout → nutrition is now the default whenever both
-        // prompts are present (Tur 2.1). The legacy `highAccuracyMode` flag
-        // on the request body is ignored; we surface progress via onStep so
-        // the SSE stream still emits per-leg "workout" / "nutrition" events.
-        const sequentialActive =
-          prompts.nutrition !== null && prompts.workout !== null;
-
-        if (!sequentialActive) {
-          if (prompts.nutrition) emit({ type: "status", step: "nutrition" });
-          else if (prompts.workout) emit({ type: "status", step: "workout" });
-        }
-
         // Bands + previous-week breakdown are computed in the resolve phase
         // (single source) and reused for both proactive prompt blocks and
         // post-validation. The route just forwards them to runWeeklyGeneration.
+        // Per-leg lifecycle events (start/retry/done) are streamed straight to
+        // the client so the progress overlay reflects real backend work — for
+        // both the sequential ("both") path and single-mode requests.
         const outcome = await runWeeklyGeneration(prompts, {
           locale,
-          onStep: sequentialActive
-            ? (s) => emit({ type: "status", step: s })
-            : undefined,
+          onProgress: (ev) =>
+            emit({ type: "status", step: ev.leg, phase: ev.phase }),
           muscleVolumeBands: req.muscleVolumeBands,
           previousWeekBreakdown: req.previousWeekBreakdown,
           isDeloadWeek: req.deloadWeek,

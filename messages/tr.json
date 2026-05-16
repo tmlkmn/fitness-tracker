@@ -427,13 +427,7 @@
       "overlayNutritionLoading": "Beslenme planı oluşturuluyor",
       "overlayWorkout": "Antrenman planı",
       "overlayWorkoutLoading": "Antrenman planı oluşturuluyor",
-      "stepProfile": "Profil bilgileri okunuyor",
-      "stepNutrition": "Beslenme programı oluşturuluyor",
-      "stepWorkout": "Antrenman programı oluşturuluyor",
-      "stepMerging": "Program optimize ediliyor",
-      "stepDuration": "Bu işlem 1-2 dakika sürebilir",
-      "elapsedMin": "{minutes}dk {seconds}sn",
-      "elapsedSec": "{seconds}sn",
+      "overlayRetrying": "Plan iyileştiriliyor…",
       "willReplace": "Bu işlem mevcut haftalık programınızı tamamen değiştirecektir. Önceki öğün ve egzersiz verileri silinecektir.",
       "modeLabel": "Oluşturulacak plan:",
       "modeBoth": "Beslenme + Antrenman",
@@ -1690,7 +1684,9 @@
     },
     "generating": {
       "defaultTitle": "AI programını hazırlıyor",
-      "subtitle": "Verilerini analiz ediyoruz, bu birkaç dakika sürebilir."
+      "subtitle": "Verilerini analiz ediyoruz, bu birkaç dakika sürebilir.",
+      "elapsedMin": "{minutes}dk {seconds}sn",
+      "elapsedSec": "{seconds}sn"
     },
     "profileMissing": {
       "title": "Profil Bilgileri Eksik",

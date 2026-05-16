@@ -15,13 +15,32 @@ import {
 } from "@/actions/ai-suggestions";
 import { invalidateWeeklyPlanQueries } from "@/hooks/ai-invalidation";
 
-export type GenerationStep = "profile" | "nutrition" | "workout" | "merging";
+/** Lifecycle status of a single generation leg (workout / nutrition). */
+export type LegStatus = "pending" | "active" | "retrying" | "done";
+
+/**
+ * Real-time progress of a weekly plan generation, driven entirely by the
+ * SSE `status` events streamed from `/api/ai/weekly`. Each leg advances
+ * independently so the overlay never shows two legs "active" at once or
+ * regresses a finished leg.
+ */
+export interface WeeklyProgress {
+  phase: "profile" | "generating" | "merging";
+  workout: LegStatus;
+  nutrition: LegStatus;
+}
+
+const INITIAL_PROGRESS: WeeklyProgress = {
+  phase: "profile",
+  workout: "pending",
+  nutrition: "pending",
+};
 
 export function useGenerateWeeklyPlan() {
   const [isPending, setIsPending] = useState(false);
   const [data, setData] = useState<AIWeeklyPlan | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const [step, setStep] = useState<GenerationStep | null>(null);
+  const [progress, setProgress] = useState<WeeklyProgress>(INITIAL_PROGRESS);
   const controllerRef = useRef<AbortController | null>(null);
 
   const mutate = useCallback(async ({
@@ -44,7 +63,7 @@ export function useGenerateWeeklyPlan() {
     setIsPending(true);
     setData(null);
     setError(null);
-    setStep(null);
+    setProgress(INITIAL_PROGRESS);
 
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -82,17 +101,33 @@ export function useGenerateWeeklyPlan() {
 
           const event = JSON.parse(jsonStr) as {
             type: "status" | "done" | "error";
-            step?: GenerationStep;
+            step?: "profile" | "workout" | "nutrition" | "merging";
+            phase?: "start" | "retry" | "done";
             suggestedPlan?: AIWeeklyPlan;
             error?: string;
           };
 
           if (event.type === "status" && event.step) {
-            setStep(event.step);
+            const { step, phase } = event;
+            setProgress((prev) => {
+              if (step === "profile") return { ...prev, phase: "profile" };
+              if (step === "merging") {
+                return {
+                  phase: "merging",
+                  workout: prev.workout === "pending" ? "pending" : "done",
+                  nutrition: prev.nutrition === "pending" ? "pending" : "done",
+                };
+              }
+              // Per-leg lifecycle event (workout / nutrition).
+              let legStatus: LegStatus = "active";
+              if (phase === "done") legStatus = "done";
+              else if (phase === "retry") legStatus = "retrying";
+              return { ...prev, phase: "generating", [step]: legStatus };
+            });
           } else if (event.type === "done" && event.suggestedPlan) {
             setData(event.suggestedPlan);
             setIsPending(false);
-            setStep(null);
+            setProgress(INITIAL_PROGRESS);
             return;
           } else if (event.type === "error") {
             throw new Error(event.error ?? "Bir hata oluştu.");
@@ -102,7 +137,7 @@ export function useGenerateWeeklyPlan() {
 
       // Stream ended without "done" — treat as error
       setIsPending(false);
-      setStep(null);
+      setProgress(INITIAL_PROGRESS);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         setError(new Error("İşlem zaman aşımına uğradı. Lütfen tekrar deneyin."));
@@ -110,7 +145,7 @@ export function useGenerateWeeklyPlan() {
         setError(err instanceof Error ? err : new Error("Bir hata oluştu."));
       }
       setIsPending(false);
-      setStep(null);
+      setProgress(INITIAL_PROGRESS);
     } finally {
       clearTimeout(timeout);
       if (controllerRef.current === controller) {
@@ -125,10 +160,10 @@ export function useGenerateWeeklyPlan() {
     setIsPending(false);
     setData(null);
     setError(null);
-    setStep(null);
+    setProgress(INITIAL_PROGRESS);
   }, []);
 
-  return { isPending, data, error, step, mutate, reset };
+  return { isPending, data, error, progress, mutate, reset };
 }
 
 export function useApplyWeeklyPlan() {
