@@ -10,6 +10,7 @@ import { useAIChat } from "@/hooks/use-ai-chat";
 import { Bot, Trash2, Loader2 } from "lucide-react";
 import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { useTranslations } from "next-intl";
+import { markAiVisited } from "@/lib/onboarding-storage";
 
 export default function AsistanPage() {
   const { messages, isStreaming, isLoading, send, abort, clearHistory } = useAIChat();
@@ -24,6 +25,11 @@ export default function AsistanPage() {
       el.scrollTop = el.scrollHeight;
     }
   }, [messages]);
+
+  // Tick off the "try the AI assistant" getting-started checklist item.
+  useEffect(() => {
+    markAiVisited();
+  }, []);
 
   const suggestionKeys = ["todayMeal", "kneeSquat", "weightLossSpeed", "waterIntake"] as const;
 

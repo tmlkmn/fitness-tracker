@@ -2603,6 +2603,95 @@
       "description": "You can now build your weekly training and nutrition program.",
       "goToCalendar": "Go to Calendar",
       "close": "Close"
+    },
+    "tour": {
+      "next": "Next",
+      "prev": "Back",
+      "done": "Done",
+      "steps": {
+        "dashboard": {
+          "today": {
+            "title": "Today's Plan",
+            "description": "Your daily meal and workout progress shows here. Tap the card to open the plan."
+          },
+          "quickAccess": {
+            "title": "Quick Access",
+            "description": "Reach your calendar, progress, assistant and shopping list with a single tap."
+          },
+          "calendar": {
+            "title": "Calendar",
+            "description": "Create your weekly workout and nutrition plan here. This is your real starting point."
+          },
+          "assistant": {
+            "title": "AI Assistant",
+            "description": "Ask your fitness coach anything: nutrition tips, exercise swaps and motivation."
+          },
+          "progress": {
+            "title": "Progress",
+            "description": "Log your weight and measurements here and track your development with charts."
+          },
+          "checklist": {
+            "title": "Getting Started",
+            "description": "Complete the steps in this list to get up and running quickly."
+          }
+        },
+        "calendar": {
+          "generate": {
+            "title": "Create a Weekly Plan",
+            "description": "This button lets AI build a personalized weekly workout and nutrition plan for you."
+          },
+          "weekStrip": {
+            "title": "Days of the Week",
+            "description": "Move between days; tap a day to open its details."
+          },
+          "dayDetail": {
+            "title": "Day Detail",
+            "description": "The selected day's meals and workout appear here."
+          }
+        },
+        "day": {
+          "tabs": {
+            "title": "Day Tabs",
+            "description": "Switch between meals, workout, supplements and wellness tracking with these tabs."
+          },
+          "track": {
+            "title": "Check As You Go",
+            "description": "Mark meals and exercises as you complete them; your daily progress updates instantly."
+          }
+        },
+        "progress": {
+          "chart": {
+            "title": "Progress Chart",
+            "description": "Your weight and measurement data is visualized here with charts."
+          },
+          "add": {
+            "title": "Add Measurement",
+            "description": "Record new weight and body measurements with this button."
+          }
+        }
+      }
+    },
+    "checklist": {
+      "title": "Getting Started",
+      "dismiss": "Dismiss list",
+      "items": {
+        "profile": {
+          "label": "Complete your profile",
+          "description": "Enter your height, weight and goal weight"
+        },
+        "weeklyPlan": {
+          "label": "Create your first weekly plan",
+          "description": "Build a plan with AI from the calendar"
+        },
+        "weightLog": {
+          "label": "Log your first weigh-in",
+          "description": "Add a measurement on the progress page"
+        },
+        "assistant": {
+          "label": "Try the AI assistant",
+          "description": "Ask your fitness coach your first question"
+        }
+      }
     }
   },
   "landing": {

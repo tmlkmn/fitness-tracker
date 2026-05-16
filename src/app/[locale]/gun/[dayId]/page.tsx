@@ -13,6 +13,7 @@ import { WaterTracker } from "@/components/water/water-tracker";
 import { SleepEntry } from "@/components/sleep/sleep-entry";
 import { ReadinessEntry } from "@/components/readiness/readiness-entry";
 import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
+import { PageTour } from "@/components/onboarding/page-tour";
 import { getTranslations } from "next-intl/server";
 import { normalizeLocale } from "@/lib/locale";
 import { formatDate, parseDateOnly } from "@/lib/date-format";
@@ -99,9 +100,13 @@ export default async function GunPage({ params, searchParams }: PageProps) {
           </Link>
         </div>
       )}
+      <PageTour surface="day" />
       <div className="p-4">
         <Tabs defaultValue={initialTab}>
-          <TabsList className="grid grid-cols-4 w-full mb-4 h-auto p-1">
+          <TabsList
+            data-tour="day-tabs"
+            className="grid grid-cols-4 w-full mb-4 h-auto p-1"
+          >
             <TabsTrigger
               value="meals"
               className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
@@ -131,7 +136,7 @@ export default async function GunPage({ params, searchParams }: PageProps) {
               <span className="text-[10px] xs:text-xs truncate max-w-full">{t("tabs.wellness")}</span>
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="meals" className="space-y-3">
+          <TabsContent value="meals" className="space-y-3" data-tour="day-content">
             {false && dailyPlan.date && (
               <MacroTrendSparkline endDate={dailyPlan.date!} metric="calories" />
             )}

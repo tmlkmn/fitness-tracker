@@ -44,6 +44,8 @@ import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
 import { DailyRingsCard } from "@/components/meals/daily-rings-card";
 import { useDashboardPrefs } from "@/hooks/use-dashboard-prefs";
 import { SetupCompleteBanner } from "@/components/onboarding/setup-complete-banner";
+import { PageTour } from "@/components/onboarding/page-tour";
+import { GettingStartedChecklist } from "@/components/onboarding/getting-started-checklist";
 import { NotificationPromptCard } from "@/components/notifications/notification-prompt-card";
 import { useDailyGreeting } from "@/hooks/use-greeting";
 
@@ -186,8 +188,14 @@ export default function HomePage() {
         }}
       />
 
+      <PageTour
+        surface="dashboard"
+        ready={!onboardingOpen && !healthWizardOpen && !profileLoading}
+      />
+
       <div className="p-4 space-y-4">
         <SetupCompleteBanner />
+        <GettingStartedChecklist />
         <NotificationPromptCard />
         <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-transparent overflow-hidden">
           <CardContent className="p-4">
@@ -271,7 +279,7 @@ export default function HomePage() {
           </Link>
         )}
 
-        <Card>
+        <Card data-tour="today-plan">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">{t("todayPlan")}</h3>
@@ -491,7 +499,7 @@ export default function HomePage() {
         )}
 
         {isVisible("quick_access") && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-list">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-list" data-tour="quick-access">
           {([
             { href: "/takvim" as const, icon: Calendar, labelKey: "calendar" as const, descKey: "calendarDesc" as const },
             { href: "/ilerleme" as const, icon: TrendingUp, labelKey: "progress" as const, descKey: "progressDesc" as const },

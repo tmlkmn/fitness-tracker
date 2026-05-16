@@ -2603,6 +2603,95 @@
       "description": "Artık haftalık antrenman ve beslenme programını oluşturabilirsin.",
       "goToCalendar": "Takvime Git",
       "close": "Kapat"
+    },
+    "tour": {
+      "next": "İleri",
+      "prev": "Geri",
+      "done": "Tamam",
+      "steps": {
+        "dashboard": {
+          "today": {
+            "title": "Bugünün Planı",
+            "description": "Günlük öğün ve antrenman ilerlemen burada görünür. Plana gitmek için karta dokun."
+          },
+          "quickAccess": {
+            "title": "Hızlı Erişim",
+            "description": "Takvim, ilerleme, asistan ve alışveriş listene buradan tek dokunuşla ulaşırsın."
+          },
+          "calendar": {
+            "title": "Takvim",
+            "description": "Haftalık antrenman ve beslenme planını buradan oluşturursun. Asıl başlangıç noktan burası."
+          },
+          "assistant": {
+            "title": "AI Asistan",
+            "description": "Fitness koçuna soru sor: beslenme önerileri, egzersiz alternatifleri ve motivasyon."
+          },
+          "progress": {
+            "title": "İlerleme",
+            "description": "Kilonu ve ölçümlerini buraya kaydeder, gelişimini grafiklerle takip edersin."
+          },
+          "checklist": {
+            "title": "İlk Adımlar",
+            "description": "Bu listedeki adımları tamamlayarak uygulamayı kullanmaya hızlıca başla."
+          }
+        },
+        "calendar": {
+          "generate": {
+            "title": "Haftalık Plan Oluştur",
+            "description": "Bu butonla AI sana özel bir haftalık antrenman ve beslenme planı hazırlar."
+          },
+          "weekStrip": {
+            "title": "Haftanın Günleri",
+            "description": "Günler arasında gezin; bir güne dokunarak o günün detaylarını aç."
+          },
+          "dayDetail": {
+            "title": "Gün Detayı",
+            "description": "Seçtiğin günün öğünleri ve antrenmanı burada görünür."
+          }
+        },
+        "day": {
+          "tabs": {
+            "title": "Gün Sekmeleri",
+            "description": "Öğünler, antrenman, takviyeler ve sağlık takibi arasında bu sekmelerle geçiş yap."
+          },
+          "track": {
+            "title": "Tamamladıkça İşaretle",
+            "description": "Öğünlerini ve egzersizlerini yaptıkça işaretle; günlük ilerlemen anında güncellenir."
+          }
+        },
+        "progress": {
+          "chart": {
+            "title": "Gelişim Grafiği",
+            "description": "Kilo ve ölçüm verilerin burada grafiklerle görselleşir."
+          },
+          "add": {
+            "title": "Ölçüm Ekle",
+            "description": "Yeni kilo ve vücut ölçümlerini bu butonla kaydet."
+          }
+        }
+      }
+    },
+    "checklist": {
+      "title": "İlk Adımlar",
+      "dismiss": "Listeyi kapat",
+      "items": {
+        "profile": {
+          "label": "Profilini tamamla",
+          "description": "Boy, kilo ve hedef kilonu gir"
+        },
+        "weeklyPlan": {
+          "label": "İlk haftalık planını oluştur",
+          "description": "Takvimden AI ile plan hazırla"
+        },
+        "weightLog": {
+          "label": "İlk kilo kaydını gir",
+          "description": "İlerleme sayfasından ölçüm ekle"
+        },
+        "assistant": {
+          "label": "AI asistanını dene",
+          "description": "Fitness koçuna ilk sorunu sor"
+        }
+      }
     }
   },
   "landing": {

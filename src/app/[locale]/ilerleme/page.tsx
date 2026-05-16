@@ -8,6 +8,7 @@ import { ProgressAiAnalysis } from "@/components/progress/progress-ai-analysis";
 import { ChartSelector } from "@/components/progress/chart-selector";
 import { WeightTargetEditor } from "@/components/progress/weight-target-editor";
 import { ProgressModal } from "@/components/progress/progress-modal";
+import { PageTour } from "@/components/onboarding/page-tour";
 import { useProgressLogs, useDeleteProgress } from "@/hooks/use-progress";
 import { useUserProfile } from "@/hooks/use-user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,6 +131,7 @@ export default function IlerlemePage() {
           </div>
         }
       />
+      <PageTour surface="progress" ready={!logsLoading} />
       <div className="p-4 space-y-4">
         {/* Summary cards */}
         {logsLoading || profileLoading ? (
@@ -192,19 +194,21 @@ export default function IlerlemePage() {
         )}
 
         {/* Dynamic chart */}
-        {logsLoading ? (
-          <Card>
-            <CardHeader className="p-3 pb-0 flex-row items-center justify-between">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-8 w-35 rounded-md" />
-            </CardHeader>
-            <CardContent className="p-3 pt-2">
-              <Skeleton className="h-40 w-full" />
-            </CardContent>
-          </Card>
-        ) : (
-          <ChartSelector data={logs ?? []} />
-        )}
+        <div data-tour="progress-chart">
+          {logsLoading ? (
+            <Card>
+              <CardHeader className="p-3 pb-0 flex-row items-center justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-35 rounded-md" />
+              </CardHeader>
+              <CardContent className="p-3 pt-2">
+                <Skeleton className="h-40 w-full" />
+              </CardContent>
+            </Card>
+          ) : (
+            <ChartSelector data={logs ?? []} />
+          )}
+        </div>
 
         {/* AI Analysis — only show with 2+ measurements */}
         {logs && logs.length >= 2 && <ProgressAiAnalysis />}
@@ -237,7 +241,7 @@ export default function IlerlemePage() {
         <SleepChart />
 
         {/* Add measurement button */}
-        <Button onClick={handleAdd} className="w-full gap-2">
+        <Button onClick={handleAdd} className="w-full gap-2" data-tour="add-measurement">
           <Plus className="h-4 w-4" />
           {t("addMeasurement")}
         </Button>

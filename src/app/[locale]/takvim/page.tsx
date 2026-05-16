@@ -9,6 +9,7 @@ import { MonthCalendar } from "@/components/calendar/month-calendar";
 import { DayDetailPanel } from "@/components/calendar/day-detail-panel";
 import { AiWeeklyPlanModal } from "@/components/calendar/ai-weekly-plan-modal";
 import { ProfileMissingWarning } from "@/components/ai/profile-missing-warning";
+import { PageTour } from "@/components/onboarding/page-tour";
 import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans, useEmptyWeeksBetween } from "@/hooks/use-plans";
 import { useReadinessRange } from "@/hooks/use-readiness";
@@ -273,6 +274,7 @@ export default function TakvimPage() {
           </div>
         }
       />
+      <PageTour surface="calendar" ready={!isLoading} />
       <div className="p-4 space-y-4">
         {showFullCalendar ? (
           <>
@@ -311,16 +313,18 @@ export default function TakvimPage() {
           </>
         ) : (
           <>
-            <WeekStrip
-              weekStartDate={weekStart}
-              selectedDate={selectedDate}
-              onSelectDate={handleSelectDate}
-              onPrevWeek={handlePrevWeek}
-              onNextWeek={handleNextWeek}
-              datesWithPlans={datesWithPlans}
-              weekStartsOn={weekStartsOn}
-              readinessByDate={readinessByDate}
-            />
+            <div data-tour="week-strip">
+              <WeekStrip
+                weekStartDate={weekStart}
+                selectedDate={selectedDate}
+                onSelectDate={handleSelectDate}
+                onPrevWeek={handlePrevWeek}
+                onNextWeek={handleNextWeek}
+                datesWithPlans={datesWithPlans}
+                weekStartsOn={weekStartsOn}
+                readinessByDate={readinessByDate}
+              />
+            </div>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
@@ -365,6 +369,7 @@ export default function TakvimPage() {
                 className="flex-1 gap-1.5"
                 onClick={() => handleWeeklyModalOpenChange(true)}
                 disabled={hasEmptyWeekGap}
+                data-tour="ai-weekly"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 {t("aiWeeklyPlan", { action: data?.weeklyPlan ? t("actionChange") : t("actionCreate") })}
@@ -453,6 +458,7 @@ export default function TakvimPage() {
           {formatLocaleDate(selectedDate, locale)}
         </p>
 
+        <div data-tour="day-detail">
         {isLoading ? (
           <div className="space-y-2">
             {[...Array(3)].map((_, i) => (
@@ -510,6 +516,7 @@ export default function TakvimPage() {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {weeklyModalOpen && (

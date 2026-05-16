@@ -72,6 +72,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
+              data-tour={`nav-${labelKey}`}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg transition-colors min-w-[3.5rem]",

@@ -74,6 +74,16 @@ export function OnboardingCarousel({
     }
     onOpenChange(false);
     setCurrent(0);
+    // First-time: the dashboard PageTour auto-runs once this dialog closes.
+    // Re-launch (header "App Guide"): explicitly chain into the dashboard
+    // guided tour after the close animation finishes.
+    if (!isFirstTime) {
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent("fitmusc:start-tour", { detail: "dashboard" }),
+        );
+      }, 250);
+    }
   }, [isFirstTime, markSeen, onOpenChange]);
 
   const handleSkip = useCallback(() => {
