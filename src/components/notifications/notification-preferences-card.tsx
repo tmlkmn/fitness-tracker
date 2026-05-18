@@ -18,7 +18,11 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from "@/hooks/use-notification-preferences";
-import { subscribeToPush } from "@/lib/push-subscribe";
+import {
+  subscribeToPush,
+  getPushSubscription,
+  unsubscribeFromPush,
+} from "@/lib/push-subscribe";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -39,15 +43,11 @@ function PushStatus() {
     }
 
     if (Notification.permission === "granted") {
-      navigator.serviceWorker
-        .getRegistration()
-        .then(async (reg) => {
-          if (reg) {
-            const sub = await reg.pushManager.getSubscription();
-            if (sub) {
-              setStatus("active");
-              return;
-            }
+      getPushSubscription()
+        .then(async (sub) => {
+          if (sub) {
+            setStatus("active");
+            return;
           }
           // Permission granted but no subscription — auto re-subscribe
           const result = await subscribeToPush();
@@ -179,23 +179,7 @@ export function NotificationPreferencesCard() {
       }
     } else {
       // Unsubscribe and toggle off
-      try {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg) {
-          const sub = await reg.pushManager.getSubscription();
-          if (sub) {
-            const endpoint = sub.endpoint;
-            await sub.unsubscribe();
-            await fetch("/api/push/unsubscribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ endpoint }),
-            });
-          }
-        }
-      } catch {
-        // Best effort unsubscribe
-      }
+      await unsubscribeFromPush();
       toggle("pushEnabled", false);
       setPushKey((k) => k + 1);
     }

@@ -1,4 +1,14 @@
-// Minimal service worker for push notifications (used when main SW is unavailable in dev mode)
+// Dedicated push service worker — registered at the /push-sw/ scope by
+// src/lib/push-subscribe.ts. Deliberately featherweight: its install event
+// does NO precaching and NO network I/O, so it activates within milliseconds
+// even on a cold iOS PWA launch (the precaching Serwist worker can hang there
+// for 30s+, which is why push gets its own worker).
+
+// Take over immediately on install/update so pushManager.subscribe() always
+// has an `active` worker and shipped fixes apply without a stale generation.
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+
 self.addEventListener("push", (event) => {
   const data = event.data ? event.data.json() : {};
   const title = data.title || "FitMusc";

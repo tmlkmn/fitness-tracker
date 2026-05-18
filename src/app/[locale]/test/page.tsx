@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { sendTestNotification } from "@/actions/test-notifications";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { subscribeToPush, getPushSubscription } from "@/lib/push-subscribe";
 import { useQueryClient } from "@tanstack/react-query";
 
 type Channel = "all" | "email" | "push" | "inapp";
@@ -27,17 +28,6 @@ interface Result {
   ok: boolean;
   message: string;
   time: string;
-}
-
-function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray.buffer as ArrayBuffer;
 }
 
 export default function TestPage() {
@@ -56,9 +46,7 @@ export default function TestPage() {
     if (!("serviceWorker" in navigator)) { setPushStatus("no-sw"); return; }
     if (typeof Notification === "undefined" || Notification.permission !== "granted") { setPushStatus("no-perm"); return; }
     try {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (!reg) { setPushStatus("no-sw"); return; }
-      const sub = await reg.pushManager.getSubscription();
+      const sub = await getPushSubscription();
       setPushStatus(sub ? "active" : "no-sub");
     } catch {
       setPushStatus("no-sw");
@@ -68,44 +56,20 @@ export default function TestPage() {
   async function resubscribe() {
     setResubscribing(true);
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") { setPushStatus("no-perm"); return; }
-
-      // Ensure SW is registered first
-      let reg = await navigator.serviceWorker.getRegistration();
-      if (!reg) {
-        try {
-          reg = await navigator.serviceWorker.register("/sw.js");
-        } catch {
-          // Full SW failed (dev mode) — try push-only fallback
-          reg = await navigator.serviceWorker.register("/sw-push.js");
-        }
-        // Wait for it to activate
-        await new Promise<void>((resolve, reject) => {
-          const sw = reg!.installing || reg!.waiting || reg!.active;
-          if (reg!.active) { resolve(); return; }
-          if (!sw) { reject(new Error("SW kurulumu başarısız")); return; }
-          sw.addEventListener("statechange", () => {
-            if (sw.state === "activated") resolve();
-          });
-          setTimeout(() => reject(new Error("SW aktivasyon zaman aşımı")), 10000);
-        });
+      const result = await subscribeToPush();
+      if (result.ok) {
+        setPushStatus("active");
+        addResult("push", true, "Push aboneliği yeniden oluşturuldu");
+        return;
       }
-
-      const subscription = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
-      });
-      const json = subscription.toJSON();
-      await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
-      });
-      setPushStatus("active");
-      addResult("push", true, "Push aboneliği yeniden oluşturuldu");
-    } catch (err) {
-      addResult("push", false, err instanceof Error ? err.message : "Push aboneliği başarısız");
+      if (result.reason === "denied" || result.reason === "dismissed") {
+        setPushStatus("no-perm");
+      }
+      addResult(
+        "push",
+        false,
+        result.message ?? `Push aboneliği başarısız (${result.reason})`,
+      );
     } finally {
       setResubscribing(false);
     }

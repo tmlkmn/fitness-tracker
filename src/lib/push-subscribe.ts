@@ -15,9 +15,9 @@ export type PushSubscribeResult =
        *   for sites with a low accept rate or after repeated dismissals)
        *   hides the modal behind an address-bar icon; permission stays
        *   `"default"` and can still be granted from that icon.
-       * - `sw` — the service worker did not reach the `active` state in time
-       *   (common on a cold iOS PWA launch while it is still precaching);
-       *   closing/reopening the app and retrying usually succeeds
+       * - `sw` — the dedicated push service worker did not reach the `active`
+       *   state in time; closing/reopening the app and retrying usually
+       *   succeeds
        * - `config` — NEXT_PUBLIC_VAPID_PUBLIC_KEY missing from the build
        * - `error` — service worker / pushManager / server call failed
        */
@@ -171,33 +171,118 @@ function waitForActivation(
 }
 
 /**
- * Ensures a service worker is registered AND has reached the `active` state.
- * `pushManager.subscribe()` throws "Subscribing for push requires an active
- * service worker" if the worker is still installing/waiting.
+ * The push subscription is deliberately NOT tied to the primary Serwist worker
+ * (`/sw.js`). That worker precaches the entire build inside its `install`
+ * event, which on a cold iOS PWA launch hangs for 30s+ and never activates —
+ * so `pushManager.subscribe()`, which requires an `active` worker, can never
+ * run there.
  *
- * On a cold iOS PWA launch the Serwist worker precaches the whole build during
- * its `install` event, which routinely takes longer than a short fixed
- * timeout — so we wait, event-driven, for activation to actually land.
+ * Instead push gets a featherweight, dedicated worker (`/sw-push.js`, no
+ * precache) registered at its own scope. Its `install` event does no network
+ * I/O, so it activates within milliseconds even on iOS. The scope is a sub-path
+ * of `/`, which `/sw-push.js` is allowed to claim without a
+ * `Service-Worker-Allowed` header. It controls no pages — push delivery and
+ * `showNotification()` do not depend on the worker controlling a client.
+ */
+export const PUSH_SW_URL = "/sw-push.js";
+export const PUSH_SW_SCOPE = "/push-sw/";
+
+/**
+ * True if `reg` is the dedicated push registration (not the Serwist one).
+ * A plain boolean, not a type guard: "not the push registration" must not
+ * narrow `reg` away from `ServiceWorkerRegistration` for callers that hold a
+ * non-push registration (e.g. the legacy root cleanup).
+ */
+function isPushRegistration(reg: ServiceWorkerRegistration): boolean {
+  try {
+    return new URL(reg.scope).pathname === PUSH_SW_SCOPE;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Returns the push registration for components that only need to *check*
+ * status — never registers anything. `null` if push has not been set up yet.
+ */
+export async function getPushSubscription(): Promise<PushSubscription | null> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+    return null;
+  }
+  const reg = await navigator.serviceWorker.getRegistration(PUSH_SW_SCOPE);
+  if (!reg || !isPushRegistration(reg)) return null;
+  return reg.pushManager.getSubscription();
+}
+
+/** Tears down the push subscription locally and server-side. Best-effort. */
+export async function unsubscribeFromPush(): Promise<void> {
+  try {
+    const sub = await getPushSubscription();
+    if (!sub) return;
+    const { endpoint } = sub;
+    await sub.unsubscribe();
+    await fetch("/api/push/unsubscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint }),
+    });
+  } catch {
+    // Best-effort — a stale row is harmless (web-push prunes it on 404/410).
+  }
+}
+
+/**
+ * Drops any legacy push subscription that lived on the Serwist root worker
+ * (how push was registered before it moved to its own scope). Without this,
+ * a user who subscribed under the old scheme would receive every notification
+ * twice once they re-subscribe under the new scope. Best-effort, runs once.
+ */
+async function cleanupLegacyRootSubscription(): Promise<void> {
+  try {
+    const root = await navigator.serviceWorker.getRegistration("/");
+    if (!root || isPushRegistration(root)) return;
+    const sub = await root.pushManager.getSubscription();
+    if (!sub) return;
+    const { endpoint } = sub;
+    await sub.unsubscribe();
+    await fetch("/api/push/unsubscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint }),
+    });
+  } catch {
+    // Non-fatal — worst case the user briefly gets a duplicate notification.
+  }
+}
+
+/**
+ * Gets the dedicated push worker registered AND `active`, registering it if
+ * needed. `pushManager.subscribe()` throws "Subscribing for push requires an
+ * active service worker" if the worker is still installing/waiting.
  *
  * Returns the registration regardless of whether it activated, plus how long
  * we waited, so the caller can include both in a diagnostic on failure.
  */
-async function getActiveRegistration(): Promise<{
+async function getPushRegistration(): Promise<{
   registration: ServiceWorkerRegistration | null;
   waitMs: number;
 }> {
-  let registration = (await navigator.serviceWorker.getRegistration()) ?? null;
+  // getRegistration() falls back to the root Serwist worker for this URL when
+  // the push worker is not registered yet — only reuse a genuine push reg.
+  const existing = await navigator.serviceWorker.getRegistration(
+    PUSH_SW_SCOPE,
+  );
 
-  if (!registration) {
+  let registration: ServiceWorkerRegistration;
+  if (existing && isPushRegistration(existing)) {
+    registration = existing;
+  } else {
     try {
-      registration = await navigator.serviceWorker.register("/sw.js");
+      registration = await navigator.serviceWorker.register(PUSH_SW_URL, {
+        scope: PUSH_SW_SCOPE,
+      });
     } catch {
-      // /sw.js unavailable (e.g. dev mode) — fall back to the push-only worker.
-      try {
-        registration = await navigator.serviceWorker.register("/sw-push.js");
-      } catch {
-        return { registration: null, waitMs: 0 };
-      }
+      return { registration: null, waitMs: 0 };
     }
   }
 
@@ -261,7 +346,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
     }
     vapidKeyLen = vapidKey.length;
 
-    const got = await getActiveRegistration();
+    const got = await getPushRegistration();
     registration = got.registration;
     activationWaitMs = got.waitMs;
 
@@ -321,6 +406,10 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
         message: `Subscription could not be saved (HTTP ${res.status}).`,
       };
     }
+
+    // Now that the push subscription lives on the dedicated worker, drop any
+    // leftover subscription on the old root worker so pushes aren't doubled.
+    void cleanupLegacyRootSubscription();
 
     void reportPushDiagnostic({
       stage: "success",

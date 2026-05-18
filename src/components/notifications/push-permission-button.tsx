@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Bell, BellOff, CheckCircle2, Loader2 } from "lucide-react";
-import { subscribeToPush } from "@/lib/push-subscribe";
+import { subscribeToPush, getPushSubscription } from "@/lib/push-subscribe";
 import { useTranslations } from "next-intl";
 
 export function PushPermissionButton() {
@@ -20,26 +20,18 @@ export function PushPermissionButton() {
 
     setPermission(Notification.permission);
 
-    // Check if an actual push subscription exists in the service worker
+    // Check if an actual push subscription exists on the push service worker
     if (Notification.permission === "granted") {
-      navigator.serviceWorker
-        .getRegistration()
-        .then(async (reg) => {
-          if (reg) {
-            const sub = await reg.pushManager.getSubscription();
-            setHasSubscription(!!sub);
-            // Auto re-subscribe if permission granted but no subscription
-            // (e.g., after PWA reinstall)
-            if (!sub) {
-              const result = await subscribeToPush();
-              setHasSubscription(result.ok);
-            }
-          } else {
-            setHasSubscription(false);
-            // No service worker registered — register and subscribe
-            const result = await subscribeToPush();
-            setHasSubscription(result.ok);
+      getPushSubscription()
+        .then(async (sub) => {
+          if (sub) {
+            setHasSubscription(true);
+            return;
           }
+          // Permission granted but no subscription (e.g. after PWA reinstall)
+          // — register the push worker and subscribe.
+          const result = await subscribeToPush();
+          setHasSubscription(result.ok);
         })
         .catch(() => setHasSubscription(false));
     }
