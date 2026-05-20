@@ -29,7 +29,8 @@ export function useUnreadCount() {
   return useQuery({
     queryKey: ["unread-count"],
     queryFn: getUnreadCount,
-    refetchInterval: 30000,
+    refetchInterval: 120_000,
+    refetchOnWindowFocus: true,
   });
 }
 

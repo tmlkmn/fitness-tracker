@@ -93,6 +93,19 @@ function timeToMinutes(time: string): number {
   return h * 60 + m;
 }
 
+// Cron runs every 5 min (vercel.json), so target times rarely line up with
+// the firing minute exactly. A reminder at 09:03 must fire from the 09:05
+// invocation. TOLERANCE_MIN is the look-back window: a target is "due" if it
+// fell in [current - TOLERANCE_MIN + 1, current]. Keep this in sync with the
+// cron schedule.
+const TOLERANCE_MIN = 5;
+
+function isDue(targetHhmm: string, currentHhmm: string): boolean {
+  const t = timeToMinutes(targetHhmm);
+  const c = timeToMinutes(currentHhmm);
+  return c >= t && c - t < TOLERANCE_MIN;
+}
+
 function isTimeInRange(current: string, start: string, end: string): boolean {
   const c = timeToMinutes(current);
   const s = timeToMinutes(start);
@@ -100,10 +113,11 @@ function isTimeInRange(current: string, start: string, end: string): boolean {
   return c >= s && c <= e;
 }
 
-function isIntervalHit(current: string, start: string, intervalMin: number): boolean {
+function isIntervalDue(current: string, start: string, intervalMin: number): boolean {
   const c = timeToMinutes(current);
   const s = timeToMinutes(start);
-  return (c - s) % intervalMin === 0;
+  if (c < s) return false;
+  return (c - s) % intervalMin < TOLERANCE_MIN;
 }
 
 export async function GET(request: NextRequest) {
@@ -119,7 +133,7 @@ export async function GET(request: NextRequest) {
   const istanbulTime = getCurrentTimeInTz("Europe/Istanbul");
   let membershipFired = 0;
   let trialFired = 0;
-  if (istanbulTime.hhmm === "09:00") {
+  if (isDue("09:00", istanbulTime.hhmm)) {
     membershipFired = await checkMembershipExpiry();
     trialFired = await checkTrialEnding();
   }
@@ -192,12 +206,12 @@ export async function GET(request: NextRequest) {
         const intMin = reminder.intervalMinutes ?? 60;
         const start = reminder.intervalStart ?? "08:00";
         const end = reminder.intervalEnd ?? "22:00";
-        if (isTimeInRange(hhmm, start, end) && isIntervalHit(hhmm, start, intMin)) {
+        if (isTimeInRange(hhmm, start, end) && isIntervalDue(hhmm, start, intMin)) {
           // Check lastFiredAt already done above
           await fireReminder(reminder);
           firedCount++;
         }
-      } else if (reminder.time === hhmm) {
+      } else if (reminder.time && isDue(reminder.time, hhmm)) {
         await fireReminder(reminder);
         firedCount++;
       }
@@ -212,7 +226,7 @@ export async function GET(request: NextRequest) {
       const workoutTime = reminder.defaultWorkoutTime ?? "19:00";
       const minutes = reminder.minutesBefore ?? 10;
       const targetTime = subtractMinutes(workoutTime, minutes);
-      if (targetTime === hhmm) {
+      if (isDue(targetTime, hhmm)) {
         const locale = normalizeLocale(reminder.userLocale);
         const t = await getServerTranslator(locale, "triggerNotifications.reminderWorkout");
         await sendNotification({
@@ -352,7 +366,7 @@ async function handleMealReminder(
     if (!/^\d{2}:\d{2}$/.test(mealTimeStr)) continue;
 
     const targetTime = subtractMinutes(mealTimeStr, offset);
-    if (targetTime === currentHhmm) {
+    if (isDue(targetTime, currentHhmm)) {
       await sendNotification({
         userId: reminder.userId,
         type: "reminder_meal",

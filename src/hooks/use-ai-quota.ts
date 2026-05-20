@@ -6,7 +6,7 @@ export function useAiQuota() {
   return useQuery({
     queryKey: ["ai.quota"],
     queryFn: () => getAiQuotas(),
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
   });
 }
 

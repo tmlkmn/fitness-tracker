@@ -1,0 +1,1 @@
+CREATE INDEX "reminders_enabled_user_idx" ON "reminders" USING btree ("user_id") WHERE "reminders"."is_enabled" = true;

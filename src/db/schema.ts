@@ -8,6 +8,7 @@ import {
   timestamp,
   date,
   jsonb,
+  index,
   uniqueIndex,
   check,
   primaryKey,
@@ -463,28 +464,38 @@ export const notificationPreferences = pgTable("notification_preferences", {
 
 // ── Reminder tables ──
 
-export const reminders = pgTable("reminders", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  type: text("type").notNull(),
-  title: text("title").notNull(),
-  body: text("body"),
-  templateKey: text("template_key"),
-  time: text("time"),
-  minutesBefore: integer("minutes_before"),
-  recurrence: text("recurrence").notNull().default("daily"),
-  intervalMinutes: integer("interval_minutes"),
-  intervalStart: text("interval_start"),
-  intervalEnd: text("interval_end"),
-  daysOfWeek: jsonb("days_of_week"),
-  onceDate: date("once_date"),
-  isEnabled: boolean("is_enabled").default(true).notNull(),
-  skipEmail: boolean("skip_email").default(true),
-  lastFiredAt: timestamp("last_fired_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const reminders = pgTable(
+  "reminders",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    body: text("body"),
+    templateKey: text("template_key"),
+    time: text("time"),
+    minutesBefore: integer("minutes_before"),
+    recurrence: text("recurrence").notNull().default("daily"),
+    intervalMinutes: integer("interval_minutes"),
+    intervalStart: text("interval_start"),
+    intervalEnd: text("interval_end"),
+    daysOfWeek: jsonb("days_of_week"),
+    onceDate: date("once_date"),
+    isEnabled: boolean("is_enabled").default(true).notNull(),
+    skipEmail: boolean("skip_email").default(true),
+    lastFiredAt: timestamp("last_fired_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  // Partial index on enabled rows only — the cron scans this table every
+  // 5 minutes and a seq-scan was the dominant CU-hour cost on Neon free tier.
+  (t) => [
+    index("reminders_enabled_user_idx")
+      .on(t.userId)
+      .where(sql`${t.isEnabled} = true`),
+  ],
+);
 
 export const exerciseTips = pgTable("exercise_tips", {
   id: serial("id").primaryKey(),
