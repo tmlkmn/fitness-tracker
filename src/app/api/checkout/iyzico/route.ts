@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { db } from "@/db";
 import { users, type BillingAddress } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { getAuthSession } from "@/lib/auth-utils";
+import { requireApiUser } from "@/lib/api-auth";
 import { getUserLocale } from "@/lib/locale";
 import { createSubscriptionCheckout } from "@/lib/billing/iyzico";
 import { encryptIdentity } from "@/lib/billing/identity-encrypt";
@@ -17,12 +17,12 @@ const TCKN_REGEX = /^\d{11}$/;
  * iyzico checkout form snippet for the client to render.
  */
 export async function POST(request: NextRequest) {
-  let user: Awaited<ReturnType<typeof getAuthSession>>;
-  try {
-    user = await getAuthSession();
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Checkout itself is how the user obtains entitlement — don't gate on it.
+  const { user, response } = await requireApiUser({
+    requireApproved: false,
+    requireActiveBilling: false,
+  });
+  if (response) return response;
 
   let body: Record<string, unknown>;
   try {

@@ -213,6 +213,8 @@ export const weeklyPlans = pgTable(
   },
   (table) => [
     uniqueIndex("weekly_plans_user_week_idx").on(table.userId, table.weekNumber),
+    // Date-range scans for /takvim, shared plans, dashboard.
+    index("weekly_plans_user_start_idx").on(table.userId, table.startDate),
   ],
 );
 
@@ -233,6 +235,8 @@ export const dailyPlans = pgTable(
       "daily_plans_plan_type_check",
       sql`${t.planType} IN ('workout', 'swimming', 'rest', 'nutrition')`,
     ),
+    // Day detail page + cron reminder lookups.
+    index("daily_plans_weekly_date_idx").on(t.weeklyPlanId, t.date),
   ],
 );
 
@@ -257,6 +261,8 @@ export const meals = pgTable(
       "meals_meal_label_check",
       sql`${t.mealLabel} IN ('Kahvaltı', 'Öğle Yemeği', 'Akşam Yemeği', 'Ara Öğün', 'Erken Protein', 'Pre-Workout', 'Post-Workout', 'Akşam Atıştırması')`,
     ),
+    // Day detail page lists meals grouped + ordered per plan.
+    index("meals_daily_plan_sort_idx").on(t.dailyPlanId, t.sortOrder),
   ],
 );
 
@@ -297,6 +303,8 @@ export const exercises = pgTable(
       "exercises_intensity_check",
       sql`${t.intensity} IS NULL OR ${t.intensity} IN ('low', 'moderate', 'high')`,
     ),
+    // Day detail page lists exercises grouped + ordered per plan.
+    index("exercises_daily_plan_sort_idx").on(t.dailyPlanId, t.sortOrder),
   ],
 );
 
@@ -343,12 +351,14 @@ export const supplementCompletions = pgTable(
   ],
 );
 
-export const progressLogs = pgTable("progress_logs", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  logDate: date("log_date").notNull(),
+export const progressLogs = pgTable(
+  "progress_logs",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    logDate: date("log_date").notNull(),
   // Ana Bilgiler
   weight: numeric("weight"),
   fluidPercent: numeric("fluid_percent"),
@@ -387,10 +397,15 @@ export const progressLogs = pgTable("progress_logs", {
   leftArmCm: numeric("left_arm_cm"),
   rightLegCm: numeric("right_leg_cm"),
   leftLegCm: numeric("left_leg_cm"),
-  // Meta
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+    // Meta
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [
+    // Hot path: progress chart, AI analyze/target-weight read latest N logs.
+    index("progress_logs_user_date_idx").on(t.userId, t.logDate),
+  ],
+);
 
 export const shoppingLists = pgTable("shopping_lists", {
   id: serial("id").primaryKey(),
@@ -404,35 +419,55 @@ export const shoppingLists = pgTable("shopping_lists", {
   mealIds: jsonb("meal_ids").$type<number[]>(),
 });
 
-export const shares = pgTable("shares", {
-  id: serial("id").primaryKey(),
-  weeklyPlanId: integer("weekly_plan_id")
-    .notNull()
-    .references(() => weeklyPlans.id, { onDelete: "cascade" }),
-  ownerUserId: text("owner_user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  sharedWithUserId: text("shared_with_user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const shares = pgTable(
+  "shares",
+  {
+    id: serial("id").primaryKey(),
+    weeklyPlanId: integer("weekly_plan_id")
+      .notNull()
+      .references(() => weeklyPlans.id, { onDelete: "cascade" }),
+    ownerUserId: text("owner_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sharedWithUserId: text("shared_with_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [
+    // /paylasilan list (plans shared TO me) + revoke flows (plans I shared).
+    index("shares_shared_with_idx").on(t.sharedWithUserId),
+    index("shares_weekly_plan_idx").on(t.weeklyPlanId),
+  ],
+);
 
 // ── Notification tables ──
 
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  type: text("type").notNull(),
-  title: text("title").notNull(),
-  body: text("body").notNull(),
-  link: text("link"),
-  isRead: boolean("is_read").default(false),
-  metadata: jsonb("metadata"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    link: text("link"),
+    isRead: boolean("is_read").default(false),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [
+    // Bell unread count polls every 30s — needs (userId, isRead) for the
+    // filter and createdAt for the dropdown's ORDER BY desc.
+    index("notifications_user_read_created_idx").on(
+      t.userId,
+      t.isRead,
+      t.createdAt,
+    ),
+  ],
+);
 
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: serial("id").primaryKey(),
@@ -549,22 +584,36 @@ export const exerciseDemos = pgTable("exercise_demos", {
 
 // ── AI Usage Logs ──
 
-export const aiUsageLogs = pgTable("ai_usage_logs", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  feature: text("feature").notNull(),
-  promptVersion: text("prompt_version"),
-  model: text("model"),
-  inputTokens: integer("input_tokens"),
-  outputTokens: integer("output_tokens"),
-  durationMs: integer("duration_ms"),
-  status: text("status").default("success").notNull(),
-  errorMessage: text("error_message"),
-  estCostUsd: numeric("est_cost_usd"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const aiUsageLogs = pgTable(
+  "ai_usage_logs",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    feature: text("feature").notNull(),
+    promptVersion: text("prompt_version"),
+    model: text("model"),
+    inputTokens: integer("input_tokens"),
+    outputTokens: integer("output_tokens"),
+    durationMs: integer("duration_ms"),
+    status: text("status").default("success").notNull(),
+    errorMessage: text("error_message"),
+    estCostUsd: numeric("est_cost_usd"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    // Every AI call runs checkRateLimit which filters by (userId, feature,
+    // status, createdAt >= start-of-day). Without this index Postgres
+    // sequential-scans a constantly-growing table on every AI request.
+    index("ai_usage_logs_user_feature_status_created_idx").on(
+      t.userId,
+      t.feature,
+      t.status,
+      t.createdAt,
+    ),
+  ],
+);
 
 // ── AI Plan Suggestions (saved for later reuse) ──
 
@@ -612,15 +661,22 @@ export const savedMealSuggestions = pgTable("saved_meal_suggestions", {
 
 // ── Chat Messages ──
 
-export const chatMessages = pgTable("chat_messages", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  role: text("role").notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const chatMessages = pgTable(
+  "chat_messages",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    // /asistan loads last N messages per user, ordered by createdAt.
+    index("chat_messages_user_created_idx").on(t.userId, t.createdAt),
+  ],
+);
 
 // ── Feedbacks ──
 
@@ -781,6 +837,8 @@ export const invoices = pgTable(
       "invoices_provider_check",
       sql`${t.provider} IN ('lemonsqueezy', 'iyzico')`,
     ),
+    // Billing history page: user's invoices ordered desc by issuedAt.
+    index("invoices_user_issued_idx").on(t.userId, t.issuedAt),
   ],
 );
 
@@ -788,6 +846,15 @@ export const invoices = pgTable(
 // A processed webhook is recorded by (provider, externalId). The unique index
 // lets handlers detect replays: a conflicting insert means "already handled".
 
+// Webhook event log + idempotency tracker.
+//
+// `processedAt` records when the row was claimed (first INSERT). `succeededAt`
+// flips from NULL → timestamp only after the handler's side effects all
+// complete. A replay sees:
+//   - succeededAt IS NOT NULL → true duplicate, return early
+//   - succeededAt IS NULL     → previous attempt crashed mid-flight, retry
+// This way a partial failure (DB updated but notification crashed, or vice
+// versa) won't get silently dropped because the dedup row was written too early.
 export const webhookEvents = pgTable(
   "webhook_events",
   {
@@ -797,6 +864,7 @@ export const webhookEvents = pgTable(
     eventName: text("event_name"),
     payload: jsonb("payload"),
     processedAt: timestamp("processed_at").defaultNow().notNull(),
+    succeededAt: timestamp("succeeded_at"),
   },
   (t) => [
     uniqueIndex("webhook_events_provider_external_idx").on(

@@ -1,5 +1,4 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { requireApiUser } from "@/lib/api-auth";
 import { db } from "@/db";
 import { progressLogs, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -18,13 +17,11 @@ import { getUserLocale } from "@/lib/locale";
 export const maxDuration = 30;
 
 export async function POST() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const { user: sessionUser, response } = await requireApiUser();
+  if (response) return response;
 
-  const userId = session.user.id;
-  const locale = getUserLocale(session.user);
+  const userId = sessionUser.id;
+  const locale = getUserLocale(sessionUser);
 
   try {
     await checkRateLimit(userId, "target-weight");

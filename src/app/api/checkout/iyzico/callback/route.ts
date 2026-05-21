@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { getAuthSession } from "@/lib/auth-utils";
+import { requireApiUser } from "@/lib/api-auth";
 import { getUserLocale } from "@/lib/locale";
 import { retrieveSubscriptionCheckout } from "@/lib/billing/iyzico";
 import { isBillingTier, isBillingInterval } from "@/lib/billing/tier-config";
@@ -19,10 +19,13 @@ export async function POST(request: NextRequest) {
   const tier = searchParams.get("tier");
   const interval = searchParams.get("interval");
 
-  let user: Awaited<ReturnType<typeof getAuthSession>>;
-  try {
-    user = await getAuthSession();
-  } catch {
+  // Callback runs before the subscription is fully linked — entitlement may
+  // still be inactive. Just ensure there is an authenticated session.
+  const { user, response } = await requireApiUser({
+    requireApproved: false,
+    requireActiveBilling: false,
+  });
+  if (response) {
     return NextResponse.redirect(new URL("/tr/giris", request.url));
   }
 

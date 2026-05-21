@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import * as Sentry from "@sentry/nextjs";
 import { db } from "@/db";
 import { aiUsageLogs, users } from "@/db/schema";
 import { eq, and, gte, sql, inArray } from "drizzle-orm";
@@ -183,7 +184,9 @@ export async function checkRateLimit(userId: string, feature: AIFeature): Promis
     }
   }
 
-  // Check daily limit — same: only successful calls consume quota.
+  // Check daily limit — both "success" and "success_with_warnings" consumed
+  // compute and produced a usable result, so they share the same quota.
+  // Keep this in sync with the cooldown query above.
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(aiUsageLogs)
@@ -191,7 +194,7 @@ export async function checkRateLimit(userId: string, feature: AIFeature): Promis
       and(
         eq(aiUsageLogs.userId, userId),
         eq(aiUsageLogs.feature, feature),
-        eq(aiUsageLogs.status, "success"),
+        inArray(aiUsageLogs.status, SUCCESS_LIKE_STATUSES as unknown as string[]),
         gte(aiUsageLogs.createdAt, startOfDay),
       ),
     );
@@ -215,7 +218,7 @@ export async function getRemainingQuota(
       and(
         eq(aiUsageLogs.userId, userId),
         eq(aiUsageLogs.feature, feature),
-        eq(aiUsageLogs.status, "success"),
+        inArray(aiUsageLogs.status, SUCCESS_LIKE_STATUSES as unknown as string[]),
         gte(aiUsageLogs.createdAt, startOfDay),
       ),
     );
@@ -241,7 +244,18 @@ export async function logAiUsage(
       promptVersion: options?.promptVersion ?? null,
       estCostUsd: options?.estCostUsd != null ? String(options.estCostUsd) : null,
     });
-  } catch {
-    // silent — logging should not break features
+  } catch (err) {
+    // Logging must not break the feature — but a silent catch hid real DB
+    // problems (and made AI quota counts unreliable since they read this
+    // table). Surface to Sentry so the issue is visible without disrupting
+    // the user's request.
+    Sentry.captureException(err, {
+      tags: { area: "ai-usage-log", feature },
+      extra: {
+        userId,
+        status: options?.status,
+        model: options?.model,
+      },
+    });
   }
 }

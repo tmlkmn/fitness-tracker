@@ -1,10 +1,13 @@
 "use server";
 
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthAdmin } from "@/lib/auth-utils";
 import { sendNotification } from "@/lib/notifications";
 
 export async function sendTestNotification(channel: "all" | "email" | "push" | "inapp") {
-  const user = await getAuthUser();
+  // Admin-only diagnostic. Anyone with this action could fire arbitrary
+  // emails/push to their own channels, which is a low-grade abuse vector
+  // (rate-limited by email provider but still noisy).
+  const user = await getAuthAdmin();
   const now = new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
   if (channel === "email") {

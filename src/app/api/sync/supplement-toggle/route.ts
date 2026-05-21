@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { requireApiUser } from "@/lib/api-auth";
 import { db } from "@/db";
 import { supplementCompletions, supplements, weeklyPlans } from "@/db/schema";
 import { isSupplementTogglePayload } from "@/lib/sync-payloads";
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { user, response } = await requireApiUser();
+  if (response) return response;
 
   let body: unknown;
   try {
@@ -31,7 +28,7 @@ export async function POST(request: Request) {
     .where(
       and(
         eq(supplements.id, body.supplementId),
-        eq(weeklyPlans.userId, session.user.id),
+        eq(weeklyPlans.userId, user.id),
       ),
     );
   if (rows.length === 0) {
@@ -43,7 +40,7 @@ export async function POST(request: Request) {
       .insert(supplementCompletions)
       .values({
         supplementId: body.supplementId,
-        userId: session.user.id,
+        userId: user.id,
         completionDate: body.date,
       })
       .onConflictDoNothing();
@@ -53,7 +50,7 @@ export async function POST(request: Request) {
       .where(
         and(
           eq(supplementCompletions.supplementId, body.supplementId),
-          eq(supplementCompletions.userId, session.user.id),
+          eq(supplementCompletions.userId, user.id),
           eq(supplementCompletions.completionDate, body.date),
         ),
       );

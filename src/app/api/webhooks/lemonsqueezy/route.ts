@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import { db } from "@/db";
 import { users, invoices } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { recordWebhookEvent } from "@/lib/billing/webhook-events";
+import { withWebhookEvent } from "@/lib/billing/webhook-events";
 import { resolveVariant } from "@/lib/billing/lemonsqueezy";
 import { notifyAdminsOfPaymentFailure } from "@/lib/billing/notify-admins";
 import { sendNotification } from "@/lib/notifications";
@@ -117,48 +117,68 @@ export async function POST(request: NextRequest) {
   }
 
   // Idempotency: updated_at changes per event, so a replay of the same event
-  // collides while genuinely new events still process.
+  // collides while genuinely new events still process. withWebhookEvent only
+  // marks the row "succeeded" after the handler completes, so a partial
+  // failure (e.g. user.update succeeded but notification crashed) is retried
+  // on the next replay instead of being silently dropped.
   const externalId = `${eventName}:${data.id}:${attrs.updated_at ?? ""}`;
-  const isNew = await recordWebhookEvent(
+
+  type Outcome = "handled" | "ignored:no-user" | "ignored:event";
+  const result = { outcome: "handled" as Outcome };
+
+  const { duplicate } = await withWebhookEvent(
     "lemonsqueezy",
     externalId,
     eventName,
     payload,
+    async () => {
+      const customUserId = payload.meta?.custom_data?.user_id;
+      let user = customUserId
+        ? (
+            await db
+              .select({ id: users.id, locale: users.locale })
+              .from(users)
+              .where(eq(users.id, customUserId))
+          )[0]
+        : undefined;
+
+      if (eventName.startsWith("subscription_payment_")) {
+        if (!user) {
+          result.outcome = "ignored:no-user";
+          return;
+        }
+        await handlePaymentEvent(eventName, data, attrs, user);
+        return;
+      }
+      if (eventName.startsWith("subscription_")) {
+        if (!user && data.id) {
+          const bySub = await db
+            .select({ id: users.id, locale: users.locale })
+            .from(users)
+            .where(eq(users.lemonSqueezySubscriptionId, data.id));
+          user = bySub[0];
+        }
+        if (!user) {
+          result.outcome = "ignored:no-user";
+          return;
+        }
+        await handleSubscriptionEvent(eventName, data.id!, attrs, user);
+        return;
+      }
+      result.outcome = "ignored:event";
+    },
   );
-  if (!isNew) {
+
+  if (duplicate) {
     return NextResponse.json({ ok: true, duplicate: true });
   }
-
-  // Resolve the target user — custom data is the source of truth; fall back to
-  // an existing subscription mapping for events lacking custom data.
-  const customUserId = payload.meta?.custom_data?.user_id;
-  let user = customUserId
-    ? (
-        await db
-          .select({ id: users.id, locale: users.locale })
-          .from(users)
-          .where(eq(users.id, customUserId))
-      )[0]
-    : undefined;
-
-  if (eventName.startsWith("subscription_payment_")) {
-    return handlePaymentEvent(eventName, data, attrs, user);
+  if (result.outcome === "ignored:no-user") {
+    return NextResponse.json({ ok: true, ignored: "no user" });
   }
-  if (eventName.startsWith("subscription_")) {
-    if (!user) {
-      const bySub = await db
-        .select({ id: users.id, locale: users.locale })
-        .from(users)
-        .where(eq(users.lemonSqueezySubscriptionId, data.id));
-      user = bySub[0];
-    }
-    if (!user) {
-      return NextResponse.json({ ok: true, ignored: "no user" });
-    }
-    return handleSubscriptionEvent(eventName, data.id, attrs, user);
+  if (result.outcome === "ignored:event") {
+    return NextResponse.json({ ok: true, ignored: eventName });
   }
-
-  return NextResponse.json({ ok: true, ignored: eventName });
+  return NextResponse.json({ ok: true });
 }
 
 async function handleSubscriptionEvent(

@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { requireApiUser } from "@/lib/api-auth";
 import {
   AI_MODELS,
   checkRateLimit,
@@ -33,12 +32,10 @@ const RequestBodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  const userId = session.user.id;
-  const locale = getUserLocale(session.user);
+  const { user, response } = await requireApiUser();
+  if (response) return response;
+  const userId = user.id;
+  const locale = getUserLocale(user);
 
   let parsedBody: z.infer<typeof RequestBodySchema>;
   try {

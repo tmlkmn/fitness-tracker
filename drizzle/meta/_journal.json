@@ -309,6 +309,20 @@
       "when": 1779254068831,
       "tag": "0043_worthless_mariko_yashida",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1779353869492,
+      "tag": "0044_broken_thor",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1779355909406,
+      "tag": "0045_sharp_blacklash",
+      "breakpoints": true
     }
   ]
 }

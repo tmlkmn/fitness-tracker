@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import { db } from "@/db";
 import { users, invoices } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { recordWebhookEvent } from "@/lib/billing/webhook-events";
+import { withWebhookEvent } from "@/lib/billing/webhook-events";
 import { notifyAdminsOfPaymentFailure } from "@/lib/billing/notify-admins";
 import { splitVatInclusive } from "@/lib/billing/currency";
 import { sendNotification } from "@/lib/notifications";
@@ -117,56 +117,69 @@ export async function POST(request: NextRequest) {
   const externalId = `${eventType}:${subscriptionRef}:${
     payload.iyziReferenceCode ?? payload.iyziEventTime ?? ""
   }`;
-  const isNew = await recordWebhookEvent(
+
+  type Outcome = "handled" | "ignored:no-user" | "ignored:event";
+  const result = { outcome: "handled" as Outcome };
+
+  const { duplicate } = await withWebhookEvent(
     "iyzico",
     externalId,
     eventType,
     payload,
+    async () => {
+      const [user] = await db
+        .select({ id: users.id, locale: users.locale })
+        .from(users)
+        .where(eq(users.iyzicoSubscriptionRef, subscriptionRef));
+      if (!user) {
+        result.outcome = "ignored:no-user";
+        return;
+      }
+
+      const status = statusForEvent(eventType);
+      if (!status) {
+        result.outcome = "ignored:event";
+        return;
+      }
+
+      await db
+        .update(users)
+        .set({
+          subscriptionStatus: status,
+          paymentFailedAt: status === "past_due" ? new Date() : null,
+          cancelledAt: status === "cancelled" ? new Date() : null,
+        })
+        .where(eq(users.id, user.id));
+
+      if (status === "active") {
+        await recordIyzicoInvoice(user.id, externalId, payload);
+      } else if (status === "past_due") {
+        const loc = normalizeLocale(user.locale);
+        const t = await getServerTranslator(
+          loc,
+          "triggerNotifications.paymentFailed",
+        );
+        await sendNotification({
+          userId: user.id,
+          type: "billing_paymentFailed",
+          title: t("title"),
+          body: t("body"),
+          link: loc === "en" ? "/en/settings/billing" : "/tr/ayarlar/odeme",
+          forceEmail: true,
+        });
+        await notifyAdminsOfPaymentFailure(user.id);
+      }
+    },
   );
-  if (!isNew) {
+
+  if (duplicate) {
     return NextResponse.json({ ok: true, duplicate: true });
   }
-
-  const [user] = await db
-    .select({ id: users.id, locale: users.locale })
-    .from(users)
-    .where(eq(users.iyzicoSubscriptionRef, subscriptionRef));
-  if (!user) {
+  if (result.outcome === "ignored:no-user") {
     return NextResponse.json({ ok: true, ignored: "no user" });
   }
-
-  const status = statusForEvent(eventType);
-  if (!status) {
+  if (result.outcome === "ignored:event") {
     return NextResponse.json({ ok: true, ignored: eventType });
   }
-
-  await db
-    .update(users)
-    .set({
-      subscriptionStatus: status,
-      paymentFailedAt: status === "past_due" ? new Date() : null,
-      cancelledAt: status === "cancelled" ? new Date() : null,
-    })
-    .where(eq(users.id, user.id));
-
-  if (status === "active") {
-    await recordIyzicoInvoice(user.id, externalId, payload);
-  } else if (status === "past_due") {
-    const loc = normalizeLocale(user.locale);
-    const t = await getServerTranslator(
-      loc,
-      "triggerNotifications.paymentFailed",
-    );
-    await sendNotification({
-      userId: user.id,
-      type: "billing_paymentFailed",
-      title: t("title"),
-      body: t("body"),
-      link: loc === "en" ? "/en/settings/billing" : "/tr/ayarlar/odeme",
-      forceEmail: true,
-    });
-    await notifyAdminsOfPaymentFailure(user.id);
-  }
-
   return NextResponse.json({ ok: true });
 }

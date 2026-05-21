@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getAuthSession } from "@/lib/auth-utils";
+import { requireApiUser } from "@/lib/api-auth";
 import { createCheckoutUrl } from "@/lib/billing/lemonsqueezy";
 import { isBillingTier, isBillingInterval } from "@/lib/billing/tier-config";
 import { getUserLocale } from "@/lib/locale";
@@ -10,12 +10,12 @@ import { getUserLocale } from "@/lib/locale";
  * a plain link target so the browser navigates straight to the LS page.
  */
 export async function GET(request: NextRequest) {
-  let user: Awaited<ReturnType<typeof getAuthSession>>;
-  try {
-    user = await getAuthSession();
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Checkout itself is how the user obtains entitlement — don't gate on it.
+  const { user, response } = await requireApiUser({
+    requireApproved: false,
+    requireActiveBilling: false,
+  });
+  if (response) return response;
 
   const { searchParams } = new URL(request.url);
   const tier = searchParams.get("tier");

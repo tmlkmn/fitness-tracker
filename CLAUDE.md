@@ -76,8 +76,8 @@ No test framework is configured.
 
 ## Key Conventions
 
-- **Auth-protected app** — better-auth with email/password. Invite-only model (no public sign-up). Users must have `isApproved: true` to access the app. Admin role (`role: "admin"`) manages user invitations.
-- **Admin-managed users** — Admin invites users via email (Resend). Invited users get a temp password (24h expiry), must change it on first login, then become approved.
+- **Auth-protected app** — better-auth with email/password. Hybrid onboarding: admins invite users directly *and* there is a public marketing/sign-up flow (Lemon Squeezy + iyzico billing). Users must have `isApproved: true` to access the app; admin invites approve by default, billing flow approves after a successful trial/checkout. Admin role (`role: "admin"`) manages user invitations and operations.
+- **Admin-managed users** — Admin invites users via email (Mailjet). Invited users get a temp password (24h expiry), must change it on first login, then become approved.
 - **Bilingual (TR + EN) via next-intl** — see the **i18n** section below for layout, navigation, prompts, dates, and email/notification dispatch. User-generated content (meal/exercise/note text) is stored in whatever language it was entered and is not translated.
 - **Dark mode only** — hardcoded `className="dark"` on `<html>`, green primary color
 - **Mobile-first PWA** — layout constrained to `max-w-lg mx-auto`, persistent bottom nav, standalone manifest
@@ -90,8 +90,8 @@ No test framework is configured.
 - **Revalidation strategy** — server actions use `revalidatePath()` (typically `revalidatePath("/")`), NOT `revalidateTag()`. Tag-based revalidation requires wrapping fetches in `unstable_cache({ tags })`, which loses request context and breaks cookie-based `getAuthUser()` (cross-user cache key collisions / auth bypass risk). Phase 5.1 of the meal flow plan deliberately skipped tag migration for this reason.
 - **Unified meal picker** — `src/components/meals/unified-meal-picker.tsx` is the single entry point for picking meals in `meal-form-dialog.tsx`. Its tabs (Sık Kullanılan / Geçmiş / Kayıtlılarım / Günlük Planlar) cover all candidate sources via `searchMealCandidates` in `src/actions/meal-picker.ts`. The legacy `recent-meal-chips.tsx`, `meal-copy-picker.tsx`, and `meal-template-picker.tsx` were removed — do not reintroduce them.
 - **Plan sharing** — users can share weekly plans (read-only) with other approved users. Owner manages shares via `ShareManager` on settings page. Shared plans are browsed under `/paylasilan` routes. Access is verified via `verifyWeeklyPlanReadAccess` / `verifyDailyPlanReadAccess` in `src/lib/ownership.ts`.
-- **Notification system** — three channels: in-app (DB-stored, bell icon with popover dropdown), email (Resend), push (web-push via VAPID + Serwist service worker). Central dispatch in `src/lib/notifications.ts`. Per-user preferences in `notificationPreferences` table. Push subscriptions stored in `pushSubscriptions`. Triggers: plan sharing (`sharing.ts`), user invite (`admin.ts`), reminders (cron). Unread count polled every 30s. Auto-mark-as-read on dropdown open.
-- **Reminder system** — three types: custom (user-defined time + recurrence), meal (X min before each meal's `mealTime`), workout (X min before `defaultWorkoutTime`). Preset templates in `src/lib/reminder-templates.ts` (su iç, esneme, duruş kontrolü, etc.). CRUD via `src/actions/reminders.ts`. Vercel Cron (`vercel.json`) triggers `/api/cron/reminders` every minute, which queries due reminders per user timezone and dispatches via `sendNotification()`. Recurrence options: daily, weekdays, weekends, once, custom days. Settings card on `/ayarlar`. `CRON_SECRET` env var for cron auth.
+- **Notification system** — three channels: in-app (DB-stored, bell icon with popover dropdown), email (Mailjet), push (web-push via VAPID + Serwist service worker). Central dispatch in `src/lib/notifications.ts`. Per-user preferences in `notificationPreferences` table. Push subscriptions stored in `pushSubscriptions`. Triggers: plan sharing (`sharing.ts`), user invite (`admin.ts`), reminders (cron). Unread count polled every 30s. Auto-mark-as-read on dropdown open. Server logs route user ids and push endpoints through `src/lib/log-redact.ts` so production Vercel logs only contain SHA-256 prefixes (set `DEBUG_NOTIFICATIONS=1` to see raw values during debugging).
+- **Reminder system** — three types: custom (user-defined time + recurrence), meal (X min before each meal's `mealTime`), workout (X min before `defaultWorkoutTime`). Preset templates in `src/lib/reminder-templates.ts` (su iç, esneme, duruş kontrolü, etc.). CRUD via `src/actions/reminders.ts`. Vercel Cron (`vercel.json`) triggers `/api/cron/reminders` every 5 minutes with a 5-minute look-back tolerance; the route queries due reminders per user timezone and dispatches via `sendNotification()`. Recurrence options: daily, weekdays, weekends, once, custom days. Settings card on `/ayarlar`. `CRON_SECRET` env var for cron auth.
 
 ## i18n (next-intl)
 
@@ -132,7 +132,7 @@ Required in `.env.local`:
 Security, SEO, responsive, performance, accessibility, and code quality rules are defined in [`.github/copilot-instructions.md`](.github/copilot-instructions.md). All AI assistants and contributors must follow those rules.
 
 ### Security Checklist (yeni kod yazarken)
-- **API route'lar**: `auth.api.getSession()` ile auth kontrolü zorunlu (cron endpoint'ler hariç)
+- **API route'lar**: `requireApiUser()` / `requireApiAdmin()` wrapper'ı (`src/lib/api-auth.ts`) ile auth + isApproved + (varsayılan olarak) aktif billing entitlement kontrolü zorunlu. Checkout / push subscribe-unsubscribe / invoice PDF / account export gibi billing veya approval olmadan da çalışması gereken route'larda `requireApproved` ve `requireActiveBilling` flag'leri ile bilinçli olarak gevşetilebilir. İstisnalar — wrapper kullanmayan route'lar: `api/auth/*` (better-auth), `api/cron/*` (CRON_SECRET), `api/webhooks/*` (HMAC), `api/push/diagnostic` (anon log toplar).
 - **Cron endpoint'ler**: `if (!cronSecret || authHeader !== ...)` pattern'i — secret yoksa deny
 - **Input validation**: `request.json()` body'si mutlaka doğrulanmalı (type check + max length)
 - **Push subscriptions**: endpoint URL `https://` olarak validate edilmeli
@@ -140,7 +140,7 @@ Security, SEO, responsive, performance, accessibility, and code quality rules ar
 - **Env güvenliği**: `.env*` gitignore'da, `NEXT_PUBLIC_` prefix'i ile DB/API key paylaşılmamalı
 
 ### SEO & Erişilebilirlik Kuralları
-- Uygulama **invite-only** — `robots: { index: false }` ve `public/robots.txt` → `Disallow: /`
+- Uygulama yarı-açık — public marketing/legal sayfaları (`/fiyatlandirma`, `/tanitim`, `/kvkk`, vs.) `robots.txt` ile indekslenebilir; uygulama içi route'lar (`/`, `/takvim`, `/gun/...` vs.) `robots: { index: false }` ile noindex tutulur. `public/robots.txt` explicit `Allow` listesinin sonunda `Disallow: /` ile bu hibridi sağlar.
 - Root layout'ta `title.template`, `openGraph`, `robots` metadata tanımlı
 - `<nav>` elementlerinde `aria-label` zorunlu, aktif link'te `aria-current="page"`
 - Heading hiyerarşisi: her sayfada tek `<h1>`, altında `<h2>`, `<h3>`

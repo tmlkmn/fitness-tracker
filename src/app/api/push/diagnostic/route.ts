@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { redactId } from "@/lib/log-redact";
 
 /**
  * Client-side push diagnostics sink.
@@ -25,7 +26,7 @@ function clip(value: unknown): string {
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
-  const userId = session?.user?.id ?? "anon";
+  const userId = session?.user?.id ? redactId(session.user.id) : "anon";
 
   let body: Record<string, unknown> = {};
   try {

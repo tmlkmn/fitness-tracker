@@ -14,13 +14,24 @@ function refetchTodayDashboard(qc: QueryClient) {
   qc.refetchQueries({ queryKey: ["today-dashboard"] });
 }
 
+/**
+ * Refresh the AI quota badges. Call this after any AI mutation (successful
+ * or failed-after-counting) so users see their remaining quota update
+ * without a manual page reload.
+ */
+export function invalidateAiQuotaQueries(qc: QueryClient) {
+  qc.invalidateQueries({ queryKey: ["ai.quota"] });
+}
+
 export function invalidateWorkoutQueries(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: ["exercises"] });
+  invalidateAiQuotaQueries(qc);
   refetchTodayDashboard(qc);
 }
 
 export function invalidateMealQueries(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: ["meals.byDay"] });
+  invalidateAiQuotaQueries(qc);
   refetchTodayDashboard(qc);
 }
 
@@ -29,5 +40,6 @@ export function invalidateWeeklyPlanQueries(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: ["meals.byDay"] });
   qc.invalidateQueries({ queryKey: ["exercises"] });
   qc.invalidateQueries({ queryKey: ["week-plans-date"] });
+  invalidateAiQuotaQueries(qc);
   refetchTodayDashboard(qc);
 }

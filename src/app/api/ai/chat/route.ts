@@ -1,5 +1,4 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { requireApiUser } from "@/lib/api-auth";
 import {
   getAIClient,
   AI_MODELS,
@@ -18,13 +17,11 @@ import type Anthropic from "@anthropic-ai/sdk";
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const { user, response } = await requireApiUser();
+  if (response) return response;
 
-  const userId = session.user.id;
-  const locale = getUserLocale(session.user);
+  const userId = user.id;
+  const locale = getUserLocale(user);
 
   try {
     await checkRateLimit(userId, "chat");

@@ -5,7 +5,7 @@ import { invoices, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { getAuthSession } from "@/lib/auth-utils";
+import { requireApiUser } from "@/lib/api-auth";
 import { getUserLocale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
 import {
@@ -19,12 +19,12 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  let sessionUser;
-  try {
-    sessionUser = await getAuthSession();
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Users must be able to download receipts even after subscription expires.
+  const { user: sessionUser, response } = await requireApiUser({
+    requireApproved: false,
+    requireActiveBilling: false,
+  });
+  if (response) return response;
 
   const { id } = await params;
   const invoiceId = Number(id);
@@ -54,8 +54,7 @@ export async function GET(
   }
 
   // Owner or admin only.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isAdmin = (sessionUser as any).role === "admin";
+  const isAdmin = sessionUser.role === "admin";
   if (row.userId !== sessionUser.id && !isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

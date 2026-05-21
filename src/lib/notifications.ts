@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { sendNotificationEmail } from "@/lib/email";
 import { sendPushNotification } from "@/lib/web-push";
 import { normalizeLocale } from "@/lib/locale";
+import { redactId } from "@/lib/log-redact";
 
 function isInQuietHours(
   start: string | null | undefined,
@@ -60,7 +61,7 @@ export async function sendNotification(params: {
   const pushEnabled = prefs?.pushEnabled ?? true;
   const quiet = isInQuietHours(prefs?.quietHoursStart, prefs?.quietHoursEnd, prefs?.timezone);
 
-  console.log(`[notification] userId=${userId} type=${type} prefs: inApp=${inAppEnabled} email=${emailEnabled} push=${pushEnabled} skipEmail=${skipEmail} forceEmail=${forceEmail} quiet=${quiet}`);
+  console.log(`[notification] user=${redactId(userId)} type=${type} prefs: inApp=${inAppEnabled} email=${emailEnabled} push=${pushEnabled} skipEmail=${skipEmail} forceEmail=${forceEmail} quiet=${quiet}`);
 
   // 1. In-app notification
   if (inAppEnabled) {
@@ -105,7 +106,7 @@ export async function sendNotification(params: {
       .where(eq(pushSubscriptions.userId, userId));
 
     if (subs.length === 0) {
-      console.warn(`[notification] No push subscriptions for user ${userId}`);
+      console.warn(`[notification] No push subscriptions for user=${redactId(userId)}`);
     }
 
     for (const sub of subs) {
@@ -115,7 +116,7 @@ export async function sendNotification(params: {
       );
       // Remove expired subscriptions
       if (!success) {
-        console.warn(`[notification] Removing expired push subscription for user ${userId}`);
+        console.warn(`[notification] Removing expired push subscription for user=${redactId(userId)}`);
         await db
           .delete(pushSubscriptions)
           .where(eq(pushSubscriptions.id, sub.id));

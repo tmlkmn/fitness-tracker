@@ -1,30 +1,32 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { requireApiUser } from "@/lib/api-auth";
 import { db } from "@/db";
 import { pushSubscriptions } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+import { redactId } from "@/lib/log-redact";
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
-    console.warn("[push-subscribe] rejected: unauthenticated request");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Notification delivery is still useful for expired/cancelled users (e.g.
+  // billing failure reminders), so billing is not required here.
+  const { user, response } = await requireApiUser({ requireActiveBilling: false });
+  if (response) {
+    console.warn("[push-subscribe] rejected: unauthenticated or unapproved");
+    return response;
   }
-  const userId = session.user.id;
+  const userId = user.id;
 
   let body: { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
   try {
     body = await request.json();
   } catch {
-    console.error("[push-subscribe] rejected: malformed JSON body", { userId });
+    console.error("[push-subscribe] rejected: malformed JSON body", { user: redactId(userId) });
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
   const { endpoint, keys } = body;
 
   if (!endpoint || !keys?.p256dh || !keys?.auth) {
     console.error("[push-subscribe] rejected: incomplete subscription", {
-      userId,
+      user: redactId(userId),
       hasEndpoint: Boolean(endpoint),
       hasP256dh: Boolean(keys?.p256dh),
       hasAuth: Boolean(keys?.auth),
@@ -41,14 +43,14 @@ export async function POST(request: Request) {
     host = url.host;
     if (url.protocol !== "https:") {
       console.error("[push-subscribe] rejected: non-https endpoint", {
-        userId,
+        user: redactId(userId),
         host,
       });
       return NextResponse.json({ error: "Invalid endpoint" }, { status: 400 });
     }
   } catch {
     console.error("[push-subscribe] rejected: malformed endpoint URL", {
-      userId,
+      user: redactId(userId),
     });
     return NextResponse.json({ error: "Invalid endpoint URL" }, { status: 400 });
   }
@@ -72,13 +74,13 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("[push-subscribe] failed: DB write error", {
-      userId,
+      user: redactId(userId),
       host,
       error: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
     });
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
 
-  console.log("[push-subscribe] subscription saved", { userId, host });
+  console.log("[push-subscribe] subscription saved", { user: redactId(userId), host });
   return NextResponse.json({ success: true });
 }

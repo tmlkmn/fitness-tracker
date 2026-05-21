@@ -13,7 +13,10 @@ import {
   getSavedSuggestionById,
   deleteSavedSuggestion as deleteSavedSuggestionAction,
 } from "@/actions/ai-suggestions";
-import { invalidateWeeklyPlanQueries } from "@/hooks/ai-invalidation";
+import {
+  invalidateAiQuotaQueries,
+  invalidateWeeklyPlanQueries,
+} from "@/hooks/ai-invalidation";
 
 /** Lifecycle status of a single generation leg (workout / nutrition). */
 export type LegStatus = "pending" | "active" | "retrying" | "done";
@@ -37,6 +40,7 @@ const INITIAL_PROGRESS: WeeklyProgress = {
 };
 
 export function useGenerateWeeklyPlan() {
+  const qc = useQueryClient();
   const [isPending, setIsPending] = useState(false);
   const [data, setData] = useState<AIWeeklyPlan | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -58,6 +62,10 @@ export function useGenerateWeeklyPlan() {
     pastDows?: number[];
     deloadWeek?: boolean;
   }) => {
+    // The quota badge needs to refresh regardless of how the stream ends,
+    // since a successful generation consumed quota (and a server-side rate
+    // limit error counts on the API side too).
+    const refreshQuota = () => invalidateAiQuotaQueries(qc);
     controllerRef.current?.abort();
 
     setIsPending(true);
@@ -128,6 +136,7 @@ export function useGenerateWeeklyPlan() {
             setData(event.suggestedPlan);
             setIsPending(false);
             setProgress(INITIAL_PROGRESS);
+            refreshQuota();
             return;
           } else if (event.type === "error") {
             throw new Error(event.error ?? "Bir hata oluştu.");
@@ -151,8 +160,11 @@ export function useGenerateWeeklyPlan() {
       if (controllerRef.current === controller) {
         controllerRef.current = null;
       }
+      // Cover the error path too — rate limit errors and partial successes
+      // still want the badge to refresh.
+      refreshQuota();
     }
-  }, []);
+  }, [qc]);
 
   const reset = useCallback(() => {
     controllerRef.current?.abort();

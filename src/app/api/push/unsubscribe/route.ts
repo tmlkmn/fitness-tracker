@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { requireApiUser } from "@/lib/api-auth";
 import { db } from "@/db";
 import { pushSubscriptions } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Unsubscribe must always succeed for any authenticated user, regardless of
+  // approval / billing state — they need a way out.
+  const { user, response } = await requireApiUser({
+    requireApproved: false,
+    requireActiveBilling: false,
+  });
+  if (response) return response;
 
   const body = await request.json();
   const { endpoint } = body;
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
     .delete(pushSubscriptions)
     .where(
       and(
-        eq(pushSubscriptions.userId, session.user.id),
+        eq(pushSubscriptions.userId, user.id),
         eq(pushSubscriptions.endpoint, endpoint)
       )
     );

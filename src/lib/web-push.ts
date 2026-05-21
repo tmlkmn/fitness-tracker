@@ -1,4 +1,5 @@
 import webPush from "web-push";
+import { redactEndpoint } from "@/lib/log-redact";
 
 webPush.setVapidDetails(
   "mailto:" +
@@ -23,10 +24,10 @@ export async function sendPushNotification(
   } catch (err: unknown) {
     const statusCode = (err as { statusCode?: number }).statusCode;
     if (statusCode === 410 || statusCode === 404) {
-      console.warn(`Push subscription expired (${statusCode}):`, subscription.endpoint.slice(0, 60));
+      console.warn(`Push subscription expired (${statusCode}):`, redactEndpoint(subscription.endpoint));
       return false;
     }
-    console.error(`Push send failed (status=${statusCode}):`, subscription.endpoint.slice(0, 60), err);
+    console.error(`Push send failed (status=${statusCode}):`, redactEndpoint(subscription.endpoint), err);
     // Don't remove subscription on transient errors — only on 410/404
     return true;
   }
