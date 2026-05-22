@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { normalizeLocale } from "@/lib/locale";
+import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
+  const locale = normalizeLocale(await getLocale());
+  const isEn = locale === "en";
   return {
-    title: locale === "en" ? "Privacy Policy" : "Gizlilik Politikasi",
+    ...buildPublicMetadata({
+      href: "/gizlilik",
+      locale,
+      title: isEn ? "Privacy Policy" : "Gizlilik Politikası",
+      description: isEn
+        ? "FitMusc privacy policy: detailed information on how your personal and health data is collected, processed, stored, and protected."
+        : "FitMusc gizlilik politikası: kişisel ve sağlık verilerinizin nasıl toplandığı, işlendiği, saklandığı ve korunduğu hakkında detaylı bilgi.",
+    }),
     robots: { index: true, follow: true },
   };
 }
@@ -25,10 +35,10 @@ export default async function GizlilikPage() {
 
       <header>
         <h1 className="text-3xl font-bold tracking-tight">
-          {isEn ? "Privacy Policy" : "Gizlilik Politikasi"}
+          {isEn ? "Privacy Policy" : "Gizlilik Politikası"}
         </h1>
         <p className="text-sm text-muted-foreground mt-2">
-          {isEn ? "Last updated" : "Son guncelleme"}: {isEn ? "April 20, 2026" : "20 Nisan 2026"}
+          {isEn ? "Last updated" : "Son güncelleme"}: {isEn ? "April 20, 2026" : "20 Nisan 2026"}
         </p>
       </header>
 
@@ -36,14 +46,14 @@ export default async function GizlilikPage() {
       <section className="space-y-6 text-sm leading-relaxed text-muted-foreground">
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            Gizlilik Politikasi
+            Gizlilik Politikası
           </h2>
           <p>
             FitMusc (&quot;biz&quot;, &quot;bize&quot; veya
-            &quot;Platform&quot;), kullanicilarinin gizliligine buyuk onem
-            vermektedir. Bu Gizlilik Politikasi, kisisel verilerinizin nasil
-            toplandigi, islendigi, saklandigi ve korundugununu aciklamaktadir.
-            Platformumuzu kullanarak bu politikayi kabul etmis sayilirsiniz.
+            &quot;Platform&quot;), kullanıcılarının gizliliğine büyük önem
+            vermektedir. Bu Gizlilik Politikası, kişisel verilerinizin nasıl
+            toplandığı, işlendiği, saklandığı ve korunduğunu açıklamaktadır.
+            Platformumuzu kullanarak bu politikayı kabul etmiş sayılırsınız.
           </p>
         </div>
 
@@ -52,8 +62,8 @@ export default async function GizlilikPage() {
             1. Toplanan Veriler
           </h2>
           <p className="mb-2">
-            FitMusc, hizmetlerini sunabilmek icin asagidaki kategorilerdeki
-            kisisel verileri toplamaktadir:
+            FitMusc, hizmetlerini sunabilmek için aşağıdaki kategorilerdeki
+            kişisel verileri toplamaktadır:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>
@@ -61,177 +71,177 @@ export default async function GizlilikPage() {
               soyad, e-posta adresi
             </li>
             <li>
-              <strong className="text-foreground">Saglik Verileri:</strong> Boy,
-              kilo, vucut olculeri (gogus, bel, kalca, kol, bacak), saglik
-              notlari, alerji bilgileri, kullanilan ilaclar
+              <strong className="text-foreground">Sağlık Verileri:</strong> Boy,
+              kilo, vücut ölçüleri (göğüs, bel, kalça, kol, bacak), sağlık
+              notları, alerji bilgileri, kullanılan ilaçlar
             </li>
             <li>
               <strong className="text-foreground">Fitness Verileri:</strong>{" "}
-              Antrenman kayitlari, ogun planlari, takviye programlari, ilerleme
-              kayitlari
+              Antrenman kayıtları, öğün planları, takviye programları, ilerleme
+              kayıtları
             </li>
             <li>
-              <strong className="text-foreground">Kullanim Verileri:</strong>{" "}
-              Oturum bilgileri, cihaz bilgileri, IP adresi, tarayici turu,
-              erisim zamanlari
+              <strong className="text-foreground">Kullanım Verileri:</strong>{" "}
+              Oturum bilgileri, cihaz bilgileri, IP adresi, tarayıcı türü,
+              erişim zamanları
             </li>
             <li>
               <strong className="text-foreground">
                 Bildirim Verileri:
               </strong>{" "}
-              Push bildirim aboneligi, bildirim tercihleri
+              Push bildirim aboneliği, bildirim tercihleri
             </li>
           </ul>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            2. Veri Isleme Amaci
+            2. Veri İşleme Amacı
           </h2>
-          <p className="mb-2">Toplanan veriler asagidaki amaclarla islenir:</p>
+          <p className="mb-2">Toplanan veriler aşağıdaki amaçlarla işlenir:</p>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>
-              Kisisellestirilmis fitness ve beslenme planlari olusturmak
+              Kişiselleştirilmiş fitness ve beslenme planları oluşturmak
             </li>
-            <li>Ilerlemenizi takip etmek ve analiz raporlari sunmak</li>
+            <li>İlerlemenizi takip etmek ve analiz raporları sunmak</li>
             <li>
-              Yapay zeka destekli oneriler ve analizler saglamak (ogun
-              varyasyonlari, egzersiz form ipuclari, ilerleme analizi, AI kocluk
+              Yapay zeka destekli öneriler ve analizler sağlamak (öğün
+              varyasyonları, egzersiz form ipuçları, ilerleme analizi, AI koçluk
               sohbeti)
             </li>
             <li>
-              Haftalik alisveris listeleri ve takviye hatirlatmalari
-              olusturmak
+              Haftalık alışveriş listeleri ve takviye hatırlatmaları
+              oluşturmak
             </li>
-            <li>Hesap yonetimi ve kimlik dogrulama islemleri</li>
+            <li>Hesap yönetimi ve kimlik doğrulama işlemleri</li>
             <li>
-              Push bildirimleri ve e-posta yoluyla hatirlatmalar gondermek
-            </li>
-            <li>
-              Platform guvenligini saglamak ve hizmet kalitesini iyilestirmek
+              Push bildirimleri ve e-posta yoluyla hatırlatmalar göndermek
             </li>
             <li>
-              Plan paylasim ozelligini sunmak (kullanicilarin izniyle
-              salt-okunur erisim)
+              Platform güvenliğini sağlamak ve hizmet kalitesini iyileştirmek
+            </li>
+            <li>
+              Plan paylaşım özelliğini sunmak (kullanıcıların izniyle
+              salt-okunur erişim)
             </li>
           </ul>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            3. Ucuncu Taraf Paylasimlari
+            3. Üçüncü Taraf Paylaşımları
           </h2>
           <p className="mb-2">
-            Verileriniz, yalnizca hizmet sunumu icin gerekli olan asagidaki
-            ucuncu taraf hizmet saglayicilariyla paylasabilir:
+            Verileriniz, yalnızca hizmet sunumu için gerekli olan aşağıdaki
+            üçüncü taraf hizmet sağlayıcılarıyla paylaşılabilir:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>
               <strong className="text-foreground">Anthropic (Claude AI):</strong>{" "}
-              Yapay zeka destekli oneriler, analizler ve sohbet ozellikleri icin
-              fitness ve beslenme verilerinizin anonim hale getirilmis ozetleri
-              islenir. Anthropic, bu verileri model egitimi icin kullanmaz.
+              Yapay zeka destekli öneriler, analizler ve sohbet özellikleri için
+              fitness ve beslenme verilerinizin anonim hale getirilmiş özetleri
+              işlenir. Anthropic, bu verileri model eğitimi için kullanmaz.
             </li>
             <li>
               <strong className="text-foreground">
                 Neon Database (PostgreSQL):
               </strong>{" "}
-              Tum kullanici verilerinin guvenli bir sekilde saklandigi
-              veritabani hizmetidir. Veriler sifrelenmis baglanti uzerinden
-              aktarilir.
+              Tüm kullanıcı verilerinin güvenli bir şekilde saklandığı
+              veritabanı hizmetidir. Veriler şifrelenmiş bağlantı üzerinden
+              aktarılır.
             </li>
             <li>
               <strong className="text-foreground">Mailjet:</strong> Davet
-              e-postalari, sifre sifirlama baglantilari ve bildirimler icin
-              e-posta gonderim hizmeti olarak kullanilir. Yalnizca e-posta
-              adresi ve ilgili mesaj icerigi paylasalir.
+              e-postaları, şifre sıfırlama bağlantıları ve bildirimler için
+              e-posta gönderim hizmeti olarak kullanılır. Yalnızca e-posta
+              adresi ve ilgili mesaj içeriği paylaşılır.
             </li>
             <li>
               <strong className="text-foreground">Vercel:</strong> Platformun
-              barindirildigi altyapi saglayicisidir. Sunucu tablali islemler ve
-              statik icerikler Vercel uzerinde calisir.
+              barındırıldığı altyapı sağlayıcısıdır. Sunucu tabanlı işlemler ve
+              statik içerikler Vercel üzerinde çalışır.
             </li>
           </ul>
           <p className="mt-2">
-            Verileriniz, yukarida belirtilen amaclar disinda hicbir ucuncu
-            tarafla paylasalmaz, satilmaz veya kiralanmaz.
+            Verileriniz, yukarıda belirtilen amaçlar dışında hiçbir üçüncü
+            tarafla paylaşılmaz, satılmaz veya kiralanmaz.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            4. Cerezler ve Yerel Depolama
+            4. Çerezler ve Yerel Depolama
           </h2>
           <p>
-            FitMusc, oturum yonetimi icin HTTP cerezleri kullanmaktadir. Bu
-            cerezler, kimlik dogrulama ve oturum surekliligi icin zorunludur.
-            Push bildirim abonelikleri tarayicinizin yerel depolamasinda
-            saklanir. Analitik veya reklam amacli ucuncu taraf cerezleri
-            kullanilmamaktadir. Platform bir PWA (Progressive Web App) olarak
-            calisir ve cevrimdisi islevsellik icin Service Worker teknolojisini
-            kullanir.
+            FitMusc, oturum yönetimi için HTTP çerezleri kullanmaktadır. Bu
+            çerezler, kimlik doğrulama ve oturum sürekliliği için zorunludur.
+            Push bildirim abonelikleri tarayıcınızın yerel depolamasında
+            saklanır. Analitik veya reklam amaçlı üçüncü taraf çerezleri
+            kullanılmamaktadır. Platform bir PWA (Progressive Web App) olarak
+            çalışır ve çevrimdışı işlevsellik için Service Worker teknolojisini
+            kullanır.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            5. Veri Saklama Suresi
+            5. Veri Saklama Süresi
           </h2>
           <p>
-            Kisisel verileriniz, hesabiniz aktif oldugu surece saklanir. Hesap
-            silme talebinde bulunmaniz halinde, tum kisisel verileriniz 30 gun
-            icinde kalici olarak silinir. Yasal yukumlulukler geregi saklanmasi
-            gereken veriler (ornegin fatura kayitlari), ilgili mevzuatin
-            ongorduugu sure boyunca muhafaza edilir. Anonim hale getirilmis
-            istatistiksel veriler, hizmet iyilestirme amacli suresiz olarak
+            Kişisel verileriniz, hesabınız aktif olduğu sürece saklanır. Hesap
+            silme talebinde bulunmanız halinde, tüm kişisel verileriniz 30 gün
+            içinde kalıcı olarak silinir. Yasal yükümlülükler gereği saklanması
+            gereken veriler (örneğin fatura kayıtları), ilgili mevzuatın
+            öngördüğü süre boyunca muhafaza edilir. Anonim hale getirilmiş
+            istatistiksel veriler, hizmet iyileştirme amaçlı süresiz olarak
             saklanabilir.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            6. Kullanici Haklari
+            6. Kullanıcı Hakları
           </h2>
           <p className="mb-2">
-            Kullanicilarimiz asagidaki haklara sahiptir:
+            Kullanıcılarımız aşağıdaki haklara sahiptir:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2">
-            <li>Kisisel verilerinize erisim talep etme</li>
-            <li>Verilerinizin duzeltilmesini veya guncellenmesini isteme</li>
-            <li>Verilerinizin silinmesini talep etme (unutulma hakki)</li>
-            <li>Veri islemesine itiraz etme</li>
-            <li>Verilerinizin tasinabilirligini talep etme</li>
-            <li>Bildirim tercihlerinizi dilediginiz zaman degistirme</li>
+            <li>Kişisel verilerinize erişim talep etme</li>
+            <li>Verilerinizin düzeltilmesini veya güncellenmesini isteme</li>
+            <li>Verilerinizin silinmesini talep etme (unutulma hakkı)</li>
+            <li>Veri işlemesine itiraz etme</li>
+            <li>Verilerinizin taşınabilirliğini talep etme</li>
+            <li>Bildirim tercihlerinizi dilediğiniz zaman değiştirme</li>
             <li>
-              Paylasilan planlara erisimi istediginiz zaman iptal etme
+              Paylaşılan planlara erişimi istediğiniz zaman iptal etme
             </li>
           </ul>
           <p className="mt-2">
-            Bu haklarinizi kullanmak icin asagidaki iletisim bilgilerinden bize
-            ulasabilirsiniz.
+            Bu haklarınızı kullanmak için aşağıdaki iletişim bilgilerinden bize
+            ulaşabilirsiniz.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            7. Veri Guvenligi
+            7. Veri Güvenliği
           </h2>
           <p>
-            Verilerinizin guvenligini saglamak icin SSL/TLS sifreleme,
-            guvenli oturum yonetimi, yetkilendirme kontrolleri ve duzenli
-            guvenlik degerlendirmeleri uygulanmaktadir. Veritabani baglantilari
-            sifrelenmis kanallar uzerinden gerceklestirilir. Parola bilgileri
-            tek yonlu hash algoritmasi ile saklanir.
+            Verilerinizin güvenliğini sağlamak için SSL/TLS şifreleme,
+            güvenli oturum yönetimi, yetkilendirme kontrolleri ve düzenli
+            güvenlik değerlendirmeleri uygulanmaktadır. Veritabanı bağlantıları
+            şifrelenmiş kanallar üzerinden gerçekleştirilir. Parola bilgileri
+            tek yönlü hash algoritması ile saklanır.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            8. Iletisim
+            8. İletişim
           </h2>
           <p>
-            Gizlilik politikamiz hakkinda sorulariniz veya talepleriniz icin
-            bizimle iletisime gecebilirsiniz:
+            Gizlilik politikamız hakkında sorularınız veya talepleriniz için
+            bizimle iletişime geçebilirsiniz:
           </p>
           <p className="mt-2">
             <strong className="text-foreground">FitMusc</strong>

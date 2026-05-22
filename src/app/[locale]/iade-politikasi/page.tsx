@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { normalizeLocale } from "@/lib/locale";
+import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
+  const locale = normalizeLocale(await getLocale());
+  const isEn = locale === "en";
   return {
-    title: locale === "en" ? "Refund Policy" : "İade Politikası",
+    ...buildPublicMetadata({
+      href: "/iade-politikasi",
+      locale,
+      title: isEn ? "Refund Policy" : "İade Politikası",
+      description: isEn
+        ? "FitMusc refund policy: free trial terms, subscription cancellation, and refund conditions for paid memberships."
+        : "FitMusc iade politikası: ücretsiz deneme koşulları, abonelik iptali ve ücretli üyelikler için iade şartları.",
+    }),
     robots: { index: true, follow: true },
   };
 }

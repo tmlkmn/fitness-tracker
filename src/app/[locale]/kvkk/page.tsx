@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { normalizeLocale } from "@/lib/locale";
+import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
+  const locale = normalizeLocale(await getLocale());
+  const isEn = locale === "en";
   return {
-    title: locale === "en" ? "KVKK Disclosure (English Summary)" : "KVKK Aydinlatma Metni",
+    ...buildPublicMetadata({
+      href: "/kvkk",
+      locale,
+      title: isEn ? "KVKK Disclosure (English Summary)" : "KVKK Aydınlatma Metni",
+      description: isEn
+        ? "FitMusc KVKK disclosure (English summary): how personal and sensitive data is processed under Turkish Law No. 6698, data transfers, and your rights."
+        : "FitMusc KVKK aydınlatma metni: 6698 sayılı Kanun kapsamında kişisel ve özel nitelikli verilerin işlenmesi, veri aktarımları ve ilgili kişi hakları.",
+    }),
     robots: { index: true, follow: true },
   };
 }
@@ -25,10 +35,10 @@ export default async function KvkkPage() {
 
       <header>
         <h1 className="text-3xl font-bold tracking-tight">
-          {isEn ? "KVKK Disclosure — English Summary" : "KVKK Aydinlatma Metni"}
+          {isEn ? "KVKK Disclosure — English Summary" : "KVKK Aydınlatma Metni"}
         </h1>
         <p className="text-sm text-muted-foreground mt-2">
-          {isEn ? "Last updated" : "Son guncelleme"}: {isEn ? "April 20, 2026" : "20 Nisan 2026"}
+          {isEn ? "Last updated" : "Son güncelleme"}: {isEn ? "April 20, 2026" : "20 Nisan 2026"}
         </p>
         {isEn && (
           <p className="text-xs text-muted-foreground mt-3 italic">

@@ -6,16 +6,27 @@ import { PlanComparison } from "@/components/billing/plan-comparison";
 import { isPublicSignupEnabled } from "@/lib/feature-flags";
 import { countryFromHeaders } from "@/lib/billing/gateway-router";
 import { currencyForCountry } from "@/lib/billing/currency";
+import { normalizeLocale } from "@/lib/locale";
+import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("pricing");
-  return {
+  const locale = normalizeLocale(await getLocale());
+  const t = await getTranslations({ locale, namespace: "pricing" });
+  const meta = buildPublicMetadata({
+    href: "/fiyatlandirma",
+    locale,
     title: t("title"),
-    // Keep pricing out of search indexes while the app is invite-only.
-    robots: isPublicSignupEnabled()
-      ? undefined
-      : { index: false, follow: false },
-  };
+    description:
+      locale === "en"
+        ? "FitMusc pricing plans: compare features, free trial, and subscription options for AI-powered fitness and nutrition tracking."
+        : "FitMusc fiyatlandırma planları: AI destekli fitness ve beslenme takibi için özellik karşılaştırması, ücretsiz deneme ve abonelik seçenekleri.",
+  });
+  // Keep pricing out of search indexes while the app is invite-only; when
+  // signup is live the helper's index:true (+ canonical/hreflang) stands.
+  if (!isPublicSignupEnabled()) {
+    meta.robots = { index: false, follow: false };
+  }
+  return meta;
 }
 
 export default async function PricingPage() {

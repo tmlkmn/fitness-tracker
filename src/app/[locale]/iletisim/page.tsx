@@ -3,10 +3,24 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Mail } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
+import { normalizeLocale } from "@/lib/locale";
+import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("contact");
-  return { title: t("title"), robots: { index: true, follow: true } };
+  const locale = normalizeLocale(await getLocale());
+  const t = await getTranslations({ locale, namespace: "contact" });
+  return {
+    ...buildPublicMetadata({
+      href: "/iletisim",
+      locale,
+      title: t("title"),
+      description:
+        locale === "en"
+          ? "Get in touch with FitMusc. Email us for support, privacy, and account-related requests — we respond as soon as possible."
+          : "FitMusc ile iletişime geçin. Destek, gizlilik ve hesap talepleriniz için bize e-posta gönderin; en kısa sürede yanıtlıyoruz.",
+    }),
+    robots: { index: true, follow: true },
+  };
 }
 
 export default async function ContactPage() {

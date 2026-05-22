@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { normalizeLocale } from "@/lib/locale";
+import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
+  const locale = normalizeLocale(await getLocale());
+  const isEn = locale === "en";
   return {
-    title: locale === "en" ? "Cookie Policy" : "Çerez Politikası",
+    ...buildPublicMetadata({
+      href: "/cerez-politikasi",
+      locale,
+      title: isEn ? "Cookie Policy" : "Çerez Politikası",
+      description: isEn
+        ? "FitMusc cookie policy: which cookies we use for session management, how local storage works, and why we use no advertising trackers."
+        : "FitMusc çerez politikası: oturum yönetimi için kullandığımız çerezler, yerel depolamanın işleyişi ve reklam amaçlı izleyici kullanmama ilkemiz.",
+    }),
     robots: { index: true, follow: true },
   };
 }

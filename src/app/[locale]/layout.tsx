@@ -59,6 +59,10 @@ export async function generateMetadata({
       template: `%s | FitMusc`,
     },
     description,
+    // Default everything to noindex; public marketing/legal pages opt back in
+    // via buildPublicMetadata (belt-and-suspenders alongside robots.txt, which
+    // prevents URL-only indexing of app/auth screens).
+    robots: { index: false, follow: false },
     manifest: "/manifest.webmanifest",
     metadataBase: new URL(BASE_URL),
     openGraph: {
@@ -122,9 +126,6 @@ export default async function LocaleLayout({
   }
   setRequestLocale(locale);
 
-  const t = await getTranslations({ locale, namespace: "metadata" });
-  const description = t("description");
-
   return (
     <html
       lang={locale}
@@ -132,29 +133,6 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              name: "FitMusc",
-              applicationCategory: "HealthApplication",
-              operatingSystem: "Web",
-              description,
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "TRY",
-              },
-              author: {
-                "@type": "Organization",
-                name: "FitMusc",
-                url: BASE_URL,
-              },
-            }),
-          }}
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="light")document.documentElement.classList.remove("dark");else document.documentElement.classList.add("dark")}catch(e){}})()`,

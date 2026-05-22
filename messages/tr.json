@@ -2763,14 +2763,18 @@
     }
   },
   "landing": {
+    "seo": {
+      "title": "AI Destekli Fitness ve Beslenme Takip Uygulaması",
+      "description": "FitMusc, AI destekli antrenman, beslenme, makro ve ilerleme takibini tek uygulamada birleştirir. Haftalık planlar, akıllı öneriler ve kişisel AI fitness koçu."
+    },
     "nav": {
       "ariaLabel": "Ana navigasyon",
       "signIn": "Giriş Yap"
     },
     "hero": {
       "pill": "AI Destekli Kişisel Fitness Platformu",
-      "headline1": "Hedefine Giden Yolda",
-      "headline2": "Akıllı Rehberin",
+      "headline1": "FitMusc ile Akıllı Fitness ve Beslenme Takibi",
+      "headline2": "AI Koçunla Hedefine Ulaş",
       "subhead": "FitMusc, dünyanın en güçlü AI modelleriyle çalışan kişisel fitness koçunuz. Beslenme planı, antrenman takibi ve ilerleme analizi — hepsi bir arada, tamamen Türkçe.",
       "ctaStart": "Hemen Başla",
       "inviteNote": "Invite-only · Davet gerektirir"

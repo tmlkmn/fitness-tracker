@@ -2763,14 +2763,18 @@
     }
   },
   "landing": {
+    "seo": {
+      "title": "AI-Powered Fitness & Nutrition Tracking App",
+      "description": "FitMusc combines AI-powered workout, nutrition, macro and progress tracking in one app. Weekly plans, smart suggestions, and a personal AI fitness coach."
+    },
     "nav": {
       "ariaLabel": "Main navigation",
       "signIn": "Sign In"
     },
     "hero": {
       "pill": "AI-Powered Personal Fitness Platform",
-      "headline1": "Your Smart Guide",
-      "headline2": "On the Way to Your Goal",
+      "headline1": "Smart Fitness & Nutrition Tracking with FitMusc",
+      "headline2": "Reach Your Goals with Your AI Coach",
       "subhead": "FitMusc is your personal fitness coach powered by the world's most capable AI models. Nutrition planning, workout tracking, and progress analysis — all in one place.",
       "ctaStart": "Get Started",
       "inviteNote": "Invite-only · Requires an invitation"

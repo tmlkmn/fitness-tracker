@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { normalizeLocale } from "@/lib/locale";
+import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
+  const locale = normalizeLocale(await getLocale());
+  const isEn = locale === "en";
   return {
-    title: locale === "en" ? "Terms of Service" : "Kullanim Sartlari",
+    ...buildPublicMetadata({
+      href: "/kullanim-sartlari",
+      locale,
+      title: isEn ? "Terms of Service" : "Kullanım Şartları",
+      description: isEn
+        ? "FitMusc terms of service: membership conditions, user obligations, AI feature disclaimer, limitation of liability, and termination terms."
+        : "FitMusc kullanım şartları: üyelik koşulları, kullanıcı yükümlülükleri, AI özellikleri uyarısı, sorumluluk sınırları ve fesih koşulları.",
+    }),
     robots: { index: true, follow: true },
   };
 }
@@ -25,10 +35,10 @@ export default async function KullanimSartlariPage() {
 
       <header>
         <h1 className="text-3xl font-bold tracking-tight">
-          {isEn ? "Terms of Service" : "Kullanim Sartlari"}
+          {isEn ? "Terms of Service" : "Kullanım Şartları"}
         </h1>
         <p className="text-sm text-muted-foreground mt-2">
-          {isEn ? "Last updated" : "Son guncelleme"}: {isEn ? "April 20, 2026" : "20 Nisan 2026"}
+          {isEn ? "Last updated" : "Son güncelleme"}: {isEn ? "April 20, 2026" : "20 Nisan 2026"}
         </p>
       </header>
 
@@ -36,202 +46,202 @@ export default async function KullanimSartlariPage() {
       <section className="space-y-6 text-sm leading-relaxed text-muted-foreground">
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            Kullanim Sartlari
+            Kullanım Şartları
           </h2>
           <p>
-            Asagidaki kullanim sartlari (&quot;Sartlar&quot;), FitMusc
-            platformunu (&quot;Platform&quot;, &quot;Hizmet&quot;) kullaniminizi
-            duzenlemektedir. Platformu kullanarak bu Sartlari kabul etmis
-            sayilirsiniz. Sartlari kabul etmiyorsaniz Platformu
-            kullanmayiniz.
+            Aşağıdaki kullanım şartları (&quot;Şartlar&quot;), FitMusc
+            platformunu (&quot;Platform&quot;, &quot;Hizmet&quot;) kullanımınızı
+            düzenlemektedir. Platformu kullanarak bu Şartları kabul etmiş
+            sayılırsınız. Şartları kabul etmiyorsanız Platformu
+            kullanmayınız.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            1. Hizmet Tanimi
+            1. Hizmet Tanımı
           </h2>
           <p>
-            FitMusc, kisisellestirilmis fitness ve beslenme takibi hizmeti sunan
-            bir web uygulamasidir. Platform asagidaki hizmetleri saglar:
+            FitMusc, kişiselleştirilmiş fitness ve beslenme takibi hizmeti sunan
+            bir web uygulamasıdır. Platform aşağıdaki hizmetleri sağlar:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2 mt-2">
             <li>
-              Kisisellestirilmis haftalik antrenman ve beslenme planlari
+              Kişiselleştirilmiş haftalık antrenman ve beslenme planları
             </li>
-            <li>Gunluk ogun takibi ve besin degeri hesaplamalari</li>
-            <li>Egzersiz kayitlari ve antrenman takibi</li>
-            <li>Takviye (supplement) programi yonetimi</li>
-            <li>Vucut olculeri ve kilo takibi ile ilerleme grafikleri</li>
-            <li>Haftalik alisveris listesi olusturma</li>
+            <li>Günlük öğün takibi ve besin değeri hesaplamaları</li>
+            <li>Egzersiz kayıtları ve antrenman takibi</li>
+            <li>Takviye (supplement) programı yönetimi</li>
+            <li>Vücut ölçüleri ve kilo takibi ile ilerleme grafikleri</li>
+            <li>Haftalık alışveriş listesi oluşturma</li>
             <li>
-              Yapay zeka destekli oneriler (ogun varyasyonlari, egzersiz form
-              ipuclari, ilerleme analizi, AI kocluk sohbeti)
+              Yapay zeka destekli öneriler (öğün varyasyonları, egzersiz form
+              ipuçları, ilerleme analizi, AI koçluk sohbeti)
             </li>
-            <li>Plan paylasimi (salt-okunur erisim)</li>
+            <li>Plan paylaşımı (salt-okunur erişim)</li>
             <li>
-              Hatirlatma ve bildirim sistemi (push, e-posta, uygulama ici)
+              Hatırlatma ve bildirim sistemi (push, e-posta, uygulama içi)
             </li>
           </ul>
           <p className="mt-2">
-            Platform, Progressive Web App (PWA) olarak mobil ve masaustu
-            cihazlarda kullanilabilir.
+            Platform, Progressive Web App (PWA) olarak mobil ve masaüstü
+            cihazlarda kullanılabilir.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            2. Uyelik Kosullari
+            2. Üyelik Koşulları
           </h2>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>
-              Platform yalnizca davet usulu ile calismaktadir. Yeni kullanicilar
-              yalnizca yonetici tarafindan davet edilebilir.
+              Platform yalnızca davet usulü ile çalışmaktadır. Yeni kullanıcılar
+              yalnızca yönetici tarafından davet edilebilir.
             </li>
             <li>
-              Uye olmak icin 18 yasini doldurmus olmaniz gerekmektedir.
+              Üye olmak için 18 yaşını doldurmuş olmanız gerekmektedir.
             </li>
             <li>
-              Davet e-postasi ile gonderilen gecici sifre 24 saat gecerlidir.
-              Ilk giriste sifrenizi degistirmeniz zorunludur.
+              Davet e-postası ile gönderilen geçici şifre 24 saat geçerlidir.
+              İlk girişte şifrenizi değiştirmeniz zorunludur.
             </li>
             <li>
-              Hesap bilgilerinizin guvenliginden siz sorumlusunuz. Sifrenizi
-              ucuncu kisilerle paylasmayiniz.
+              Hesap bilgilerinizin güvenliğinden siz sorumlusunuz. Şifrenizi
+              üçüncü kişilerle paylaşmayınız.
             </li>
             <li>
-              Her kullanici yalnizca bir hesap olusturabilir. Hesabinizi baska
+              Her kullanıcı yalnızca bir hesap oluşturabilir. Hesabınızı başka
               birine devredemezsiniz.
             </li>
             <li>
               FitMusc, herhangi bir zamanda ve herhangi bir sebeple davet veya
-              uyelik talebini reddetme hakkini sakli tutar.
+              üyelik talebini reddetme hakkını saklı tutar.
             </li>
           </ul>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            3. Kullanici Yukumlulukleri
+            3. Kullanıcı Yükümlülükleri
           </h2>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>
-              Platformu yalnizca kisisel fitness ve beslenme takibi amaciyla
-              kullanacaginizi kabul edersiniz.
+              Platformu yalnızca kişisel fitness ve beslenme takibi amacıyla
+              kullanacağınızı kabul edersiniz.
             </li>
             <li>
-              Sagladiginiz bilgilerin dogru ve guncel olmasi sizin
-              sorumlulugunuzdadir. Yanlis saglik bilgisi girmeniz durumunda
-              olusabilecek sonuclardan FitMusc sorumlu degildir.
+              Sağladığınız bilgilerin doğru ve güncel olması sizin
+              sorumluluğunuzdadır. Yanlış sağlık bilgisi girmeniz durumunda
+              oluşabilecek sonuçlardan FitMusc sorumlu değildir.
             </li>
             <li>
-              Platformu yasa disi amaclarla, baskalarinin haklarina tecavuz
-              edecek sekilde veya Platformun normal isleyisini bozacak sekilde
-              kullanamazsiniz.
+              Platformu yasa dışı amaçlarla, başkalarının haklarına tecavüz
+              edecek şekilde veya Platformun normal işleyişini bozacak şekilde
+              kullanamazsınız.
             </li>
             <li>
-              Platformun guvenlik onlemlerini asmayi, tersine muhendislik
-              yapmayi veya yetkisiz erisim elde etmeyi denemeyeceksiniz.
+              Platformun güvenlik önlemlerini aşmayı, tersine mühendislik
+              yapmayı veya yetkisiz erişim elde etmeyi denemeyeceksiniz.
             </li>
             <li>
-              Paylasilan planlara yalnizca salt-okunur erisim verilmektedir.
-              Paylasilan icerikleri izinsiz kopyalama, dagitma veya ticari amacla
-              kullanma yasaktir.
+              Paylaşılan planlara yalnızca salt-okunur erişim verilmektedir.
+              Paylaşılan içerikleri izinsiz kopyalama, dağıtma veya ticari amaçla
+              kullanma yasaktır.
             </li>
             <li>
-              AI ozelliklerini kotu niyetli, yaniltici veya zarar verici
-              iceriklerin uretilmesi amaciyla kullanamazsiniz.
+              AI özelliklerini kötü niyetli, yanıltıcı veya zarar verici
+              içeriklerin üretilmesi amacıyla kullanamazsınız.
             </li>
           </ul>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            4. Fikri Mulkiyet
+            4. Fikri Mülkiyet
           </h2>
           <p>
-            Platform uzerindeki tum icerikler, yazilim, tasarim, logolar,
-            grafikler ve diger materyaller FitMusc&apos;in fikri mulkiyetindedir
-            ve telif haklari ile korunmaktadir. Kullanicilar, Platformu
-            kullanarak bu icerikler uzerinde herhangi bir mulkiyet hakki elde
+            Platform üzerindeki tüm içerikler, yazılım, tasarım, logolar,
+            grafikler ve diğer materyaller FitMusc&apos;in fikri mülkiyetindedir
+            ve telif hakları ile korunmaktadır. Kullanıcılar, Platformu
+            kullanarak bu içerikler üzerinde herhangi bir mülkiyet hakkı elde
             etmez.
           </p>
           <p className="mt-2">
-            Kullanici tarafindan girilen kisisel veriler, antrenman kayitlari ve
-            beslenme bilgileri kullanicinin mulkiyetinde kalir. FitMusc, bu
-            verileri yalnizca hizmet sunumu amaciyla kullanir.
+            Kullanıcı tarafından girilen kişisel veriler, antrenman kayıtları ve
+            beslenme bilgileri kullanıcının mülkiyetinde kalır. FitMusc, bu
+            verileri yalnızca hizmet sunumu amacıyla kullanır.
           </p>
           <p className="mt-2">
-            AI ozellikleri tarafindan uretilen icerikler (ogun onerileri,
-            egzersiz ipuclari, analizler) genel bilgi niteligi tasir ve herhangi
-            bir fikri mulkiyet hakki olusturmaz.
+            AI özellikleri tarafından üretilen içerikler (öğün önerileri,
+            egzersiz ipuçları, analizler) genel bilgi niteliği taşır ve herhangi
+            bir fikri mülkiyet hakkı oluşturmaz.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            5. Sorumluluk Sinirlamasi
+            5. Sorumluluk Sınırlaması
           </h2>
           <p>
-            FitMusc, Platformu &quot;oldugu gibi&quot; ve &quot;mevcut
-            haliyle&quot; sunmaktadir. Asagidaki hususlarda sorumlulugumuz
-            sinirlidir:
+            FitMusc, Platformu &quot;olduğu gibi&quot; ve &quot;mevcut
+            haliyle&quot; sunmaktadır. Aşağıdaki hususlarda sorumluluğumuz
+            sınırlıdır:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2 mt-2">
             <li>
-              Platform uzerinden saglanan bilgiler genel fitness ve beslenme
-              bilgisi niteligi tasir. Herhangi bir saglik durumu icin tibbi
-              tavsiye yerine gecmez.
+              Platform üzerinden sağlanan bilgiler genel fitness ve beslenme
+              bilgisi niteliği taşır. Herhangi bir sağlık durumu için tıbbi
+              tavsiye yerine geçmez.
             </li>
             <li>
-              Platformun kesintisiz, hatasiz veya guvenli olacagini garanti
-              etmemekteyiz. Teknik arizalar, bakim calismalari veya mucbir
-              sebepler nedeniyle hizmet kesintileri yasanabilir.
+              Platformun kesintisiz, hatasız veya güvenli olacağını garanti
+              etmemekteyiz. Teknik arızalar, bakım çalışmaları veya mücbir
+              sebepler nedeniyle hizmet kesintileri yaşanabilir.
             </li>
             <li>
-              Kullanicinin Platformu kullanmasindan kaynaklanan dolayli,
-              arizi, ozel veya cezai zararlardan FitMusc sorumlu tutulamaz.
+              Kullanıcının Platformu kullanmasından kaynaklanan dolaylı,
+              arızi, özel veya cezai zararlardan FitMusc sorumlu tutulamaz.
             </li>
             <li>
-              Ucuncu taraf hizmet saglayicilarinin (veritabani, e-posta,
-              barindirma, AI) neden oldugu kesinti veya veri kayiplarindan
-              dolayi sorumlulugumuz sinirlidir.
+              Üçüncü taraf hizmet sağlayıcılarının (veritabanı, e-posta,
+              barındırma, AI) neden olduğu kesinti veya veri kayıplarından
+              dolayı sorumluluğumuz sınırlıdır.
             </li>
           </ul>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            6. AI Ozellikleri Uyarisi
+            6. AI Özellikleri Uyarısı
           </h2>
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
             <p className="font-semibold text-foreground mb-2">
-              Onemli Uyari: Yapay Zeka Ozellikleri Tibbi Tavsiye Degildir
+              Önemli Uyarı: Yapay Zeka Özellikleri Tıbbi Tavsiye Değildir
             </p>
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li>
-                FitMusc&apos;in yapay zeka destekli ozellikleri (ogun
-                varyasyonlari, egzersiz form ipuclari, ilerleme analizi, AI
-                kocluk sohbeti) yalnizca genel bilgilendirme amaciyla
-                sunulmaktadir.
+                FitMusc&apos;in yapay zeka destekli özellikleri (öğün
+                varyasyonları, egzersiz form ipuçları, ilerleme analizi, AI
+                koçluk sohbeti) yalnızca genel bilgilendirme amacıyla
+                sunulmaktadır.
               </li>
               <li>
-                Bu oneriler, bir doktor, diyetisyen, fizyoterapist veya
-                herhangi bir saglik profesyonelinin tavsiyesi yerine gecmez.
+                Bu öneriler, bir doktor, diyetisyen, fizyoterapist veya
+                herhangi bir sağlık profesyonelinin tavsiyesi yerine geçmez.
               </li>
               <li>
-                Herhangi bir saglik sorununuz, alerjiniz, ilac
-                etkilesiminiz veya ozel beslenme ihtiyaciniz varsa, AI
-                onerilerini uygulamadan once mutlaka bir saglik profesyoneline
-                danisiniz.
+                Herhangi bir sağlık sorununuz, alerjiniz, ilaç
+                etkileşiminiz veya özel beslenme ihtiyacınız varsa, AI
+                önerilerini uygulamadan önce mutlaka bir sağlık profesyoneline
+                danışınız.
               </li>
               <li>
-                AI tarafindan uretilen icerikler otomatik olarak olusturulur ve
-                hatalar icerebilir. Uretilen iceriklerin dogrulugunu teyit etmek
-                kullanicinin sorumlulugundadir.
+                AI tarafından üretilen içerikler otomatik olarak oluşturulur ve
+                hatalar içerebilir. Üretilen içeriklerin doğruluğunu teyit etmek
+                kullanıcının sorumluluğundadır.
               </li>
               <li>
-                AI ozelliklerinin kullanilmasindan dogan saglik sorunlari veya
+                AI özelliklerinin kullanılmasından doğan sağlık sorunları veya
                 zararlardan FitMusc sorumlu tutulamaz.
               </li>
             </ul>
@@ -240,12 +250,12 @@ export default async function KullanimSartlariPage() {
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            7. Fesih Kosullari
+            7. Fesih Koşulları
           </h2>
           <ul className="list-disc list-inside space-y-1 ml-2">
             <li>
-              Kullanici, herhangi bir zamanda hesabinin silinmesini talep
-              ederek Platformu kullanmayi sonlandirebilir. Hesap silme
+              Kullanıcı, herhangi bir zamanda hesabının silinmesini talep
+              ederek Platformu kullanmayı sonlandırabilir. Hesap silme
               talebi{" "}
               <a
                 href="mailto:destek@fitmusc.com"
@@ -256,57 +266,57 @@ export default async function KullanimSartlariPage() {
               adresine iletilmelidir.
             </li>
             <li>
-              Hesap silindiginde, tum kisisel veriler 30 gun icinde kalici
+              Hesap silindiğinde, tüm kişisel veriler 30 gün içinde kalıcı
               olarak silinir.
             </li>
             <li>
-              FitMusc, bu Sartlarin ihlali halinde kullanici hesabini onceden
-              bildirim yaparak veya yapmaksizin askiya alma veya sonlandirma
-              hakkini sakli tutar.
+              FitMusc, bu Şartların ihlali halinde kullanıcı hesabını önceden
+              bildirim yaparak veya yapmaksızın askıya alma veya sonlandırma
+              hakkını saklı tutar.
             </li>
             <li>
-              Platform hizmetinin tamamen durdurulmasi halinde, kullanicilar en
-              az 30 gun oncesinden bilgilendirilir ve verilerini indirme imkani
-              taninir.
+              Platform hizmetinin tamamen durdurulması halinde, kullanıcılar en
+              az 30 gün öncesinden bilgilendirilir ve verilerini indirme imkanı
+              tanınır.
             </li>
             <li>
-              Fesih sonrasinda, kullanicinin Platforma erisimi derhal
-              sonlandirilir. Paylasilan planlar otomatik olarak iptal edilir.
+              Fesih sonrasında, kullanıcının Platforma erişimi derhal
+              sonlandırılır. Paylaşılan planlar otomatik olarak iptal edilir.
             </li>
           </ul>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            8. Degisiklikler
+            8. Değişiklikler
           </h2>
           <p>
-            FitMusc, bu Sartlari herhangi bir zamanda degistirme hakkini sakli
-            tutar. Onemli degisiklikler, Platform uzerinden veya e-posta
-            yoluyla bildirilir. Degisikliklerden sonra Platformu kullanmaya
-            devam etmeniz, guncellenmi sartlari kabul ettiginiz anlamina
+            FitMusc, bu Şartları herhangi bir zamanda değiştirme hakkını saklı
+            tutar. Önemli değişiklikler, Platform üzerinden veya e-posta
+            yoluyla bildirilir. Değişikliklerden sonra Platformu kullanmaya
+            devam etmeniz, güncellenmiş şartları kabul ettiğiniz anlamına
             gelir.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            9. Uygulanacak Hukuk ve Uyusmazlik Cozumu
+            9. Uygulanacak Hukuk ve Uyuşmazlık Çözümü
           </h2>
           <p>
-            Bu Sartlar, Turkiye Cumhuriyeti kanunlarina tabidir. Sartlardan
-            kaynaklanan veya Sartlarla baglantili uyusmazliklarin cozumunde
-            Istanbul Mahkemeleri ve Icra Daireleri yetkilidir.
+            Bu Şartlar, Türkiye Cumhuriyeti kanunlarına tabidir. Şartlardan
+            kaynaklanan veya Şartlarla bağlantılı uyuşmazlıkların çözümünde
+            İstanbul Mahkemeleri ve İcra Daireleri yetkilidir.
           </p>
         </div>
 
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-3">
-            10. Iletisim
+            10. İletişim
           </h2>
           <p>
-            Kullanim sartlari hakkinda sorulariniz icin bizimle iletisime
-            gecebilirsiniz:
+            Kullanım şartları hakkında sorularınız için bizimle iletişime
+            geçebilirsiniz:
           </p>
           <p className="mt-2">
             <strong className="text-foreground">FitMusc</strong>

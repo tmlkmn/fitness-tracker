@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "FitMusc — AI Destekli Kişisel Fitness Takip";
+export const alt = "FitMusc — AI-Powered Fitness & Nutrition Tracking";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -70,12 +70,12 @@ export default async function OgImage() {
             letterSpacing: "0.04em",
           }}
         >
-          AI DESTEKLİ KİŞİSEL FİTNESS TAKİP
+          AI-POWERED FITNESS &amp; NUTRITION
         </div>
 
         {/* Feature pills */}
         <div style={{ display: "flex", gap: 12, marginTop: 44 }}>
-          {["Antrenman", "Beslenme", "AI Koç", "İlerleme"].map((label) => (
+          {["Workout", "Nutrition", "AI Coach", "Progress"].map((label) => (
             <div
               key={label}
               style={{
