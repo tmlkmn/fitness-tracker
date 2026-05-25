@@ -8,6 +8,7 @@ import { Link } from "@/i18n/navigation";
  */
 export async function Footer() {
   const t = await getTranslations("footer");
+  const td = await getTranslations("disclaimer");
   const company = process.env.COMPANY_LEGAL_NAME ?? "FitMusc";
   const address = process.env.COMPANY_ADDRESS;
   const year = new Date().getFullYear();
@@ -39,8 +40,17 @@ export async function Footer() {
         <Link href="/iletisim" className="hover:text-primary">
           {t("links.contact")}
         </Link>
+        <Link href="/feragatname" className="hover:text-primary">
+          {t("links.disclaimer")}
+        </Link>
       </nav>
       <p className="mt-3 text-center">
+        {td("short")}{" "}
+        <Link href="/feragatname" className="underline hover:text-primary">
+          {td("moreInfo")}
+        </Link>
+      </p>
+      <p className="mt-2 text-center">
         © {year} {company} · {t("rights")}
         {address ? ` · ${address}` : ""}
       </p>

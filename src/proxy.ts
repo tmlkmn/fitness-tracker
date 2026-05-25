@@ -37,6 +37,8 @@ const PUBLIC_PATTERNS: RegExp[] = [
   /^\/cookie-policy$/,
   /^\/iletisim$/,
   /^\/contact$/,
+  /^\/feragatname$/,
+  /^\/disclaimer$/,
 ];
 
 function stripLocale(pathname: string): string {

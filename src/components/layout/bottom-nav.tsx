@@ -52,6 +52,7 @@ const HIDDEN_PATHS = [
   "/kvkk",
   "/kullanim-sartlari",
   "/tanitim",
+  "/feragatname",
 ];
 
 export function BottomNav() {

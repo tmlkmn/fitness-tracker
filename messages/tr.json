@@ -3475,9 +3475,39 @@
       "kvkk": "KVKK",
       "refund": "İade Politikası",
       "cookie": "Çerez Politikası",
-      "contact": "İletişim"
+      "contact": "İletişim",
+      "disclaimer": "Feragatname"
     },
     "rights": "Tüm hakları saklıdır."
+  },
+  "disclaimer": {
+    "short": "Bu içerik yalnızca bilgilendirme amaçlıdır; tıbbi tavsiye değildir.",
+    "ai": "Yapay zeka tarafından üretilmiştir ve hata içerebilir. Tıbbi öneri veya teşhis için bir profesyonele danışın.",
+    "moreInfo": "Daha fazla bilgi",
+    "consent": {
+      "title": "Önemli bilgilendirme",
+      "body": "Bu program ve içerikler (yapay zeka tarafından üretilen yanıtlar dahil) yalnızca bilgilendirme amaçlıdır ve tıbbi tavsiye yerine geçmez. Sağlığınızla ilgili kararlar almadan önce bir doktora veya nitelikli bir sağlık profesyoneline danışın.",
+      "accept": "Anladım",
+      "moreInfo": "Detaylı bilgi"
+    },
+    "page": {
+      "title": "Feragatname",
+      "description": "FitMusc içeriklerinin ve yapay zeka destekli önerilerin yalnızca bilgilendirme amaçlı olduğuna, tıbbi tavsiye yerine geçmediğine dair feragatname.",
+      "lastUpdated": "Son güncelleme",
+      "lastUpdatedDate": "25 Mayıs 2026",
+      "intro": "FitMusc; kişiselleştirilmiş antrenman ve beslenme planları, alışveriş listeleri, ilerleme takibi ve yapay zeka destekli öneriler sunan bir fitness ve beslenme uygulamasıdır. Aşağıdaki feragatname, bu uygulamada sunulan tüm içeriklerin niteliğini ve sorumluluk sınırlarını açıklar.",
+      "generalTitle": "1. Genel Bilgilendirme",
+      "generalBody": "Bu uygulamada yer alan tüm metinler, programlar, planlar, besin değerleri ve öneriler yalnızca genel bilgilendirme ve eğitim amaçlıdır. Bu içerikler hiçbir şekilde profesyonel tıbbi, beslenme veya egzersiz danışmanlığı yerine geçmez ve böyle bir danışmanlık ilişkisi oluşturmaz.",
+      "medicalTitle": "2. Tıbbi Sorumluluk Reddi",
+      "medicalBody": "Herhangi bir egzersiz programına, diyete veya takviye kullanımına başlamadan önce bir doktora veya nitelikli bir sağlık profesyoneline danışın. Bu özellikle hamileyseniz, kronik bir rahatsızlığınız varsa, ilaç kullanıyorsanız veya herhangi bir sağlık endişeniz varsa geçerlidir. Bu uygulamadaki içerikleri profesyonel tıbbi tavsiyeyi göz ardı etmek, ertelemek veya bunun yerine kullanmak için kullanmayın. Acil bir durumda derhal en yakın sağlık kuruluşuna başvurun.",
+      "aiTitle": "3. Yapay Zeka ile Üretilen İçerik",
+      "aiBody": "Uygulamadaki bazı öneriler (öğün varyasyonları, egzersiz form ipuçları, ilerleme analizi ve AI koçluk sohbeti dahil) yapay zeka tarafından üretilir. Yapay zeka yanıtları hatalı, eksik veya yanıltıcı olabilir ve her zaman doğrulanmalıdır. Bu yanıtlar tıbbi teşhis veya tedavi niteliği taşımaz. Yapay zeka tarafından üretilen herhangi bir öneriyi uygulamadan önce kendi muhakemenizi kullanın ve gerektiğinde bir uzmana danışın.",
+      "liabilityTitle": "4. Sorumluluğun Sınırlandırılması",
+      "liabilityBody": "FitMusc ve operatörleri, bu uygulamadaki içeriklerin kullanımından doğan veya bunlarla bağlantılı doğrudan ya da dolaylı hiçbir zarardan, yaralanmadan veya sağlık sorunundan sorumlu tutulamaz. Uygulamayı kullanarak, içeriklerin yukarıda açıklanan niteliğini kabul etmiş ve kullanım riskinin tamamen size ait olduğunu onaylamış olursunuz.",
+      "contactTitle": "5. İletişim",
+      "contactBody": "Bu feragatname hakkında sorularınız için bizimle iletişime geçebilirsiniz.",
+      "contactLink": "İletişim sayfası"
+    }
   },
   "contact": {
     "title": "İletişim",

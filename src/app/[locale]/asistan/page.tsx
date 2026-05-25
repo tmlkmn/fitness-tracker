@@ -6,6 +6,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
 import { ChatMessage } from "@/components/ai/chat-message";
 import { ChatInput } from "@/components/ai/chat-input";
+import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import { useAIChat } from "@/hooks/use-ai-chat";
 import { Bot, Trash2, Loader2 } from "lucide-react";
 import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
@@ -108,6 +109,8 @@ export default function AsistanPage() {
             }
           />
         ))}
+
+        {messages.length > 0 && <AiDisclaimer className="pt-1" />}
       </div>
 
       <div className="sticky bottom-16">

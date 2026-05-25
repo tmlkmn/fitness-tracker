@@ -30,6 +30,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CookieConsent } from "@/components/cookie-consent";
+import { HealthDisclaimerConsent } from "@/components/health-disclaimer-consent";
 import { GlobalSearchProvider } from "@/components/layout/global-search-provider";
 import { LocaleSync } from "@/components/layout/locale-sync";
 import { routing } from "@/i18n/routing";
@@ -156,6 +157,7 @@ export default async function LocaleLayout({
                 <BottomNav />
                 <Toaster />
                 <CookieConsent />
+                <HealthDisclaimerConsent />
                 <SwRegister />
               </GlobalSearchProvider>
             </ThemeProvider>

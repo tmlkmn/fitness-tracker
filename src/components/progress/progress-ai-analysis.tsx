@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
+import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 
 function useTimeAgo() {
   const t = useTranslations("progress.aiAnalysis");
@@ -141,6 +142,8 @@ export function ProgressAiAnalysis() {
             )}
           </div>
         )}
+
+        {analysis && !loading && <AiDisclaimer />}
       </CardContent>
     </Card>
   );

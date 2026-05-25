@@ -30,6 +30,7 @@ import {
 } from "@/hooks/use-saved-meals";
 import { useInvalidateAiQuota } from "@/hooks/use-ai-quota";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
+import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 import { formatAiError } from "@/lib/ai-errors";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
@@ -406,6 +407,7 @@ export function AiSuggestionModal({
                 )}
                 {t("newSuggestions")}
               </Button>
+              <AiDisclaimer />
             </div>
           )}
 

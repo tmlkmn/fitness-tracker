@@ -37,6 +37,7 @@ import type { Locale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
 import { buildAiUserNote } from "@/lib/ai-user-note";
 import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
+import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 
 type Tab = "suggest" | "saved";
 
@@ -441,6 +442,7 @@ export function AiMealModal({
                   )}
                   {t("saveToFavorites")}
                 </Button>
+                <AiDisclaimer />
               </div>
             )}
           </div>

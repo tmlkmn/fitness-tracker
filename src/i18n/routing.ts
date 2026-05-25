@@ -75,6 +75,7 @@ export const routing = defineRouting({
     "/iade-politikasi": { tr: "/iade-politikasi", en: "/refund-policy" },
     "/cerez-politikasi": { tr: "/cerez-politikasi", en: "/cookie-policy" },
     "/iletisim": { tr: "/iletisim", en: "/contact" },
+    "/feragatname": { tr: "/feragatname", en: "/disclaimer" },
   },
 });
 

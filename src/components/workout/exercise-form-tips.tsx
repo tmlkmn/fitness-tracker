@@ -14,6 +14,7 @@ import { formatAiError } from "@/lib/ai-errors";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
 
 interface ExerciseFormTipsProps {
   name: string;
@@ -123,6 +124,7 @@ export function ExerciseFormTips({ name, notes, englishName, triggerClassName, t
                   </ReactMarkdown>
                 </div>
               )}
+              {tips && !isLoading && <AiDisclaimer />}
             </div>
           </SheetContent>
         </Sheet>
