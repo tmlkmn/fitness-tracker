@@ -14,6 +14,7 @@ import { useProfileCheck } from "@/hooks/use-profile-check";
 import { useWeekPlansByDate, useDatesWithPlans, useEmptyWeeksBetween } from "@/hooks/use-plans";
 import { useReadinessRange } from "@/hooks/use-readiness";
 import { ShareWeeklyPlanButton } from "@/components/sharing/share-weekly-plan-button";
+import { ExportButton } from "@/components/export/export-button";
 import { useGenerateWeeklyPlan, useApplyWeeklyPlan, useDeleteWeeklyPlan } from "@/hooks/use-weekly-ai";
 import { useUserProfile } from "@/hooks/use-user";
 import { useMonthGate } from "@/hooks/use-month-gate";
@@ -397,6 +398,15 @@ export default function TakvimPage() {
                   <ShoppingCart className="h-3.5 w-3.5" />
                 </Button>
               </Link>
+            )}
+            {/* Export PDF: visible when a weekly plan exists */}
+            {data?.weeklyPlan && (
+              <ExportButton
+                url={`/api/export/weekly-plan/${data.weeklyPlan.id}`}
+                filename={`fitmusc-${data.weeklyPlan.weekNumber}.pdf`}
+                shareTitle={data.weeklyPlan.title}
+                size="sm"
+              />
             )}
             {/* Share: visible when a weekly plan exists and week is not past */}
             {data?.weeklyPlan && !isPastWeek && (

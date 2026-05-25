@@ -3494,5 +3494,52 @@
       "invalidEmail": "Geçerli bir e-posta girin.",
       "generic": "Mesaj gönderilemedi. Tekrar deneyin."
     }
+  },
+  "export": {
+    "buttonLabel": "Dışa aktar",
+    "exportPdf": "PDF olarak dışa aktar",
+    "error": "Dosya oluşturulamadı. Tekrar deneyin.",
+    "generatedAt": "Oluşturulma",
+    "footer": "FitMusc ile oluşturuldu — fitmusc.com",
+    "meals": "Öğünler",
+    "time": "Saat",
+    "meal": "Öğün",
+    "kcal": "kcal",
+    "macros": {
+      "protein": "P",
+      "carbs": "K",
+      "fat": "Y"
+    },
+    "dayTotal": "Gün Toplamı",
+    "noMeals": "Öğün eklenmemiş.",
+    "workout": "Antrenman",
+    "sets": "set",
+    "reps": "tekrar",
+    "rest": "Dinlenme",
+    "duration": "Süre",
+    "noWorkout": "Antrenman eklenmemiş.",
+    "min": "dk",
+    "sec": "sn",
+    "supplements": "Takviyeler",
+    "dosage": "Doz",
+    "timing": "Zamanlama",
+    "targets": "Günlük Hedef",
+    "planType": {
+      "workout": "Antrenman",
+      "swimming": "Yüzme",
+      "rest": "Dinlenme",
+      "nutrition": "Beslenme"
+    },
+    "shoppingTitle": "Alışveriş Listesi",
+    "itemsProgress": "Tamamlanan",
+    "progressTitle": "İlerleme Raporu",
+    "date": "Tarih",
+    "weight": "Kilo",
+    "measurements": "Ölçüler",
+    "bodyComposition": "Vücut Kompozisyonu",
+    "latest": "Son Ölçüm",
+    "weightTrend": "Kilo Değişimi",
+    "notes": "Notlar",
+    "noData": "Henüz veri yok."
   }
 }

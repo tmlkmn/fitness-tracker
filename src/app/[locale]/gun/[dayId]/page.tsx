@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
+import { ExportButton } from "@/components/export/export-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDailyPlan } from "@/actions/plans";
 import { MealList } from "@/components/meals/meal-list";
@@ -80,6 +81,13 @@ export default async function GunPage({ params, searchParams }: PageProps) {
         backHref="/takvim"
         rightSlot={
           <div className="flex items-center gap-1">
+            <ExportButton
+              url={`/api/export/daily-plan/${id}`}
+              filename={`fitmusc-${dailyPlan.date ?? id}.pdf`}
+              shareTitle={dailyPlan.dayName}
+              variant="ghost"
+              size="icon"
+            />
             <NotificationBell />
             <HeaderMenu />
           </div>

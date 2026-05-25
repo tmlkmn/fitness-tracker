@@ -3494,5 +3494,52 @@
       "invalidEmail": "Enter a valid email address.",
       "generic": "Could not send the message. Please try again."
     }
+  },
+  "export": {
+    "buttonLabel": "Export",
+    "exportPdf": "Export as PDF",
+    "error": "Could not generate the file. Please try again.",
+    "generatedAt": "Generated",
+    "footer": "Created with FitMusc — fitmusc.com",
+    "meals": "Meals",
+    "time": "Time",
+    "meal": "Meal",
+    "kcal": "kcal",
+    "macros": {
+      "protein": "P",
+      "carbs": "C",
+      "fat": "F"
+    },
+    "dayTotal": "Day Total",
+    "noMeals": "No meals added.",
+    "workout": "Workout",
+    "sets": "sets",
+    "reps": "reps",
+    "rest": "Rest",
+    "duration": "Duration",
+    "noWorkout": "No workout added.",
+    "min": "min",
+    "sec": "sec",
+    "supplements": "Supplements",
+    "dosage": "Dosage",
+    "timing": "Timing",
+    "targets": "Daily Target",
+    "planType": {
+      "workout": "Workout",
+      "swimming": "Swimming",
+      "rest": "Rest",
+      "nutrition": "Nutrition"
+    },
+    "shoppingTitle": "Shopping List",
+    "itemsProgress": "Completed",
+    "progressTitle": "Progress Report",
+    "date": "Date",
+    "weight": "Weight",
+    "measurements": "Measurements",
+    "bodyComposition": "Body Composition",
+    "latest": "Latest",
+    "weightTrend": "Weight Trend",
+    "notes": "Notes",
+    "noData": "No data yet."
   }
 }

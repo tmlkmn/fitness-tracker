@@ -20,6 +20,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ShoppingCart, CheckCircle, Sparkles, RefreshCw, AlertCircle } from "lucide-react";
+import { ExportButton } from "@/components/export/export-button";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { formatAiError } from "@/lib/ai-errors";
@@ -182,6 +183,15 @@ function AlisverisContent() {
                   )}
                   {t("refresh")}
                 </Button>
+                {activeWeekId ? (
+                  <ExportButton
+                    url={`/api/export/shopping-list/${activeWeekId}`}
+                    filename={`fitmusc-alisveris-${activeWeekId}.pdf`}
+                    shareTitle={t("title")}
+                    size="sm"
+                    className="h-7 text-xs"
+                  />
+                ) : null}
                 <Badge
                   variant={purchasedItems === totalItems ? "default" : "secondary"}
                   className="gap-1"

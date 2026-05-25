@@ -40,6 +40,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ExportButton } from "@/components/export/export-button";
 import { useActivityStats } from "@/hooks/use-activity-stats";
 import { ActivityHeatmap } from "@/components/gamification/activity-heatmap";
 import { WaterChart } from "@/components/water/water-chart";
@@ -240,11 +241,21 @@ export default function IlerlemePage() {
         <WaterChart />
         <SleepChart />
 
-        {/* Add measurement button */}
-        <Button onClick={handleAdd} className="w-full gap-2" data-tour="add-measurement">
-          <Plus className="h-4 w-4" />
-          {t("addMeasurement")}
-        </Button>
+        {/* Add measurement + export */}
+        <div className="flex gap-2">
+          <Button onClick={handleAdd} className="flex-1 gap-2" data-tour="add-measurement">
+            <Plus className="h-4 w-4" />
+            {t("addMeasurement")}
+          </Button>
+          {logs && logs.length > 0 && (
+            <ExportButton
+              url="/api/export/progress"
+              filename="fitmusc-ilerleme.pdf"
+              variant="outline"
+              size="default"
+            />
+          )}
+        </div>
 
         {/* History */}
         {logsLoading ? (
