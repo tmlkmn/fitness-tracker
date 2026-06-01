@@ -131,6 +131,8 @@ import {
   safeNullableText,
   safeNumber,
   safeString,
+  sanitizeRestSeconds,
+  sanitizeDurationMinutes,
   isStrictMacroValidationEnabled as defaultStrictMacroEnabled,
 } from "@/lib/ai-shape-validators";
 import { detectAllergens } from "@/lib/allergen-detect";
@@ -388,8 +390,8 @@ export function validateWeeklyPlan(
           englishName: safeNullableText(ex.englishName),
           sets: safeInteger(ex.sets),
           reps: safeNullableText(ex.reps),
-          restSeconds: safeNumber(ex.restSeconds),
-          durationMinutes: safeNumber(ex.durationMinutes),
+          restSeconds: sanitizeRestSeconds(ex.restSeconds, `${dayCtx}.exercise[${ei}]`, warnings),
+          durationMinutes: sanitizeDurationMinutes(ex.durationMinutes, `${dayCtx}.exercise[${ei}]`, warnings),
           notes: safeNullableText(ex.notes),
           intensity: sanitizeIntensity(ex.intensity),
         }))

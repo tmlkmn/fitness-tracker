@@ -440,13 +440,21 @@ export async function applyWeeklyPlan(
     const dayIdByDow = new Map<number, number>();
     for (const d of insertedDays) dayIdByDow.set(d.dayOfWeek, d.id);
 
+    // Batch meal + exercise inserts so they commit atomically. Previously these
+    // were two independent awaits: a constraint violation on exercises (e.g. an
+    // out-of-range restSeconds) left meals committed but workouts missing.
+    // neon-http has no interactive transactions, but db.batch() runs the queries
+    // in a single transaction. dailyPlans is inserted above because meal/exercise
+    // rows depend on its returned ids.
+    const batchQueries = [];
+
     if (mode !== "workout") {
       const allMealRows = futureDays.flatMap((day) => {
         const dayId = dayIdByDow.get(day.dayOfWeek);
         if (dayId == null || day.meals.length === 0) return [];
         return mealsToInsertValues(dayId, day.meals);
       });
-      if (allMealRows.length > 0) await db.insert(meals).values(allMealRows);
+      if (allMealRows.length > 0) batchQueries.push(db.insert(meals).values(allMealRows));
     }
 
     if (mode !== "nutrition") {
@@ -455,7 +463,13 @@ export async function applyWeeklyPlan(
         if (dayId == null || day.exercises.length === 0) return [];
         return exercisesToInsertValues(dayId, day.exercises);
       });
-      if (allExerciseRows.length > 0) await db.insert(exercises).values(allExerciseRows);
+      if (allExerciseRows.length > 0) batchQueries.push(db.insert(exercises).values(allExerciseRows));
+    }
+
+    if (batchQueries.length > 0) {
+      await db.batch(
+        batchQueries as [(typeof batchQueries)[number], ...(typeof batchQueries)[number][]],
+      );
     }
   }
 
