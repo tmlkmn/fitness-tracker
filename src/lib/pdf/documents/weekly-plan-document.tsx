@@ -95,7 +95,10 @@ export function WeeklyPlanDocument({ data }: { data: WeeklyPlanDocData }) {
         ) : null}
 
         {days.map((day) => (
-          <View key={day.id} style={styles.daySection} wrap={atomicDays ? false : undefined}>
+          // react-pdf treats `'wrap' in props` as "wrap was set" — even
+          // wrap={undefined} disables wrapping. So the prop is omitted entirely
+          // in the default flowing mode and only added (false) for the fallback.
+          <View key={day.id} style={styles.daySection} {...(atomicDays ? { wrap: false } : {})}>
             <View style={styles.dayHeader} wrap={false}>
               <View style={styles.dayAccent} />
               <Text style={styles.dayName}>{day.dayName}</Text>
