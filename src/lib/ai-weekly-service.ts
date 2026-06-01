@@ -11,7 +11,7 @@ import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { buildWeeklyPlanContext } from "@/actions/ai-weekly";
 import { buildUserNotePriorityBlock } from "@/lib/ai";
 import { getNutritionOnlyWeeklyPrompt, getWorkoutOnlyWeeklyPrompt } from "@/lib/ai-prompts";
-import { getMondayStr } from "@/lib/utils";
+import { getMondayStr, addDaysStr } from "@/lib/utils";
 import { callAITool } from "@/lib/ai-runtime";
 import {
   validateWeeklyPlan,
@@ -593,7 +593,7 @@ export async function resolveWeeklyGenerationRequest(
       targetFatG: users.targetFatG,
       foodAllergens: users.foodAllergens,
     }).from(users).where(eq(users.id, userId)).then((r) => r[0]),
-    buildWeeklyPlanContext(userId),
+    buildWeeklyPlanContext(userId, monday),
     db.select({ id: weeklyPlans.id, weekNumber: weeklyPlans.weekNumber })
       .from(weeklyPlans)
       .where(and(eq(weeklyPlans.userId, userId), eq(weeklyPlans.startDate, monday)))
@@ -683,7 +683,7 @@ export async function resolveWeeklyGenerationRequest(
   // for the new layered progressive-overload checks. Beginners and first-week
   // users naturally have all-zeros here and skip every check.
   const previousWeekBreakdown = doWorkout
-    ? await loadPreviousWeekVolumeBreakdown(userId, nextWeekNumber)
+    ? await loadPreviousWeekVolumeBreakdown(userId, nextWeekNumber, addDaysStr(monday, -7))
     : { total: 0, byMuscle: { chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0 } as Record<MuscleGroup, number>, byPattern: { lower: 0, push: 0, pull: 0, full_body: 0, mixed: 0 } as Record<Pattern, number> };
   const previousWorkingSets = previousWeekBreakdown.total;
 
@@ -740,18 +740,34 @@ const EMPTY_BREAKDOWN: PreviousWeekVolumeBreakdown = {
 export async function loadPreviousWeekVolumeBreakdown(
   userId: string,
   currentWeekNumber: number,
+  previousWeekStartDate?: string,
 ): Promise<PreviousWeekVolumeBreakdown> {
-  const [prevWeek] = await db
-    .select({ id: weeklyPlans.id })
-    .from(weeklyPlans)
-    .where(
-      and(
-        eq(weeklyPlans.userId, userId),
-        sql`${weeklyPlans.weekNumber} < ${currentWeekNumber}`,
-      ),
-    )
-    .orderBy(desc(weeklyPlans.weekNumber))
-    .limit(1);
+  // When a calendar anchor is supplied (weekly generation), reference the
+  // immediately-preceding calendar week rather than the last *created* plan.
+  // An empty/missing preceding week then yields EMPTY_BREAKDOWN (total 0) so
+  // the progressive-overload checks sit out — matching "boş hafta = boş".
+  const [prevWeek] = previousWeekStartDate
+    ? await db
+        .select({ id: weeklyPlans.id })
+        .from(weeklyPlans)
+        .where(
+          and(
+            eq(weeklyPlans.userId, userId),
+            eq(weeklyPlans.startDate, previousWeekStartDate),
+          ),
+        )
+        .limit(1)
+    : await db
+        .select({ id: weeklyPlans.id })
+        .from(weeklyPlans)
+        .where(
+          and(
+            eq(weeklyPlans.userId, userId),
+            sql`${weeklyPlans.weekNumber} < ${currentWeekNumber}`,
+          ),
+        )
+        .orderBy(desc(weeklyPlans.weekNumber))
+        .limit(1);
   if (!prevWeek) return EMPTY_BREAKDOWN;
   const dayRows = await db
     .select({ id: dailyPlans.id })

@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { weeklyPlans, dailyPlans, meals, exercises, supplements, shoppingLists, waterLogs, sleepLogs } from "@/db/schema";
-import { eq, and, sql, desc, asc, inArray, notInArray } from "drizzle-orm";
+import { eq, and, sql, desc, asc, inArray, notInArray, lt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
@@ -28,7 +28,10 @@ import {
 
 export type { AIWeeklyPlan, AIWeeklyDay } from "@/lib/ai-weekly-types";
 
-export async function buildWeeklyPlanContext(userId: string): Promise<string> {
+export async function buildWeeklyPlanContext(
+  userId: string,
+  targetMonday: string,
+): Promise<string> {
   const lines: string[] = [];
 
   // ─── 1. User profile ──────────────────────────────────────────────────
@@ -156,115 +159,181 @@ export async function buildWeeklyPlanContext(userId: string): Promise<string> {
   }
 
   // ─── 3. Previous weeks' programs (skip workout details for nutrition-only) ──
+  // Calendar-anchored to the target week's Monday: we always represent the
+  // four preceding calendar weeks so a skipped week shows up as "BOŞ" instead
+  // of silently dropping out. (weekNumber is a creation counter, not a calendar
+  // index, so the old `weekNumber DESC LIMIT 2` reached past empty weeks.)
   if (user?.serviceType !== "nutrition") {
-    const prevWeeks = await db
-    .select({
-      id: weeklyPlans.id,
-      weekNumber: weeklyPlans.weekNumber,
-      title: weeklyPlans.title,
-      phase: weeklyPlans.phase,
-      startDate: weeklyPlans.startDate,
-    })
-    .from(weeklyPlans)
-    .where(eq(weeklyPlans.userId, userId))
-    .orderBy(desc(weeklyPlans.weekNumber))
-    .limit(2);
+    const mondayAnchor = getMondayStr(targetMonday);
+    const prevMondays = [
+      addDaysStr(mondayAnchor, -28),
+      addDaysStr(mondayAnchor, -21),
+      addDaysStr(mondayAnchor, -14),
+      addDaysStr(mondayAnchor, -7),
+    ];
 
-  if (prevWeeks.length > 0) {
-    lines.push("");
-    lines.push("═══ ANTRENMAN GEÇMİŞİ (Önceki Haftalar — progresif yüklenme için referans) ═══");
+    // Does the user have ANY plan before this week? Distinguishes a genuine
+    // first-time user (skip the block entirely) from a returning user whose
+    // last 4 weeks are empty (render empty weeks + a "restart" note).
+    const [priorHistoryRow] = await db
+      .select({ id: weeklyPlans.id })
+      .from(weeklyPlans)
+      .where(
+        and(
+          eq(weeklyPlans.userId, userId),
+          lt(weeklyPlans.startDate, mondayAnchor),
+        ),
+      )
+      .limit(1);
 
-    const weekIds = prevWeeks.map(w => w.id);
+    if (priorHistoryRow) {
+      // Plans that fall on one of the four preceding Mondays.
+      const prevWeeks = await db
+        .select({
+          id: weeklyPlans.id,
+          weekNumber: weeklyPlans.weekNumber,
+          title: weeklyPlans.title,
+          phase: weeklyPlans.phase,
+          startDate: weeklyPlans.startDate,
+        })
+        .from(weeklyPlans)
+        .where(
+          and(
+            eq(weeklyPlans.userId, userId),
+            inArray(weeklyPlans.startDate, prevMondays),
+          ),
+        );
 
-    // Fetch all days for these weeks in one query
-    const allDays = await db
-      .select({
-        id: dailyPlans.id,
-        weeklyPlanId: dailyPlans.weeklyPlanId,
-        dayName: dailyPlans.dayName,
-        workoutTitle: dailyPlans.workoutTitle,
-        planType: dailyPlans.planType,
-        dayOfWeek: dailyPlans.dayOfWeek,
-      })
-      .from(dailyPlans)
-      .where(inArray(dailyPlans.weeklyPlanId, weekIds))
-      .orderBy(asc(dailyPlans.dayOfWeek));
+      const weekByStart = new Map<string, (typeof prevWeeks)[number]>();
+      for (const w of prevWeeks) {
+        if (w.startDate) weekByStart.set(w.startDate, w);
+      }
 
-    const dayIds = allDays.filter(d => d.planType !== "rest").map(d => d.id);
+      const weekIds = prevWeeks.map((w) => w.id);
 
-    // Fetch all exercises for those days in one query
-    const allExercises = dayIds.length > 0
-      ? await db
-          .select({
-            dailyPlanId: exercises.dailyPlanId,
-            name: exercises.name,
-            sectionLabel: exercises.sectionLabel,
-            sets: exercises.sets,
-            reps: exercises.reps,
-            restSeconds: exercises.restSeconds,
-            durationMinutes: exercises.durationMinutes,
-          })
-          .from(exercises)
-          .where(inArray(exercises.dailyPlanId, dayIds))
-          .orderBy(asc(exercises.sortOrder))
-      : [];
+      // Fetch all days for these weeks in one query
+      const allDays = weekIds.length > 0
+        ? await db
+            .select({
+              id: dailyPlans.id,
+              weeklyPlanId: dailyPlans.weeklyPlanId,
+              dayName: dailyPlans.dayName,
+              workoutTitle: dailyPlans.workoutTitle,
+              planType: dailyPlans.planType,
+              dayOfWeek: dailyPlans.dayOfWeek,
+            })
+            .from(dailyPlans)
+            .where(inArray(dailyPlans.weeklyPlanId, weekIds))
+            .orderBy(asc(dailyPlans.dayOfWeek))
+        : [];
 
-    // Group exercises by dailyPlanId
-    const exercisesByDay = new Map<number, typeof allExercises>();
-    for (const ex of allExercises) {
-      if (ex.dailyPlanId == null) continue;
-      const arr = exercisesByDay.get(ex.dailyPlanId) ?? [];
-      arr.push(ex);
-      exercisesByDay.set(ex.dailyPlanId, arr);
-    }
+      const dayIds = allDays.filter((d) => d.planType !== "rest").map((d) => d.id);
 
-    // Group days by weeklyPlanId
-    const daysByWeek = new Map<number, typeof allDays>();
-    for (const day of allDays) {
-      if (day.weeklyPlanId == null) continue;
-      const arr = daysByWeek.get(day.weeklyPlanId) ?? [];
-      arr.push(day);
-      daysByWeek.set(day.weeklyPlanId, arr);
-    }
+      // Fetch all exercises for those days in one query
+      const allExercises = dayIds.length > 0
+        ? await db
+            .select({
+              dailyPlanId: exercises.dailyPlanId,
+              name: exercises.name,
+              sectionLabel: exercises.sectionLabel,
+              sets: exercises.sets,
+              reps: exercises.reps,
+              restSeconds: exercises.restSeconds,
+              durationMinutes: exercises.durationMinutes,
+            })
+            .from(exercises)
+            .where(inArray(exercises.dailyPlanId, dayIds))
+            .orderBy(asc(exercises.sortOrder))
+        : [];
 
-    for (const week of prevWeeks.reverse()) {
+      // Group exercises by dailyPlanId
+      const exercisesByDay = new Map<number, typeof allExercises>();
+      for (const ex of allExercises) {
+        if (ex.dailyPlanId == null) continue;
+        const arr = exercisesByDay.get(ex.dailyPlanId) ?? [];
+        arr.push(ex);
+        exercisesByDay.set(ex.dailyPlanId, arr);
+      }
+
+      // Group days by weeklyPlanId
+      const daysByWeek = new Map<number, typeof allDays>();
+      for (const day of allDays) {
+        if (day.weeklyPlanId == null) continue;
+        const arr = daysByWeek.get(day.weeklyPlanId) ?? [];
+        arr.push(day);
+        daysByWeek.set(day.weeklyPlanId, arr);
+      }
+
+      // A week is "full" only if it has at least one logged exercise. A plan
+      // with no exercises (or no row at all) is treated as an empty/skipped week.
+      const weekHasExercises = (weekId: number): boolean => {
+        const days = daysByWeek.get(weekId) ?? [];
+        return days.some((d) => (exercisesByDay.get(d.id)?.length ?? 0) > 0);
+      };
+
       lines.push("");
-      lines.push(`── Hafta ${week.weekNumber}: ${week.title} (${week.phase} fazı, ${week.startDate ?? ""}) ──`);
+      lines.push("═══ ANTRENMAN GEÇMİŞİ (Son 4 Hafta — progresif yüklenme için referans) ═══");
 
-      const days = daysByWeek.get(week.id) ?? [];
+      let anyFullWeek = false;
 
-      for (const day of days) {
-        if (day.planType === "rest") {
-          lines.push(`${day.dayName}: Dinlenme`);
+      for (const monday of prevMondays) {
+        const week = weekByStart.get(monday);
+
+        if (!week || !weekHasExercises(week.id)) {
+          // No plan, or a plan with no training content → explicit empty week.
+          lines.push("");
+          lines.push(`── ${monday} (önceki hafta): BOŞ — bu hafta program/antrenman yapılmadı ──`);
           continue;
         }
 
-        const dayExs = exercisesByDay.get(day.id) ?? [];
+        anyFullWeek = true;
+        lines.push("");
+        lines.push(`── Hafta ${week.weekNumber}: ${week.title} (${week.phase} fazı, ${week.startDate ?? ""}) ──`);
 
-        if (dayExs.length === 0) {
-          lines.push(`${day.dayName} (${day.workoutTitle ?? ""}): Program yok`);
-          continue;
+        const days = daysByWeek.get(week.id) ?? [];
+
+        for (const day of days) {
+          if (day.planType === "rest") {
+            lines.push(`${day.dayName}: Dinlenme`);
+            continue;
+          }
+
+          const dayExs = exercisesByDay.get(day.id) ?? [];
+
+          if (dayExs.length === 0) {
+            lines.push(`${day.dayName} (${day.workoutTitle ?? ""}): Program yok`);
+            continue;
+          }
+
+          const sections: Record<string, string[]> = {};
+          for (const ex of dayExs) {
+            if (!sections[ex.sectionLabel]) sections[ex.sectionLabel] = [];
+            const detail = ex.sets && ex.reps
+              ? `${ex.name} ${ex.sets}x${ex.reps}${ex.restSeconds ? ` (${ex.restSeconds}sn)` : ""}`
+              : ex.durationMinutes
+                ? `${ex.name} ${ex.durationMinutes}dk`
+                : ex.name;
+            sections[ex.sectionLabel].push(detail);
+          }
+
+          const sectionSummary = Object.entries(sections)
+            .map(([label, exs]) => `${label}: ${exs.join(", ")}`)
+            .join(" | ");
+
+          lines.push(`${day.dayName} (${day.workoutTitle ?? ""}): ${sectionSummary}`);
         }
+      }
 
-        const sections: Record<string, string[]> = {};
-        for (const ex of dayExs) {
-          if (!sections[ex.sectionLabel]) sections[ex.sectionLabel] = [];
-          const detail = ex.sets && ex.reps
-            ? `${ex.name} ${ex.sets}x${ex.reps}${ex.restSeconds ? ` (${ex.restSeconds}sn)` : ""}`
-            : ex.durationMinutes
-              ? `${ex.name} ${ex.durationMinutes}dk`
-              : ex.name;
-          sections[ex.sectionLabel].push(detail);
-        }
-
-        const sectionSummary = Object.entries(sections)
-          .map(([label, exs]) => `${label}: ${exs.join(", ")}`)
-          .join(" | ");
-
-        lines.push(`${day.dayName} (${day.workoutTitle ?? ""}): ${sectionSummary}`);
+      // All four preceding weeks empty but the user has older history → they
+      // are returning after a long break: tell the AI to ease back in rather
+      // than progressively overload off a plan that's 5+ weeks old.
+      if (!anyFullWeek) {
+        lines.push("");
+        lines.push(
+          "⚠️ Son 4 haftada hiç antrenman kaydı yok — kullanıcı uzun bir aradan sonra yeniden başlıyor. Başlangıç/deload seviyesine uygun, hacmi düşük tutarak kademeli bir programla başla; progresif yüklenme uygulama.",
+        );
       }
     }
-  }
   }
 
   return lines.join("\n");
