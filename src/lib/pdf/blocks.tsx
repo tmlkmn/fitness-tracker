@@ -67,22 +67,22 @@ export interface ExportLabels {
 const styles = StyleSheet.create({
   mealRow: {
     flexDirection: "row",
-    paddingVertical: 5,
-    borderBottomWidth: 0.5,
-    borderBottomColor: PALETTE.border,
+    paddingVertical: 4,
   },
+  // Filled rects instead of element borders: a border on a row that lands on a
+  // page boundary makes react-pdf's border-clip path produce NaN coords and
+  // crash. Background fills paint through a different, safe code path.
+  rowDivider: { height: 0.5, backgroundColor: PALETTE.border },
+  totalDivider: { height: 1, backgroundColor: PALETTE.rule, marginTop: 3, marginBottom: 5 },
   mealLeft: { width: 64 },
   mealTime: { fontWeight: 700 },
   mealMid: { flex: 1, paddingRight: 8 },
   mealMacro: { width: 132, textAlign: "right" },
   mealKcal: { fontWeight: 700 },
+  mealMacroSub: { fontSize: 8, color: PALETTE.faint },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingTop: 6,
-    marginTop: 3,
-    borderTopWidth: 1,
-    borderTopColor: PALETTE.rule,
   },
   exGroupTitle: {
     fontSize: 8.5,
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     marginTop: 7,
     marginBottom: 3,
   },
-  exRow: { flexDirection: "row", paddingVertical: 2.5 },
+  exRow: { flexDirection: "row", paddingVertical: 2 },
   exName: { flex: 1, paddingRight: 8 },
   exMeta: { width: 150, textAlign: "right", color: PALETTE.muted },
   exNote: { color: PALETTE.faint, fontSize: 8, marginTop: 1, paddingRight: 8 },
@@ -131,30 +131,36 @@ export function MealsBlock({
           : m.mealLabel;
         const macros = computeMealMacros([m]);
         return (
-          <View key={m.id} style={styles.mealRow} wrap={false}>
-            <View style={styles.mealLeft}>
-              <Text style={styles.mealTime}>{m.mealTime}</Text>
-              <Text style={baseStyles.faint}>{label}</Text>
+          <View key={m.id} wrap={false}>
+            <View style={styles.mealRow}>
+              <View style={styles.mealLeft}>
+                <Text style={styles.mealTime}>{m.mealTime}</Text>
+                <Text style={baseStyles.faint}>{label}</Text>
+              </View>
+              <View style={styles.mealMid}>
+                <Text>{m.content}</Text>
+              </View>
+              <View style={styles.mealMacro}>
+                {m.calories != null ? (
+                  <Text style={styles.mealKcal}>
+                    {m.calories} {L.kcal}
+                  </Text>
+                ) : null}
+                <Text style={styles.mealMacroSub}>{macroSummary(macros, L)}</Text>
+              </View>
             </View>
-            <View style={styles.mealMid}>
-              <Text>{m.content}</Text>
-            </View>
-            <View style={styles.mealMacro}>
-              {m.calories != null ? (
-                <Text style={styles.mealKcal}>
-                  {m.calories} {L.kcal}
-                </Text>
-              ) : null}
-              <Text style={baseStyles.faint}>{macroSummary(macros, L)}</Text>
-            </View>
+            <View style={styles.rowDivider} />
           </View>
         );
       })}
-      <View style={styles.totalRow}>
-        <Text style={baseStyles.bold}>{L.dayTotal}</Text>
-        <Text style={baseStyles.bold}>
-          {totals.calories} {L.kcal} · {macroSummary(totals, L)}
-        </Text>
+      <View wrap={false}>
+        <View style={styles.totalDivider} />
+        <View style={styles.totalRow}>
+          <Text style={baseStyles.bold}>{L.dayTotal}</Text>
+          <Text style={baseStyles.bold}>
+            {totals.calories} {L.kcal} · {macroSummary(totals, L)}
+          </Text>
+        </View>
       </View>
     </View>
   );

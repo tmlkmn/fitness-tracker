@@ -1,10 +1,10 @@
 import {
   Document,
   Page,
-  Text,
   baseStyles,
   DocHeader,
   DocFooter,
+  SubSection,
 } from "../pdf-base";
 import {
   MealsBlock,
@@ -41,10 +41,10 @@ export function DailyPlanDocument({ data }: { data: DailyPlanDocData }) {
           metaLines={[`${L.generatedAt}: ${generatedAt}`]}
         />
 
-        <Text style={baseStyles.sectionTitle}>{L.meals}</Text>
+        <SubSection label={L.meals} />
         <MealsBlock meals={day.meals} locale={locale} L={L} />
 
-        <Text style={baseStyles.sectionTitle}>{L.workout}</Text>
+        <SubSection label={L.workout} spaced />
         <WorkoutBlock exercises={day.exercises} L={L} />
 
         <DocFooter text={L.footer} />
