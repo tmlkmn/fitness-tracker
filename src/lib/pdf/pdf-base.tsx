@@ -1,5 +1,6 @@
-import { Document, Page, View, Text, StyleSheet, Font } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet, Font } from "@react-pdf/renderer";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 
 // Shared Turkish-capable font for every app export PDF. The bundled Geist
 // Regular at public/fonts covers the glyphs (ş, ğ, ı, İ …) the built-in PDF
@@ -9,6 +10,19 @@ Font.register({
   family: "FitMusc",
   src: path.join(process.cwd(), "public", "fonts", "receipt.ttf"),
 });
+
+// The app logo (FitMusc mark) shown top-left on every export header. It is
+// inlined as a base64 data URI: react-pdf treats a plain `src` string as a URL
+// and tries to fetch it (which fails for a local path), so we read the file
+// once at module load and embed it directly.
+const LOGO_SRC: string | null = (() => {
+  try {
+    const buf = readFileSync(path.join(process.cwd(), "public", "icon-192.png"));
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+})();
 
 // react-pdf hyphenates long words by default; disable so Turkish content and
 // food names stay intact.
@@ -44,23 +58,16 @@ export const baseStyles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  brandWrap: { flexDirection: "row", alignItems: "center" },
-  brandMark: {
-    width: 15,
-    height: 15,
-    backgroundColor: PALETTE.primary,
-    borderRadius: 4,
-    marginRight: 7,
-  },
-  brand: { fontSize: 14, color: PALETTE.primary, fontWeight: 700, letterSpacing: 0.3 },
+  logo: { width: 34, height: 34, borderRadius: 7 },
+  logoFallback: { width: 34, height: 34, borderRadius: 7, backgroundColor: PALETTE.primary },
   metaRight: { alignItems: "flex-end" },
   metaText: { fontSize: 8, color: PALETTE.faint },
-  docTitle: { fontSize: 20, marginTop: 16, fontWeight: 700, color: PALETTE.text },
-  docSubtitle: { color: PALETTE.muted, marginTop: 3, fontSize: 10.5 },
+  docTitle: { fontSize: 20, marginTop: 18, fontWeight: 700, color: PALETTE.text },
+  docSubtitle: { color: PALETTE.muted, marginTop: 8, fontSize: 10.5 },
   headerRule: {
     height: 2,
     backgroundColor: PALETTE.primary,
-    marginTop: 12,
+    marginTop: 14,
     borderRadius: 1,
   },
 
@@ -189,20 +196,22 @@ export const baseStyles = StyleSheet.create({
 });
 
 export interface DocHeaderProps {
-  brand: string;
+  /** Kept for API compatibility; the brand is now shown via the logo image. */
+  brand?: string;
   title: string;
   subtitle?: string;
   metaLines?: string[];
 }
 
-export function DocHeader({ brand, title, subtitle, metaLines }: DocHeaderProps) {
+export function DocHeader({ title, subtitle, metaLines }: DocHeaderProps) {
   return (
     <View style={baseStyles.header}>
       <View style={baseStyles.brandRow}>
-        <View style={baseStyles.brandWrap}>
-          <View style={baseStyles.brandMark} />
-          <Text style={baseStyles.brand}>{brand}</Text>
-        </View>
+        {LOGO_SRC ? (
+          <Image src={LOGO_SRC} style={baseStyles.logo} />
+        ) : (
+          <View style={baseStyles.logoFallback} />
+        )}
         {metaLines && metaLines.length > 0 ? (
           <View style={baseStyles.metaRight}>
             {metaLines.map((line, i) => (

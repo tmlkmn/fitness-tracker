@@ -81,18 +81,7 @@ export async function GET(
     targets,
   };
 
-  // The flowing layout is the clean default, but react-pdf's layout engine
-  // crashes on extremely long (>~10 page) flowing documents. If that happens,
-  // retry with atomic days (each day pinned to a page) so the export still
-  // produces a PDF instead of a 500.
-  let buffer: Buffer;
-  try {
-    buffer = await renderToBuffer(WeeklyPlanDocument({ data }));
-  } catch {
-    buffer = await renderToBuffer(
-      WeeklyPlanDocument({ data: { ...data, atomicDays: true } }),
-    );
-  }
+  const buffer = await renderToBuffer(WeeklyPlanDocument({ data }));
   const filename = `fitmusc-${slugForFilename(collected.plan.title)}.pdf`;
 
   return new NextResponse(new Uint8Array(buffer), {

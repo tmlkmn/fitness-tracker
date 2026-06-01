@@ -16,17 +16,11 @@ import {
   planTypeLabel,
   type ExportLabels,
 } from "../blocks";
-import type { CollectedWeeklyPlan } from "@/lib/export/collect-weekly-plan";
+import type { CollectedWeeklyPlan, CollectedDay } from "@/lib/export/collect-weekly-plan";
 import type { Locale } from "@/lib/locale";
 import type { MacroTargets } from "@/lib/macro-targets";
 
 const styles = StyleSheet.create({
-  // The day block intentionally does NOT use wrap={false}: a full training
-  // day (many meals + long workout) is taller than an A4 page, and forcing it
-  // onto one page makes react-pdf overflow and overlap every line. Letting it
-  // flow across pages keeps each page within bounds. Short rows inside still
-  // use wrap={false} so individual meal/exercise rows never split.
-  daySection: { marginTop: 13 },
   dayHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -52,27 +46,51 @@ export interface WeeklyPlanDocData {
   dateRange: string | null;
   generatedAt: string;
   targets: MacroTargets | null;
-  /**
-   * Fallback layout. When true, each day is kept on a single page (wrap=false)
-   * instead of flowing across pages. Flowing gives the cleaner result, but
-   * react-pdf's layout engine crashes on extremely long (>~10 page) flowing
-   * documents; the route retries with this flag so such plans still produce a
-   * PDF (a very tall day may overflow, but it never 500s).
-   */
-  atomicDays?: boolean;
+}
+
+function DayPage({
+  day,
+  locale,
+  L,
+}: {
+  day: CollectedDay;
+  locale: Locale;
+  L: ExportLabels;
+}) {
+  return (
+    <Page size="A4" style={baseStyles.page}>
+      <View style={styles.dayHeader} wrap={false}>
+        <View style={styles.dayAccent} />
+        <Text style={styles.dayName}>{day.dayName}</Text>
+        <Text style={styles.dayMeta}>
+          {planTypeLabel(day.planType, L)}
+          {day.workoutTitle ? ` · ${day.workoutTitle}` : ""}
+        </Text>
+      </View>
+
+      <SubSection label={L.meals} />
+      <MealsBlock meals={day.meals} locale={locale} L={L} />
+
+      <SubSection label={L.workout} spaced />
+      <WorkoutBlock exercises={day.exercises} L={L} />
+
+      <DocFooter text={L.footer} />
+    </Page>
+  );
 }
 
 export function WeeklyPlanDocument({ data }: { data: WeeklyPlanDocData }) {
-  const { collected, locale, labels: L, dateRange, generatedAt, targets, atomicDays } = data;
+  const { collected, locale, labels: L, dateRange, generatedAt, targets } = data;
   const { plan, days, supplements } = collected;
 
   const subtitleParts = [plan.phase, dateRange].filter(Boolean) as string[];
 
   return (
     <Document>
+      {/* Overview page: brand, week title, daily targets, supplements. Each
+          day then gets its own page for an easy-to-read, printable handout. */}
       <Page size="A4" style={baseStyles.page}>
         <DocHeader
-          brand={L.brand}
           title={plan.title}
           subtitle={subtitleParts.join(" · ")}
           metaLines={[`${L.generatedAt}: ${generatedAt}`]}
@@ -94,30 +112,8 @@ export function WeeklyPlanDocument({ data }: { data: WeeklyPlanDocData }) {
           </>
         ) : null}
 
-        {days.map((day) => (
-          // react-pdf treats `'wrap' in props` as "wrap was set" — even
-          // wrap={undefined} disables wrapping. So the prop is omitted entirely
-          // in the default flowing mode and only added (false) for the fallback.
-          <View key={day.id} style={styles.daySection} {...(atomicDays ? { wrap: false } : {})}>
-            <View style={styles.dayHeader} wrap={false}>
-              <View style={styles.dayAccent} />
-              <Text style={styles.dayName}>{day.dayName}</Text>
-              <Text style={styles.dayMeta}>
-                {planTypeLabel(day.planType, L)}
-                {day.workoutTitle ? ` · ${day.workoutTitle}` : ""}
-              </Text>
-            </View>
-
-            <SubSection label={L.meals} />
-            <MealsBlock meals={day.meals} locale={locale} L={L} />
-
-            <SubSection label={L.workout} spaced />
-            <WorkoutBlock exercises={day.exercises} L={L} />
-          </View>
-        ))}
-
         {supplements.length > 0 ? (
-          <View wrap={false}>
+          <View>
             <Text style={baseStyles.sectionTitle}>{L.supplements}</Text>
             {supplements.map((s) => (
               <View key={s.id} wrap={false}>
@@ -134,6 +130,10 @@ export function WeeklyPlanDocument({ data }: { data: WeeklyPlanDocData }) {
 
         <DocFooter text={L.footer} />
       </Page>
+
+      {days.map((day) => (
+        <DayPage key={day.id} day={day} locale={locale} L={L} />
+      ))}
     </Document>
   );
 }
