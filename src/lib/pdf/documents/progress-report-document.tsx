@@ -24,7 +24,15 @@ export interface ProgressDocData {
 }
 
 const styles = StyleSheet.create({
-  chartBox: { marginTop: 8, marginBottom: 8 },
+  chartBox: {
+    marginTop: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: PALETTE.border,
+    borderRadius: 5,
+    padding: 8,
+    backgroundColor: PALETTE.surface,
+  },
   metricRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -51,7 +59,9 @@ const styles = StyleSheet.create({
   cNum: { width: 70, textAlign: "right" },
 });
 
-const CHART_W = 515;
+// Content width on A4 (595.28pt) minus the page's 44pt horizontal padding on
+// each side, minus the chart card's 8pt padding on each side.
+const CHART_W = 491;
 const CHART_H = 150;
 const PAD = 24;
 

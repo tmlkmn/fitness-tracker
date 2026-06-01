@@ -6,6 +6,7 @@ import {
   baseStyles,
   DocHeader,
   DocFooter,
+  StatChips,
 } from "../pdf-base";
 import { StyleSheet } from "@react-pdf/renderer";
 import {
@@ -19,29 +20,43 @@ import type { Locale } from "@/lib/locale";
 import type { MacroTargets } from "@/lib/macro-targets";
 
 const styles = StyleSheet.create({
-  daySection: { marginBottom: 12 },
+  daySection: {
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 5,
+    overflow: "hidden",
+  },
   dayHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-end",
+    alignItems: "center",
     backgroundColor: "#f3f4f6",
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 3,
-    marginBottom: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
   },
-  dayName: { fontSize: 11 },
-  subTitle: { fontSize: 9, color: "#6b7280", marginTop: 6, marginBottom: 2 },
+  dayName: { fontSize: 11.5, fontWeight: 700, color: "#14532d" },
+  dayMeta: { fontSize: 9, color: "#6b7280" },
+  dayBody: { paddingHorizontal: 10, paddingBottom: 8 },
+  subTitle: {
+    fontSize: 8,
+    color: "#6b7280",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 8,
+    marginBottom: 3,
+  },
   suppRow: {
     flexDirection: "row",
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderBottomWidth: 0.5,
     borderBottomColor: "#e5e7eb",
   },
   suppName: { flex: 1 },
   suppDosage: { width: 110 },
   suppTiming: { width: 130, textAlign: "right", color: "#6b7280" },
-  targetText: { color: "#15803d" },
 });
 
 export interface WeeklyPlanDocData {
@@ -70,29 +85,38 @@ export function WeeklyPlanDocument({ data }: { data: WeeklyPlanDocData }) {
         />
 
         {targets ? (
-          <Text style={[styles.subTitle, styles.targetText]}>
-            {L.targets}: {targets.calories} {L.kcal} · {L.protein}
-            {targets.protein} {L.carbs}
-            {targets.carbs} {L.fat}
-            {targets.fat}
-          </Text>
+          <>
+            <Text style={[baseStyles.sectionLabel, { marginTop: 12 }]}>
+              {L.targets}
+            </Text>
+            <StatChips
+              chips={[
+                { label: L.calories, value: `${targets.calories} ${L.kcal}`, accent: true },
+                { label: L.proteinFull, value: `${targets.protein} g` },
+                { label: L.carbsFull, value: `${targets.carbs} g` },
+                { label: L.fatFull, value: `${targets.fat} g` },
+              ]}
+            />
+          </>
         ) : null}
 
         {days.map((day) => (
           <View key={day.id} style={styles.daySection} wrap={false}>
             <View style={styles.dayHeader}>
               <Text style={styles.dayName}>{day.dayName}</Text>
-              <Text style={baseStyles.muted}>
+              <Text style={styles.dayMeta}>
                 {planTypeLabel(day.planType, L)}
                 {day.workoutTitle ? ` · ${day.workoutTitle}` : ""}
               </Text>
             </View>
 
-            <Text style={styles.subTitle}>{L.meals}</Text>
-            <MealsBlock meals={day.meals} locale={locale} L={L} />
+            <View style={styles.dayBody}>
+              <Text style={styles.subTitle}>{L.meals}</Text>
+              <MealsBlock meals={day.meals} locale={locale} L={L} />
 
-            <Text style={styles.subTitle}>{L.workout}</Text>
-            <WorkoutBlock exercises={day.exercises} L={L} />
+              <Text style={styles.subTitle}>{L.workout}</Text>
+              <WorkoutBlock exercises={day.exercises} L={L} />
+            </View>
           </View>
         ))}
 

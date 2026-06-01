@@ -21,6 +21,10 @@ export interface ExportLabels {
   protein: string;
   carbs: string;
   fat: string;
+  calories: string;
+  proteinFull: string;
+  carbsFull: string;
+  fatFull: string;
   dayTotal: string;
   noMeals: string;
   // workout
@@ -63,34 +67,39 @@ export interface ExportLabels {
 const styles = StyleSheet.create({
   mealRow: {
     flexDirection: "row",
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderBottomWidth: 0.5,
     borderBottomColor: PALETTE.border,
   },
-  mealLeft: { width: 70 },
+  mealLeft: { width: 64 },
+  mealTime: { fontWeight: 700 },
   mealMid: { flex: 1, paddingRight: 8 },
-  mealMacro: { width: 120, textAlign: "right" },
+  mealMacro: { width: 132, textAlign: "right" },
+  mealKcal: { fontWeight: 700 },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingTop: 5,
-    marginTop: 2,
+    paddingTop: 6,
+    marginTop: 3,
+    borderTopWidth: 1,
+    borderTopColor: PALETTE.rule,
   },
   exGroupTitle: {
-    fontSize: 9,
+    fontSize: 8.5,
     color: PALETTE.muted,
     textTransform: "uppercase",
-    marginTop: 6,
-    marginBottom: 2,
+    letterSpacing: 0.4,
+    marginTop: 7,
+    marginBottom: 3,
   },
-  exRow: { flexDirection: "row", paddingVertical: 2 },
+  exRow: { flexDirection: "row", paddingVertical: 2.5 },
   exName: { flex: 1, paddingRight: 8 },
   exMeta: { width: 150, textAlign: "right", color: PALETTE.muted },
-  exNote: { color: PALETTE.faint, fontSize: 8, marginTop: 1 },
+  exNote: { color: PALETTE.faint, fontSize: 8, marginTop: 1, paddingRight: 8 },
 });
 
 function macroSummary(m: { protein: number; carbs: number; fat: number }, L: ExportLabels): string {
-  return `${L.protein}${m.protein} ${L.carbs}${m.carbs} ${L.fat}${m.fat}`;
+  return `${L.protein} ${m.protein}g · ${L.carbs} ${m.carbs}g · ${L.fat} ${m.fat}g`;
 }
 
 export function planTypeLabel(planType: string, L: ExportLabels): string {
@@ -124,7 +133,7 @@ export function MealsBlock({
         return (
           <View key={m.id} style={styles.mealRow} wrap={false}>
             <View style={styles.mealLeft}>
-              <Text>{m.mealTime}</Text>
+              <Text style={styles.mealTime}>{m.mealTime}</Text>
               <Text style={baseStyles.faint}>{label}</Text>
             </View>
             <View style={styles.mealMid}>
@@ -132,7 +141,7 @@ export function MealsBlock({
             </View>
             <View style={styles.mealMacro}>
               {m.calories != null ? (
-                <Text>
+                <Text style={styles.mealKcal}>
                   {m.calories} {L.kcal}
                 </Text>
               ) : null}

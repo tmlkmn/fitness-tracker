@@ -3540,6 +3540,10 @@
       "carbs": "K",
       "fat": "Y"
     },
+    "calories": "Kalori",
+    "proteinFull": "Protein",
+    "carbsFull": "Karbonhidrat",
+    "fatFull": "Yağ",
     "dayTotal": "Gün Toplamı",
     "noMeals": "Öğün eklenmemiş.",
     "workout": "Antrenman",
