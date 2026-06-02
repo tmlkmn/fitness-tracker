@@ -22,7 +22,11 @@ import { getSectionSortOffset } from "@/lib/ai-config";
  * transaction can build value rows for `tx.insert(meals).values(...)`.
  */
 export function mealsToInsertValues(dailyPlanId: number, list: AIMeal[]) {
-  return list.map((m, i) => ({
+  // Persist chronologically so the PDF (ordered by sortOrder) renders meals by
+  // time. The AI sometimes emits them out of order — e.g. a 20:00 post-workout
+  // before a 19:30 snack. Stable sort keeps equal/parseless times in place.
+  const ordered = [...list].sort((a, b) => mealMinutes(a.mealTime) - mealMinutes(b.mealTime));
+  return ordered.map((m, i) => ({
     dailyPlanId,
     mealTime: m.mealTime,
     mealLabel: coerceMealLabel(m.mealLabel),
@@ -34,6 +38,13 @@ export function mealsToInsertValues(dailyPlanId: number, list: AIMeal[]) {
     isCompleted: false,
     sortOrder: i,
   }));
+}
+
+function mealMinutes(t: string | null | undefined): number {
+  if (!t) return 9999;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim());
+  if (!m) return 9999;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
 }
 
 /**

@@ -630,6 +630,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_EN}
 - Main: compound first, then isolation
 - Compound: 3-5 sets, 6-12 reps, 60-120s rest
 - Isolation: 3-4 sets, 10-15 reps, 45-60s rest
+- Use CLEAN rep numbers — 8, 10, 12, 15, or 20. NEVER odd values like 11, 14, 18.
 - Cardio / HIIT: use durationMinutes (15-30min), sets = reps = null, restSeconds is interval-rest not between-move
 - Plyometric: 3-4 sets × 6-8 reps, 90-120s rest (quality reps; explosiveness fades when fatigued)
 - Warm-up: muscle-specific dynamic warm-up + light set
@@ -711,6 +712,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_TR}
 - Ana antrenman: Önce compound, sonra izolasyon
 - Compound hareketlerde: 3-5 set, 6-12 tekrar, 60-120sn dinlenme
 - İzolasyon hareketlerde: 3-4 set, 10-15 tekrar, 45-60sn dinlenme
+- TEMIZ tekrar sayıları kullan — 8, 10, 12, 15 veya 20. 11, 14, 18 gibi sayılar VERME.
 - Cardio / HIIT: durationMinutes kullan (15-30dk), sets = reps = null, restSeconds hareket arası değil interval arası
 - Plyometric: 3-4 set × 6-8 tekrar, 90-120sn dinlenme (kaliteli tekrar, yorgunlukta patlayıcılık kaybolur)
 - Isınma: Kas grubuna özel dinamik ısınma + hafif set

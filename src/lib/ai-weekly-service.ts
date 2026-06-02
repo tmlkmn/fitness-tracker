@@ -27,6 +27,7 @@ import {
   type DayType,
   type WeeklyMacroTargets,
 } from "@/lib/carb-cycling";
+import { enforceDailyMacroFloors, normalizePlanReps } from "@/lib/ai-weekly-postprocess";
 import {
   getDailySupplementBudget,
   applySupplementAdjustment,
@@ -320,7 +321,7 @@ function buildQualityRetryMessage(summary: QualityIssueSummary): string {
         ? ` Sapan günler: ${summary.macroDriftDetails.join(" | ")}.`
         : "";
     issues.push(
-      `MAKRO HEDEF SAPMASI (kcal ±%10 / makro ±%15 aşıldı).${detail} DÜZELTME KURALI: sapan günlerin çoğu hedefin ALTINDA — öğünleri BÜYÜT (karb: pirinç/yulaf/ekmek/makarna/meyve; yağ: zeytinyağı/kuruyemiş/avokado), öğün SİLME. Her günü KENDİ tipinin MUTLAK kcal hedefine ±%5 getir: antrenman günü ~3000+ kcal. Dinlenme günlerinde proteini ve yağı DÜŞÜRME, karbı tabanın (≥220g) ALTINA indirme — sadece karbı hafif azalt. Çıkardığın pre/post-workout shake proteinini kalan öğünlere dağıt.`,
+      `MAKRO HEDEF SAPMASI (kcal ±%10 / makro ±%15 aşıldı).${detail} DÜZELTME KURALI: Carb cycling SADECE karbonhidratı oynatır — protein HER GÜN (dinlenme günleri DAHİL) o gün-tipinin hedef proteinine eşit kalmalı (±%5), yağ da gün-tipi tabanının altına inmemeli. Dinlenme günü proteini = antrenman günü proteini; SADECE karbı hafif azalt, proteini/yağı DÜŞÜRME. Sapan günlerin çoğu hedefin ALTINDAysa o günleri BÜYÜT (öğün SİLME): proteini düşük günlerde protein kaynaklarını (yumurta, yoğurt, tavuk, whey) artır. Her günü KENDİ tipinin MUTLAK kcal hedefine ±%5 getir.`,
     );
   }
   if (summary.progressiveOverloadIssue) {
@@ -416,7 +417,7 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
     // Up to 2 attempts: macro drift (esp. the rest-day protein collapse) often
     // survives a single generic nudge, so we retry once more when macros are
     // still off — but only while each attempt keeps strictly improving.
-    const MAX_QUALITY_RETRIES = 2;
+    const MAX_QUALITY_RETRIES = 3;
     for (let attempt = 0; attempt < MAX_QUALITY_RETRIES; attempt++) {
       const summary = summarizeQualityIssues(result, effectivePastDows);
       if (!summary.hasAny) break;
@@ -1273,6 +1274,13 @@ export function mergeWeeklyResults(
   if (nonPastDays.length > 0 && emptyDays >= nonPastDays.length) {
     throw new Error("AI bu hafta için anlamlı bir plan üretemedi. Lütfen birkaç dakika sonra tekrar deneyin.");
   }
+
+  // Deterministic safety net (last word after the AI + retries): guarantee each
+  // day's protein/fat floors — carb cycling must move ONLY carbs — and clean up
+  // odd rep counts.
+  const bodyWeightKg = req.userRow?.weight ? parseFloat(req.userRow.weight) : null;
+  enforceDailyMacroFloors(plan, req.adjustedTargets, bodyWeightKg, req.locale);
+  normalizePlanReps(plan);
 
   // Snapshot the supplement-adjusted targets the meals were graded against so
   // the export PDF header stays consistent with this week even after the
