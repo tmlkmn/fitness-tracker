@@ -49,8 +49,11 @@ export function computeBMI(
 /**
  * Gates a chosen goal by body composition. Only SURPLUS goals (muscle_gain,
  * weight_gain) are gated — deficit/maintenance goals pass through unchanged.
- * When body-fat % is missing the BMI bands still apply (so an obese user is
- * caught without any logged measurement).
+ *
+ * Body fat % is the AUTHORITATIVE signal when measured: a muscular person with
+ * a high BMI but low body fat is NOT gated (BMI can't tell muscle from fat).
+ * The BMI bands apply ONLY as a fallback when no body-fat measurement exists,
+ * so an obese user who never logged a scan is still caught.
  */
 export function gateGoalByComposition(
   chosenGoal: FitnessGoal,
@@ -64,15 +67,23 @@ export function gateGoalByComposition(
   const female = body.gender === "female";
   const { bodyFatPct: bf, bmi } = body;
 
-  const obese = bmi != null && bmi >= BMI_OBESE;
-  const overweight = bmi != null && bmi >= BMI_OVERWEIGHT;
-  const veryHighBF = bf != null && bf > (female ? BF_VERY_HIGH.female : BF_VERY_HIGH.male);
-  const highBF = bf != null && bf > (female ? BF_HIGH.female : BF_HIGH.male);
+  // Measured body fat wins — BMI over-counts lean mass for a muscular build.
+  if (bf != null) {
+    if (bf > (female ? BF_VERY_HIGH.female : BF_VERY_HIGH.male)) {
+      return { goal: "loss", gated: true, reason: gateReason("loss", bf, bmi, locale) };
+    }
+    if (bf > (female ? BF_HIGH.female : BF_HIGH.male)) {
+      return { goal: "recomp", gated: true, reason: gateReason("recomp", bf, bmi, locale) };
+    }
+    // Low/normal body fat → a bulk is fine even if BMI reads "obese" (muscle).
+    return { goal: chosenGoal, gated: false, reason: null };
+  }
 
-  if (obese || veryHighBF) {
+  // No body-fat measurement → fall back to BMI bands alone.
+  if (bmi != null && bmi >= BMI_OBESE) {
     return { goal: "loss", gated: true, reason: gateReason("loss", bf, bmi, locale) };
   }
-  if (overweight || highBF) {
+  if (bmi != null && bmi >= BMI_OVERWEIGHT) {
     return { goal: "recomp", gated: true, reason: gateReason("recomp", bf, bmi, locale) };
   }
   return { goal: chosenGoal, gated: false, reason: null };
@@ -84,15 +95,15 @@ function gateReason(
   bmi: number | null,
   locale: "tr" | "en",
 ): string {
-  const bmiStr = bmi != null ? bmi.toFixed(1) : "—";
+  const bmiStr = bmi == null ? "—" : bmi.toFixed(1);
   if (locale === "en") {
-    const bfStr = bf != null ? `~${Math.round(bf)}%` : "n/a";
+    const bfStr = bf == null ? "n/a" : `~${Math.round(bf)}%`;
     const phase = to === "loss"
       ? "a fat-loss phase (calorie deficit + high protein)"
       : "a recomposition phase (slight deficit, very high protein)";
     return `Body fat ${bfStr} / BMI ${bmiStr} is high — applied ${phase} instead of a surplus. Bulking is recommended once body fat reaches ~15-18%.`;
   }
-  const bfStr = bf != null ? `~%${Math.round(bf)}` : "—";
+  const bfStr = bf == null ? "—" : `~%${Math.round(bf)}`;
   const phase = to === "loss"
     ? "yağ kaybı fazı (kalori açığı + yüksek protein)"
     : "rekomposizyon fazı (hafif açık, çok yüksek protein)";
