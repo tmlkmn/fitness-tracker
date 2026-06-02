@@ -7,6 +7,7 @@ import {
   type FitnessGoal,
 } from "@/lib/meal-timing";
 import { GOAL_STRATEGIES, computeCalorieDelta, CALORIE_DELTA_CLAMP } from "@/lib/strategy/goal-strategy";
+import { gateGoalByComposition, computeBMI, type GoalGateResult } from "@/lib/strategy/goal-gating";
 import { DELOAD_CALORIE_DELTA_MULTIPLIER } from "@/lib/deload-policy";
 import {
   applyCarbCycling,
@@ -26,6 +27,19 @@ export interface ResolveTargetsOptions {
    * result is always internally reconciled.
    */
   strategy?: StrategyOverride;
+  /**
+   * Pre-resolved (body-composition gated) goal. When provided,
+   * `computeDefaultTargets` uses it directly and skips its own gating —
+   * lets `resolveWeeklyTargets` gate ONCE and share the result with the
+   * baseline + the carb-cycling profile.
+   */
+  effectiveGoal?: FitnessGoal;
+  /**
+   * Pre-fetched latest body-fat % (drives Katch-McArdle BMR + the gate). When
+   * `undefined`, `computeDefaultTargets` fetches it itself; pass it down to
+   * avoid a duplicate query. `null` explicitly means "no measurement".
+   */
+  bodyFatPct?: number | null;
 }
 
 export interface StrategyOverride {
@@ -94,6 +108,12 @@ const DEFAULT_ACTIVITY: DailyActivityLevel = "moderate";
 
 const MIN_DAILY_CALORIES = 1200;
 
+// Safety guards for stored body-fat readings (BIA scales sometimes return
+// 0/100/NaN). Anything outside this range is treated as missing. Used by the
+// goal gate (high body fat redirects a bulk to fat loss).
+const FAT_PERCENT_MIN = 5;
+const FAT_PERCENT_MAX = 60;
+
 function safeParseFloat(value: unknown): number | null {
   if (value == null) return null;
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
@@ -155,6 +175,24 @@ async function fetchTrailingWeight(userId: string): Promise<number | null> {
   return weights.reduce((a, b) => a + b, 0) / weights.length;
 }
 
+/**
+ * Latest plausible body-fat % from the progress logs — feeds the goal gate
+ * (high body fat redirects a chosen bulk to a fat-loss/recomp phase). Returns
+ * null when nothing usable is logged; the gate then falls back to BMI alone.
+ */
+async function fetchLatestBodyFat(userId: string): Promise<number | null> {
+  const rows = await db
+    .select({ fatPercent: progressLogs.fatPercent })
+    .from(progressLogs)
+    .where(and(eq(progressLogs.userId, userId), isNotNull(progressLogs.fatPercent)))
+    .orderBy(desc(progressLogs.logDate))
+    .limit(1);
+
+  const fp = rows[0] ? safeParseFloat(rows[0].fatPercent) : null;
+  if (fp == null || fp < FAT_PERCENT_MIN || fp > FAT_PERCENT_MAX) return null;
+  return fp;
+}
+
 /** Clamps an explicit kcal delta to the same safety bounds as the per-kg path. */
 function clampCalorieDelta(delta: number, multiplier = 1): number {
   const raw = Math.round(delta * multiplier);
@@ -177,18 +215,53 @@ export async function computeDefaultTargets(
 
   const gender = normalizeGender(user.gender);
   const activity = ACTIVITY_MULTIPLIER[normalizeActivity(user.dailyActivityLevel)];
-  const goal = resolveGoal(user);
+  // Latest body-fat % drives BOTH the goal gate and (when known) a more
+  // accurate Katch-McArdle BMR — one fetch, used twice. Callers may pass it in
+  // (resolveWeeklyTargets) to avoid a duplicate query.
+  const bodyFatPct =
+    opts?.bodyFatPct !== undefined
+      ? opts.bodyFatPct
+      : userId
+        ? await fetchLatestBodyFat(userId)
+        : null;
+
+  // Body-composition goal gate: a high-body-fat / obese user's "bulk" choice
+  // is redirected to fat loss / recomp (no surplus on top of existing fat).
+  // When the caller already gated (opts.effectiveGoal), reuse it.
+  const chosenGoal = resolveGoal(user);
+  let goal: FitnessGoal;
+  let gatedAway: boolean;
+  if (opts?.effectiveGoal != null) {
+    goal = opts.effectiveGoal;
+    gatedAway = opts.effectiveGoal !== chosenGoal;
+  } else {
+    const res = gateGoalByComposition(chosenGoal, { bodyFatPct, bmi: computeBMI(w, h), gender });
+    goal = res.goal;
+    gatedAway = res.gated;
+  }
   const strategy = GOAL_STRATEGIES[goal];
   const nudge = opts?.strategy;
 
-  // Mifflin-St Jeor (sex-aware)
-  const bmr = 10 * w + 6.25 * h - 5 * age + BMR_SEX_CONSTANT[gender];
+  // BMR: Katch-McArdle (LBM-based) when body fat is known — accurate for
+  // high-body-fat users, where Mifflin (total-weight) overestimates
+  // maintenance and would leave the fat-loss deficit too small. Falls back to
+  // Mifflin-St Jeor when no body-fat measurement exists.
+  const bmr =
+    bodyFatPct != null
+      ? 370 + 21.6 * (w * (1 - bodyFatPct / 100))
+      : 10 * w + 6.25 * h - 5 * age + BMR_SEX_CONSTANT[gender];
   const tdee = bmr * activity;
   const deloadMultiplier = opts?.deloadWeek ? DELOAD_CALORIE_DELTA_MULTIPLIER : 1;
   // Calorie delta: an explicit nudge (AI/manual) replaces the goal's per-kg
-  // delta; both share the ±800 clamp and the deload shrink.
-  const delta = nudge?.calorieDelta != null
-    ? clampCalorieDelta(nudge.calorieDelta, deloadMultiplier)
+  // delta; both share the ±800 clamp and the deload shrink. But when the goal
+  // was gated away from a bulk, a positive (surplus) nudge is dropped so it
+  // can't re-introduce the surplus the gate just removed.
+  const nudgeDelta =
+    gatedAway && nudge?.calorieDelta != null && nudge.calorieDelta > 0
+      ? null
+      : nudge?.calorieDelta;
+  const delta = nudgeDelta != null
+    ? clampCalorieDelta(nudgeDelta, deloadMultiplier)
     : computeCalorieDelta(
         strategy,
         w,
@@ -224,6 +297,27 @@ export function readStrategyOverride(user: UserWithTargets): StrategyOverride {
     proteinPerKgBW: safeParseFloat(user.targetProteinPerKg),
     fatPctOfCalories: safeParseFloat(user.targetFatPct),
   };
+}
+
+/**
+ * Resolves the user's chosen goal and gates it by body composition (latest
+ * body-fat % + live-weight BMI). A high-body-fat / obese user's bulk choice
+ * becomes fat loss / recomp. Shared by the macro engine and the AI prompt so
+ * both render the same (gated) goal. `locale` only affects `reason`.
+ */
+export async function resolveEffectiveGoal(
+  user: UserBasics,
+  userId: string | null,
+  locale: "tr" | "en" = "tr",
+): Promise<GoalGateResult & { chosenGoal: FitnessGoal; bodyFatPct: number | null }> {
+  const chosenGoal = resolveGoal(user);
+  const loggedWeight = userId ? await fetchTrailingWeight(userId) : null;
+  const w = loggedWeight ?? safeParseFloat(user.weight);
+  const bmi = computeBMI(w, user.height ?? null);
+  const bodyFatPct = userId ? await fetchLatestBodyFat(userId) : null;
+  const gender = normalizeGender(user.gender);
+  const res = gateGoalByComposition(chosenGoal, { bodyFatPct, bmi, gender }, locale);
+  return { chosenGoal, bodyFatPct, ...res };
 }
 
 /**
@@ -264,16 +358,19 @@ export async function resolveWeeklyTargets(
     returnWeek?: boolean;
   },
 ): Promise<WeeklyMacroTargets | null> {
-  const baseline = await resolveTargets(user, userId, { deloadWeek: opts.deloadWeek });
+  // Gate the goal ONCE by body composition, then share it with the baseline
+  // and the carb-cycling profile so an obese user gets a fat-loss baseline AND
+  // a non-aggressive carb profile (not a bulk pump).
+  const eff = await resolveEffectiveGoal(user, userId);
+  const baseline = await resolveTargets(user, userId, {
+    deloadWeek: opts.deloadWeek,
+    effectiveGoal: eff.goal,
+    bodyFatPct: eff.bodyFatPct,
+  });
   if (!baseline) return null;
-  const profile = getCarbCyclingProfile(
-    isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user),
-    opts.deloadWeek,
-    opts.returnWeek,
-  );
+  const profile = getCarbCyclingProfile(eff.goal, opts.deloadWeek, opts.returnWeek);
   const gender = normalizeGender(user.gender);
-  const goal = isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user);
-  const minCarbsFloor = GOAL_STRATEGIES[goal].minCarbsG[gender];
+  const minCarbsFloor = GOAL_STRATEGIES[eff.goal].minCarbsG[gender];
   return applyCarbCycling(baseline, opts.dayTypeCounts, profile, minCarbsFloor);
 }
 
@@ -287,15 +384,18 @@ export async function resolveTargetsForDay(
   planType: string | null | undefined,
   opts?: ResolveTargetsOptions,
 ): Promise<MacroTargets | null> {
-  const baseline = await resolveTargets(user, userId, opts);
+  // Gate once so the daily baseline + carb profile agree (consistent with the
+  // weekly path and the macro UI).
+  const eff = await resolveEffectiveGoal(user, userId);
+  const baseline = await resolveTargets(user, userId, {
+    ...opts,
+    effectiveGoal: eff.goal,
+    bodyFatPct: eff.bodyFatPct,
+  });
   if (!baseline) return null;
-  const profile = getCarbCyclingProfile(
-    isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user),
-    opts?.deloadWeek,
-  );
+  const profile = getCarbCyclingProfile(eff.goal, opts?.deloadWeek);
   if (!profile.enabled) return baseline;
   const gender = normalizeGender(user.gender);
-  const goal = isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user);
-  const minCarbsFloor = GOAL_STRATEGIES[goal].minCarbsG[gender];
+  const minCarbsFloor = GOAL_STRATEGIES[eff.goal].minCarbsG[gender];
   return applyCarbCyclingSingleDay(baseline, planType, profile, minCarbsFloor);
 }

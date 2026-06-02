@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, progressLogs } from "@/db/schema";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { normalizeEvent } from "@/lib/routine-constants";
 import {
   deriveGoalFallback,
@@ -8,6 +8,7 @@ import {
   type FitnessGoal,
 } from "@/lib/meal-timing";
 import { renderGoalStrategyBlock } from "@/lib/strategy/goal-strategy";
+import { gateGoalByComposition, computeBMI } from "@/lib/strategy/goal-gating";
 
 const FITNESS_LABELS: Record<string, string> = {
   beginner: "Yeni başlayan",
@@ -48,6 +49,8 @@ export interface UserProfileRow {
   isPregnantOrBreastfeeding: boolean | null;
   hasDiabetes: boolean | null;
   hasThyroidCondition: boolean | null;
+  /** Latest plausible body-fat % (progress logs) — feeds the goal gate. */
+  bodyFatPct: number | null;
 }
 
 /**
@@ -186,7 +189,22 @@ export function renderUserProfileLines(
   }
   if (resolvedGoal) {
     const userWeight = user.weight ? parseFloat(user.weight) : null;
-    lines.push(renderGoalStrategyBlock(resolvedGoal, goalSource, userWeight));
+    // Body-composition goal gate: a high-body-fat / obese user's bulk choice
+    // is redirected to fat loss / recomp, so the AI plans a deficit (not a
+    // surplus on top of existing fat) and titles the week accordingly. Same
+    // pure rule the macro engine uses, so prompt + numbers agree.
+    const gate = gateGoalByComposition(resolvedGoal, {
+      bodyFatPct: user.bodyFatPct,
+      bmi: computeBMI(userWeight, user.height),
+      gender:
+        user.gender === "male" || user.gender === "female"
+          ? user.gender
+          : "prefer_not_to_say",
+    });
+    lines.push(renderGoalStrategyBlock(gate.goal, goalSource, userWeight));
+    if (gate.gated && gate.reason) {
+      lines.push(`⚠️ HEDEF AYARI (vücut kompozisyonu): ${gate.reason}`);
+    }
   }
 
   if (user.sportHistory) {
@@ -206,8 +224,23 @@ export function renderUserProfileLines(
   return lines;
 }
 
+/** Latest plausible body-fat % (BIA guards: 5-60). Null when nothing usable. */
+async function fetchLatestBodyFatPct(userId: string): Promise<number | null> {
+  const rows = await db
+    .select({ fatPercent: progressLogs.fatPercent })
+    .from(progressLogs)
+    .where(and(eq(progressLogs.userId, userId), isNotNull(progressLogs.fatPercent)))
+    .orderBy(desc(progressLogs.logDate))
+    .limit(1);
+  const raw = rows[0]?.fatPercent;
+  const fp = raw != null ? parseFloat(raw) : null;
+  if (fp == null || !Number.isFinite(fp) || fp < 5 || fp > 60) return null;
+  return fp;
+}
+
 export async function loadUserProfileRow(userId: string): Promise<UserProfileRow | null> {
-  const [user] = await db
+  const [rows, bodyFatPct] = await Promise.all([
+    db
     .select({
       height: users.height,
       weight: users.weight,
@@ -235,7 +268,11 @@ export async function loadUserProfileRow(userId: string): Promise<UserProfileRow
       hasThyroidCondition: users.hasThyroidCondition,
     })
     .from(users)
-    .where(eq(users.id, userId));
+    .where(eq(users.id, userId)),
+    fetchLatestBodyFatPct(userId),
+  ]);
 
-  return user ?? null;
+  const user = rows[0];
+  if (!user) return null;
+  return { ...user, bodyFatPct };
 }
