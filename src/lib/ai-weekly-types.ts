@@ -68,6 +68,8 @@ export interface ValidateWeeklyPlanResult {
   weeklyCarbsDrift: boolean;
   /** Days where weekly fat drift exceeds tolerance. */
   weeklyFatDrift: boolean;
+  /** Sum of all per-macro drift ratios that exceeded tolerance — a continuous gap magnitude so the retry keep-decision can reward partial improvements (e.g. carbs −54% → −20%). */
+  macroDriftScore: number;
   /** Per-day allergen substring hits across the week. */
   allergenHits: { dow: number; mealIndex: number; allergens: string[] }[];
   /** Progressive overload assessment outcome (null when no comparison available). */
@@ -357,6 +359,7 @@ export function validateWeeklyPlan(
       weeklyProteinDrift: false,
       weeklyCarbsDrift: false,
       weeklyFatDrift: false,
+      macroDriftScore: 0,
       allergenHits: [],
       progressiveOverloadIssue: null,
     };
@@ -478,6 +481,7 @@ export function validateWeeklyPlan(
   let weeklyProteinDrift = false;
   let weeklyCarbsDrift = false;
   let weeklyFatDrift = false;
+  let macroDriftScore = 0;
 
   const dayTotals = (d: AIWeeklyDay): MacroTotals => ({
     calories: d.meals.reduce((s, m) => s + (m.calories ?? 0), 0),
@@ -487,10 +491,10 @@ export function validateWeeklyPlan(
   });
 
   const flagDrift = (d: ReturnType<typeof computeMacroDrift>) => {
-    if (d.calories != null) weeklyKcalDrift = true;
-    if (d.protein != null) weeklyProteinDrift = true;
-    if (d.carbs != null) weeklyCarbsDrift = true;
-    if (d.fat != null) weeklyFatDrift = true;
+    if (d.calories != null) { weeklyKcalDrift = true; macroDriftScore += d.calories; }
+    if (d.protein != null) { weeklyProteinDrift = true; macroDriftScore += d.protein; }
+    if (d.carbs != null) { weeklyCarbsDrift = true; macroDriftScore += d.carbs; }
+    if (d.fat != null) { weeklyFatDrift = true; macroDriftScore += d.fat; }
   };
 
   if (expectedTargets?.perDayType) {
@@ -560,6 +564,7 @@ export function validateWeeklyPlan(
     weeklyProteinDrift,
     weeklyCarbsDrift,
     weeklyFatDrift,
+    macroDriftScore,
     allergenHits,
     progressiveOverloadIssue,
   };

@@ -213,19 +213,20 @@ function scoreWeeklyValidationGaps(
   result: ValidateWeeklyPlanResult,
   effectivePastDows: Set<number>,
 ): number {
-  return (
+  // Structural issues are discrete and dominant (×10). Macro drift is added as
+  // a CONTINUOUS magnitude (sum of exceeding drift ratios) so a retry that
+  // narrows the gap (e.g. carbs −54% → −20%) scores strictly lower and is kept
+  // even while a ±tolerance flag is still set — letting retries converge toward
+  // target instead of discarding partial improvements.
+  const structural =
     result.missingDays.filter((d) => !effectivePastDows.has(d)).length +
     result.emptyMealDays.filter((d) => !effectivePastDows.has(d)).length +
     result.planTypeMismatches.filter((d) => !effectivePastDows.has(d)).length +
     result.restDaysWithClearedExercises.filter((d) => !effectivePastDows.has(d)).length +
     result.daysWithMissingSections.filter((m) => !effectivePastDows.has(m.dow)).length +
     result.allergenHits.filter((h) => !effectivePastDows.has(h.dow)).length +
-    (result.weeklyKcalDrift ? 1 : 0) +
-    (result.weeklyProteinDrift ? 1 : 0) +
-    (result.weeklyCarbsDrift ? 1 : 0) +
-    (result.weeklyFatDrift ? 1 : 0) +
-    (result.progressiveOverloadIssue ? 1 : 0)
-  );
+    (result.progressiveOverloadIssue ? 1 : 0);
+  return structural * 10 + result.macroDriftScore;
 }
 
 interface QualityIssueSummary {
@@ -319,7 +320,7 @@ function buildQualityRetryMessage(summary: QualityIssueSummary): string {
         ? ` Sapan günler: ${summary.macroDriftDetails.join(" | ")}.`
         : "";
     issues.push(
-      `MAKRO HEDEF SAPMASI (kcal ±%10 / makro ±%15 aşıldı).${detail} DÜZELTME KURALI: her günü KENDİ tipinin hedefine yaklaştır. Dinlenme günlerinde proteini DÜŞÜRME — antrenman günleriyle ~aynı tut (±%10); SADECE karbonhidratı azalt. Çıkardığın pre/post-workout shake proteinini kalan öğünlere dağıt. Dinlenme günü kalorisini yarı yarıya düşürme — antrenman gününün ~%85-90'ında tut.`,
+      `MAKRO HEDEF SAPMASI (kcal ±%10 / makro ±%15 aşıldı).${detail} DÜZELTME KURALI: sapan günlerin çoğu hedefin ALTINDA — öğünleri BÜYÜT (karb: pirinç/yulaf/ekmek/makarna/meyve; yağ: zeytinyağı/kuruyemiş/avokado), öğün SİLME. Her günü KENDİ tipinin MUTLAK kcal hedefine ±%5 getir: antrenman günü ~3000+ kcal. Dinlenme günlerinde proteini ve yağı DÜŞÜRME, karbı tabanın (≥220g) ALTINA indirme — sadece karbı hafif azalt. Çıkardığın pre/post-workout shake proteinini kalan öğünlere dağıt.`,
     );
   }
   if (summary.progressiveOverloadIssue) {

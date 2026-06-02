@@ -197,12 +197,12 @@ function renderDayTypeTargetLine(
 ): string {
   if (locale === "en") {
     const floorNote = isRest
-      ? ` — protein floor ${t.protein}g (DO NOT cut), kcal floor ${t.calories} (do not go below); ONLY carbs taper to ${t.carbs}g`
+      ? ` — FLOORS (do NOT go below): protein ${t.protein}g, fat ${t.fat}g, carbs ${t.carbs}g, total ${t.calories} kcal. Only carbs taper, down to ${t.carbs}g and NOT lower.`
       : "";
     return `${label}: ${t.calories} kcal / ${t.protein}g protein / ${t.carbs}g carbs / ${t.fat}g fat${floorNote}`;
   }
   const floorNote = isRest
-    ? ` — protein tabanı ${t.protein}g (DÜŞÜRME), kcal tabanı ${t.calories} (altına inme); SADECE karb ${t.carbs}g'a iner`
+    ? ` — TABANLAR (altına İNME): protein ${t.protein}g, yağ ${t.fat}g, karb ${t.carbs}g, toplam ${t.calories} kcal. Sadece karb düşer, en fazla ${t.carbs}g'a, daha aşağı DEĞİL.`
     : "";
   return `${label}: ${t.calories} kcal / ${t.protein}g protein / ${t.carbs}g carbs / ${t.fat}g yağ${floorNote}`;
 }

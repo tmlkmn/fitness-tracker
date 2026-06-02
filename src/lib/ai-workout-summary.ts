@@ -174,19 +174,19 @@ export function buildProducedWorkoutBlock(
 
   if (locale === "en") {
     return [
-      "═══ PRODUCED WORKOUT SUMMARY (reference) ═══",
+      "═══ PRODUCED WORKOUT SUMMARY (timing reference only) ═══",
       ...lines,
-      "On workout days add +250-400 kcal of carbohydrate pump (especially in the pre/post-workout meal).",
-      "On rest days keep the protein target but you may slightly lower carbs.",
+      "Use this ONLY to place the pre/post-workout meals on the right days — it is NOT a portion-sizing signal.",
+      "Each day's TOTAL kcal is the absolute per-day-type target in the MACRO TARGETS block (the carb pump is already baked into the workout-day target). Do NOT shrink meals because the workout looks light or short — hit the absolute target.",
       "═══════════════════════════════════════════",
     ].join("\n");
   }
 
   return [
-    "═══ ÜRETİLMİŞ ANTRENMAN ÖZETİ (referans) ═══",
+    "═══ ÜRETİLMİŞ ANTRENMAN ÖZETİ (sadece zamanlama referansı) ═══",
     ...lines,
-    "Antrenman günlerinde +250-400 kcal carb pump ekle (özellikle antrenman öncesi/sonrası öğüne).",
-    "Dinlenme günlerinde protein hedefini koruyarak carbs'i hafif azaltabilirsin.",
+    "Bunu SADECE pre/post-workout öğünlerini doğru günlere yerleştirmek için kullan — porsiyon küçültme sinyali DEĞİL.",
+    "Her günün TOPLAM kcal'ı MAKRO HEDEFLERİ bloğundaki o gün-tipinin mutlak hedefidir (carb pump zaten antrenman günü hedefine dahil). Antrenman hafif/kısa göründü diye öğünleri KÜÇÜLTME — mutlak hedefi tuttur.",
     "═══════════════════════════════════════════",
   ].join("\n");
 }

@@ -10,6 +10,7 @@ import { collectWeeklyPlan } from "@/lib/export/collect-weekly-plan";
 import { getUserLocale } from "@/lib/locale";
 import { formatDate, parseDateOnly } from "@/lib/date-format";
 import { resolveTargets } from "@/lib/macro-targets";
+import { getDailySupplementBudget, subtractSupplementBudget } from "@/lib/supplement-budget";
 import { buildExportLabels, slugForFilename } from "@/lib/pdf/labels";
 import {
   WeeklyPlanDocument,
@@ -62,7 +63,16 @@ export async function GET(
       .from(users)
       .where(eq(users.id, collected.plan.userId));
     if (owner) {
-      targets = await resolveTargets(owner, owner.id);
+      const baseline = await resolveTargets(owner, owner.id);
+      if (baseline) {
+        // Subtract the supplement budget so the header shows the same MEAL
+        // target the AI generated against (it grades meals against the
+        // supplement-adjusted baseline). Supplements are listed separately on
+        // the supplements page, so the header must not double-count them.
+        // No-op when the user has no calorie-bearing supplements.
+        const budget = await getDailySupplementBudget(owner.id, weeklyPlanId);
+        targets = subtractSupplementBudget(baseline, budget);
+      }
     }
   }
 
