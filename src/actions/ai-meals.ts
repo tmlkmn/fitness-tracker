@@ -84,6 +84,9 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
       targetProteinG: users.targetProteinG,
       targetCarbsG: users.targetCarbsG,
       targetFatG: users.targetFatG,
+      targetCalorieDelta: users.targetCalorieDelta,
+      targetProteinPerKg: users.targetProteinPerKg,
+      targetFatPct: users.targetFatPct,
       foodAllergens: users.foodAllergens,
     })
     .from(users)

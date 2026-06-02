@@ -1133,7 +1133,14 @@
       "computeFailed": "Hesaplanamadı",
       "saveFailed": "Kaydedilemedi",
       "minCalories": "Kalori hedefi en az 1200 kcal olmalıdır",
-      "saved": "Makro hedefleri güncellendi"
+      "saved": "Makro hedefleri güncellendi",
+      "strategySubtitle": "Hedeflerin son ölçümlerine ve hedefine göre canlı hesaplanır. İstersen aşağıdan stratejini ince ayarla.",
+      "calorieDelta": "Kalori farkı (kcal)",
+      "proteinPerKg": "Protein (g/kg yağsız)",
+      "fatPct": "Yağ (% kalori)",
+      "currentTarget": "Şu anki hedef",
+      "reset": "Sıfırla",
+      "hint": "Kalori farkı: fazla için +, açık için − (örn. lean bulk +300). Boş bırakırsan hedefine uygun varsayılan kullanılır; karb otomatik dengelenir."
     },
     "swap": {
       "title": "Öğünü Değiştir",

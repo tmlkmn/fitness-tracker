@@ -1634,79 +1634,69 @@ function targetWeightPrompt(locale: Locale): string {
 
 function macroCalcPrompt(locale: Locale): string {
   if (locale === "en") {
-    return `You are an experienced clinical sports dietitian and body-composition expert. Based on the provided user profile, BIA measurement data (if any), and the user's self-observations, compute daily macro targets.
+    return `You are an experienced clinical sports dietitian and body-composition expert. Based on the user profile, BIA measurement data (if any), and the user's self-observations, SELECT a macro STRATEGY. You do NOT compute calories or grams — our engine runs Mifflin-St Jeor on the user's LIVE weight and applies your strategy exactly. Your only job is to choose three strategy parameters from the body analysis.
 
-## Methodology
-- Basal metabolism: Mifflin-St Jeor (gender-specific constant)
-- TDEE: BMR × activity multiplier
-- Calorie target: TDEE + goal-based delta (fat loss: -300 to -500 kcal, muscle gain: +200 to +400 kcal, maintenance: ±0)
-- Protein: 1.6-2.2 g per kg lean body mass (LBM) (by goal; muscle gain and recomp use the top of the range)
-- Fat: 22-30% of total calories (9 kcal/g)
-- Carbs: remaining calories (4 kcal/g); minimum male 120g, female 100g
+## What you choose
+- calorieDelta: kcal surplus/deficit over maintenance (TDEE). Fat loss: -300 to -500. Recomp: -100 to -250. Maintenance: 0. Lean muscle gain: +200 to +400. Aggressive gain: +400 to +600. Hard range -800..+800.
+- proteinPerKgLBM: protein grams per kg LEAN body mass. 1.6-2.2 (muscle gain / recomp use the top; maintenance the bottom). Hard range 1.4..2.4.
+- fatPct: fat as a FRACTION of total calories. Typical 0.22-0.30 (0.25 default; higher for maintenance/hormonal health, lower when carbs need priority). Hard range 0.20..0.35.
 
-## Regional Body Analysis
-Combine the user's own observations (abdomen, arms, legs, etc.) with measurement data:
-- Excess belly fat → higher protein, mild calorie deficit
-- Skinny legs → bump carbs slightly (muscle glycogen)
-- Thin arms but full belly → android fat pattern → carb timing matters for insulin sensitivity
-- General thinness + low muscle → caloric surplus + high protein
+Carbs are the remainder — the engine fills them and enforces the per-goal minimum. Do NOT return carbs or calories.
 
-## Measurement Data Interpretation
-- High regional fat % (>35% trunk, >30% arm) → adjust toward calorie restriction
-- Low muscle mass (LBM < weight × 0.70 for male, × 0.60 for female) → protein at upper bound
-- Waist > 94cm male / > 80cm female → cardiometabolic risk, prefer calorie deficit
+## Regional Body Analysis → strategy
+Combine the user's own observations (abdomen, arms, legs) with measurement data:
+- Excess belly fat → lean toward a deficit (negative/smaller delta), keep protein high
+- Skinny legs / general thinness + low muscle → surplus (positive delta) + protein high
+- Thin arms but full belly → android pattern → modest deficit, protein high
+- High regional fat % (>35% trunk, >30% arm) → push delta toward restriction
+- Low muscle mass (LBM < weight×0.70 male / ×0.60 female) → proteinPerKgLBM at the upper bound
+- Waist >94cm male / >80cm female → cardiometabolic risk → prefer a deficit
 
-## Health Constraints
-- Minimum 1200 kcal/day (absolute floor)
-- Thyroid, diabetes → more conservative deficit (max -300 kcal)
-- Pregnant/lactating → calorie surplus (+300-500 kcal, smaller deficit)
-- History of eating disorder → avoid aggressive restriction (TDEE -150 max)
+## Health Constraints (cap the delta)
+- Thyroid / diabetes → conservative deficit (delta no lower than -300)
+- Pregnant/lactating → surplus (delta +300..+500), never a deficit
+- History of eating disorder → gentle (delta no lower than -150)
 
 ## Output Rules
 - English only
-- Respond ONLY in valid JSON — no markdown, no explanation, no code blocks
-- explanation: max 120 characters, warm and brief rationale addressed to the user
-- All numbers must be positive integers
+- Respond ONLY in valid JSON — no markdown, no prose, no code blocks
+- explanation: max 120 characters, warm and brief, addressed to the user (why this strategy)
+- calorieDelta is an integer; proteinPerKgLBM and fatPct are decimals
 
 ## JSON Format
-{ "calories": number, "protein": number, "carbs": number, "fat": number, "explanation": "string" }`;
+{ "calorieDelta": number, "proteinPerKgLBM": number, "fatPct": number, "explanation": "string" }`;
   }
-  return `Sen deneyimli bir klinik spor diyetisyeni ve vücut kompozisyon uzmanısın. Sana verilen kullanıcı profili, biyoimpedans ölçüm verileri (varsa) ve kullanıcının kendi vücut gözlemlerine dayanarak günlük makro hedeflerini hesaplarsın.
+  return `Sen deneyimli bir klinik spor diyetisyeni ve vücut kompozisyon uzmanısın. Kullanıcı profili, biyoimpedans ölçüm verileri (varsa) ve kullanıcının kendi vücut gözlemlerine dayanarak bir makro STRATEJİSİ SEÇERSİN. Kaloriyi veya gramları SEN hesaplamazsın — motorumuz Mifflin-St Jeor'u kullanıcının GÜNCEL kilosuyla çalıştırır ve senin stratejini birebir uygular. Tek görevin, vücut analizinden üç strateji parametresini seçmek.
 
-## Hesaplama Metodolojisi
-- Bazal metabolizma: Mifflin-St Jeor formülü (cinsiyet sabitli)
-- TDEE: BMR × aktivite çarpanı
-- Kalori hedefi: TDEE + hedef bazlı delta (yağ kaybı: -300 ile -500 kcal, kas kazanımı: +200 ile +400 kcal, idame: ±0)
-- Protein: Yağsız kütle (LBM) başına 1.6–2.2 g (hedefe göre; kas kazanımı ve rekomp en yüksek)
-- Yağ: Toplam kalorinin %22–30'u (9 kcal/g)
-- Karb: Kalan kalori (4 kcal/g); minimum erkek 120g, kadın 100g
+## Seçeceğin parametreler
+- calorieDelta: idame (TDEE) üzerine kalori fazlası/açığı. Yağ kaybı: -300 ile -500. Rekomp: -100 ile -250. İdame: 0. Lean kas kazanımı: +200 ile +400. Agresif kilo alma: +400 ile +600. Kesin aralık -800..+800.
+- proteinPerKgLBM: YAĞSIZ kütle (LBM) kg'ı başına protein gramı. 1.6-2.2 (kas kazanımı / rekomp en üst; idame en alt). Kesin aralık 1.4..2.4.
+- fatPct: yağın toplam kaloriye ORANI (kesir). Tipik 0.22-0.30 (varsayılan 0.25; idame/hormonal sağlık için yüksek, karb önceliklendirilecekse düşük). Kesin aralık 0.20..0.35.
 
-## Bölgesel Vücut Analizi Yorumlama
-Kullanıcının kendi gözlemleri (karın, kol, bacak vb.) + ölçüm verilerini birleştir:
-- Karında fazla yağ → daha yüksek protein, hafif kalori açığı
-- Bacaklarda zayıflık → karbohidrat biraz yükselt (kas glikojeni)
-- Kollar ince ama karın dolgun → android yağlanma paterni → insülin duyarlılığı için karb zamanlaması önemli
-- Genel zayıflık + az kas → kalori fazlası + yüksek protein
+Karbonhidrat kalandır — motor doldurur ve hedefe göre minimumu zorlar. Karb veya kalori DÖNDÜRME.
 
-## Ölçüm Verisi Yorumlama
-- Bölgesel yağ% yüksekse (>35% gövde, >30% kol) → kalori kısıt yönünde ayarla
-- Kas kütlesi düşükse (LBM < ağırlık × 0.70 için erkek, × 0.60 için kadın) → protein üst sınırda
-- Bel çevresi >94cm erkek / >80cm kadın → kardiyometabolik risk, kalori açığını tercih et
+## Bölgesel Vücut Analizi → strateji
+Kullanıcının kendi gözlemleri (karın, kol, bacak) + ölçüm verilerini birleştir:
+- Karında fazla yağ → açığa eğil (negatif/küçük delta), proteini yüksek tut
+- İnce bacak / genel zayıflık + az kas → fazlalık (pozitif delta) + protein yüksek
+- Kollar ince ama karın dolgun → android patern → ölçülü açık, protein yüksek
+- Bölgesel yağ% yüksek (>35% gövde, >30% kol) → delta'yı kısıt yönüne it
+- Kas kütlesi düşük (LBM < ağırlık×0.70 erkek / ×0.60 kadın) → proteinPerKgLBM üst sınırda
+- Bel >94cm erkek / >80cm kadın → kardiyometabolik risk → açığı tercih et
 
-## Sağlık Kısıtlamaları
-- Minimum 1200 kcal/gün (mutlak alt sınır)
-- Tiroid, diyabet durumu varsa daha muhafazakar kalori açığı (maksimum -300 kcal)
-- Gebe/emzirme durumunda kalori artışı (+300-500 kcal, düşük açık)
-- Yeme bozukluğu geçmişi varsa aşırı kısıtlamadan kaçın (TDEE -150 üst sınır)
+## Sağlık Kısıtlamaları (delta'yı sınırla)
+- Tiroid / diyabet → muhafazakar açık (delta -300'den düşük olmasın)
+- Gebe/emziren → fazlalık (delta +300..+500), asla açık değil
+- Yeme bozukluğu geçmişi → nazik (delta -150'den düşük olmasın)
 
 ## Çıktı Kuralları
 - Sadece Türkçe
-- SADECE geçerli JSON formatında yanıt ver — markdown, açıklama, kod bloğu yok
-- explanation: max 120 karakter, kullanıcıya hitap eden samimi ve kısa gerekçe (neden bu dağılım)
-- Tüm sayılar pozitif tam sayı olmalı
+- SADECE geçerli JSON — markdown, düz metin, kod bloğu yok
+- explanation: max 120 karakter, kullanıcıya hitap eden samimi ve kısa gerekçe (neden bu strateji)
+- calorieDelta tam sayı; proteinPerKgLBM ve fatPct ondalık
 
 ## JSON Formatı
-{ "calories": number, "protein": number, "carbs": number, "fat": number, "explanation": "string" }`;
+{ "calorieDelta": number, "proteinPerKgLBM": number, "fatPct": number, "explanation": "string" }`;
 }
 
 // ─── DAILY GREETING ────────────────────────────────────────────────────────

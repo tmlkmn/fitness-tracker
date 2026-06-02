@@ -14,6 +14,11 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+// Type-only import (erased at runtime — no module cycle): the weekly plan
+// snapshots the supplement-adjusted per-day-type targets it was generated
+// against, so the PDF header stays consistent with the meals even after the
+// user's live targets shift (Round 3 dynamic-target model).
+import type { WeeklyMacroTargets } from "@/lib/carb-cycling";
 
 // Billing address captured at iyzico checkout (KVKK invoicing requirement).
 export type BillingAddress = {
@@ -82,10 +87,21 @@ export const users = pgTable(
     billingAddress: jsonb("billing_address").$type<BillingAddress>(),
     taxNumber: text("tax_number"),
     hasSeenOnboarding: boolean("has_seen_onboarding").default(false),
+    // ── Macro targets ──
+    // Legacy raw-macro override columns. As of the Round 3 dynamic-target
+    // model these are NO LONGER read by the compute path (resolveTargets);
+    // kept for the account export + back-compat. Targets are now a live
+    // function of latest weight + goal + the strategy-nudge columns below.
     targetCalories: integer("target_calories"),
     targetProteinG: numeric("target_protein_g"),
     targetCarbsG: numeric("target_carbs_g"),
     targetFatG: numeric("target_fat_g"),
+    // Strategy nudge: AI macro calculator / manual card persist a deviation
+    // from the goal-strategy defaults here (not frozen macros). Null = pure
+    // goal default. computeDefaultTargets applies these live every time.
+    targetCalorieDelta: integer("target_calorie_delta"),
+    targetProteinPerKg: numeric("target_protein_per_kg"),
+    targetFatPct: numeric("target_fat_pct"),
     weightUnit: text("weight_unit").default("kg"),
     energyUnit: text("energy_unit").default("kcal"),
     gender: text("gender"),
@@ -209,6 +225,11 @@ export const weeklyPlans = pgTable(
     notes: text("notes"),
     supplements: jsonb("supplements"),
     startDate: date("start_date"),
+    // Supplement-adjusted per-day-type macro targets captured at generation
+    // time. The export PDF reads this so the header == the numbers the meals
+    // were graded against, even after the user's live targets move. Null for
+    // legacy plans and workout-only generations.
+    macroTargetSnapshot: jsonb("macro_target_snapshot").$type<WeeklyMacroTargets>(),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => [

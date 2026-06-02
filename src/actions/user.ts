@@ -27,6 +27,9 @@ const TARGET_PROFILE_FIELDS = {
   targetProteinG: users.targetProteinG,
   targetCarbsG: users.targetCarbsG,
   targetFatG: users.targetFatG,
+  targetCalorieDelta: users.targetCalorieDelta,
+  targetProteinPerKg: users.targetProteinPerKg,
+  targetFatPct: users.targetFatPct,
 } as const;
 
 export async function getResolvedMacroTargets(): Promise<MacroTargets | null> {
@@ -106,6 +109,9 @@ export async function getUserProfile() {
       targetProteinG: users.targetProteinG,
       targetCarbsG: users.targetCarbsG,
       targetFatG: users.targetFatG,
+      targetCalorieDelta: users.targetCalorieDelta,
+      targetProteinPerKg: users.targetProteinPerKg,
+      targetFatPct: users.targetFatPct,
       weightUnit: users.weightUnit,
       energyUnit: users.energyUnit,
       gender: users.gender,
@@ -117,7 +123,7 @@ export async function getUserProfile() {
     })
     .from(users)
     .where(eq(users.id, user.id));
-  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, fitnessGoal: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false, targetCalories: null, targetProteinG: null, targetCarbsG: null, targetFatG: null, weightUnit: "kg", energyUnit: "kcal", gender: null, dailyActivityLevel: null, hasEatingDisorderHistory: false, isPregnantOrBreastfeeding: false, hasDiabetes: false, hasThyroidCondition: false };
+  return rows[0] ?? { weight: null, targetWeight: null, height: null, age: null, healthNotes: null, foodAllergens: null, dailyRoutine: null, weekendRoutine: null, supplementSchedule: null, fitnessLevel: null, fitnessGoal: null, sportHistory: null, currentMedications: null, serviceType: "full", membershipType: null, membershipStartDate: null, membershipEndDate: null, hasSeenOnboarding: false, targetCalories: null, targetProteinG: null, targetCarbsG: null, targetFatG: null, targetCalorieDelta: null, targetProteinPerKg: null, targetFatPct: null, weightUnit: "kg", energyUnit: "kcal", gender: null, dailyActivityLevel: null, hasEatingDisorderHistory: false, isPregnantOrBreastfeeding: false, hasDiabetes: false, hasThyroidCondition: false };
 }
 
 export async function updateUnitPreferences(data: {
@@ -138,20 +144,29 @@ export async function updateUnitPreferences(data: {
   revalidatePath("/gun", "layout");
 }
 
-export async function updateMacroTargets(data: {
-  targetCalories: number | null;
-  targetProteinG: string | null;
-  targetCarbsG: string | null;
-  targetFatG: string | null;
+/**
+ * Persists the macro STRATEGY nudge (Round 3 dynamic-target model). The
+ * resolved macros are computed live from this + the user's latest weight, so
+ * we no longer freeze raw macros — and we clear any legacy frozen columns so
+ * the dynamic engine is the sole source of truth. All-null = pure goal default.
+ */
+export async function updateMacroStrategy(data: {
+  calorieDelta: number | null;
+  proteinPerKg: number | null;
+  fatPct: number | null;
 }) {
   const user = await getAuthUser();
   await db
     .update(users)
     .set({
-      targetCalories: data.targetCalories,
-      targetProteinG: data.targetProteinG,
-      targetCarbsG: data.targetCarbsG,
-      targetFatG: data.targetFatG,
+      targetCalorieDelta: data.calorieDelta,
+      targetProteinPerKg: data.proteinPerKg != null ? String(data.proteinPerKg) : null,
+      targetFatPct: data.fatPct != null ? String(data.fatPct) : null,
+      // Retire the legacy raw-macro freeze.
+      targetCalories: null,
+      targetProteinG: null,
+      targetCarbsG: null,
+      targetFatG: null,
     })
     .where(eq(users.id, user.id));
   revalidatePath("/");

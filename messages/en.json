@@ -1133,7 +1133,14 @@
       "computeFailed": "Could not compute",
       "saveFailed": "Could not save",
       "minCalories": "Calorie target must be at least 1200 kcal",
-      "saved": "Macro targets updated"
+      "saved": "Macro targets updated",
+      "strategySubtitle": "Your targets are computed live from your latest measurements & goal. Fine-tune the strategy below if you like.",
+      "calorieDelta": "Calorie delta (kcal)",
+      "proteinPerKg": "Protein (g/kg lean)",
+      "fatPct": "Fat (% of kcal)",
+      "currentTarget": "Current target",
+      "reset": "Reset",
+      "hint": "Calorie delta: + for surplus, − for deficit (e.g. lean bulk +300). Leave blank to use the goal default; carbs auto-balance."
     },
     "swap": {
       "title": "Swap Meal",

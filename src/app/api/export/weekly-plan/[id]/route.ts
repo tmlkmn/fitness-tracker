@@ -58,20 +58,25 @@ export async function GET(
   // Macro targets only meaningful for the plan owner (viewer == owner).
   let targets: WeeklyPlanDocData["targets"] = null;
   if (collected.plan.userId === user.id) {
-    const [owner] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, collected.plan.userId));
-    if (owner) {
-      const baseline = await resolveTargets(owner, owner.id);
-      if (baseline) {
-        // Subtract the supplement budget so the header shows the same MEAL
-        // target the AI generated against (it grades meals against the
-        // supplement-adjusted baseline). Supplements are listed separately on
-        // the supplements page, so the header must not double-count them.
-        // No-op when the user has no calorie-bearing supplements.
-        const budget = await getDailySupplementBudget(owner.id, weeklyPlanId);
-        targets = subtractSupplementBudget(baseline, budget);
+    // Prefer the snapshot captured at generation — it's the supplement-adjusted
+    // baseline the meals were actually graded against, so the header stays
+    // consistent with the plan even after the user's live targets move.
+    const snapshot = collected.plan.macroTargetSnapshot?.baseline;
+    if (snapshot) {
+      targets = snapshot;
+    } else {
+      // Legacy plans / workout-only generations have no snapshot — fall back to
+      // the live resolved target, supplement-adjusted (no double-counting).
+      const [owner] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, collected.plan.userId));
+      if (owner) {
+        const baseline = await resolveTargets(owner, owner.id);
+        if (baseline) {
+          const budget = await getDailySupplementBudget(owner.id, weeklyPlanId);
+          targets = subtractSupplementBudget(baseline, budget);
+        }
       }
     }
   }

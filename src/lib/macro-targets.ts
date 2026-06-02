@@ -6,7 +6,7 @@ import {
   isFitnessGoal,
   type FitnessGoal,
 } from "@/lib/meal-timing";
-import { GOAL_STRATEGIES, computeCalorieDelta } from "@/lib/strategy/goal-strategy";
+import { GOAL_STRATEGIES, computeCalorieDelta, CALORIE_DELTA_CLAMP } from "@/lib/strategy/goal-strategy";
 import { DELOAD_CALORIE_DELTA_MULTIPLIER } from "@/lib/deload-policy";
 import {
   applyCarbCycling,
@@ -19,6 +19,22 @@ import {
 export interface ResolveTargetsOptions {
   /** Apply deload multiplier to the calorie delta. */
   deloadWeek?: boolean;
+  /**
+   * Per-user nudge layered over the goal strategy (AI macro calculator /
+   * manual card). Any field left null/undefined falls back to the goal
+   * default. The arithmetic still runs in `computeDefaultTargets`, so the
+   * result is always internally reconciled.
+   */
+  strategy?: StrategyOverride;
+}
+
+export interface StrategyOverride {
+  /** Explicit kcal surplus/deficit; replaces the goal's per-kg delta. */
+  calorieDelta?: number | null;
+  /** Protein g per kg lean body mass; replaces the goal default. */
+  proteinPerKgLBM?: number | null;
+  /** Fat as a fraction of total calories (0.20–0.35); replaces the default. */
+  fatPctOfCalories?: number | null;
 }
 
 export interface MacroTargets {
@@ -47,10 +63,15 @@ export interface UserBasics {
 }
 
 export interface UserWithTargets extends UserBasics {
+  // Legacy raw-macro override columns — no longer read by the compute path.
   targetCalories?: number | null;
   targetProteinG?: string | null;
   targetCarbsG?: string | null;
   targetFatG?: string | null;
+  // Strategy-nudge columns (Round 3) — drive the live dynamic target.
+  targetCalorieDelta?: number | null;
+  targetProteinPerKg?: string | null;
+  targetFatPct?: string | null;
 }
 
 // Mifflin-St Jeor sex-aware constant. prefer_not_to_say uses the midpoint
@@ -144,12 +165,48 @@ function computeLeanMass(weightKg: number, fatPercent: number | null, gender: Ge
   return weightKg * LBM_FRACTION_FALLBACK[gender];
 }
 
+// How many recent weight logs to average. Smooths day-to-day BIA-scale noise
+// while still tracking the user's current weight (the BMR driver). One log →
+// that log; zero → fall back to the static `users.weight`.
+const TRAILING_WEIGHT_SAMPLE = 3;
+
+/**
+ * Average of the user's most recent weight logs — the LIVE weight the macro
+ * engine uses, so targets track measurements without the user re-running
+ * anything. `users.weight` (onboarding/profile value) is only the fallback
+ * when no logs exist. Mirrors `fetchLatestFatPercent`.
+ */
+async function fetchTrailingWeight(userId: string): Promise<number | null> {
+  const rows = await db
+    .select({ weight: progressLogs.weight })
+    .from(progressLogs)
+    .where(and(eq(progressLogs.userId, userId), isNotNull(progressLogs.weight)))
+    .orderBy(desc(progressLogs.logDate))
+    .limit(TRAILING_WEIGHT_SAMPLE);
+
+  const weights = rows
+    .map((r) => safeParseFloat(r.weight))
+    .filter((w): w is number => w != null && w > 0);
+  if (weights.length === 0) return null;
+  return weights.reduce((a, b) => a + b, 0) / weights.length;
+}
+
+/** Clamps an explicit kcal delta to the same safety bounds as the per-kg path. */
+function clampCalorieDelta(delta: number, multiplier = 1): number {
+  const raw = Math.round(delta * multiplier);
+  return Math.max(CALORIE_DELTA_CLAMP.min, Math.min(CALORIE_DELTA_CLAMP.max, raw));
+}
+
 export async function computeDefaultTargets(
   user: UserBasics,
   userId: string | null,
   opts?: ResolveTargetsOptions,
 ): Promise<MacroTargets | null> {
-  const w = safeParseFloat(user.weight);
+  // Live weight: average of recent logs (the BMR driver), falling back to the
+  // static onboarding/profile value only when no logs exist. This is what
+  // makes targets dynamic — logging a new weight moves them, no re-run needed.
+  const loggedWeight = userId ? await fetchTrailingWeight(userId) : null;
+  const w = loggedWeight ?? safeParseFloat(user.weight);
   const h = user.height ?? null;
   const age = user.age ?? null;
   if (!w || !h || !age) return null;
@@ -158,24 +215,31 @@ export async function computeDefaultTargets(
   const activity = ACTIVITY_MULTIPLIER[normalizeActivity(user.dailyActivityLevel)];
   const goal = resolveGoal(user);
   const strategy = GOAL_STRATEGIES[goal];
+  const nudge = opts?.strategy;
 
   // Mifflin-St Jeor (sex-aware)
   const bmr = 10 * w + 6.25 * h - 5 * age + BMR_SEX_CONSTANT[gender];
   const tdee = bmr * activity;
-  const deltaOpts = opts?.deloadWeek
-    ? { deloadMultiplier: DELOAD_CALORIE_DELTA_MULTIPLIER }
-    : undefined;
-  const calories = Math.max(
-    MIN_DAILY_CALORIES,
-    Math.round(tdee + computeCalorieDelta(strategy, w, deltaOpts)),
-  );
+  const deloadMultiplier = opts?.deloadWeek ? DELOAD_CALORIE_DELTA_MULTIPLIER : 1;
+  // Calorie delta: an explicit nudge (AI/manual) replaces the goal's per-kg
+  // delta; both share the ±800 clamp and the deload shrink.
+  const delta = nudge?.calorieDelta != null
+    ? clampCalorieDelta(nudge.calorieDelta, deloadMultiplier)
+    : computeCalorieDelta(
+        strategy,
+        w,
+        opts?.deloadWeek ? { deloadMultiplier: DELOAD_CALORIE_DELTA_MULTIPLIER } : undefined,
+      );
+  const calories = Math.max(MIN_DAILY_CALORIES, Math.round(tdee + delta));
 
   // LBM: prefer measured fatPercent, else gender-based fallback
   const fatPercent = userId ? await fetchLatestFatPercent(userId) : null;
   const lbm = computeLeanMass(w, fatPercent, gender);
 
-  const protein = Math.round(lbm * strategy.proteinPerKgLBM);
-  const fat = Math.round((calories * strategy.fatPctOfCalories) / 9);
+  const proteinPerKg = nudge?.proteinPerKgLBM ?? strategy.proteinPerKgLBM;
+  const fatPct = nudge?.fatPctOfCalories ?? strategy.fatPctOfCalories;
+  const protein = Math.round(lbm * proteinPerKg);
+  const fat = Math.round((calories * fatPct) / 9);
   const carbsRaw = Math.round((calories - protein * 4 - fat * 9) / 4);
   const carbs = Math.max(strategy.minCarbsG[gender], carbsRaw);
 
@@ -188,37 +252,32 @@ export async function computeDefaultTargets(
   return { calories: finalCalories, protein, carbs, fat };
 }
 
+/**
+ * Reads the persisted strategy-nudge columns into a `StrategyOverride`.
+ * Null columns fall back to the goal-strategy default downstream.
+ */
+export function readStrategyOverride(user: UserWithTargets): StrategyOverride {
+  return {
+    calorieDelta: user.targetCalorieDelta ?? null,
+    proteinPerKgLBM: safeParseFloat(user.targetProteinPerKg),
+    fatPctOfCalories: safeParseFloat(user.targetFatPct),
+  };
+}
+
+/**
+ * Round 3: targets are computed LIVE — no raw-macro freeze. We layer the
+ * user's persisted strategy nudge (or an explicit `opts.strategy`, e.g. the
+ * AI calculator preview) over the goal strategy and let
+ * `computeDefaultTargets` do the arithmetic, so the result always reconciles
+ * (protein·4 + carbs·4 + fat·9 ≈ calories) and tracks the latest weight/goal.
+ */
 export async function resolveTargets(
   user: UserWithTargets,
   userId: string | null,
   opts?: ResolveTargetsOptions,
 ): Promise<MacroTargets | null> {
-  const hasOverride =
-    user.targetCalories != null ||
-    user.targetProteinG != null ||
-    user.targetCarbsG != null ||
-    user.targetFatG != null;
-
-  const defaults = await computeDefaultTargets(user, userId, opts);
-
-  if (!hasOverride) return defaults;
-
-  const overrideProtein = safeParseFloat(user.targetProteinG);
-  const overrideCarbs = safeParseFloat(user.targetCarbsG);
-  const overrideFat = safeParseFloat(user.targetFatG);
-
-  const calories = user.targetCalories ?? defaults?.calories ?? null;
-  const protein = overrideProtein != null ? Math.round(overrideProtein) : defaults?.protein ?? null;
-  const carbs = overrideCarbs != null ? Math.round(overrideCarbs) : defaults?.carbs ?? null;
-  const fat = overrideFat != null ? Math.round(overrideFat) : defaults?.fat ?? null;
-
-  // Dört alanın tamamı belirlenemiyorsa (kısmi override + eksik profil) null dön;
-  // "0g hedef" ile "hedef bilinmiyor" ayrımını korur.
-  if (calories == null || protein == null || carbs == null || fat == null) {
-    return null;
-  }
-
-  return { calories, protein, carbs, fat };
+  const strategy = opts?.strategy ?? readStrategyOverride(user);
+  return computeDefaultTargets(user, userId, { ...opts, strategy });
 }
 
 export function macroProgressColor(actual: number, target: number): string {

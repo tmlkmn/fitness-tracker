@@ -14,11 +14,37 @@ import {
 } from "@/lib/ai";
 import { getMacroCalcPrompt } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
-import type { MacroTargets } from "@/lib/macro-targets";
+import { computeDefaultTargets, type MacroTargets } from "@/lib/macro-targets";
+
+/** Strategy nudge the AI selects; the arithmetic is done by code. */
+export interface MacroStrategy {
+  /** kcal surplus/deficit over TDEE (clamped ±800). */
+  calorieDelta: number;
+  /** protein g per kg lean body mass (clamped 1.4–2.4). */
+  proteinPerKgLBM: number;
+  /** fat as a fraction of calories (clamped 0.20–0.35). */
+  fatPct: number;
+}
 
 export interface AIMacroResult {
+  /** What gets persisted — the strategy, not frozen macros. */
+  strategy: MacroStrategy;
+  /** Code-computed preview macros at the user's current weight/goal. */
   macros: MacroTargets;
   explanation: string;
+}
+
+// Safe bands for the AI-selected strategy — guards against an LLM returning
+// an extreme or nonsensical value. Calorie delta shares the engine's ±800.
+const PROTEIN_PER_KG_MIN = 1.4;
+const PROTEIN_PER_KG_MAX = 2.4;
+const FAT_PCT_MIN = 0.2;
+const FAT_PCT_MAX = 0.35;
+const CALORIE_DELTA_MIN = -800;
+const CALORIE_DELTA_MAX = 800;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 const FITNESS_GOAL_TR: Record<string, string> = {
@@ -254,17 +280,35 @@ export async function generateAIMacroTargets(
     const jsonStr = rawText.slice(firstBrace, lastBrace + 1);
     const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
 
-    const calories = Math.round(Number(parsed.calories));
-    const protein = Math.round(Number(parsed.protein));
-    const carbs = Math.round(Number(parsed.carbs));
-    const fat = Math.round(Number(parsed.fat));
+    // The AI now returns a STRATEGY, not macros. Validate the fields are
+    // finite, then clamp to safe bands — code does the arithmetic so the
+    // output always reconciles and respects the user's current weight/goal.
+    const rawDelta = Number(parsed.calorieDelta);
+    const rawProtein = Number(parsed.proteinPerKgLBM);
+    const rawFatPct = Number(parsed.fatPct);
     const explanation = String(parsed.explanation ?? "").slice(0, 150);
 
-    if (!calories || !protein || !carbs || !fat) {
-      throw new Error("Geçersiz makro değerleri: " + jsonStr);
+    if (!Number.isFinite(rawDelta) || !Number.isFinite(rawProtein) || !Number.isFinite(rawFatPct)) {
+      throw new Error("Geçersiz strateji değerleri: " + jsonStr);
     }
-    if (calories < 1200) {
-      throw new Error("AI geçersiz kalori döndürdü: " + calories);
+
+    const strategy: MacroStrategy = {
+      calorieDelta: Math.round(clamp(rawDelta, CALORIE_DELTA_MIN, CALORIE_DELTA_MAX)),
+      proteinPerKgLBM: Math.round(clamp(rawProtein, PROTEIN_PER_KG_MIN, PROTEIN_PER_KG_MAX) * 100) / 100,
+      fatPct: Math.round(clamp(rawFatPct, FAT_PCT_MIN, FAT_PCT_MAX) * 100) / 100,
+    };
+
+    // Code computes the actual macros at the user's live weight, applying the
+    // AI-chosen strategy as a nudge over the goal defaults.
+    const macros = await computeDefaultTargets(profile ?? {}, user.id, {
+      strategy: {
+        calorieDelta: strategy.calorieDelta,
+        proteinPerKgLBM: strategy.proteinPerKgLBM,
+        fatPctOfCalories: strategy.fatPct,
+      },
+    });
+    if (!macros) {
+      throw new Error("Profil eksik — makro hesaplanamadı (kilo/boy/yaş gerekli).");
     }
 
     await logAiUsage(user.id, "macro-ai", {
@@ -276,10 +320,7 @@ export async function generateAIMacroTargets(
       promptVersion: PROMPT_VERSION,
     });
 
-    return {
-      macros: { calories, protein, carbs, fat },
-      explanation,
-    };
+    return { strategy, macros, explanation };
   } catch (error) {
     const { status, errorMessage } = discriminateAiError(error);
     console.error("[macro-ai] failed:", {

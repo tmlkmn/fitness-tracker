@@ -626,6 +626,9 @@ export async function resolveWeeklyGenerationRequest(
       targetProteinG: users.targetProteinG,
       targetCarbsG: users.targetCarbsG,
       targetFatG: users.targetFatG,
+      targetCalorieDelta: users.targetCalorieDelta,
+      targetProteinPerKg: users.targetProteinPerKg,
+      targetFatPct: users.targetFatPct,
       foodAllergens: users.foodAllergens,
       healthNotes: users.healthNotes,
     }).from(users).where(eq(users.id, userId)).then((r) => r[0]),
@@ -1270,6 +1273,11 @@ export function mergeWeeklyResults(
   if (nonPastDays.length > 0 && emptyDays >= nonPastDays.length) {
     throw new Error("AI bu hafta için anlamlı bir plan üretemedi. Lütfen birkaç dakika sonra tekrar deneyin.");
   }
+
+  // Snapshot the supplement-adjusted targets the meals were graded against so
+  // the export PDF header stays consistent with this week even after the
+  // user's live targets shift. Null for workout-only generations.
+  plan.macroTargetSnapshot = req.adjustedTargets ?? null;
 
   return plan;
 }

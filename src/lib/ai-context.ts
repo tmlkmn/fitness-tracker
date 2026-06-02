@@ -448,6 +448,9 @@ export async function getMealMacroBudget(
       targetProteinG: users.targetProteinG,
       targetCarbsG: users.targetCarbsG,
       targetFatG: users.targetFatG,
+      targetCalorieDelta: users.targetCalorieDelta,
+      targetProteinPerKg: users.targetProteinPerKg,
+      targetFatPct: users.targetFatPct,
     })
     .from(users)
     .where(eq(users.id, userId));

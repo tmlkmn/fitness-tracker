@@ -1,3 +1,5 @@
+import type { WeeklyMacroTargets } from "@/lib/carb-cycling";
+
 export interface AIMealItem {
   mealTime: string;
   mealLabel: string;
@@ -43,6 +45,14 @@ export interface AIWeeklyPlan {
    */
   strategyNote: string | null;
   days: AIWeeklyDay[];
+  /**
+   * Supplement-adjusted per-day-type macro targets the nutrition was generated
+   * and graded against. Captured at generation (post-merge, not from the AI)
+   * and persisted onto the weekly plan so the export PDF header stays
+   * consistent with the meals even after the user's live targets move. Null
+   * for workout-only generations and legacy plans.
+   */
+  macroTargetSnapshot?: WeeklyMacroTargets | null;
 }
 
 export type DayModeChoice = "workout" | "swimming" | "rest" | "nutrition";

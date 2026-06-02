@@ -403,13 +403,18 @@ export async function applyWeeklyPlan(
   if (existingWeek.length > 0) {
     weeklyPlanId = existingWeek[0].id;
 
-    // Update weekly plan metadata
+    // Update weekly plan metadata. Only overwrite the macro snapshot when this
+    // generation produced one (nutrition included) — a workout-only re-apply
+    // must not wipe the existing nutrition snapshot.
     await db
       .update(weeklyPlans)
       .set({
         title: plan.weekTitle,
         phase: plan.phase,
         notes: plan.notes,
+        ...(plan.macroTargetSnapshot != null
+          ? { macroTargetSnapshot: plan.macroTargetSnapshot }
+          : {}),
       })
       .where(eq(weeklyPlans.id, weeklyPlanId));
 
@@ -518,6 +523,7 @@ export async function applyWeeklyPlan(
         phase: plan.phase,
         notes: plan.notes,
         startDate: monday,
+        macroTargetSnapshot: plan.macroTargetSnapshot ?? null,
       })
       .returning({ id: weeklyPlans.id });
 

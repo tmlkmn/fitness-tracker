@@ -12,7 +12,7 @@ import { Sparkles, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { generateAIMacroTargets, type AIMacroResult } from "@/actions/ai-macro";
-import { updateMacroTargets } from "@/actions/user";
+import { updateMacroStrategy } from "@/actions/user";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { useTranslations } from "next-intl";
 
@@ -52,11 +52,12 @@ export function AIMacroCalculator() {
     if (!result) return;
     setIsSaving(true);
     try {
-      await updateMacroTargets({
-        targetCalories: result.macros.calories,
-        targetProteinG: String(result.macros.protein),
-        targetCarbsG: String(result.macros.carbs),
-        targetFatG: String(result.macros.fat),
+      // Persist the STRATEGY (delta + protein/kg + fat%), not frozen macros —
+      // resolved targets stay live against the user's current weight/goal.
+      await updateMacroStrategy({
+        calorieDelta: result.strategy.calorieDelta,
+        proteinPerKg: result.strategy.proteinPerKgLBM,
+        fatPct: result.strategy.fatPct,
       });
       qc.invalidateQueries({ queryKey: ["user-profile"] });
       qc.invalidateQueries({ queryKey: ["macro.resolved"] });
