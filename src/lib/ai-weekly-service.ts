@@ -266,15 +266,21 @@ function summarizeQualityIssues(
   const macroDriftDetails = result.warnings.filter(
     (w) => w.includes(" drifts ") && w.includes("from target"),
   );
+  // Protein & fat drift are intentionally NOT retry triggers: the deterministic
+  // enforceDailyMacroFloors net (ai-weekly-postprocess, run in mergeWeeklyResults)
+  // guarantees each day's protein/fat floors AFTER generation, so burning an
+  // expensive Sonnet retry to chase them is pure waste — that grind was the main
+  // latency cost. Only kcal/carb drift, which the net does NOT correct, still
+  // warrants a (single) quality retry. The protein/fat flags stay on the summary
+  // for the retry *message* — when a retry fires for another reason, reminding
+  // the model to keep protein high is still useful guidance.
   const hasAny =
     emptyMealCount > 0 ||
     planTypeMismatchCount > 0 ||
     missingSections.length > 0 ||
     restDaysWithExercises.length > 0 ||
     weeklyKcalDrift ||
-    weeklyProteinDrift ||
     weeklyCarbsDrift ||
-    weeklyFatDrift ||
     allergenHits.length > 0 ||
     progressiveOverloadIssue != null;
   return {
@@ -412,26 +418,19 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
     }
     result = retryResult;
   } else {
-    // Priority 2: quality retry — empty meals, planType mismatches, missing
-    // sections, rest-day exercises, allergen hits, or weekly macro drift.
-    // Up to 2 attempts: macro drift (esp. the rest-day protein collapse) often
-    // survives a single generic nudge, so we retry once more when macros are
-    // still off — but only while each attempt keeps strictly improving.
-    const MAX_QUALITY_RETRIES = 3;
-    for (let attempt = 0; attempt < MAX_QUALITY_RETRIES; attempt++) {
-      const summary = summarizeQualityIssues(result, effectivePastDows);
-      if (!summary.hasAny) break;
-      // The 2nd pass only earns its cost when the unresolved issue is macro
-      // drift; other quality gaps rarely improve on a repeat nudge.
-      const macroDriftOnly =
-        summary.weeklyKcalDrift ||
-        summary.weeklyProteinDrift ||
-        summary.weeklyCarbsDrift ||
-        summary.weeklyFatDrift;
-      if (attempt > 0 && !macroDriftOnly) break;
+    // Priority 2: a SINGLE quality retry for issues the deterministic net can't
+    // fix — empty meals, planType mismatches, missing sections, rest-day
+    // exercises, allergen hits, progressive overload, or kcal/carb drift.
+    // Protein/fat floors are deliberately excluded (see summarizeQualityIssues):
+    // enforceDailyMacroFloors guarantees them post-generation, so the old
+    // 3-attempt grind — which existed almost entirely to coax rest-day protein
+    // back up — is gone. One nudge handles the residual structural cases; the
+    // net handles the rest. This is the main latency win.
+    const summary = summarizeQualityIssues(result, effectivePastDows);
+    if (summary.hasAny) {
       qualityRetryTriggered = true;
       onRetry?.();
-      console.warn(`[AI Weekly] ⚠ ${label} quality issues (attempt ${attempt + 1}) → retry`);
+      console.warn(`[AI Weekly] ⚠ ${label} quality issues → retry`);
       const retry = await callAITool({
         systemPrompt,
         userMessage: `${userMessage}${buildQualityRetryMessage(summary)}`,
@@ -442,16 +441,14 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
       });
       totalInput += retry.inputTokens;
       totalOutput += retry.outputTokens;
-      console.log(`[AI Weekly] ✓ ${label} quality retry ${attempt + 1} (stop=${retry.stopReason}, out=${retry.outputTokens})`);
+      console.log(`[AI Weekly] ✓ ${label} quality retry (stop=${retry.stopReason}, out=${retry.outputTokens})`);
       const retryResult = validate(retry.toolInput);
-      // Keep only when it's a strict improvement; otherwise stop retrying.
+      // Keep only when it's a strict improvement.
       if (
         scoreWeeklyValidationGaps(retryResult, effectivePastDows) <
         scoreWeeklyValidationGaps(result, effectivePastDows)
       ) {
         result = retryResult;
-      } else {
-        break;
       }
     }
   }

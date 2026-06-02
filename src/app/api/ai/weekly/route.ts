@@ -17,7 +17,14 @@ import {
 } from "@/lib/ai-weekly-service";
 import { categorizeWarnings } from "@/lib/ai-warning-telemetry";
 
-export const maxDuration = 300;
+// "both" generation runs the workout + nutrition legs sequentially, each with
+// up to 3 quality retries, so the worst case is ~6-8 back-to-back Sonnet calls.
+// 300s clipped that; 800s is the Vercel Pro ceiling (requires Fluid Compute —
+// without it Pro caps at 300 and the build rejects this value). The client-side
+// abort in use-weekly-ai.ts MUST stay above this so the server's own error wins
+// the race instead of a blunt client abort. NOTE: this only defers the timeout;
+// it does not shorten the wait — see the A/B levers in ai-weekly-service.ts.
+export const maxDuration = 800;
 
 const RequestBodySchema = z.object({
   dateStr: z.string().min(1, "Tarih gerekli."),

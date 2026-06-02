@@ -75,7 +75,11 @@ export function useGenerateWeeklyPlan() {
 
     const controller = new AbortController();
     controllerRef.current = controller;
-    const timeout = setTimeout(() => controller.abort(), 300_000);
+    // Kept ABOVE the server's maxDuration (800s in route.ts) so the server's
+    // own graceful error/done event wins the race; a shorter client abort would
+    // pre-empt it and surface a generic timeout instead of the real reason.
+    // These two values must move together.
+    const timeout = setTimeout(() => controller.abort(), 820_000);
 
     try {
       const res = await fetch("/api/ai/weekly", {
