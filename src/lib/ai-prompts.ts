@@ -107,6 +107,7 @@ const MEAL_TIMING_POLICY_BLOCK_TR = `## Öğün Zamanlama Politikası (KRİTİK)
 - Politika "intermittent" (sadece beslenme + kilo verme/idame): 3-4 öğün, eating window 8-10h, ana öğünler arası 4-5h tolere edilir
 - "Erken Protein" slotu (uyanıştan 30-60dk sonra) 150-250 kcal, en az 20g protein içerecek şekilde yap (protein shake, yoğurt+ceviz, haşlanmış yumurta+meyve gibi)
 - "Post-Workout" slotu antrenman sonrası 30dk içinde, hızlı karb + yüksek protein
+- Pre-Workout öğünü bir ana öğüne (özellikle akşam yemeği) <90 dk yakınsa: ya HİÇ ekleme (ana öğün zaten yakıt) ya da ≤200 kcal hafif tut. Antrenman öncesi 1 saat içinde iki ağır öğünü (ör. 680 kcal akşam + 320 kcal pre-workout) üst üste KOYMA — sindirim yükü performansı düşürür.
 - Frekans kararı sana ait değil — politika bağlamdan geliyor; kullanıcı isteği bunu override edebilir`;
 
 const MEAL_TIMING_POLICY_BLOCK_EN = `## Meal Timing Policy (CRITICAL)
@@ -118,6 +119,7 @@ const MEAL_TIMING_POLICY_BLOCK_EN = `## Meal Timing Policy (CRITICAL)
 - "intermittent" policy (nutrition-only + weight loss/maintenance): 3-4 meals, eating window 8-10h, 4-5h between main meals tolerated
 - "Early Protein" slot (30-60min after waking) 150-250 kcal, at least 20g protein (protein shake, yogurt+walnuts, boiled eggs+fruit)
 - "Post-Workout" slot within 30min after training, fast carbs + high protein
+- If the Pre-Workout meal is within <90 min of a main meal (especially dinner): either DON'T add it (the main meal is the fuel) or keep it light (≤200 kcal). Do NOT stack two heavy meals (e.g. a 680 kcal dinner + a 320 kcal pre-workout) within an hour before training — digestive load hurts performance.
 - Frequency is not your call — the policy comes from context; user request can override this`;
 
 const MEAL_LABELING_BLOCK_TR = `## Öğün Etiketleme Kuralı (KRİTİK)
@@ -922,6 +924,7 @@ ${WORKOUT_PROGRESSION_BLOCK_EN}
 ## Nutrition Rules
 - Daily calorie and protein targets come from the GOAL-DRIVEN STRATEGY block — not your estimate
 - Shift carbs between training/rest days but weekly average must stay aligned with the strategy
+- On REST days ONLY carbs drop; protein stays ~constant every day (±10%) and calories do not halve. When removing pre/post-workout meals, redistribute their protein into the remaining meals.
 - Use commonly available ingredients
 
 ## Recent Measurement Trend Analysis
@@ -1015,6 +1018,7 @@ ${WORKOUT_PROGRESSION_BLOCK_TR}
 ## Beslenme Kuralları
 - Günlük kalori ve protein hedefleri HEDEF-ODAKLI STRATEJİ bloğundan gelir — kendi tahminin değil, blok geçerli
 - Antrenman/dinlenme günleri arasında karbonhidratı kaydır ama haftalık ortalama strateji ile uyumlu kalsın
+- DİNLENME günlerinde SADECE karbonhidrat düşer; protein her gün ~sabit kalır (±%10), kalori yarı yarıya düşmez. Pre/post-workout öğünlerini çıkarırken proteinlerini kalan öğünlere dağıt.
 - Türkiye'de yaygın malzemeler kullan
 
 ## Son Ölçüm Trend Analizi
@@ -1166,6 +1170,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_EN}
 ## Calories and Macros
 - Analyze body composition (weight, height, body fat %)
 - For calorie delta, protein/fat share, and carb base, apply the GOAL-DRIVEN STRATEGY block EXACTLY — not your own estimate. Don't fix the daily calorie — adjust TRAINING days +10-15%, REST days -10-15%; the weekly AVERAGE must be within ±5% of "COMPUTED DAILY MACRO TARGETS". Daily protein must stay within ±10% (to preserve muscle).
+- ⚠️ MOST COMMON MISTAKE: treating a rest day as a "small day" and cutting everything (protein included). WRONG. On a rest day ONLY carbs drop; protein and fat do NOT, so calories only dip slightly (stay ~85-90% of a training day), they do NOT halve. Example: target 185g protein / 2800 kcal → training day ~185g/3100 kcal (7 meals), rest day ALSO ~185g/2400 kcal (5 meals, denser protein per meal). You may NOT drop rest-day protein to 130g or calories to 1800.
 - Activity level: derive from the user profile and the day types in the "TRAINING DAY CONTEXT" block. If no block, assume lightly active (TEE = BMR × 1.3).
 
 ${GOAL_STRATEGY_REF_BLOCK_EN}
@@ -1205,7 +1210,7 @@ ${JSON_FIELD_RULES_EN}
 - If a "TRAINING DAY CONTEXT" block is present:
   • TRAINING days: ADD a small carb-leaning meal/snack 30-60 min before training (+ light protein), and a protein+carb recovery meal 30-60 min after. Concentrate carbs on this day.
   • SWIM days: similar but lighter (assume swim is shorter/less intense).
-  • REST days: do NOT add pre/post-workout meals. Slightly cut carbs, keep protein constant, increase fiber/vegetables.
+  • REST days: do NOT add pre/post-workout meals — BUT do not let their protein (usually protein shakes; ~45-70g total) vanish; redistribute it into the remaining 4-5 meals. Daily TOTAL protein must stay ~the SAME as a training day (±10%). ONLY carbs drop (−15-25%); protein and fat do NOT, increase fiber/vegetables.
 - Week starts Monday. dayOfWeek: 0=Monday … 6=Sunday
 - Provide days array sorted Monday (0) to Sunday (6)
 - JSON format:
@@ -1233,6 +1238,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_TR}
 ## Kalori ve Makro Hesaplama
 - Kullanıcının vücut kompozisyonu verilerini (kilo, boy, yağ oranı) analiz et
 - Kalori deltası, protein/yağ payı ve karbonhidrat tabanı için HEDEF-ODAKLI STRATEJİ bloğunu BİREBİR uygula — kendi tahminin değil, blok geçerli. Günlük kaloriyi sabitleme — ANTRENMAN günlerinde +%10–15, DİNLENME günlerinde −%10–15 ayarla; haftalık ORTALAMA, "HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ" ile ±%5 içinde olmalı. Protein hedefi her gün ±%10 içinde sabit kalmalı (kas korumak için).
+- ⚠️ EN SIK YAPILAN HATA: dinlenme gününü "küçük gün" sanıp protein dahil her şeyi kısmak. YANLIŞ. Dinlenme gününde SADECE karbonhidrat düşer; protein ve yağ düşmez, kalori bu yüzden sadece HAFİF iner (antrenman gününün ~%85-90'ı), yarı yarıya DÜŞMEZ. Örnek: hedef 185g protein / 2800 kcal → antrenman günü ~185g/3100 kcal (7 öğün), dinlenme günü de ~185g/2400 kcal (5 öğün, öğün başına daha yoğun protein). Dinlenme gününde proteini 130g'a veya kaloriyi 1800'e DÜŞÜREMEZSİN.
 - Aktivite seviyesi: kullanıcı profilindeki bilgilere ve "ANTRENMAN GÜN BAĞLAMI" bloğundaki gün tiplerine göre belirle. Bağlam bloğu yoksa hafif aktif (TEE = BMR × 1.3) varsay.
 
 ${GOAL_STRATEGY_REF_BLOCK_TR}
@@ -1272,7 +1278,7 @@ ${JSON_FIELD_RULES_TR}
 - "ANTRENMAN GÜN BAĞLAMI" bloğu mevcutsa:
   • ANTRENMAN günlerinde: 30–60 dk önce karb-ağırlıklı küçük öğün/atıştırmalık (+ az protein), antrenmandan 30–60 dk sonra protein+karb toparlanma öğünü EKLE. Karbonhidratı bu güne yığ.
   • YÜZME günlerinde: benzer ama daha hafif (yüzme süresi/yoğunluğu kısa varsay).
-  • DİNLENME günlerinde: pre/post-workout öğünü EKLEME. Karbı hafif düşür, protein sabit kalsın, lif/sebze artır.
+  • DİNLENME günlerinde: pre/post-workout öğünü EKLEME — AMA o öğünlerin proteinini (genelde protein shake; toplam ~45-70g) yok etme, kalan 4-5 öğüne dağıt. Günlük TOPLAM protein antrenman günüyle ~AYNI kalmalı (±%10). SADECE karbonhidrat düşer (−%15-25); protein ve yağ DÜŞMEZ, lif/sebze artır.
 - Hafta Pazartesi'den başlar. dayOfWeek: 0=Pazartesi, 1=Salı, 2=Çarşamba, 3=Perşembe, 4=Cuma, 5=Cumartesi, 6=Pazar (Türkiye standardı)
 - days dizisini Pazartesi'den (0) Pazar'a (6) sıralı ver
 - JSON formatı:

@@ -60,6 +60,8 @@ export interface MuscleVolumeBandsInput {
   fitnessLevel?: string | null;
   fitnessGoal?: string | null;
   deloadWeek?: boolean;
+  /** Re-adaptation week after a layoff — shrinks bands like a soft deload so a returning user isn't prescribed full hypertrophy volume. */
+  returnWeek?: boolean;
   /** workout + swimming days in the week; rest/nutrition days don't count. */
   trainingDayCount: number;
 }
@@ -112,12 +114,14 @@ export function getMuscleVolumeBands(
   const goal = input.fitnessGoal ?? "recomp";
   const goalMul = GOAL_MULTIPLIERS[goal] ?? 1;
 
-  const deloadMul = input.deloadWeek ? 0.5 : 1;
+  // Deload is the hardest cut; a return week is a softer taper (the user is
+  // ramping back, not actively recovering). Deload wins if both are set.
+  const recoveryMul = input.deloadWeek ? 0.5 : input.returnWeek ? 0.6 : 1;
 
   const days = Math.max(0, Math.min(7, input.trainingDayCount));
   const dayMul = Math.max(0.6, Math.min(1.4, days / 4));
 
-  const totalMul = levelMul * goalMul * deloadMul * dayMul;
+  const totalMul = levelMul * goalMul * recoveryMul * dayMul;
 
   const bands: Record<MuscleGroup, { min: number; max: number }> = {
     chest: { min: 0, max: 0 },
@@ -134,7 +138,8 @@ export function getMuscleVolumeBands(
     };
   }
 
-  const profileLabel = `${level} / ${goal}${input.deloadWeek ? " / deload" : ""} / ${days}-day program`;
+  const recoveryTag = input.deloadWeek ? " / deload" : input.returnWeek ? " / return" : "";
+  const profileLabel = `${level} / ${goal}${recoveryTag} / ${days}-day program`;
   return { bands, profileLabel };
 }
 

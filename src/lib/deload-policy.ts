@@ -239,5 +239,38 @@ export function buildDeloadNutritionBlock(locale: Locale): string {
   ].join("\n");
 }
 
+/**
+ * Builds the return-week (re-adaptation) instructions for the weekly workout
+ * prompt. Distinct from deload: the user did not train at all in the
+ * immediately-preceding week(s), so the model must NOT progress off the last
+ * full week shown in history. Appended to the user message — system prompt
+ * stays cache-warm. Injected only when a return week is detected AND it is not
+ * already a manual deload week (deload block covers volume reduction).
+ */
+export function buildReturnWeekWorkoutBlock(locale: Locale): string {
+  if (locale === "en") {
+    return [
+      "═══ RETURN WEEK — RE-ADAPTATION (user is back after a layoff) ═══",
+      "The user did NOT train during the immediately-preceding week(s). Their body is detrained — do NOT progress off the last full week shown in history.",
+      "- Total set count = 50-60% of the last full training week (ease back in).",
+      "- NO intensity techniques: no drop sets, no supersets, no tempo escalation, no 'increase the pace'.",
+      "- Use familiar compound movements; avoid brand-new or highly taxing exercises.",
+      "- Leave 2-3 reps in reserve; do NOT go to failure. Lower the load vs the last full week.",
+      "- Do NOT apply progressive overload this week — the goal is re-adaptation, not new PRs.",
+      "═══════════════════════════════════════",
+    ].join("\n");
+  }
+  return [
+    "═══ DÖNÜŞ HAFTASI — RE-ADAPTASYON (kullanıcı aradan sonra dönüyor) ═══",
+    "Kullanıcı hemen önceki hafta(lar) HİÇ antrenman yapmadı. Vücut detrained durumda — geçmişteki son dolu haftadan progresyon YAPMA.",
+    "- Toplam set sayısı = son tam antrenman haftasının %50-60'ı (kademeli dönüş).",
+    "- Yoğunluk tekniği YOK: drop set yok, süperset yok, tempo artışı yok, 'tempoyu artır' yok.",
+    "- Tanıdık compound hareketler kullan; yepyeni veya çok yorucu hareketlerden kaçın.",
+    "- 2-3 tekrar yedekte bırak; failure'a GİTME. Son tam haftaya göre ağırlığı düşür.",
+    "- Bu hafta progresif yüklenme UYGULAMA — amaç re-adaptasyon, yeni PR değil.",
+    "═══════════════════════════════════════════",
+  ].join("\n");
+}
+
 /** Multiplier applied to the calorie delta during deload weeks. */
 export const DELOAD_CALORIE_DELTA_MULTIPLIER = 0.4;

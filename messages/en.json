@@ -3557,7 +3557,7 @@
     "supplements": "Supplements",
     "dosage": "Dosage",
     "timing": "Timing",
-    "targets": "Daily Target",
+    "targets": "Daily Average Target",
     "planType": {
       "workout": "Workout",
       "swimming": "Swimming",

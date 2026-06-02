@@ -42,6 +42,7 @@ import {
 } from "@/lib/ai-weekly-prompt-blocks";
 import { AI_MAX_TOKENS, AI_TIMEOUTS } from "@/lib/ai-config";
 import { parseUserAllergens } from "@/lib/allergen-detect";
+import { detectInjuryProtocols } from "@/lib/injury-protocols";
 import {
   summarizeProducedWorkout,
   buildProducedWorkoutBlock,
@@ -52,6 +53,7 @@ import {
 import {
   buildDeloadWorkoutBlock,
   buildDeloadNutritionBlock,
+  buildReturnWeekWorkoutBlock,
 } from "@/lib/deload-policy";
 import { defaultDayModesForLevel } from "@/lib/day-modes-default";
 import {
@@ -236,6 +238,8 @@ interface QualityIssueSummary {
   weeklyProteinDrift: boolean;
   weeklyCarbsDrift: boolean;
   weeklyFatDrift: boolean;
+  /** Per-day macro-drift detail lines (e.g. "day 1 (rest) protein 98 drifts 47% from target 185 …") so the retry nudge can name the offending days. */
+  macroDriftDetails: string[];
   allergenHits: { dow: number; mealIndex: number; allergens: string[] }[];
   progressiveOverloadIssue: ValidateWeeklyPlanResult["progressiveOverloadIssue"];
 }
@@ -254,6 +258,12 @@ function summarizeQualityIssues(
   const weeklyFatDrift = result.weeklyFatDrift;
   const allergenHits = result.allergenHits.filter((h) => !effectivePastDows.has(h.dow));
   const progressiveOverloadIssue = result.progressiveOverloadIssue;
+  // Per-day macro-drift lines emitted by computeMacroDrift — used to name the
+  // exact offending days/macros in the retry nudge. Only present when a drift
+  // flag is set, so no separate gating needed.
+  const macroDriftDetails = result.warnings.filter(
+    (w) => w.includes(" drifts ") && w.includes("from target"),
+  );
   const hasAny =
     emptyMealCount > 0 ||
     planTypeMismatchCount > 0 ||
@@ -275,6 +285,7 @@ function summarizeQualityIssues(
     weeklyProteinDrift,
     weeklyCarbsDrift,
     weeklyFatDrift,
+    macroDriftDetails,
     allergenHits,
     progressiveOverloadIssue,
   };
@@ -297,17 +308,19 @@ function buildQualityRetryMessage(summary: QualityIssueSummary): string {
   if (summary.restDaysWithExercises.length > 0) {
     issues.push(`${summary.restDaysWithExercises.length} rest gününde egzersiz vardı (rest günü exercises BOŞ olmalı).`);
   }
-  if (summary.weeklyKcalDrift) {
-    issues.push(`Haftalık kalori hedeften sapıyor (±%10 tolerans aşıldı). Hedefe yakınlaştır.`);
-  }
-  if (summary.weeklyProteinDrift) {
-    issues.push(`Haftalık protein hedeften sapıyor (±%15 tolerans aşıldı). Protein dağılımını düzelt.`);
-  }
-  if (summary.weeklyCarbsDrift) {
-    issues.push(`Haftalık karbonhidrat hedeften sapıyor (±%15 tolerans aşıldı). Carb dağılımını düzelt.`);
-  }
-  if (summary.weeklyFatDrift) {
-    issues.push(`Haftalık yağ hedeften sapıyor (±%15 tolerans aşıldı). Yağ dağılımını düzelt.`);
+  const macroDrift =
+    summary.weeklyKcalDrift ||
+    summary.weeklyProteinDrift ||
+    summary.weeklyCarbsDrift ||
+    summary.weeklyFatDrift;
+  if (macroDrift) {
+    const detail =
+      summary.macroDriftDetails.length > 0
+        ? ` Sapan günler: ${summary.macroDriftDetails.join(" | ")}.`
+        : "";
+    issues.push(
+      `MAKRO HEDEF SAPMASI (kcal ±%10 / makro ±%15 aşıldı).${detail} DÜZELTME KURALI: her günü KENDİ tipinin hedefine yaklaştır. Dinlenme günlerinde proteini DÜŞÜRME — antrenman günleriyle ~aynı tut (±%10); SADECE karbonhidratı azalt. Çıkardığın pre/post-workout shake proteinini kalan öğünlere dağıt. Dinlenme günü kalorisini yarı yarıya düşürme — antrenman gününün ~%85-90'ında tut.`,
+    );
   }
   if (summary.progressiveOverloadIssue) {
     issues.push(
@@ -398,12 +411,25 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
     result = retryResult;
   } else {
     // Priority 2: quality retry — empty meals, planType mismatches, missing
-    // sections, rest-day exercises, or weekly kcal drift. One attempt only.
-    const summary = summarizeQualityIssues(result, effectivePastDows);
-    if (summary.hasAny) {
+    // sections, rest-day exercises, allergen hits, or weekly macro drift.
+    // Up to 2 attempts: macro drift (esp. the rest-day protein collapse) often
+    // survives a single generic nudge, so we retry once more when macros are
+    // still off — but only while each attempt keeps strictly improving.
+    const MAX_QUALITY_RETRIES = 2;
+    for (let attempt = 0; attempt < MAX_QUALITY_RETRIES; attempt++) {
+      const summary = summarizeQualityIssues(result, effectivePastDows);
+      if (!summary.hasAny) break;
+      // The 2nd pass only earns its cost when the unresolved issue is macro
+      // drift; other quality gaps rarely improve on a repeat nudge.
+      const macroDriftOnly =
+        summary.weeklyKcalDrift ||
+        summary.weeklyProteinDrift ||
+        summary.weeklyCarbsDrift ||
+        summary.weeklyFatDrift;
+      if (attempt > 0 && !macroDriftOnly) break;
       qualityRetryTriggered = true;
       onRetry?.();
-      console.warn(`[AI Weekly] ⚠ ${label} quality issues → retry`);
+      console.warn(`[AI Weekly] ⚠ ${label} quality issues (attempt ${attempt + 1}) → retry`);
       const retry = await callAITool({
         systemPrompt,
         userMessage: `${userMessage}${buildQualityRetryMessage(summary)}`,
@@ -414,11 +440,16 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
       });
       totalInput += retry.inputTokens;
       totalOutput += retry.outputTokens;
-      console.log(`[AI Weekly] ✓ ${label} quality retry (stop=${retry.stopReason}, out=${retry.outputTokens})`);
+      console.log(`[AI Weekly] ✓ ${label} quality retry ${attempt + 1} (stop=${retry.stopReason}, out=${retry.outputTokens})`);
       const retryResult = validate(retry.toolInput);
-      // Only keep retry result when it's an improvement.
-      if (scoreWeeklyValidationGaps(retryResult, effectivePastDows) < scoreWeeklyValidationGaps(result, effectivePastDows)) {
+      // Keep only when it's a strict improvement; otherwise stop retrying.
+      if (
+        scoreWeeklyValidationGaps(retryResult, effectivePastDows) <
+        scoreWeeklyValidationGaps(result, effectivePastDows)
+      ) {
         result = retryResult;
+      } else {
+        break;
       }
     }
   }
@@ -519,6 +550,7 @@ interface UserProfileRow {
   targetCarbsG: string | null;
   targetFatG: string | null;
   foodAllergens: string | null;
+  healthNotes: string | null;
 }
 
 export interface ResolvedWeeklyRequest {
@@ -540,6 +572,8 @@ export interface ResolvedWeeklyRequest {
   sanitizedNote: string | null;
   rawUserNote: string | null;
   deloadWeek: boolean;
+  /** Re-adaptation week after a layoff (immediately-preceding calendar week empty). */
+  returnWeek: boolean;
   /** Sum of main/swimming working sets from the user's most recent prior week. */
   previousWorkingSets: number;
   /** Per-muscle and per-pattern breakdown of the prior week's working sets. */
@@ -576,7 +610,7 @@ export async function resolveWeeklyGenerationRequest(
   const pastDowsSet = new Set(body.pastDows ?? []);
   const monday = getMondayStr(dateStr);
 
-  const [userRow, weeklyContext, existingForMonday] = await Promise.all([
+  const [userRow, weeklyCtx, existingForMonday] = await Promise.all([
     db.select({
       serviceType: users.serviceType,
       weight: users.weight,
@@ -592,6 +626,7 @@ export async function resolveWeeklyGenerationRequest(
       targetCarbsG: users.targetCarbsG,
       targetFatG: users.targetFatG,
       foodAllergens: users.foodAllergens,
+      healthNotes: users.healthNotes,
     }).from(users).where(eq(users.id, userId)).then((r) => r[0]),
     buildWeeklyPlanContext(userId, monday),
     db.select({ id: weeklyPlans.id, weekNumber: weeklyPlans.weekNumber })
@@ -599,6 +634,12 @@ export async function resolveWeeklyGenerationRequest(
       .where(and(eq(weeklyPlans.userId, userId), eq(weeklyPlans.startDate, monday)))
       .then((r) => r[0]),
   ]);
+
+  const weeklyContext = weeklyCtx.context;
+  // Re-adaptation week: the immediately-preceding calendar week had no
+  // training. Shrinks volume bands and injects the deterministic return-week
+  // workout block — independent of the manual deload toggle.
+  const returnWeek = weeklyCtx.isReturnWeek;
 
   // If a weekly plan already exists for this Monday, pull its daily planType
   // shape so nutrition-only refreshes preserve the training day backdrop.
@@ -697,6 +738,7 @@ export async function resolveWeeklyGenerationRequest(
     fitnessLevel: userRow?.fitnessLevel ?? null,
     fitnessGoal: userRow?.fitnessGoal ?? null,
     deloadWeek,
+    returnWeek,
     trainingDayCount,
   });
 
@@ -718,6 +760,7 @@ export async function resolveWeeklyGenerationRequest(
     sanitizedNote,
     rawUserNote: userNote ?? null,
     deloadWeek,
+    returnWeek,
     previousWorkingSets,
     previousWeekBreakdown,
     muscleVolumeBands,
@@ -871,7 +914,7 @@ export interface WeeklyPrompts {
 }
 
 export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
-  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, adjustedTargets, expectedTargets, supplementBudget, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek, previousWorkingSets, previousWeekBreakdown, muscleVolumeBands, underlyingTrainingDayModes } = req;
+  const { locale, weeklyContext, expectedDayModes, pastDowsSet, doNutrition, doWorkout, adjustedTargets, expectedTargets, supplementBudget, sanitizedNote, monday, nextWeekNumber, userRow, deloadWeek, returnWeek, previousWorkingSets, previousWeekBreakdown, muscleVolumeBands, underlyingTrainingDayModes } = req;
   // Proactive workout-prompt blocks: bands the validator will check post-hoc
   // + previous-week per-muscle/per-pattern reference for progression. Empty
   // strings when nutrition-only or first-week user (no prior breakdown).
@@ -885,6 +928,15 @@ export function buildWeeklyPrompts(req: ResolvedWeeklyRequest): WeeklyPrompts {
   const userAllergens = parseUserAllergens(userRow?.foodAllergens);
   const deloadWorkoutBlock = deloadWeek ? `\n\n${buildDeloadWorkoutBlock(locale)}` : "";
   const deloadNutritionBlock = deloadWeek ? `\n\n${buildDeloadNutritionBlock(locale)}` : "";
+  // Return-week block layers on top of the free-text context note so the
+  // re-adaptation rules are authoritative. Skipped on manual deload weeks
+  // (the deload block already enforces volume reduction).
+  const returnWorkoutBlock = returnWeek && !deloadWeek ? `\n\n${buildReturnWeekWorkoutBlock(locale)}` : "";
+  // Structured injury protocols (meniscus, lower back, shoulder, knee
+  // ligament) parsed from healthNotes — authoritative DO/DON'T rules so the
+  // model doesn't improvise a contradictory protocol. Workout-only.
+  const injuryBlocks = doWorkout ? detectInjuryProtocols(userRow?.healthNotes, locale) : [];
+  const injuryWorkoutBlock = injuryBlocks.length > 0 ? `\n\n${injuryBlocks.join("\n\n")}` : "";
 
   const weekHeader = `Hafta başlangıç tarihi: ${monday}\nBu plan ${nextWeekNumber}. hafta için oluşturulacak. weekTitle alanı MUTLAKA "Hafta ${nextWeekNumber} — ..." formatında başlamalı.`;
 
@@ -972,7 +1024,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
       }
 
       const workoutDayModesBlock = buildWorkoutOnlyDayModesBlock(expectedDayModes, pastDowsSet);
-      const workoutUserMsg = `${weeklyContext}${workoutVolumeBlock}${previousVolumeBlock}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}`;
+      const workoutUserMsg = `${weeklyContext}${workoutVolumeBlock}${previousVolumeBlock}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}${returnWorkoutBlock}${injuryWorkoutBlock}`;
 
       workout = {
         systemPrompt: getWorkoutOnlyWeeklyPrompt(locale),
@@ -987,7 +1039,7 @@ Bu hedefler kullanıcının cinsiyet, yaş, kilo, boy, aktivite seviyesi ve fitn
     } else {
       // Workout-only mode: full 7-day plan
       const workoutDayModesBlock = buildDayModesBlock(expectedDayModes, pastDowsSet);
-      const workoutUserMsg = `${weeklyContext}${workoutVolumeBlock}${previousVolumeBlock}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}`;
+      const workoutUserMsg = `${weeklyContext}${workoutVolumeBlock}${previousVolumeBlock}${workoutDayModesBlock}\n\n${weekHeader}\n\nÖnceki haftaların programlarını analiz et ve progresif yüklenme uygulayarak bu hafta için daha ilerici bir antrenman programı oluştur. Sadece antrenman programı oluştur, beslenme ekleme.\n\n⚡ KISALTMA KURALI: egzersiz notes alanı MAX 8 kelime veya null. Gereksiz açıklama yazma.${noteBlockWorkout}${deloadWorkoutBlock}${returnWorkoutBlock}${injuryWorkoutBlock}`;
 
       workout = {
         systemPrompt: getWorkoutOnlyWeeklyPrompt(locale),

@@ -183,6 +183,31 @@ const EN_CYCLING_LABEL: Record<CarbCyclingLabel, string> = {
 };
 
 /**
+ * Renders one per-day-type macro line. Rest/nutrition days are the lowest-kcal
+ * lines — the model tends to read them as "small day" and scale the whole day
+ * down, protein included. Spell out the protein + kcal FLOOR (not just a
+ * target) so only carbs move. Pulled out of `buildCyclingTargetsBlock` to keep
+ * that function's branching flat.
+ */
+function renderDayTypeTargetLine(
+  label: string,
+  t: MacroTargets,
+  isRest: boolean,
+  locale: "tr" | "en",
+): string {
+  if (locale === "en") {
+    const floorNote = isRest
+      ? ` — protein floor ${t.protein}g (DO NOT cut), kcal floor ${t.calories} (do not go below); ONLY carbs taper to ${t.carbs}g`
+      : "";
+    return `${label}: ${t.calories} kcal / ${t.protein}g protein / ${t.carbs}g carbs / ${t.fat}g fat${floorNote}`;
+  }
+  const floorNote = isRest
+    ? ` — protein tabanı ${t.protein}g (DÜŞÜRME), kcal tabanı ${t.calories} (altına inme); SADECE karb ${t.carbs}g'a iner`
+    : "";
+  return `${label}: ${t.calories} kcal / ${t.protein}g protein / ${t.carbs}g carbs / ${t.fat}g yağ${floorNote}`;
+}
+
+/**
  * Renders the per-day-type macro target block for the weekly nutrition prompt.
  * Only emitted when `cyclingProfile.enabled` — caller decides which block to
  * use (single vs per-day-type).
@@ -215,12 +240,8 @@ export function buildCyclingTargetsBlock(
     lines.push(`═══ HESAPLANMIŞ MAKRO HEDEFLERİ (Carb Cycling: ${cyclingLabel}) ═══`);
   }
   for (const dt of renderTypes) {
-    const t = targets.perDayType[dt];
-    if (locale === "en") {
-      lines.push(`${labelMap[dt]}: ${t.calories} kcal / ${t.protein}g protein / ${t.carbs}g carbs / ${t.fat}g fat`);
-    } else {
-      lines.push(`${labelMap[dt]}: ${t.calories} kcal / ${t.protein}g protein / ${t.carbs}g carbs / ${t.fat}g yağ`);
-    }
+    const isRest = dt === "rest" || dt === "nutrition";
+    lines.push(renderDayTypeTargetLine(labelMap[dt], targets.perDayType[dt], isRest, locale));
   }
   if (locale === "en") {
     lines.push(

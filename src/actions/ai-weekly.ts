@@ -28,11 +28,21 @@ import {
 
 export type { AIWeeklyPlan, AIWeeklyDay } from "@/lib/ai-weekly-types";
 
+export interface WeeklyPlanContext {
+  context: string;
+  /** True when the user is resuming after the immediately-preceding calendar week had no training (re-adaptation week). */
+  isReturnWeek: boolean;
+  /** Consecutive empty calendar weeks immediately before the target week. */
+  weeksOff: number;
+}
+
 export async function buildWeeklyPlanContext(
   userId: string,
   targetMonday: string,
-): Promise<string> {
+): Promise<WeeklyPlanContext> {
   const lines: string[] = [];
+  let isReturnWeek = false;
+  let weeksOff = 0;
 
   // ─── 1. User profile ──────────────────────────────────────────────────
   const user = await loadUserProfileRow(userId);
@@ -276,6 +286,22 @@ export async function buildWeeklyPlanContext(
 
       let anyFullWeek = false;
 
+      // Return-from-layoff detection: the immediately-preceding calendar week
+      // (monday-7) has no training content while the user has older history.
+      // A single empty week right before the target is the strongest
+      // detraining signal — the old "all 4 weeks empty" check missed it and
+      // let the model anchor progression to a 2+ week-old full week.
+      const precedingMonday = prevMondays[prevMondays.length - 1];
+      const precedingWeek = weekByStart.get(precedingMonday);
+      isReturnWeek = !precedingWeek || !weekHasExercises(precedingWeek.id);
+      if (isReturnWeek) {
+        for (let i = prevMondays.length - 1; i >= 0; i--) {
+          const w = weekByStart.get(prevMondays[i]);
+          if (!w || !weekHasExercises(w.id)) weeksOff += 1;
+          else break;
+        }
+      }
+
       for (const monday of prevMondays) {
         const week = weekByStart.get(monday);
 
@@ -288,7 +314,9 @@ export async function buildWeeklyPlanContext(
 
         anyFullWeek = true;
         lines.push("");
-        lines.push(`── Hafta ${week.weekNumber}: ${week.title} (${week.phase} fazı, ${week.startDate ?? ""}) ──`);
+        lines.push(
+          `── Hafta ${week.weekNumber}: ${week.title} (${week.phase} fazı, ${week.startDate ?? ""}) ──${isReturnWeek ? " ⚠️ REFERANS ALMA: araya boş hafta girdi, bu haftanın ağırlık/hacmini baz alma" : ""}`,
+        );
 
         const days = daysByWeek.get(week.id) ?? [];
 
@@ -324,19 +352,26 @@ export async function buildWeeklyPlanContext(
         }
       }
 
-      // All four preceding weeks empty but the user has older history → they
-      // are returning after a long break: tell the AI to ease back in rather
-      // than progressively overload off a plan that's 5+ weeks old.
-      if (!anyFullWeek) {
+      // Return-from-layoff guidance. Covers both the full layoff (all 4 weeks
+      // empty) and the partial case (only the immediately-preceding week empty,
+      // older weeks full) — the latter is the "took last week completely off"
+      // scenario the all-empty check used to miss.
+      if (isReturnWeek) {
         lines.push("");
-        lines.push(
-          "⚠️ Son 4 haftada hiç antrenman kaydı yok — kullanıcı uzun bir aradan sonra yeniden başlıyor. Başlangıç/deload seviyesine uygun, hacmi düşük tutarak kademeli bir programla başla; progresif yüklenme uygulama.",
-        );
+        if (!anyFullWeek) {
+          lines.push(
+            "⚠️ Son 4 haftada hiç antrenman kaydı yok — kullanıcı uzun bir aradan sonra yeniden başlıyor. Başlangıç/deload seviyesine uygun, hacmi düşük tutarak kademeli bir programla başla; progresif yüklenme uygulama.",
+          );
+        } else {
+          lines.push(
+            `⚠️ DÖNÜŞ HAFTASI: Kullanıcı hemen önceki ${weeksOff > 1 ? `${weeksOff} haftayı` : "haftayı"} antrenmansız geçirdi — vücut yukarıdaki son dolu haftanın formunda DEĞİL. Re-adaptasyon uygula: toplam hacmi son tam haftanın %50-60'ına indir; drop set / süperset / tempo artışı KOYMA; tanıdık compound hareketlerle başla; progresif yüklenme UYGULAMA. Yukarıdaki eski haftaların ağırlık/hacmini referans ALMA.`,
+          );
+        }
       }
     }
   }
 
-  return lines.join("\n");
+  return { context: lines.join("\n"), isReturnWeek, weeksOff };
 }
 
 export async function applyWeeklyPlan(

@@ -280,6 +280,14 @@ const SLOT_NUTRITION = {
 /** Window (minutes) around a main meal where extra snack slots are skipped. */
 const MAIN_MEAL_COLLISION_MIN = 30;
 
+/**
+ * A main meal landing this many minutes BEFORE the pre-workout slot already
+ * serves as pre-workout fuel — adding a separate pre-workout slot stacks two
+ * meals (~1000 kcal) in the hour before training. Suppress the slot in that
+ * case (e.g. 17:30 dinner + a 18:30 pre-workout right before an evening session).
+ */
+const PRE_WORKOUT_FUEL_GAP_MIN = 90;
+
 function generateSlots(
   times: RoutineTimes,
   policy: MealFrequencyPolicy,
@@ -328,9 +336,15 @@ function generateSlots(
     const collides = mainAnchors.some(
       (anchor) => Math.abs(preMin - anchor) < MAIN_MEAL_COLLISION_MIN,
     );
+    // A heavy main meal shortly BEFORE the pre-workout window already fuels the
+    // session — a separate pre-workout slot would stack two meals right before
+    // training. Suppress it in that case.
+    const mainMealServesAsFuel = mainAnchors.some(
+      (anchor) => preMin - anchor > 0 && preMin - anchor <= PRE_WORKOUT_FUEL_GAP_MIN,
+    );
     // Also skip if preMin lands before wake or after sleep window.
     const beforeWake = times.wake != null && preMin < times.wake;
-    if (!collides && !beforeWake && preMin > 0) {
+    if (!collides && !mainMealServesAsFuel && !beforeWake && preMin > 0) {
       slots.push({
         time: formatTime(preMin),
         label: "Pre-Workout",

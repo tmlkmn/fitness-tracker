@@ -3557,7 +3557,7 @@
     "supplements": "Takviyeler",
     "dosage": "Doz",
     "timing": "Zamanlama",
-    "targets": "Günlük Hedef",
+    "targets": "Günlük Ortalama Hedef",
     "planType": {
       "workout": "Antrenman",
       "swimming": "Yüzme",
