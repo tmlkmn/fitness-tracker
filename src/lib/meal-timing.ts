@@ -412,8 +412,34 @@ function generateSlots(
     }
   }
 
-  // 4. Evening snack — dinner → sleep
-  if (
+  // 4. Evening — an evening training session (workout/swim AFTER dinner) turns
+  //    the post-dinner fuel slot into an explicit Post-Workout meal (the dinner
+  //    before already served as pre-workout fuel, so a separate pre-workout is
+  //    suppressed in section 2). This guarantees the Post-Workout label on
+  //    evening-training days, which the inter-main branch (section 3) only
+  //    covers for workouts that fall between two main meals. Otherwise a
+  //    generic evening snack.
+  const eveningWorkout =
+    isFullProgram &&
+    isWorkoutDay &&
+    times.workout != null &&
+    times.dinner != null &&
+    times.workout >= times.dinner;
+
+  if (eveningWorkout && times.workout != null) {
+    const slotMin = roundTo5(times.workout + 30);
+    let sleepMin = times.sleep;
+    if (sleepMin != null && sleepMin < times.workout) sleepMin += 24 * 60;
+    if (sleepMin == null || slotMin < sleepMin) {
+      slots.push({
+        time: formatTime(slotMin),
+        label: "Post-Workout",
+        rationale: `Antrenman ${formatTime(times.workout)} sonrası 30dk içinde protein+karb`,
+        size: "medium",
+        ...SLOT_NUTRITION.postWorkout,
+      });
+    }
+  } else if (
     t.eveningSnackH != null &&
     times.dinner != null &&
     times.sleep != null

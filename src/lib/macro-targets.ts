@@ -31,8 +31,8 @@ export interface ResolveTargetsOptions {
 export interface StrategyOverride {
   /** Explicit kcal surplus/deficit; replaces the goal's per-kg delta. */
   calorieDelta?: number | null;
-  /** Protein g per kg lean body mass; replaces the goal default. */
-  proteinPerKgLBM?: number | null;
+  /** Protein g per kg BODY WEIGHT; replaces the goal default. */
+  proteinPerKgBW?: number | null;
   /** Fat as a fraction of total calories (0.20–0.35); replaces the default. */
   fatPctOfCalories?: number | null;
 }
@@ -92,19 +92,6 @@ const ACTIVITY_MULTIPLIER: Record<DailyActivityLevel, number> = {
 };
 const DEFAULT_ACTIVITY: DailyActivityLevel = "moderate";
 
-// LBM as a fraction of total body weight when measured body-fat % is
-// missing or implausible. Population averages: male ~15% BF (LBM ~85%),
-// female ~25% BF (~75%); midpoint 0.80 for unspecified.
-const LBM_FRACTION_FALLBACK: Record<Gender, number> = {
-  male: 0.85,
-  female: 0.75,
-  prefer_not_to_say: 0.8,
-};
-
-// Safety guards for stored body-fat readings (BIA scales sometimes return
-// 0/100/NaN). Anything outside this range is treated as missing.
-const FAT_PERCENT_MIN = 5;
-const FAT_PERCENT_MAX = 60;
 const MIN_DAILY_CALORIES = 1200;
 
 function safeParseFloat(value: unknown): number | null {
@@ -141,29 +128,6 @@ function resolveGoal(user: UserBasics): FitnessGoal {
   return deriveGoalFallback(w, tw, user.serviceType ?? null);
 }
 
-async function fetchLatestFatPercent(userId: string): Promise<number | null> {
-  const rows = await db
-    .select({ fatPercent: progressLogs.fatPercent })
-    .from(progressLogs)
-    .where(
-      and(
-        eq(progressLogs.userId, userId),
-        isNotNull(progressLogs.fatPercent),
-      ),
-    )
-    .orderBy(desc(progressLogs.logDate))
-    .limit(1);
-
-  const fp = rows[0] ? safeParseFloat(rows[0].fatPercent) : null;
-  if (fp == null) return null;
-  if (fp < FAT_PERCENT_MIN || fp > FAT_PERCENT_MAX) return null;
-  return fp;
-}
-
-function computeLeanMass(weightKg: number, fatPercent: number | null, gender: Gender): number {
-  if (fatPercent != null) return weightKg * (1 - fatPercent / 100);
-  return weightKg * LBM_FRACTION_FALLBACK[gender];
-}
 
 // How many recent weight logs to average. Smooths day-to-day BIA-scale noise
 // while still tracking the user's current weight (the BMR driver). One log →
@@ -174,7 +138,7 @@ const TRAILING_WEIGHT_SAMPLE = 3;
  * Average of the user's most recent weight logs — the LIVE weight the macro
  * engine uses, so targets track measurements without the user re-running
  * anything. `users.weight` (onboarding/profile value) is only the fallback
- * when no logs exist. Mirrors `fetchLatestFatPercent`.
+ * when no logs exist.
  */
 async function fetchTrailingWeight(userId: string): Promise<number | null> {
   const rows = await db
@@ -232,13 +196,11 @@ export async function computeDefaultTargets(
       );
   const calories = Math.max(MIN_DAILY_CALORIES, Math.round(tdee + delta));
 
-  // LBM: prefer measured fatPercent, else gender-based fallback
-  const fatPercent = userId ? await fetchLatestFatPercent(userId) : null;
-  const lbm = computeLeanMass(w, fatPercent, gender);
-
-  const proteinPerKg = nudge?.proteinPerKgLBM ?? strategy.proteinPerKgLBM;
+  // Protein anchored to BODY WEIGHT (Round 4) — bodyweight-based, not LBM:
+  // hit the protein target first, fat is a % of calories, carbs take the rest.
+  const proteinPerKg = nudge?.proteinPerKgBW ?? strategy.proteinPerKgBW;
   const fatPct = nudge?.fatPctOfCalories ?? strategy.fatPctOfCalories;
-  const protein = Math.round(lbm * proteinPerKg);
+  const protein = Math.round(w * proteinPerKg);
   const fat = Math.round((calories * fatPct) / 9);
   const carbsRaw = Math.round((calories - protein * 4 - fat * 9) / 4);
   const carbs = Math.max(strategy.minCarbsG[gender], carbsRaw);
@@ -259,7 +221,7 @@ export async function computeDefaultTargets(
 export function readStrategyOverride(user: UserWithTargets): StrategyOverride {
   return {
     calorieDelta: user.targetCalorieDelta ?? null,
-    proteinPerKgLBM: safeParseFloat(user.targetProteinPerKg),
+    proteinPerKgBW: safeParseFloat(user.targetProteinPerKg),
     fatPctOfCalories: safeParseFloat(user.targetFatPct),
   };
 }
@@ -298,6 +260,8 @@ export async function resolveWeeklyTargets(
   userId: string | null,
   opts: ResolveTargetsOptions & {
     dayTypeCounts: Record<DayType, number>;
+    /** Re-adaptation week: softens the swimming carb pump (light swim ≠ heavy session). */
+    returnWeek?: boolean;
   },
 ): Promise<WeeklyMacroTargets | null> {
   const baseline = await resolveTargets(user, userId, { deloadWeek: opts.deloadWeek });
@@ -305,6 +269,7 @@ export async function resolveWeeklyTargets(
   const profile = getCarbCyclingProfile(
     isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user),
     opts.deloadWeek,
+    opts.returnWeek,
   );
   const gender = normalizeGender(user.gender);
   const goal = isFitnessGoal(user.fitnessGoal) ? user.fitnessGoal : resolveGoal(user);

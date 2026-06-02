@@ -56,7 +56,7 @@ export function AIMacroCalculator() {
       // resolved targets stay live against the user's current weight/goal.
       await updateMacroStrategy({
         calorieDelta: result.strategy.calorieDelta,
-        proteinPerKg: result.strategy.proteinPerKgLBM,
+        proteinPerKg: result.strategy.proteinPerKgBW,
         fatPct: result.strategy.fatPct,
       });
       qc.invalidateQueries({ queryKey: ["user-profile"] });

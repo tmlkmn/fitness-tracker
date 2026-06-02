@@ -54,11 +54,20 @@ const PROFILE_AGGRESSIVE: CarbCyclingProfile = {
 export function getCarbCyclingProfile(
   fitnessGoal: FitnessGoal | null | undefined,
   deloadWeek?: boolean,
+  returnWeek?: boolean,
 ): CarbCyclingProfile {
   if (deloadWeek) return PROFILE_OFF;
-  if (fitnessGoal === "loss" || fitnessGoal === "recomp") return PROFILE_MODERATE;
-  if (fitnessGoal === "muscle_gain" || fitnessGoal === "weight_gain") return PROFILE_AGGRESSIVE;
-  return PROFILE_OFF;
+  let profile: CarbCyclingProfile;
+  if (fitnessGoal === "loss" || fitnessGoal === "recomp") profile = PROFILE_MODERATE;
+  else if (fitnessGoal === "muscle_gain" || fitnessGoal === "weight_gain") profile = PROFILE_AGGRESSIVE;
+  else return PROFILE_OFF;
+  // Re-adaptation week: a light return swim isn't glycogen-depleting, so it
+  // shouldn't get a carb pump. Neutralize only the swimming multiplier; the
+  // workout pump stays (workouts are still the week's hard sessions).
+  if (returnWeek) {
+    return { ...profile, swimmingCarbMultiplier: 1 };
+  }
+  return profile;
 }
 
 export interface WeeklyMacroTargets {

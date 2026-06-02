@@ -701,7 +701,7 @@ export async function resolveWeeklyGenerationRequest(
 
   let resolvedTargets: WeeklyMacroTargets | null = null;
   if (doNutrition && userRow) {
-    resolvedTargets = await resolveWeeklyTargets(userRow, userId, { deloadWeek, dayTypeCounts });
+    resolvedTargets = await resolveWeeklyTargets(userRow, userId, { deloadWeek, dayTypeCounts, returnWeek });
   }
 
   const supplementBudget = doNutrition

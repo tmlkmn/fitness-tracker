@@ -1136,7 +1136,7 @@
       "saved": "Macro targets updated",
       "strategySubtitle": "Your targets are computed live from your latest measurements & goal. Fine-tune the strategy below if you like.",
       "calorieDelta": "Calorie delta (kcal)",
-      "proteinPerKg": "Protein (g/kg lean)",
+      "proteinPerKg": "Protein (g/kg bodyweight)",
       "fatPct": "Fat (% of kcal)",
       "currentTarget": "Current target",
       "reset": "Reset",

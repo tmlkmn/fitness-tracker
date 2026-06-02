@@ -20,8 +20,8 @@ import { computeDefaultTargets, type MacroTargets } from "@/lib/macro-targets";
 export interface MacroStrategy {
   /** kcal surplus/deficit over TDEE (clamped ±800). */
   calorieDelta: number;
-  /** protein g per kg lean body mass (clamped 1.4–2.4). */
-  proteinPerKgLBM: number;
+  /** protein g per kg BODY WEIGHT (clamped 1.4–2.6). */
+  proteinPerKgBW: number;
   /** fat as a fraction of calories (clamped 0.20–0.35). */
   fatPct: number;
 }
@@ -37,7 +37,7 @@ export interface AIMacroResult {
 // Safe bands for the AI-selected strategy — guards against an LLM returning
 // an extreme or nonsensical value. Calorie delta shares the engine's ±800.
 const PROTEIN_PER_KG_MIN = 1.4;
-const PROTEIN_PER_KG_MAX = 2.4;
+const PROTEIN_PER_KG_MAX = 2.6;
 const FAT_PCT_MIN = 0.2;
 const FAT_PCT_MAX = 0.35;
 const CALORIE_DELTA_MIN = -800;
@@ -284,7 +284,7 @@ export async function generateAIMacroTargets(
     // finite, then clamp to safe bands — code does the arithmetic so the
     // output always reconciles and respects the user's current weight/goal.
     const rawDelta = Number(parsed.calorieDelta);
-    const rawProtein = Number(parsed.proteinPerKgLBM);
+    const rawProtein = Number(parsed.proteinPerKgBW);
     const rawFatPct = Number(parsed.fatPct);
     const explanation = String(parsed.explanation ?? "").slice(0, 150);
 
@@ -294,7 +294,7 @@ export async function generateAIMacroTargets(
 
     const strategy: MacroStrategy = {
       calorieDelta: Math.round(clamp(rawDelta, CALORIE_DELTA_MIN, CALORIE_DELTA_MAX)),
-      proteinPerKgLBM: Math.round(clamp(rawProtein, PROTEIN_PER_KG_MIN, PROTEIN_PER_KG_MAX) * 100) / 100,
+      proteinPerKgBW: Math.round(clamp(rawProtein, PROTEIN_PER_KG_MIN, PROTEIN_PER_KG_MAX) * 100) / 100,
       fatPct: Math.round(clamp(rawFatPct, FAT_PCT_MIN, FAT_PCT_MAX) * 100) / 100,
     };
 
@@ -303,7 +303,7 @@ export async function generateAIMacroTargets(
     const macros = await computeDefaultTargets(profile ?? {}, user.id, {
       strategy: {
         calorieDelta: strategy.calorieDelta,
-        proteinPerKgLBM: strategy.proteinPerKgLBM,
+        proteinPerKgBW: strategy.proteinPerKgBW,
         fatPctOfCalories: strategy.fatPct,
       },
     });

@@ -16,7 +16,13 @@ export interface GoalStrategy {
    * 55 kg loss = -275; 110 kg loss = -550. Clamped downstream.
    */
   calorieDeltaPerKg: number;
-  proteinPerKgLBM: number;
+  /**
+   * Protein grams per kg of BODY WEIGHT (Round 4). Bodyweight-anchored rather
+   * than LBM-based: the LBM path produced protein too low (~1.7 g/kg BW) for
+   * lean-bulk, ballooning carbs. Bodyweight basis is also robust to missing
+   * body-fat measurements.
+   */
+  proteinPerKgBW: number;
   fatPctOfCalories: number;
   minCarbsG: { female: number; male: number; prefer_not_to_say: number };
   mealPolicy: { default: MealFrequencyPolicy; nutritionOnly: MealFrequencyPolicy };
@@ -52,14 +58,14 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   loss: {
     calorieDelta: -400,
     calorieDeltaPerKg: -5,
-    proteinPerKgLBM: 1.9,
+    proteinPerKgBW: 2,
     fatPctOfCalories: 0.25,
     minCarbsG: { female: 100, male: 130, prefer_not_to_say: 120 },
     mealPolicy: { default: "moderate", nutritionOnly: "intermittent" },
     progressionFocus: "preserve",
     promptBlock: [
       "Strateji: Kontrollü kalori açığı (~300-500 kcal/gün TDEE altında).",
-      "Protein yüksek tut (yağsız kütle başına ~1.9 g), kas kaybını önle.",
+      "Protein yüksek tut (vücut ağırlığı başına ~2.0 g), kas kaybını önle.",
       "Yağ toplam kalorinin %25'i; kalan kaloriyi karbdan karşıla.",
       "Karbonhidrat minimumlarını ihlal etme (kadın ≥100g, erkek ≥130g) — beyin ve antrenman performansı için.",
       "Antrenmanda hedef: mevcut kuvveti KORU, yeni PR peşinde koşma.",
@@ -69,14 +75,14 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   recomp: {
     calorieDelta: -150,
     calorieDeltaPerKg: -2,
-    proteinPerKgLBM: 2.1,
+    proteinPerKgBW: 2.2,
     fatPctOfCalories: 0.25,
     minCarbsG: { female: 130, male: 160, prefer_not_to_say: 140 },
     mealPolicy: { default: "moderate", nutritionOnly: "moderate" },
     progressionFocus: "preserve",
     promptBlock: [
       "Strateji: Hafif kalori açığı (~100-200 kcal/gün) + agresif protein.",
-      "Protein çok yüksek (yağsız kütle başına ~2.1 g) — yağ azalırken kas korunmalı/artırılmalı.",
+      "Protein çok yüksek (vücut ağırlığı başına ~2.2 g) — yağ azalırken kas korunmalı/artırılmalı.",
       "Yağ %25, karbonhidrat antrenman çevresinde yoğunlaştırılmalı (pre/post-workout öncelikli).",
       "İlerleme yavaş ama çift yönlü: terazide stagnasyon NORMAL — bel ölçüsü ve ayna referans.",
       "Antrenmanda hedef: mevcut yükleri KORU veya küçük adımlarla ilerlet (1-2 rep / küçük yük artışı).",
@@ -85,14 +91,14 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   maintain: {
     calorieDelta: 0,
     calorieDeltaPerKg: 0,
-    proteinPerKgLBM: 1.6,
+    proteinPerKgBW: 1.6,
     fatPctOfCalories: 0.3,
     minCarbsG: { female: 130, male: 160, prefer_not_to_say: 140 },
     mealPolicy: { default: "frequent", nutritionOnly: "intermittent" },
     progressionFocus: "preserve",
     promptBlock: [
       "Strateji: İdame kalorisi (TDEE seviyesinde, ±100 kcal varyasyon normal).",
-      "Protein yağsız kütle başına ~1.6 g — sağlık ve toparlanma odaklı.",
+      "Protein vücut ağırlığı başına ~1.6 g — sağlık ve toparlanma odaklı.",
       "Yağ %30'a kadar çıkabilir (hormonal sağlık), karb makul seviyede dengeli.",
       "Esnek beslenme yaklaşımı: %80 temiz, %20 keyif — sürdürülebilirlik öncelikli.",
       "Antrenmanda hedef: form ve kuvveti KORU, periyodik deload uygula.",
@@ -101,14 +107,14 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   muscle_gain: {
     calorieDelta: 250,
     calorieDeltaPerKg: 3.5,
-    proteinPerKgLBM: 2.0,
+    proteinPerKgBW: 2.1,
     fatPctOfCalories: 0.25,
     minCarbsG: { female: 180, male: 220, prefer_not_to_say: 200 },
     mealPolicy: { default: "frequent", nutritionOnly: "frequent" },
     progressionFocus: "progress",
     promptBlock: [
       "Strateji: Ölçülü kalori fazlası (~+200-300 kcal/gün, lean bulk).",
-      "Protein yağsız kütle başına ~2.0 g — kas sentezi için optimal.",
+      "Protein vücut ağırlığı başına ~2.1 g — kas sentezi için optimal.",
       "Karbonhidrat YÜKSEK ve antrenman çevresinde yoğun (pre/post-workout): glikojen + performans.",
       "Yağ %25 — hormonal sağlık için yeterli, fazlası sürpriz yağlanma riski.",
       "Haftalık kilo artışı ~%0.25-0.5 vücut ağırlığı (hızlı artış = yağ ağırlıklı).",
@@ -118,14 +124,14 @@ export const GOAL_STRATEGIES: Record<FitnessGoal, GoalStrategy> = {
   weight_gain: {
     calorieDelta: 450,
     calorieDeltaPerKg: 6,
-    proteinPerKgLBM: 1.8,
+    proteinPerKgBW: 1.9,
     fatPctOfCalories: 0.3,
     minCarbsG: { female: 200, male: 250, prefer_not_to_say: 220 },
     mealPolicy: { default: "frequent", nutritionOnly: "frequent" },
     progressionFocus: "aggressive",
     promptBlock: [
       "Strateji: Belirgin kalori fazlası (~+400-500 kcal/gün).",
-      "Protein yağsız kütle başına ~1.8 g — yeterli ama abartısız.",
+      "Protein vücut ağırlığı başına ~1.9 g — yeterli ama abartısız.",
       "Karbonhidrat çok yüksek; kalori yoğun ama temiz besinleri önceliklendir (pirinç, makarna, yulaf, kuruyemiş, zeytinyağı).",
       "Yağ %30 — kalori yoğunluğu için sağlıklı yağlardan yararlan (avokado, ceviz, fıstık ezmesi).",
       "Sık öğün (5-7) ve büyük porsiyonlar — iştah düşükse sıvı kalori (smoothie, süt) ekle.",
@@ -163,7 +169,7 @@ export function renderGoalStrategyBlock(
     : `Kalori deltası: ${deltaSign}${delta} kcal (TDEE'ye göre)`;
   lines.push(
     deltaLine,
-    `Protein hedefi: ${strategy.proteinPerKgLBM} g / kg yağsız kütle (LBM)`,
+    `Protein hedefi: ${strategy.proteinPerKgBW} g / kg vücut ağırlığı`,
     `Yağ payı: toplam kalorinin %${Math.round(strategy.fatPctOfCalories * 100)}'i`,
     `Karbonhidrat tabanı: kadın ≥${strategy.minCarbsG.female}g · erkek ≥${strategy.minCarbsG.male}g · belirtilmemiş ≥${strategy.minCarbsG.prefer_not_to_say}g`,
     `Antrenman odağı: ${strategy.progressionFocus} (${progressionFocusLabel(strategy.progressionFocus)})`,

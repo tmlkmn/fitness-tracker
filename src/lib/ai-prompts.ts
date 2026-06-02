@@ -1172,6 +1172,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_EN}
 - For calorie delta, protein/fat share, and carb base, apply the GOAL-DRIVEN STRATEGY block EXACTLY — not your own estimate. Don't fix the daily calorie — adjust TRAINING days +10-15%, REST days -10-15%; the weekly AVERAGE must be within ±5% of "COMPUTED DAILY MACRO TARGETS". Daily protein must stay within ±10% (to preserve muscle).
 - ⚠️ MOST COMMON MISTAKE: treating a rest day as a "small day" and cutting everything (protein included). WRONG. On a rest day ONLY carbs drop; protein and fat do NOT, so calories only dip slightly (stay ~85-90% of a training day), they do NOT halve. Example: target 185g protein / 2800 kcal → training day ~185g/3100 kcal (7 meals), rest day ALSO ~185g/2400 kcal (5 meals, denser protein per meal). You may NOT drop rest-day protein to 130g or calories to 1800.
 - ⚡ SUM AND CHECK: After drafting each day, SUM the meals' calories; it must be within ±5% of that day-type's ABSOLUTE kcal target. If under, ENLARGE carb portions (rice/oats/bread/pasta/fruit) and if needed fat sources (olive oil/nuts/avocado) — grow PORTIONS, don't add/remove meals. A lean-bulk training day is ~3000+ kcal; 7 small meals is NOT "low calorie" — don't stop at ~2400.
+- 🔒 PROTEIN IS THE ANCHOR: hit each day-type's protein target FIRST (it's the priority floor), then fat, then let CARBS fill the remaining calories. NEVER lower protein to hit a carb number — if calories run high, grow carbs, not protein down. Protein is the highest-priority macro in a muscle-gain plan; it must never be the lowest.
 - Activity level: derive from the user profile and the day types in the "TRAINING DAY CONTEXT" block. If no block, assume lightly active (TEE = BMR × 1.3).
 
 ${GOAL_STRATEGY_REF_BLOCK_EN}
@@ -1241,6 +1242,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_TR}
 - Kalori deltası, protein/yağ payı ve karbonhidrat tabanı için HEDEF-ODAKLI STRATEJİ bloğunu BİREBİR uygula — kendi tahminin değil, blok geçerli. Günlük kaloriyi sabitleme — ANTRENMAN günlerinde +%10–15, DİNLENME günlerinde −%10–15 ayarla; haftalık ORTALAMA, "HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ" ile ±%5 içinde olmalı. Protein hedefi her gün ±%10 içinde sabit kalmalı (kas korumak için).
 - ⚠️ EN SIK YAPILAN HATA: dinlenme gününü "küçük gün" sanıp protein dahil her şeyi kısmak. YANLIŞ. Dinlenme gününde SADECE karbonhidrat düşer; protein ve yağ düşmez, kalori bu yüzden sadece HAFİF iner (antrenman gününün ~%85-90'ı), yarı yarıya DÜŞMEZ. Örnek: hedef 185g protein / 2800 kcal → antrenman günü ~185g/3100 kcal (7 öğün), dinlenme günü de ~185g/2400 kcal (5 öğün, öğün başına daha yoğun protein). Dinlenme gününde proteini 130g'a veya kaloriyi 1800'e DÜŞÜREMEZSİN.
 - ⚡ TOPLA VE KONTROL ET: Her günü bitirince öğünlerin kalorisini TOPLA; o gün-tipinin MUTLAK kcal hedefinin ±%5'inde olmalı. Altındaysa karb porsiyonlarını (pirinç/yulaf/ekmek/makarna/meyve) ve gerekiyorsa yağ kaynaklarını (zeytinyağı/kuruyemiş/avokado) BÜYÜT — öğün ekleyip silme, PORSİYON büyüt. Lean-bulk antrenman günü ~3000+ kcal; 7 küçük öğün "az kalori" demek DEĞİL, ~2400'de durma.
+- 🔒 PROTEİN ÇAPADIR: önce o gün-tipinin protein hedefini tuttur (öncelikli taban), sonra yağı, kalan kaloriyi KARB doldursun. Karb sayısını tutturmak için proteini ASLA düşürme — kalori yükseldiyse karbı büyüt, proteini değil. Kas kazanım planında protein en yüksek öncelikli makrodur; asla en düşük makro olmamalı.
 - Aktivite seviyesi: kullanıcı profilindeki bilgilere ve "ANTRENMAN GÜN BAĞLAMI" bloğundaki gün tiplerine göre belirle. Bağlam bloğu yoksa hafif aktif (TEE = BMR × 1.3) varsay.
 
 ${GOAL_STRATEGY_REF_BLOCK_TR}
@@ -1638,7 +1640,7 @@ function macroCalcPrompt(locale: Locale): string {
 
 ## What you choose
 - calorieDelta: kcal surplus/deficit over maintenance (TDEE). Fat loss: -300 to -500. Recomp: -100 to -250. Maintenance: 0. Lean muscle gain: +200 to +400. Aggressive gain: +400 to +600. Hard range -800..+800.
-- proteinPerKgLBM: protein grams per kg LEAN body mass. 1.6-2.2 (muscle gain / recomp use the top; maintenance the bottom). Hard range 1.4..2.4.
+- proteinPerKgBW: protein grams per kg BODYWEIGHT. 1.8-2.2 (muscle gain / recomp use the top; maintenance the bottom). Hard range 1.4..2.6.
 - fatPct: fat as a FRACTION of total calories. Typical 0.22-0.30 (0.25 default; higher for maintenance/hormonal health, lower when carbs need priority). Hard range 0.20..0.35.
 
 Carbs are the remainder — the engine fills them and enforces the per-goal minimum. Do NOT return carbs or calories.
@@ -1649,7 +1651,7 @@ Combine the user's own observations (abdomen, arms, legs) with measurement data:
 - Skinny legs / general thinness + low muscle → surplus (positive delta) + protein high
 - Thin arms but full belly → android pattern → modest deficit, protein high
 - High regional fat % (>35% trunk, >30% arm) → push delta toward restriction
-- Low muscle mass (LBM < weight×0.70 male / ×0.60 female) → proteinPerKgLBM at the upper bound
+- Lean build / low body fat, or visibly low muscle → proteinPerKgBW at the upper bound
 - Waist >94cm male / >80cm female → cardiometabolic risk → prefer a deficit
 
 ## Health Constraints (cap the delta)
@@ -1661,16 +1663,16 @@ Combine the user's own observations (abdomen, arms, legs) with measurement data:
 - English only
 - Respond ONLY in valid JSON — no markdown, no prose, no code blocks
 - explanation: max 120 characters, warm and brief, addressed to the user (why this strategy)
-- calorieDelta is an integer; proteinPerKgLBM and fatPct are decimals
+- calorieDelta is an integer; proteinPerKgBW and fatPct are decimals
 
 ## JSON Format
-{ "calorieDelta": number, "proteinPerKgLBM": number, "fatPct": number, "explanation": "string" }`;
+{ "calorieDelta": number, "proteinPerKgBW": number, "fatPct": number, "explanation": "string" }`;
   }
   return `Sen deneyimli bir klinik spor diyetisyeni ve vücut kompozisyon uzmanısın. Kullanıcı profili, biyoimpedans ölçüm verileri (varsa) ve kullanıcının kendi vücut gözlemlerine dayanarak bir makro STRATEJİSİ SEÇERSİN. Kaloriyi veya gramları SEN hesaplamazsın — motorumuz Mifflin-St Jeor'u kullanıcının GÜNCEL kilosuyla çalıştırır ve senin stratejini birebir uygular. Tek görevin, vücut analizinden üç strateji parametresini seçmek.
 
 ## Seçeceğin parametreler
 - calorieDelta: idame (TDEE) üzerine kalori fazlası/açığı. Yağ kaybı: -300 ile -500. Rekomp: -100 ile -250. İdame: 0. Lean kas kazanımı: +200 ile +400. Agresif kilo alma: +400 ile +600. Kesin aralık -800..+800.
-- proteinPerKgLBM: YAĞSIZ kütle (LBM) kg'ı başına protein gramı. 1.6-2.2 (kas kazanımı / rekomp en üst; idame en alt). Kesin aralık 1.4..2.4.
+- proteinPerKgBW: VÜCUT AĞIRLIĞI kg'ı başına protein gramı. 1.8-2.2 (kas kazanımı / rekomp en üst; idame en alt). Kesin aralık 1.4..2.6.
 - fatPct: yağın toplam kaloriye ORANI (kesir). Tipik 0.22-0.30 (varsayılan 0.25; idame/hormonal sağlık için yüksek, karb önceliklendirilecekse düşük). Kesin aralık 0.20..0.35.
 
 Karbonhidrat kalandır — motor doldurur ve hedefe göre minimumu zorlar. Karb veya kalori DÖNDÜRME.
@@ -1681,7 +1683,7 @@ Kullanıcının kendi gözlemleri (karın, kol, bacak) + ölçüm verilerini bir
 - İnce bacak / genel zayıflık + az kas → fazlalık (pozitif delta) + protein yüksek
 - Kollar ince ama karın dolgun → android patern → ölçülü açık, protein yüksek
 - Bölgesel yağ% yüksek (>35% gövde, >30% kol) → delta'yı kısıt yönüne it
-- Kas kütlesi düşük (LBM < ağırlık×0.70 erkek / ×0.60 kadın) → proteinPerKgLBM üst sınırda
+- Zayıf yapı / düşük vücut yağı ya da gözle görülür az kas → proteinPerKgBW üst sınırda
 - Bel >94cm erkek / >80cm kadın → kardiyometabolik risk → açığı tercih et
 
 ## Sağlık Kısıtlamaları (delta'yı sınırla)
@@ -1693,10 +1695,10 @@ Kullanıcının kendi gözlemleri (karın, kol, bacak) + ölçüm verilerini bir
 - Sadece Türkçe
 - SADECE geçerli JSON — markdown, düz metin, kod bloğu yok
 - explanation: max 120 karakter, kullanıcıya hitap eden samimi ve kısa gerekçe (neden bu strateji)
-- calorieDelta tam sayı; proteinPerKgLBM ve fatPct ondalık
+- calorieDelta tam sayı; proteinPerKgBW ve fatPct ondalık
 
 ## JSON Formatı
-{ "calorieDelta": number, "proteinPerKgLBM": number, "fatPct": number, "explanation": "string" }`;
+{ "calorieDelta": number, "proteinPerKgBW": number, "fatPct": number, "explanation": "string" }`;
 }
 
 // ─── DAILY GREETING ────────────────────────────────────────────────────────
