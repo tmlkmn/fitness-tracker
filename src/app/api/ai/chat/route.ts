@@ -8,13 +8,48 @@ import {
   PROMPT_VERSION,
 } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
-import { getCoachChatPrompt } from "@/lib/ai-prompts";
+import { getCoachChatPrompt, getCoachTopicGatePrompt } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
 import { db } from "@/db";
 import { chatMessages } from "@/db/schema";
 import type Anthropic from "@anthropic-ai/sdk";
 
 export const maxDuration = 60;
+
+/**
+ * Cheap topic gate run BEFORE the expensive context build + smart model call.
+ * Classifies the latest user message as on-topic (fitness/nutrition/exercise)
+ * or off-topic using the fast model with a tiny, cached prompt and a 4-token
+ * cap. Off-topic / manipulation attempts are rejected here so they never burn
+ * a full Sonnet generation. Fails OPEN (returns true) on any error so a
+ * classifier outage never breaks chat — the main prompt still enforces scope.
+ */
+async function isOnTopicQuestion(question: string): Promise<boolean> {
+  try {
+    const client = getAIClient();
+    const res = await client.messages.create({
+      model: AI_MODELS.fast,
+      max_tokens: 4,
+      system: [
+        {
+          type: "text",
+          text: getCoachTopicGatePrompt(),
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [{ role: "user", content: question.slice(0, 1500) }],
+    });
+    const decision = res.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("")
+      .toUpperCase();
+    // Default to allowing when the label is ambiguous — only an explicit DENY blocks.
+    return !decision.includes("DENY");
+  } catch {
+    return true;
+  }
+}
 
 export async function POST(request: Request) {
   const { user, response } = await requireApiUser();
@@ -71,6 +106,33 @@ export async function POST(request: Request) {
         content: lastUserMsg.content,
       });
     } catch { /* silent */ }
+  }
+
+  // Topic gate — reject off-topic / manipulation attempts cheaply, before the
+  // (expensive) context build and the smart model call. Only the latest user
+  // question is classified. The refusal is persisted and logged as a chat use
+  // so it counts toward the daily quota and deters spamming junk questions.
+  if (lastUserMsg?.role === "user" && !(await isOnTopicQuestion(lastUserMsg.content))) {
+    const refusal =
+      locale === "en"
+        ? "I can only help with sports, nutrition, training, and exercise. If you have a question on those, I'd be happy to help!"
+        : "Ben sadece spor, beslenme, antrenman ve egzersiz konularında destek verebiliyorum. Bu konularda bir sorunuz varsa yardımcı olmaktan mutluluk duyarım!";
+    try {
+      await db.insert(chatMessages).values({
+        userId,
+        role: "assistant",
+        content: refusal,
+      });
+    } catch { /* silent */ }
+    await logAiUsage(userId, "chat", {
+      status: "success",
+      durationMs: 0,
+      model: AI_MODELS.fast,
+      promptVersion: PROMPT_VERSION,
+    });
+    return new Response(refusal, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
 
   // Build context for first message

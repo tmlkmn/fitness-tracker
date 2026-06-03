@@ -116,6 +116,9 @@ const COOLDOWNS: Partial<Record<AIFeature, number>> = {
   shopping: 30,
   "target-weight": 60,
   "macro-ai": 60,
+  // Short gap so the 15/day chat quota can't be drained by scripted rapid-fire,
+  // while still allowing natural back-and-forth (the streamed reply takes longer).
+  chat: 5,
 };
 
 function getStartOfDay(): Date {
