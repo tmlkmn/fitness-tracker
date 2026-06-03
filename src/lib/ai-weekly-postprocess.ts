@@ -59,6 +59,36 @@ function dayTypeKey(planType: string): DayType {
   return "rest";
 }
 
+/**
+ * Single-day core of the macro-floor net. Mutates `meals` in place — appending
+ * one standardized "Macro Top-Up" meal when the day falls short of its protein
+ * or fat floor — and returns the same array. Pure (no DB), so it's shared by the
+ * weekly net (per-day loop below) and the daily meal regeneration flow
+ * (`generateDailyMeals`), guaranteeing a single-day regen never collapses
+ * protein/fat the way carb cycling is allowed to move carbs.
+ *
+ * `target` is a single day-type macro target (`{ protein, fat }`); callers pass
+ * the supplement-adjusted target the meals were generated and graded against.
+ */
+export function enforceMealFloors(
+  meals: AIMealItem[],
+  target: { protein: number; fat: number } | null | undefined,
+  bodyWeightKg: number | null | undefined,
+  locale: "tr" | "en" = "tr",
+): AIMealItem[] {
+  if (!target || meals.length === 0) return meals;
+  const fatFloorBW =
+    bodyWeightKg && bodyWeightKg > 0 ? Math.round(FAT_FLOOR_PER_KG * bodyWeightKg) : 0;
+  const totals = sumMeals(meals);
+  const proteinGap = Math.round(target.protein * PROTEIN_FLOOR_RATIO) - totals.protein;
+  const fatGap = Math.max(target.fat, fatFloorBW) - totals.fat;
+  if (proteinGap < MIN_PROTEIN_GAP && fatGap < MIN_FAT_GAP) return meals;
+
+  const topUp = buildTopUpMeal(proteinGap, fatGap, meals, locale);
+  if (topUp) meals.push(topUp);
+  return meals;
+}
+
 export function enforceDailyMacroFloors(
   plan: AIWeeklyPlan,
   perDayTargets: WeeklyMacroTargets | null | undefined,
@@ -66,20 +96,11 @@ export function enforceDailyMacroFloors(
   locale: "tr" | "en" = "tr",
 ): AIWeeklyPlan {
   if (!perDayTargets) return plan;
-  const fatFloorBW =
-    bodyWeightKg && bodyWeightKg > 0 ? Math.round(FAT_FLOOR_PER_KG * bodyWeightKg) : 0;
 
   for (const day of plan.days) {
     if (day.meals.length === 0) continue; // rest/empty days handled elsewhere
     const target = perDayTargets.perDayType[dayTypeKey(day.planType)];
-    if (!target) continue;
-    const totals = sumMeals(day.meals);
-    const proteinGap = Math.round(target.protein * PROTEIN_FLOOR_RATIO) - totals.protein;
-    const fatGap = Math.max(target.fat, fatFloorBW) - totals.fat;
-    if (proteinGap < MIN_PROTEIN_GAP && fatGap < MIN_FAT_GAP) continue;
-
-    const topUp = buildTopUpMeal(proteinGap, fatGap, day.meals, locale);
-    if (topUp) day.meals.push(topUp);
+    enforceMealFloors(day.meals, target, bodyWeightKg, locale);
   }
   return plan;
 }

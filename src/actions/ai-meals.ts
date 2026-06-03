@@ -33,6 +33,7 @@ import {
 } from "@/lib/ai-daily-validators";
 import { parseAiJson } from "@/lib/ai-json-repair";
 import { parseUserAllergens } from "@/lib/allergen-detect";
+import { enforceMealFloors } from "@/lib/ai-weekly-postprocess";
 
 export interface AIMeal {
   mealTime: string;
@@ -180,6 +181,20 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     outputTokens = exec.outputTokens;
 
     const suggestedMeals: AIMeal[] = validation.meals;
+
+    // Deterministic protein/fat floor net (the last word after the AI + its
+    // retries — mirrors the weekly flow). A single-day regen must not collapse
+    // protein/fat; if it falls short of the supplement-adjusted floor we append
+    // one standardized "Macro Top-Up" meal to close the gap. Mutates in place.
+    const bodyWeightKg = userRow?.weight ? parseFloat(userRow.weight) : null;
+    const mealCountBeforeFloor = suggestedMeals.length;
+    enforceMealFloors(suggestedMeals, targets, bodyWeightKg, locale);
+    if (suggestedMeals.length > mealCountBeforeFloor) {
+      validation.warnings.push(
+        "[daily-macro-floor] appended Macro Top-Up meal to meet the protein/fat floor",
+      );
+    }
+
     const hasWarnings = validation.warnings.length > 0;
 
     await logAiUsage(user.id, "daily-meal", {

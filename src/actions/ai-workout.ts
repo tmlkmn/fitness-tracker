@@ -71,6 +71,7 @@ import {
   type BucketOverloadAssessment,
 } from "@/lib/progressive-overload-validator";
 import { loadPreviousWeekVolumeBreakdown } from "@/lib/ai-weekly-service";
+import { normalizeReps } from "@/lib/ai-weekly-postprocess";
 import {
   buildVolumeBandsBlock,
   buildPreviousVolumeBlock,
@@ -253,6 +254,14 @@ export async function generateWorkoutReplacement(dailyPlanId: number, userNote?:
         `[daily-empty-day] AI returned no exercises for planType "${planType}" — applying would create an empty training day`,
       );
     }
+
+    // Clean rep counts (11->12, 14->15, 18->20) so the preview the user reviews
+    // and the persisted day match the weekly flow's normalized reps. Ranges and
+    // AMRAP pass through untouched.
+    suggestedExercises = suggestedExercises.map((ex) => ({
+      ...ex,
+      reps: normalizeReps(ex.reps),
+    }));
 
     // Weekly-aggregate parity check — combine the AI's suggestion with the
     // other 6 days of the user's current week and run the same validators
@@ -532,7 +541,11 @@ export async function generateSectionReplacement(
     inputTokens = exec.inputTokens;
     outputTokens = exec.outputTokens;
 
-    const suggestedExercises: AIExercise[] = validation.exercises as AIExercise[];
+    // Clean rep counts (11->12, 14->15, 18->20) so preview == persisted, matching
+    // the weekly flow. Ranges/AMRAP pass through untouched.
+    const suggestedExercises: AIExercise[] = (validation.exercises as AIExercise[]).map(
+      (ex) => ({ ...ex, reps: normalizeReps(ex.reps) }),
+    );
     const hasWarnings = validation.warnings.length > 0;
 
     await logAiUsage(user.id, "workout", {
@@ -724,6 +737,9 @@ export async function generateExerciseVariation(
         `[generateExerciseVariation] AI returned only ${alternatives.length} alternative(s); UI will pad with placeholders`,
       );
     }
+    // Clean rep counts before caching so cache hits and applies stay consistent
+    // with the weekly flow's normalized reps. Ranges/AMRAP pass through.
+    alternatives = alternatives.map((a) => ({ ...a, reps: normalizeReps(a.reps) }));
     inputTokens = exec.inputTokens;
     outputTokens = exec.outputTokens;
 
