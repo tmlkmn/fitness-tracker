@@ -476,9 +476,31 @@ export default function TakvimPage() {
 
         <div data-tour="day-detail">
         {isLoading ? (
-          <div className="space-y-2">
-            {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
+          // Mirror DayDetailPanel's shape (tabs bar + MealList rows) so the
+          // skeleton flows seamlessly into the panel that mounts next, instead
+          // of swapping to a differently-shaped skeleton.
+          <div className="space-y-3">
+            {userProfile?.serviceType !== "nutrition" && (
+              <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1">
+                <Skeleton className="h-7 rounded-sm" />
+                <Skeleton className="h-7 rounded-sm" />
+              </div>
+            )}
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-border/60 bg-card p-3 flex gap-3"
+              >
+                <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-3.5 w-24" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-4/5" />
+                </div>
+              </div>
             ))}
           </div>
         ) : activeDailyPlanId ? (

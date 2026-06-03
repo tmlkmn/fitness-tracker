@@ -142,25 +142,11 @@ export default function HomePage() {
     return t(`planTypes.${key}`);
   };
 
-  if (sessionPending) {
-    return (
-      <div className="animate-fade-in">
-        <Header title="FitMusc" rightSlot={
-          <div className="flex items-center gap-1">
-            <NotificationBell />
-            <HeaderMenu />
-          </div>
-        } />
-        <div className="p-4 space-y-4">
-          <Skeleton className="h-32 rounded-xl" />
-          <Skeleton className="h-40 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) return null;
+  // The `/` route is auth-protected by the proxy, so a client reaching here is
+  // already authenticated. We render the real layout immediately and let each
+  // card's own per-component skeleton drive the loading state (avoids the
+  // generic full-page skeleton flashing before the matched ones).
+  if (!sessionPending && !user) return null;
 
   return (
     <div className="animate-fade-in">
@@ -203,7 +189,7 @@ export default function HomePage() {
               <div className="min-w-0 flex-1">
                 {(() => {
                   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-                  const sessionFirstName = ((user as any).name?.split(" ")[0] ?? "") as string;
+                  const sessionFirstName = ((user as any)?.name?.split(" ")[0] ?? "") as string;
                   const displayName = greeting?.firstName || sessionFirstName;
                   const helloWord = locale === "en" ? "Hello" : "Merhaba";
                   return (
