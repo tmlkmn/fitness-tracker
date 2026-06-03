@@ -24,6 +24,12 @@ export interface SupplementBudget {
   carbs: number;
   fat: number;
   supplementsCount: number;
+  /**
+   * True when the user's stack includes a protein-powder/whey supplement.
+   * Gates whether the deterministic macro-floor net is allowed to top up with
+   * whey (vs real food) — see enforceMealFloors in ai-weekly-postprocess.ts.
+   */
+  hasProteinPowder: boolean;
   list: SupplementLine[];
 }
 
@@ -33,8 +39,15 @@ export const EMPTY_SUPPLEMENT_BUDGET: SupplementBudget = {
   carbs: 0,
   fat: 0,
   supplementsCount: 0,
+  hasProteinPowder: false,
   list: [],
 };
+
+/** Preset key + name heuristic for detecting a protein-powder supplement. */
+function isProteinPowder(presetKey: string | null, name: string): boolean {
+  if (presetKey === "whey") return true;
+  return /whey|protein\s*toz|protein\s*powder/i.test(name);
+}
 
 async function findActiveWeeklyPlanId(userId: string): Promise<number | null> {
   const today = getTurkeyTodayStr();
@@ -61,6 +74,7 @@ export async function getDailySupplementBudget(
     .select({
       name: supplements.name,
       dosage: supplements.dosage,
+      presetKey: supplements.presetKey,
       servingsPerDose: supplements.servingsPerDose,
       caloriesPerServing: supplements.caloriesPerServing,
       proteinPerServing: supplements.proteinPerServing,
@@ -79,9 +93,11 @@ export async function getDailySupplementBudget(
   let carbs = 0;
   let fat = 0;
   let supplementsCount = 0;
+  let hasProteinPowder = false;
   const list: SupplementLine[] = [];
 
   for (const r of rows) {
+    if (isProteinPowder(r.presetKey, r.name)) hasProteinPowder = true;
     const single = computeSupplementMacrosForSingle({
       caloriesPerServing: r.caloriesPerServing,
       proteinPerServing: r.proteinPerServing,
@@ -128,6 +144,7 @@ export async function getDailySupplementBudget(
     carbs: Math.round(carbs * 10) / 10,
     fat: Math.round(fat * 10) / 10,
     supplementsCount,
+    hasProteinPowder,
     list,
   };
 }

@@ -135,18 +135,16 @@ const MEAL_LABELING_BLOCK_EN = `## Meal Labeling Rule (CRITICAL)
 - Label pre-workout / post-workout meals (if any) as "Pre-Workout" and "Post-Workout"`;
 
 const MEAL_SUPPLEMENT_BLOCK_TR = `## Supplement Entegrasyonu
-- Supplement takvimi verilmişse öğün zamanlamasını buna göre uyumla
-- Protein tozu/whey ANTRENMAN SONRASI öner, öncesi DEĞİL
-- Kreatin ve BCAA antrenman öncesi olabilir
-- Pre-workout öğünü GERÇEK YİYECEK olmalı (kompleks karb + protein), supplement önerisi DEĞİL
-- Supplement'leri öğün içeriğine YAZMA, sadece zamanlamayı uyumla`;
+- Öğün içeriği SADECE gerçek gıdadır — protein tozu/whey/supplement ASLA öğün içeriğine YAZILMAZ (supplement'ler ayrı takip edilir)
+- Kendiliğinden supplement ÖNERME — kullanıcının almadığı bir takviyeyi (protein tozu dahil) uydurma
+- Yalnızca kullanıcının kendi verdiği supplement programı varsa öğün ZAMANLAMASINI ona göre uyumla; öğüne supplement EKLEME
+- Pre-workout öğünü GERÇEK YİYECEK olmalı (kompleks karb + protein), supplement DEĞİL`;
 
 const MEAL_SUPPLEMENT_BLOCK_EN = `## Supplement Integration
-- If a supplement schedule is provided, align meal timing accordingly
-- Recommend protein powder/whey POST-WORKOUT, NOT pre-workout
-- Creatine and BCAA can be pre-workout
-- Pre-workout meal must be REAL FOOD (complex carbs + protein), NOT supplement recommendations
-- DO NOT write supplements into meal content, only align timing`;
+- Meal content is REAL FOOD ONLY — NEVER write protein powder/whey/supplements into meal content (supplements are tracked separately)
+- Do NOT recommend supplements on your own — never invent a supplement (including protein powder) the user doesn't take
+- Only when the user's own supplement schedule is provided, align meal TIMING to it; do NOT add supplements into meals
+- Pre-workout meal must be REAL FOOD (complex carbs + protein), NOT a supplement`;
 
 const MEAL_CONTENT_FORMAT_BLOCK_TR = `## İçerik Formatı (ÇOK ÖNEMLİ)
 - Bir şef gibi yaz: malzemeleri ve kısa hazırlama talimatını birlikte sun

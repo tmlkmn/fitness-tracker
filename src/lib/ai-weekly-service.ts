@@ -1276,7 +1276,11 @@ export function mergeWeeklyResults(
   // day's protein/fat floors — carb cycling must move ONLY carbs — and clean up
   // odd rep counts.
   const bodyWeightKg = req.userRow?.weight ? parseFloat(req.userRow.weight) : null;
-  enforceDailyMacroFloors(plan, req.adjustedTargets, bodyWeightKg, req.locale);
+  // Whey top-ups are only offered to users who actually take protein powder and
+  // aren't on a nutrition-only plan — never suggest a supplement to a non-user.
+  const useProteinPowder =
+    req.supplementBudget.hasProteinPowder && req.userRow?.serviceType !== "nutrition";
+  enforceDailyMacroFloors(plan, req.adjustedTargets, bodyWeightKg, req.locale, useProteinPowder);
   normalizePlanReps(plan);
 
   // Snapshot the supplement-adjusted targets the meals were graded against so

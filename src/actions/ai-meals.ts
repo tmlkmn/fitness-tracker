@@ -188,7 +188,11 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     // one standardized "Macro Top-Up" meal to close the gap. Mutates in place.
     const bodyWeightKg = userRow?.weight ? parseFloat(userRow.weight) : null;
     const mealCountBeforeFloor = suggestedMeals.length;
-    enforceMealFloors(suggestedMeals, targets, bodyWeightKg, locale);
+    enforceMealFloors(suggestedMeals, targets, bodyWeightKg, locale, {
+      isTrainingDay: planType === "workout" || planType === "swimming",
+      // Only offer whey to users who take protein powder and aren't nutrition-only.
+      useProteinPowder: supplementBudget.hasProteinPowder && !isNutritionOnly,
+    });
     if (suggestedMeals.length > mealCountBeforeFloor) {
       validation.warnings.push(
         "[daily-macro-floor] appended Macro Top-Up meal to meet the protein/fat floor",
