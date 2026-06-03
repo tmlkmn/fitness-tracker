@@ -13,35 +13,81 @@ import {
   discriminateAiError,
   PROMPT_VERSION,
 } from "@/lib/ai";
-import { buildUserContext, getMealMacroBudget } from "@/lib/ai-context";
+import { buildUserContext } from "@/lib/ai-context";
 import {
   getMealVariationPrompt,
   getExerciseTipsPrompt,
 } from "@/lib/ai-prompts";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale, type Locale } from "@/lib/locale";
 import { parseAiJson } from "@/lib/ai-json-repair";
 import { categorizeWarnings } from "@/lib/ai-warning-telemetry";
+import {
+  parseMacroNum,
+  validateAgainstOriginal,
+  type OriginalMacros,
+} from "@/lib/meal-variation-validate";
 
 const TIPS_TTL_DAYS = 30;
 
-const MEAL_VARIATION_OVERSHOOT_TOLERANCE = 0.15;
+interface MealVariationCallResult {
+  suggestions: MealVariationSuggestion[];
+  inputTokens: number;
+  outputTokens: number;
+}
 
-function validateMealVariationSuggestions(
-  suggestions: MealVariationSuggestion[],
-  remaining: { calories: number; protein: number; carbs: number; fat: number } | null,
-): string[] {
-  if (!remaining || remaining.calories <= 0) return [];
-  const warnings: string[] = [];
-  suggestions.forEach((s, i) => {
-    if (s.calories == null) return;
-    const overshootRatio = (s.calories - remaining.calories) / remaining.calories;
-    if (overshootRatio > MEAL_VARIATION_OVERSHOOT_TOLERANCE) {
-      warnings.push(
-        `[meal-variation-overshoot] suggestion ${i + 1} ${s.calories} kcal exceeds remaining budget ${remaining.calories} kcal by ${Math.round(overshootRatio * 100)}%`,
-      );
-    }
+/** One AI call → parsed suggestions. Shared by the initial call and the retry. */
+async function callMealVariation(
+  userMessage: string,
+  locale: Locale,
+  fallback: OriginalMacros,
+): Promise<MealVariationCallResult> {
+  const client = getAIClient();
+  const message = await client.messages.create({
+    model: AI_MODELS.fast,
+    max_tokens: 1500,
+    system: [
+      {
+        type: "text",
+        text: getMealVariationPrompt(locale),
+        cache_control: { type: "ephemeral" },
+      },
+    ],
+    messages: [{ role: "user", content: userMessage }],
   });
-  return warnings;
+
+  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  let suggestions: MealVariationSuggestion[];
+  try {
+    const parsed = parseAiJson(text) as Record<string, unknown>;
+    const suggestionsRaw = Array.isArray(parsed.suggestions) ? parsed.suggestions : [parsed];
+    suggestions = suggestionsRaw.map((s: Record<string, unknown>) => {
+      let content = String(s.content ?? "");
+      content = content.replace(/\n/g, ", ").replace(/\s{2,}/g, " ").replace(/,\s*,/g, ",").trim();
+      content = content.replace(/^,\s*/, "").replace(/,\s*$/, "");
+      return {
+        content,
+        calories: s.calories != null ? Number(s.calories) : null,
+        proteinG: s.proteinG != null ? String(s.proteinG) : null,
+        carbsG: s.carbsG != null ? String(s.carbsG) : null,
+        fatG: s.fatG != null ? String(s.fatG) : null,
+      };
+    });
+  } catch {
+    // Fallback: treat entire response as a single suggestion with original macros
+    suggestions = [{
+      content: text,
+      calories: fallback.calories,
+      proteinG: fallback.protein != null ? String(fallback.protein) : null,
+      carbsG: fallback.carbs != null ? String(fallback.carbs) : null,
+      fatG: fallback.fat != null ? String(fallback.fat) : null,
+    }];
+  }
+
+  return {
+    suggestions,
+    inputTokens: message.usage.input_tokens,
+    outputTokens: message.usage.output_tokens,
+  };
 }
 
 export interface MealVariationSuggestion {
@@ -97,9 +143,18 @@ export async function generateMealVariation(
     .filter(Boolean)
     .join(", ");
 
-  // Resolve the dailyPlanId either from the meal row (when mealId is known)
-  // or directly from the caller (when the user is adding a brand-new meal
-  // that hasn't been persisted yet — N2 fix: budget must still apply).
+  // Original meal macros — the swap target. Suggestions must land within
+  // ±tolerance of THESE (not the day's remaining budget).
+  const original: OriginalMacros = {
+    calories: calories ?? null,
+    protein: parseMacroNum(proteinG),
+    carbs: parseMacroNum(carbsG),
+    fat: parseMacroNum(fatG),
+  };
+
+  // Resolve the dailyPlanId from the meal row or the caller — used only for
+  // plan-type context + same-type week dedup (no daily-budget fitting; meal
+  // variation matches the ORIGINAL meal's macros, not the day's remainder).
   let resolvedDailyPlanId: number | null = dailyPlanIdOpt ?? null;
   if (!resolvedDailyPlanId && mealId) {
     try {
@@ -116,20 +171,8 @@ export async function generateMealVariation(
   // Build week context: what other meals of the same label exist this week
   let weekContext = "";
   let planTypeContext = "";
-  let budgetContext = "";
-  let remainingBudget: { calories: number; protein: number; carbs: number; fat: number } | null = null;
   if (resolvedDailyPlanId) {
     try {
-      try {
-        const budget = await getMealMacroBudget(user.id, resolvedDailyPlanId, mealId ?? null, locale);
-        if (budget.text) {
-          budgetContext = `\n\n${budget.text}`;
-        }
-        remainingBudget = budget.remaining;
-      } catch {
-        // Best effort — proceed without budget
-      }
-
       const [currentDay] = await db
         .select({ weeklyPlanId: dailyPlans.weeklyPlanId, planType: dailyPlans.planType })
         .from(dailyPlans)
@@ -201,75 +244,54 @@ export async function generateMealVariation(
   // Build user message — note priority block is appended at the end so it
   // sits closest to "this is what to do" instructions for stronger steering.
   const intro = locale === "en"
-    ? `Current meal: ${mealLabel} (suggestions must stay within the SAME meal type — breakfast suggestions for breakfast, main for main)\nContent: ${currentContent}${macroInfo ? `\nMacros: ${macroInfo}` : ""}`
-    : `Mevcut öğün: ${mealLabel} (öneriler AYNI öğün tipinde olmalı — kahvaltı için kahvaltılık, ana yemek için ana yemek)\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}`;
+    ? `Current meal: ${mealLabel} (suggestions must stay within the SAME meal type — breakfast for breakfast, snack for snack, main for main)\nContent: ${currentContent}${macroInfo ? `\nMacros: ${macroInfo}` : ""}`
+    : `Mevcut öğün: ${mealLabel} (öneriler AYNI öğün tipinde olmalı — kahvaltı için kahvaltılık, ara öğün için atıştırmalık, ana yemek için ana yemek)\nİçerik: ${currentContent}${macroInfo ? `\nMakrolar: ${macroInfo}` : ""}`;
   const taskLine = locale === "en"
-    ? `Suggest 3 DIFFERENT alternatives matching the "${mealLabel}" type with similar macros. Each should use a different protein source and cuisine style (user request can override). If a remaining macro budget is provided, fit suggestions to it. Reply with JSON: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`
-    : `Bu öğüne benzer makrolarla, "${mealLabel}" öğün tipine uygun, birbirinden FARKLI 3 alternatif öneri yap. Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı (kullanıcı isteği bunu override edebilir). Eğer kalan makro bütçesi verilmişse, önerilerini bu bütçeye uyumlu yap. JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`;
-  let userMessage = `${userContext}\n\n${intro}${planTypeContext}${budgetContext}${weekContext}${prevContext}\n\n${taskLine}`;
-  if (userNote?.trim()) {
-    userMessage += buildUserNotePriorityBlock(userNote);
-  }
+    ? `Suggest 3 DIFFERENT alternatives of the SAME "${mealLabel}" type. Each suggestion's protein, carbs AND fat MUST each stay within ±15% of the current meal${macroInfo ? ` (${macroInfo})` : ""}. Use a different protein source and cuisine each (user request can override). Reply with JSON: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`
+    : `"${mealLabel}" öğün tipinde, birbirinden FARKLI 3 alternatif öner. Her önerinin protein, karb VE yağ değeri mevcut öğünün${macroInfo ? ` (${macroInfo})` : ""} ±%15'i içinde olmalı. Her öneri farklı protein kaynağı ve farklı mutfak tarzı kullanmalı (kullanıcı isteği bunu override edebilir). JSON formatında yanıt ver: { "suggestions": [{ "content": "...", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, ...] }`;
+  const baseUserMessage = `${userContext}\n\n${intro}${planTypeContext}${weekContext}${prevContext}\n\n${taskLine}`;
+  const userMessage = userNote?.trim()
+    ? baseUserMessage + buildUserNotePriorityBlock(userNote)
+    : baseUserMessage;
 
   const startTime = Date.now();
-  let inputTokens: number | undefined;
-  let outputTokens: number | undefined;
+  let inputTokens = 0;
+  let outputTokens = 0;
 
   try {
-    const client = getAIClient();
-    const message = await client.messages.create({
-      model: AI_MODELS.fast,
-      max_tokens: 1500,
-      system: [
-        {
-          type: "text",
-          text: getMealVariationPrompt(locale),
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      messages: [{ role: "user", content: userMessage }],
-    });
+    const first = await callMealVariation(userMessage, locale, original);
+    inputTokens += first.inputTokens;
+    outputTokens += first.outputTokens;
 
-    inputTokens = message.usage.input_tokens;
-    outputTokens = message.usage.output_tokens;
+    let best = first.suggestions;
+    let bestCheck = validateAgainstOriginal(best, original, locale);
 
-    const text =
-      message.content[0].type === "text" ? message.content[0].text : "";
-
-    let result: { suggestions: MealVariationSuggestion[] };
-    try {
-      const parsed = parseAiJson(text) as Record<string, unknown>;
-      const suggestionsRaw = Array.isArray(parsed.suggestions) ? parsed.suggestions : [parsed];
-      const suggestions: MealVariationSuggestion[] = suggestionsRaw.map((s: Record<string, unknown>) => {
-        let content = String(s.content ?? "");
-        content = content.replace(/\n/g, ", ").replace(/\s{2,}/g, " ").replace(/,\s*,/g, ",").trim();
-        content = content.replace(/^,\s*/, "").replace(/,\s*$/, "");
-        return {
-          content,
-          calories: s.calories != null ? Number(s.calories) : null,
-          proteinG: s.proteinG != null ? String(s.proteinG) : null,
-          carbsG: s.carbsG != null ? String(s.carbsG) : null,
-          fatG: s.fatG != null ? String(s.fatG) : null,
-        };
-      });
-      result = { suggestions };
-    } catch {
-      // Fallback: treat entire response as single suggestion
-      result = {
-        suggestions: [{
-          content: text,
-          calories: calories ?? null,
-          proteinG: proteinG ?? null,
-          carbsG: carbsG ?? null,
-          fatG: fatG ?? null,
-        }],
-      };
+    // Single conditional retry: if any suggestion drifts beyond tolerance, nudge
+    // the model once to pull macros back toward the original; keep the better set.
+    if (bestCheck.offCount > 0) {
+      const nudge = locale === "en"
+        ? `\n\nThe previous suggestions drifted from the target macros. Target = the CURRENT meal${macroInfo ? `: ${macroInfo}` : ""}. Bring EVERY suggestion's protein, carbs and fat each within ±15% of that, and keep the SAME meal type ("${mealLabel}"). Same JSON format.`
+        : `\n\nÖnceki öneriler hedef makrolardan saptı. Hedef = MEVCUT öğün${macroInfo ? `: ${macroInfo}` : ""}. Her önerinin protein, karb ve yağ değerini bu hedefin ±%15'i içine çek ve AYNI öğün tipini ("${mealLabel}") koru. Aynı JSON formatı.`;
+      try {
+        const second = await callMealVariation(userMessage + nudge, locale, original);
+        inputTokens += second.inputTokens;
+        outputTokens += second.outputTokens;
+        const secondCheck = validateAgainstOriginal(second.suggestions, original, locale);
+        // Keep the retry only if it's strictly better: fewer drifting suggestions,
+        // or the same count with a smaller total drift.
+        const better =
+          secondCheck.offCount < bestCheck.offCount ||
+          (secondCheck.offCount === bestCheck.offCount && secondCheck.totalDrift < bestCheck.totalDrift);
+        if (better) {
+          best = second.suggestions;
+          bestCheck = secondCheck;
+        }
+      } catch {
+        // Retry failed — keep the first result
+      }
     }
 
-    const validationWarnings = validateMealVariationSuggestions(
-      result.suggestions,
-      remainingBudget,
-    );
+    const validationWarnings = bestCheck.warnings;
     const hasWarnings = validationWarnings.length > 0;
 
     await logAiUsage(user.id, "meal", {
@@ -287,7 +309,7 @@ export async function generateMealVariation(
       promptVersion: PROMPT_VERSION,
     });
 
-    return { ...result, validationWarnings };
+    return { suggestions: best, validationWarnings };
   } catch (error) {
     const { status, errorMessage } = discriminateAiError(error);
     await logAiUsage(user.id, "meal", {

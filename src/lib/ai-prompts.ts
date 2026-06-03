@@ -224,13 +224,14 @@ function mealVariationPrompt(locale: Locale): string {
 1. USER REQUEST (provided in the user message as "USER REQUEST:") — beats everything below. If the user says "no dairy", "no eggs", "only oats", "lighter please", that REQUEST overrides ALL rules below. The "different protein source" and "different cooking method" rules below are CANCELED if they conflict with the user request.
 2. Food allergies and health constraints
 3. Meal-type alignment (below)
-4. Other rules
+4. Macro match to the CURRENT meal (±15% each — below)
+5. Other rules
 
 ## MEAL-TYPE ALIGNMENT (CRITICAL)
 The mealLabel on the "Current meal" field (e.g. "Breakfast", "Lunch", "Dinner", "Snack") must be preserved — suggest alternatives within the same meal type:
 - Breakfast → only breakfast-suitable suggestions (eggs, cheese, olives, honey, tahini-molasses, menemen, çılbır, omelet, oats, granola, smoothie, whole-grain bread, avocado toast, cottage cheese, yogurt + fruit, kefir, breakfast plate). Do NOT suggest rice, pasta, meatballs, soups, stuffed vegetables, grilled chicken/fish as main meals.
 - Lunch / Dinner → main-course suggestions (soup + main, rice/pasta/bulgur with grilled/baked protein, olive-oil dishes, home-style meals). Don't propose a plain breakfast plate.
-- Snack → small, quick-prep suggestions (fruit + nuts, protein shake, yogurt + granola, whole-grain crackers + cheese, boiled egg + fruit). Don't propose a full main meal.
+- Snack → small, quick-prep suggestions (fruit + nuts, protein shake, yogurt + granola, whole-grain crackers + cheese, boiled egg + fruit). Don't propose a full main meal. If the current meal is a Snack, ALL 3 suggestions MUST be snacks — never a full main meal.
 
 Rules:
 - Reply only in English
@@ -258,18 +259,10 @@ Rules:
 
 ${MEAL_CONTENT_FORMAT_BLOCK_EN}
 
-## Macro Adjustment by Day Type
-- Training day: Higher carbs + high protein
-- Rest day: Lower carbs + high protein + healthy fats
-- Swim day: Moderate carbs + high protein
-
-## Daily Macro Budget (CRITICAL)
-- If "Remaining budget for this meal" is provided, align suggestions with that budget
-- Consider the gap between the current meal's macros (reference) and the remaining budget
-- Low remaining protein → don't suggest protein-heavy alternatives (would exceed target)
-- High remaining carbs → carb-balanced suggestion is fine
-- Negative calorie budget (already exceeded) → suggest something LIGHTER than the current meal
-- If no budget data, just stay close to the current meal's macros
+## MATCH THE CURRENT MEAL'S MACROS (CRITICAL)
+- Every one of the 3 suggestions MUST keep protein, carbs AND fat each within ±15% of the current meal's values (calories within ±15% too)
+- Do NOT shift macros for the day type or any "daily budget" — the current meal already reflects the day. Ignore daily totals entirely
+- Always return REALISTIC macros in JSON that actually reflect the suggested dish
 
 - Respond ONLY in valid JSON, no extra explanation or markdown
 - JSON format: { "suggestions": [{ "content": "chef-style recipe description", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, { ... }, { ... }] }`;
@@ -280,13 +273,14 @@ ${MEAL_CONTENT_FORMAT_BLOCK_EN}
 1. KULLANICI İSTEĞİ (user message içinde "KULLANICI İSTEĞİ:" olarak verilir) — her şeyin üstündedir. Kullanıcı "süt ürünsüz", "yumurtasız", "sadece yulaf olsun", "daha hafif olsun" gibi bir istek belirttiyse ALTTAKİ tüm kurallardan ÖNCE gelir. Aşağıdaki "farklı protein kaynağı" veya "farklı pişirme yöntemi" kuralları kullanıcı isteğiyle çelişiyorsa İPTAL EDİLİR.
 2. Gıda alerjileri ve sağlık kısıtları
 3. Öğün tipi uyumu (aşağıda)
-4. Diğer kurallar
+4. Mevcut öğünün makrolarına uyum (her biri ±%15 — aşağıda)
+5. Diğer kurallar
 
 ## ÖĞÜN TİPİ UYUMU (KRİTİK)
 Kullanıcıya verilen "Mevcut öğün" alanındaki mealLabel (ör. "Kahvaltı", "Öğle Yemeği", "Akşam Yemeği", "Ara Öğün", "Atıştırmalık") aynı öğün tipinde kalacak şekilde öneri yap:
 - Kahvaltı → sadece kahvaltılık öneriler (yumurta, peynir, zeytin, bal, tahin-pekmez, menemen, çılbır, kaygana, omlet, yulaf, granola, smoothie, tam tahıllı ekmek, avokadolu tost, lor, süzme peynir, yoğurt + meyve, kefir, kahvaltı tabağı vb.). Pilav, makarna, köfte, çorba, dolma, ızgara tavuk/balık gibi ana öğünler ÖNERME.
 - Öğle / Akşam Yemeği → ana yemek niteliğinde öneriler (çorba + ana yemek, pilav/makarna/bulgur eşliğinde ızgara/fırın protein, zeytinyağlılar, ev yemekleri). Sade kahvaltı tabağı önerme.
-- Ara Öğün / Atıştırmalık → küçük porsiyon, hızlı hazırlanan öneriler (meyve + kuruyemiş, protein shake, yoğurt + granola, tam tahıllı cracker + peynir, haşlanmış yumurta + meyve vb.). Tam bir ana yemek önerme.
+- Ara Öğün / Atıştırmalık → küçük porsiyon, hızlı hazırlanan öneriler (meyve + kuruyemiş, protein shake, yoğurt + granola, tam tahıllı cracker + peynir, haşlanmış yumurta + meyve vb.). Tam bir ana yemek önerme. Mevcut öğün Ara Öğün/Atıştırmalık ise 3 önerinin TAMAMI atıştırmalık olmalı — asla tam ana yemek.
 
 Kurallar:
 - Sadece Türkçe yanıt ver
@@ -314,18 +308,10 @@ Kurallar:
 
 ${MEAL_CONTENT_FORMAT_BLOCK_TR}
 
-## Gün Tipine Göre Makro Ayarı
-- Antrenman günü: Yüksek karbonhidrat + yüksek protein
-- Dinlenme günü: Düşük karbonhidrat + yüksek protein + sağlıklı yağ
-- Yüzme günü: Orta karbonhidrat + yüksek protein
-
-## Günlük Makro Bütçesi (KRİTİK)
-- Eğer "Bu öğün için kalan bütçe" bilgisi verilmişse, önerilerini bu bütçeye UYUMLU yap
-- Mevcut öğünün makroları (referans) ile kalan bütçe arasındaki farkı dikkate al
-- Kalan protein düşükse → protein ağırlıklı öneri yapma (hedefi aşar)
-- Kalan karbonhidrat yüksekse → karb dengesi fazla olan öneri uygun
-- Kalori bütçesi negatifse (zaten aşılmış) → mevcut öğünden daha düşük kalorili, hafif öneri sun
-- Bütçe verisi yoksa, sadece mevcut öğünün makrolarına benzer kal
+## MEVCUT ÖĞÜNÜN MAKROLARINA UYUM (KRİTİK)
+- 3 önerinin HER BİRİ, mevcut öğünün protein, karbonhidrat VE yağ değerlerinin her birine ±%15 içinde olmalı (kalori de ±%15)
+- Gün tipine göre veya "günlük bütçe" için makro KAYDIRMA — mevcut öğün zaten günü yansıtıyor. Günlük toplamları tamamen YOK SAY
+- JSON'da her zaman önerilen yemeği gerçekten yansıtan GERÇEKÇİ makrolar ver
 
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - JSON formatı: { "suggestions": [{ "content": "şef tarzı tarif açıklaması", "calories": number, "proteinG": "number", "carbsG": "number", "fatG": "number" }, { ... }, { ... }] }`;
