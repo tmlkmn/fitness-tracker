@@ -7,6 +7,20 @@ export interface SupplementMacroLike {
   isCompleted?: boolean | null;
 }
 
+/**
+ * Preset key + name heuristic for detecting a protein-powder/whey supplement.
+ * Isomorphic (no server-only deps) so both the server budget builder
+ * (supplement-budget.ts) and client display (meal-list.tsx) share one source of
+ * truth — on training days whey is rendered as a meal, not a supplement line.
+ */
+export function isProteinPowder(
+  presetKey: string | null | undefined,
+  name: string | null | undefined,
+): boolean {
+  if (presetKey === "whey") return true;
+  return /whey|protein\s*toz|protein\s*powder/i.test(name ?? "");
+}
+
 export interface SupplementMacroTotals {
   calories: number;
   protein: number;

@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "@/db";
 import { supplements, weeklyPlans } from "@/db/schema";
 import { and, desc, eq, lte } from "drizzle-orm";
-import { computeSupplementMacrosForSingle } from "@/lib/supplement-macros";
+import { computeSupplementMacrosForSingle, isProteinPowder } from "@/lib/supplement-macros";
 import type { MacroTargets } from "@/lib/macro-targets";
 import type { WeeklyMacroTargets } from "@/lib/carb-cycling";
 import type { Locale } from "@/lib/locale";
@@ -42,12 +42,6 @@ export const EMPTY_SUPPLEMENT_BUDGET: SupplementBudget = {
   hasProteinPowder: false,
   list: [],
 };
-
-/** Preset key + name heuristic for detecting a protein-powder supplement. */
-function isProteinPowder(presetKey: string | null, name: string): boolean {
-  if (presetKey === "whey") return true;
-  return /whey|protein\s*toz|protein\s*powder/i.test(name);
-}
 
 async function findActiveWeeklyPlanId(userId: string): Promise<number | null> {
   const today = getTurkeyTodayStr();

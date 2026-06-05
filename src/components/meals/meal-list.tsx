@@ -22,7 +22,7 @@ import { useUserProfile, useResolvedMacroTargetsForDay } from "@/hooks/use-user"
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { computeMealMacros } from "@/lib/meal-macros";
-import { computeSupplementMacros } from "@/lib/supplement-macros";
+import { computeSupplementMacros, isProteinPowder } from "@/lib/supplement-macros";
 import { useSupplementsForDay } from "@/hooks/use-supplements-for-day";
 import { formatAiError } from "@/lib/ai-errors";
 import { formatEnergy, type EnergyUnit } from "@/lib/units";
@@ -93,9 +93,18 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
 
   const macros = useMemo(() => computeMealMacros(mealList ?? []), [mealList]);
   const { data: daySupplements } = useSupplementsForDay(dailyPlanId);
+  // On training days whey is surfaced as a visible "Post-Workout" shake MEAL, so
+  // it must NOT also be counted in the supplement contribution line (double count).
+  const isTrainingDay =
+    dailyPlanType === "workout" || dailyPlanType === "swimming";
   const supplementMacros = useMemo(
-    () => computeSupplementMacros(daySupplements ?? []),
-    [daySupplements],
+    () =>
+      computeSupplementMacros(
+        isTrainingDay
+          ? (daySupplements ?? []).filter((s) => !isProteinPowder(s.presetKey, s.name))
+          : (daySupplements ?? []),
+      ),
+    [daySupplements, isTrainingDay],
   );
 
   if (isLoading) {

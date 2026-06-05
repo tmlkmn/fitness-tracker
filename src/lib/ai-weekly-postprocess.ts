@@ -37,12 +37,25 @@ export interface MealFloorOptions {
    * suggest a supplement to someone who doesn't take one.
    */
   useProteinPowder: boolean;
+  /**
+   * Training day + user takes whey → always surface a visible post-workout whey
+   * shake meal, even when the AI already met the protein floor (so it's not just
+   * a last-resort top-up). Requires `useProteinPowder`. Skipped if the AI already
+   * produced a whey-containing meal (dedup in `enforceMealFloors`).
+   */
+  forceWhey: boolean;
 }
 
 const DEFAULT_FLOOR_OPTIONS: MealFloorOptions = {
   isTrainingDay: false,
   useProteinPowder: false,
+  forceWhey: false,
 };
+
+/** True when a meal's content already contains protein powder / whey. */
+function mealHasWhey(meal: AIMealItem): boolean {
+  return /whey|protein\s*toz/i.test(meal.content);
+}
 
 function num(value: string | number | null | undefined): number {
   if (value == null) return 0;
@@ -99,14 +112,21 @@ export function enforceMealFloors(
   opts: MealFloorOptions = DEFAULT_FLOOR_OPTIONS,
 ): AIMealItem[] {
   if (!target || meals.length === 0) return meals;
+  // Dedup: if the AI already produced a whey-containing meal, don't force a
+  // second shake — only the gap-based top-up (if still short) may apply.
+  const effectiveOpts =
+    opts.forceWhey && meals.some(mealHasWhey) ? { ...opts, forceWhey: false } : opts;
   const fatFloorBW =
     bodyWeightKg && bodyWeightKg > 0 ? Math.round(FAT_FLOOR_PER_KG * bodyWeightKg) : 0;
   const totals = sumMeals(meals);
   const proteinGap = Math.round(target.protein * PROTEIN_FLOOR_RATIO) - totals.protein;
   const fatGap = Math.max(target.fat, fatFloorBW) - totals.fat;
-  if (proteinGap < MIN_PROTEIN_GAP && fatGap < MIN_FAT_GAP) return meals;
+  // forceWhey always emits a shake; otherwise skip when both gaps are trivial.
+  if (!effectiveOpts.forceWhey && proteinGap < MIN_PROTEIN_GAP && fatGap < MIN_FAT_GAP) {
+    return meals;
+  }
 
-  const topUps = buildTopUpMeals(proteinGap, fatGap, meals, locale, opts);
+  const topUps = buildTopUpMeals(proteinGap, fatGap, meals, locale, effectiveOpts);
   for (const m of topUps) meals.push(m);
   return meals;
 }
@@ -127,6 +147,8 @@ export function enforceDailyMacroFloors(
     enforceMealFloors(day.meals, target, bodyWeightKg, locale, {
       isTrainingDay,
       useProteinPowder,
+      // Training day + whey user → always surface a visible post-workout shake.
+      forceWhey: isTrainingDay && useProteinPowder,
     });
   }
   return plan;
@@ -167,10 +189,12 @@ function planTopUpQuantities(
   opts: MealFloorOptions,
 ): TopUpQuantities {
   let wheyScoops = 0;
-  if (opts.useProteinPowder && proteinGap >= MIN_PROTEIN_GAP) {
+  if (opts.useProteinPowder && (opts.forceWhey || proteinGap >= MIN_PROTEIN_GAP)) {
     const scoopCap = opts.isTrainingDay ? 2 : 1;
-    // ceil so each scoop pulls toward the floor; clamp to the health cap.
-    wheyScoops = Math.min(Math.ceil(proteinGap / WHEY_SCOOP.protein), scoopCap);
+    // ceil so each scoop pulls toward the floor; forceWhey guarantees ≥1 scoop
+    // even when the floor is already met; always clamp to the health cap.
+    const needed = proteinGap >= MIN_PROTEIN_GAP ? Math.ceil(proteinGap / WHEY_SCOOP.protein) : 0;
+    wheyScoops = Math.min(Math.max(opts.forceWhey ? 1 : 0, needed), scoopCap);
   }
 
   const residualProtein = proteinGap - wheyScoops * WHEY_SCOOP.protein;
@@ -231,7 +255,11 @@ function buildTopUpMeals(
     locale === "en"
       ? " (to meet the daily protein/fat floor)"
       : " (günlük protein/yağ tabanını tutturmak için)";
-  const label = locale === "en" ? "Macro Top-Up" : "Makro Tamamlayıcı";
+  // Whey-containing meals get the canonical "Post-Workout" label (survives the
+  // meals.meal_label CHECK constraint + coerceMealLabel); real-food-only top-ups
+  // stay "Macro Top-Up" / "Makro Tamamlayıcı" (which coerces to "Ara Öğün").
+  const macroLabel = locale === "en" ? "Macro Top-Up" : "Makro Tamamlayıcı";
+  const shakeLabel = "Post-Workout";
 
   // ── Timing: place after the last meal (+30, capped 23:30); a 2nd meal sits
   //    a few hours earlier so the two scoops land in DIFFERENT meals. ────────
@@ -243,11 +271,12 @@ function buildTopUpMeals(
   const buildMeal = (
     components: { text: string; macros: MacroParcel }[],
     time: number,
+    mealLabel: string,
   ): AIMealItem => {
     const macros = components.reduce((acc, c) => addParcel(acc, c.macros), EMPTY_PARCEL);
     return {
       mealTime: fmtTime(time),
-      mealLabel: label,
+      mealLabel,
       content: components.map((c) => c.text).join(" + ") + note,
       calories: Math.round(macros.calories),
       proteinG: String(Math.round(macros.protein)),
@@ -260,14 +289,14 @@ function buildTopUpMeals(
   if (wheyScoops === 2) {
     const mealA = [whey(1), ...(yogurtUnits > 0 ? [yogurt(yogurtUnits)] : [])];
     const mealB = [whey(1), ...(almondUnits > 0 ? [almonds(almondUnits)] : [])];
-    return [buildMeal(mealA, t2), buildMeal(mealB, t1)];
+    return [buildMeal(mealA, t2, shakeLabel), buildMeal(mealB, t1, shakeLabel)];
   }
 
   const components: { text: string; macros: MacroParcel }[] = [];
   if (wheyScoops > 0) components.push(whey(wheyScoops));
   if (yogurtUnits > 0) components.push(yogurt(yogurtUnits));
   if (almondUnits > 0) components.push(almonds(almondUnits));
-  return [buildMeal(components, t1)];
+  return [buildMeal(components, t1, wheyScoops > 0 ? shakeLabel : macroLabel)];
 }
 
 const CLEAN_REPS = [8, 10, 12, 15, 20];

@@ -188,10 +188,14 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
     // one standardized "Macro Top-Up" meal to close the gap. Mutates in place.
     const bodyWeightKg = userRow?.weight ? parseFloat(userRow.weight) : null;
     const mealCountBeforeFloor = suggestedMeals.length;
+    const isTrainingDay = planType === "workout" || planType === "swimming";
+    // Only offer whey to users who take protein powder and aren't nutrition-only.
+    const useProteinPowder = supplementBudget.hasProteinPowder && !isNutritionOnly;
     enforceMealFloors(suggestedMeals, targets, bodyWeightKg, locale, {
-      isTrainingDay: planType === "workout" || planType === "swimming",
-      // Only offer whey to users who take protein powder and aren't nutrition-only.
-      useProteinPowder: supplementBudget.hasProteinPowder && !isNutritionOnly,
+      isTrainingDay,
+      useProteinPowder,
+      // Training day + whey user → always surface a visible post-workout shake.
+      forceWhey: isTrainingDay && useProteinPowder,
     });
     if (suggestedMeals.length > mealCountBeforeFloor) {
       validation.warnings.push(
