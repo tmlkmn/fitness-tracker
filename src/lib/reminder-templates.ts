@@ -7,8 +7,7 @@ export type ReminderTemplateKey =
   | "posture"
   | "supplement"
   | "sleep"
-  | "steps"
-  | "readiness";
+  | "steps";
 
 const REMINDER_TEMPLATE_KEYS: readonly ReminderTemplateKey[] = [
   "water",
@@ -17,7 +16,6 @@ const REMINDER_TEMPLATE_KEYS: readonly ReminderTemplateKey[] = [
   "supplement",
   "sleep",
   "steps",
-  "readiness",
 ];
 
 export interface ReminderTemplate {
@@ -78,12 +76,6 @@ export const REMINDER_TEMPLATES: ReminderTemplate[] = [
     defaultIntervalMinutes: 180,
     defaultIntervalStart: "09:00",
     defaultIntervalEnd: "23:00",
-  },
-  {
-    key: "readiness",
-    icon: "Activity",
-    defaultTime: "20:00",
-    defaultRecurrence: "daily",
   },
 ];
 

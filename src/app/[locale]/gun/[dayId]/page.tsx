@@ -6,13 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDailyPlan } from "@/actions/plans";
 import { MealList } from "@/components/meals/meal-list";
 import { WorkoutList } from "@/components/workout/workout-list";
-import { SupplementTimeline } from "@/components/supplements/supplement-timeline";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
-import { Utensils, Dumbbell, Pill, HeartPulse, Lock, ChevronRight } from "lucide-react";
+import { Utensils, Dumbbell, HeartPulse, Lock, ChevronRight } from "lucide-react";
 import { WaterTracker } from "@/components/water/water-tracker";
 import { SleepEntry } from "@/components/sleep/sleep-entry";
-import { ReadinessEntry } from "@/components/readiness/readiness-entry";
 import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
 import { PageTour } from "@/components/onboarding/page-tour";
 import { getTranslations } from "next-intl/server";
@@ -26,7 +24,7 @@ interface PageProps {
   searchParams: Promise<{ tab?: string; focus?: string }>;
 }
 
-const VALID_TABS = ["meals", "workout", "supplements", "wellness"] as const;
+const VALID_TABS = ["meals", "workout", "wellness"] as const;
 type ValidTab = (typeof VALID_TABS)[number];
 
 export default async function GunPage({ params, searchParams }: PageProps) {
@@ -41,7 +39,7 @@ export default async function GunPage({ params, searchParams }: PageProps) {
     tab ?? "",
   )
     ? (tab as ValidTab)
-    : focus === "sleep" || focus === "readiness"
+    : focus === "sleep"
       ? "wellness"
       : "meals";
 
@@ -111,7 +109,7 @@ export default async function GunPage({ params, searchParams }: PageProps) {
       <PageTour surface="day" />
       <div className="p-4">
         <Tabs defaultValue={initialTab}>
-          <TabsList className="grid grid-cols-4 w-full mb-4 h-auto p-1">
+          <TabsList className="grid grid-cols-3 w-full mb-4 h-auto p-1">
             <TabsTrigger
               value="meals"
               data-tour="tab-meals"
@@ -127,14 +125,6 @@ export default async function GunPage({ params, searchParams }: PageProps) {
             >
               <Dumbbell className="h-4 w-4" />
               <span className="text-[10px] xs:text-xs truncate max-w-full">{t("tabs.workout")}</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="supplements"
-              data-tour="tab-supplements"
-              className="flex-col gap-0.5 py-1.5 data-[state=active]:font-semibold data-[state=active]:text-primary"
-            >
-              <Pill className="h-4 w-4" />
-              <span className="text-[10px] xs:text-xs truncate max-w-full">{t("tabs.supplements")}</span>
             </TabsTrigger>
             <TabsTrigger
               value="wellness"
@@ -164,15 +154,6 @@ export default async function GunPage({ params, searchParams }: PageProps) {
               workoutTitle={dailyPlan.workoutTitle}
             />
           </TabsContent>
-          <TabsContent value="supplements">
-            {dailyPlan.weeklyPlanId && (
-              <SupplementTimeline
-                weeklyPlanId={dailyPlan.weeklyPlanId}
-                date={dailyPlan.date ?? undefined}
-                readOnly={isPast}
-              />
-            )}
-          </TabsContent>
           <TabsContent value="wellness" className="space-y-3">
             {dailyPlan.date && (
               <>
@@ -184,11 +165,6 @@ export default async function GunPage({ params, searchParams }: PageProps) {
                     autoOpen={focus === "sleep"}
                   />
                 </div>
-                {!isPast && (
-                  <div id="readiness" className="scroll-mt-20">
-                    <ReadinessEntry autoOpen={focus === "readiness"} />
-                  </div>
-                )}
               </>
             )}
           </TabsContent>

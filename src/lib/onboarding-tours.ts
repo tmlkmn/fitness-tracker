@@ -37,7 +37,6 @@ const TOUR_STEPS: Record<TourSurface, StepDef[]> = {
   day: [
     { element: '[data-tour="tab-meals"]', key: "tabMeals", side: "bottom" },
     { element: '[data-tour="tab-workout"]', key: "tabWorkout", side: "bottom" },
-    { element: '[data-tour="tab-supplements"]', key: "tabSupplements", side: "bottom" },
     { element: '[data-tour="tab-wellness"]', key: "tabWellness", side: "bottom" },
     { element: '[data-tour="day-macro"]', key: "macros", side: "bottom" },
     { element: '[data-tour="meal-card"]', key: "swipe", side: "top" },

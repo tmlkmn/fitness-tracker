@@ -37,7 +37,6 @@ import { AchievementBadges } from "@/components/gamification/achievement-badges"
 import { FriendStreakCard } from "@/components/gamification/friend-streak-card";
 import { WaterDashboardWidget } from "@/components/water/water-dashboard-widget";
 import { SleepDashboardWidget } from "@/components/sleep/sleep-dashboard-widget";
-import { ReadinessDashboardCard } from "@/components/readiness/readiness-dashboard-card";
 import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
 import { DailyRingsCard } from "@/components/meals/daily-rings-card";
 import { useDashboardPrefs } from "@/hooks/use-dashboard-prefs";
@@ -327,8 +326,6 @@ export default function HomePage() {
             )}
           </CardContent>
         </Card>
-
-        {isVisible("readiness") && <ReadinessDashboardCard />}
 
         {weekLoading ? (
           <Card>
