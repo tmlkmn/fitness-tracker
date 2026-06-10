@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { requireApiUser } from "@/lib/api-auth";
 import { db } from "@/db";
@@ -32,7 +31,6 @@ export async function POST(request: Request) {
     .update(meals)
     .set({ isCompleted: body.isCompleted })
     .where(eq(meals.id, body.id));
-  revalidatePath("/");
 
   return NextResponse.json({ ok: true });
 }

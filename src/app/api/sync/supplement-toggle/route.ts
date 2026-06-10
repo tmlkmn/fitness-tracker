@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { requireApiUser } from "@/lib/api-auth";
 import { db } from "@/db";
@@ -55,8 +54,6 @@ export async function POST(request: Request) {
         ),
       );
   }
-
-  revalidatePath("/gun");
 
   return NextResponse.json({ ok: true });
 }
