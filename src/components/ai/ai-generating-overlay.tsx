@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Sparkles, Check, Loader2, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -58,12 +58,14 @@ export function AiGeneratingOverlay({
   showElapsed = false,
 }: AiGeneratingOverlayProps) {
   const t = useTranslations("assistant.generating");
-  const [mounted, setMounted] = useState(false);
+  // Client-mount detection without setState-in-effect: false during SSR/first
+  // paint, true once hydrated — gates the portal below.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Screen wake lock — long AI generations (1-5 min) outlast the default
   // mobile screen timeout; keep the device awake while the overlay is up.

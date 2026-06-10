@@ -120,14 +120,9 @@ export function MealSwapModal({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const updateMeal = useUpdateMeal();
 
-  useEffect(() => {
-    if (!open) {
-      setSearch("");
-      setDebouncedSearch("");
-      setFilterLabel(mealLabel);
-      setPending(null);
-    }
-  }, [open, mealLabel]);
+  // No reset-on-close effect needed: the parent mounts this modal only while
+  // open ({swapOpen && <MealSwapModal/>}), so every open starts from fresh
+  // useState defaults and there is no live `open === false` render to reset.
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);

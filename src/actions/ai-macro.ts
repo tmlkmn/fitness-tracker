@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { users, progressLogs } from "@/db/schema";
-import { eq, desc, isNotNull } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
   getAIClient,

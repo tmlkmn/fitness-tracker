@@ -147,9 +147,14 @@ export function AiWorkoutModal({
   const [profileDone, setProfileDone] = useState(false);
 
   useEffect(() => {
-    if (!loading) { setProfileDone(false); return; }
+    if (!loading) return;
     const tm = setTimeout(() => setProfileDone(true), 1200);
-    return () => clearTimeout(tm);
+    // Reset on cleanup (loading ended / unmount) instead of a synchronous
+    // setState in the effect body.
+    return () => {
+      clearTimeout(tm);
+      setProfileDone(false);
+    };
   }, [loading]);
 
   const workoutOverlaySteps: GeneratingStep[] = [

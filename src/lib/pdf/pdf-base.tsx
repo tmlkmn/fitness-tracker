@@ -208,6 +208,8 @@ export function DocHeader({ title, subtitle, metaLines }: DocHeaderProps) {
     <View style={baseStyles.header}>
       <View style={baseStyles.brandRow}>
         {LOGO_SRC ? (
+          // @react-pdf/renderer Image renders into a PDF and has no `alt` prop.
+          // eslint-disable-next-line jsx-a11y/alt-text
           <Image src={LOGO_SRC} style={baseStyles.logo} />
         ) : (
           <View style={baseStyles.logoFallback} />

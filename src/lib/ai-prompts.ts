@@ -1163,7 +1163,7 @@ ${EXERCISE_NAMING_RULES_TR}
 
 // ─── EXERCISE MATCH ────────────────────────────────────────────────────────
 
-function exerciseMatchPrompt(_locale: Locale): string {
+function exerciseMatchPrompt(): string {
   // Locale-agnostic: this is a matching/lookup task, not user-facing
   return `Sen bir egzersiz veritabanı eşleştirme asistanısın. Sana bir egzersiz adı ve bir egzersiz listesi veriyorum.
 
@@ -1832,8 +1832,8 @@ export function getWeeklyPlanPrompt(locale: Locale = "tr"): string {
 export function getExerciseVariationPrompt(locale: Locale = "tr"): string {
   return exerciseVariationPrompt(locale);
 }
-export function getExerciseMatchPrompt(locale: Locale = "tr"): string {
-  return exerciseMatchPrompt(locale);
+export function getExerciseMatchPrompt(): string {
+  return exerciseMatchPrompt();
 }
 export function getNutritionOnlyWeeklyPrompt(locale: Locale = "tr"): string {
   return nutritionOnlyWeeklyPrompt(locale);
@@ -1868,7 +1868,7 @@ export const SECTION_REPLACE_PROMPT = sectionReplacePrompt("tr");
 export const DAILY_MEALS_PROMPT = dailyMealsPrompt("tr");
 export const WEEKLY_PLAN_PROMPT = weeklyPlanPrompt("tr");
 export const EXERCISE_VARIATION_PROMPT = exerciseVariationPrompt("tr");
-export const EXERCISE_MATCH_PROMPT = exerciseMatchPrompt("tr");
+export const EXERCISE_MATCH_PROMPT = exerciseMatchPrompt();
 export const NUTRITION_ONLY_WEEKLY_PROMPT = nutritionOnlyWeeklyPrompt("tr");
 export const NUTRITION_ONLY_MEALS_PROMPT = nutritionOnlyMealsPrompt("tr");
 export const WORKOUT_ONLY_WEEKLY_PROMPT = workoutOnlyWeeklyPrompt("tr");

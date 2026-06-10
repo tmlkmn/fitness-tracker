@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Bell, X, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,19 +10,25 @@ import { useTranslations } from "next-intl";
 const DISMISS_KEY = "notification_prompt_dismissed_v1";
 
 export function NotificationPromptCard() {
-  const [visible, setVisible] = useState(false);
   const t = useTranslations("notificationPrompt");
-
-  useEffect(() => {
-    if (localStorage.getItem(DISMISS_KEY)) return;
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission === "granted") return;
-    setVisible(true);
-  }, []);
+  // Eligibility depends on browser-only APIs (localStorage, Notification), so
+  // it's read via a client snapshot — false during SSR, computed after hydration
+  // — instead of a setState-in-effect.
+  const eligible = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (localStorage.getItem(DISMISS_KEY)) return false;
+      if (typeof Notification === "undefined") return false;
+      return Notification.permission !== "granted";
+    },
+    () => false,
+  );
+  const [dismissed, setDismissed] = useState(false);
+  const visible = eligible && !dismissed;
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, "1");
-    setVisible(false);
+    setDismissed(true);
   };
 
   if (!visible) return null;

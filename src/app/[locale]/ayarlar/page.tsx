@@ -32,7 +32,7 @@ import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 import { LocaleToggle } from "@/components/settings/locale-toggle";
 import { AdminQuickAccessCard } from "@/components/admin/admin-quick-access-card";
 import { PageTour } from "@/components/onboarding/page-tour";
-import { useRouter, Link } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useEffect, Suspense } from "react";
@@ -48,11 +48,14 @@ function AyarlarContent() {
   const user = session?.user;
 
 
-const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+const [showOnboardingBanner, setShowOnboardingBanner] = useState(
+  () => searchParams.get("onboarding") === "true",
+);
 
+// Strip the ?onboarding=true param after the banner has been shown. No
+// setState here — the banner's initial visibility is derived above.
 useEffect(() => {
   if (searchParams.get("onboarding") === "true") {
-    setShowOnboardingBanner(true);
     window.history.replaceState(null, "", "/ayarlar");
   }
 }, [searchParams]);
