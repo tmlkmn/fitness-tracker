@@ -47,18 +47,27 @@ async function postOne(entry: OutboxEntry): Promise<"ok" | "retry" | "drop"> {
   }
 }
 
+// Mark the synced queries stale WITHOUT an immediate refetch (refetchType:
+// "none"). The optimistic onMutate updates already hold the correct state, and
+// the server writes are idempotent, so re-fetching here is redundant — and
+// these queryFns are Server Actions, so invoking them re-renders the whole
+// route (a visible full-page "refresh" a beat after the toggle). Marking stale
+// keeps eventual consistency: the next natural mount/focus refetch reconciles.
 function invalidateAfterDrain(qc: QueryClient, kinds: Set<string>) {
+  const markStale = (queryKey: unknown[]) =>
+    qc.invalidateQueries({ queryKey, refetchType: "none" });
+
   if (kinds.has("meal")) {
-    qc.invalidateQueries({ queryKey: ["meals.byDay"] });
-    qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+    markStale(["meals.byDay"]);
+    markStale(["today-dashboard"]);
   }
   if (kinds.has("exercise")) {
-    qc.invalidateQueries({ queryKey: ["exercises"] });
-    qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+    markStale(["exercises"]);
+    markStale(["today-dashboard"]);
   }
   if (kinds.has("supplement")) {
-    qc.invalidateQueries({ queryKey: ["supplement-completions"] });
-    qc.invalidateQueries({ queryKey: ["supplements.byDay"] });
+    markStale(["supplement-completions"]);
+    markStale(["supplements.byDay"]);
   }
 }
 
