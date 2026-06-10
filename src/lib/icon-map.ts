@@ -108,6 +108,26 @@ export function getSectionIcon(section: string): LucideIcon {
   return sectionIcons[section] ?? Beef;
 }
 
+// ── Plan type (workout / swimming / rest / nutrition) → icon mapping ─────
+
+export const PLAN_TYPE_ICONS: Record<
+  string,
+  { icon: LucideIcon; color: string; bg: string }
+> = {
+  workout: { icon: Dumbbell, color: "text-green-400", bg: "bg-green-400/10" },
+  swimming: { icon: Waves, color: "text-blue-400", bg: "bg-blue-400/10" },
+  rest: { icon: Moon, color: "text-yellow-400", bg: "bg-yellow-400/10" },
+  nutrition: { icon: Utensils, color: "text-emerald-400", bg: "bg-emerald-400/10" },
+};
+
+export function getPlanTypeIcon(planType: string): LucideIcon {
+  return (PLAN_TYPE_ICONS[planType] ?? PLAN_TYPE_ICONS.workout).icon;
+}
+
+export function getPlanTypeColor(planType: string): string {
+  return (PLAN_TYPE_ICONS[planType] ?? PLAN_TYPE_ICONS.workout).color;
+}
+
 // ── Dynamic icon renderer (avoids react-hooks/static-components lint) ─────
 
 const iconNameMap: Record<string, LucideIcon> = {

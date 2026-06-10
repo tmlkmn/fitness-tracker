@@ -394,6 +394,7 @@
     "weeklyView": "Weekly View",
     "today": "Today",
     "fullCalendar": "Full Calendar",
+    "goToDayDetail": "Open day",
     "aiWeeklyPlan": "{action} Weekly Plan with AI",
     "aiWeeklyPlanShort": "Weekly Plan with AI",
     "actionCreate": "Create",

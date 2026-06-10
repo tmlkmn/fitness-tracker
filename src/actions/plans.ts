@@ -124,14 +124,14 @@ export async function getWeeklyPlanById(id: number) {
 export async function getDatesWithPlansForMonth(
   year: number,
   month: number
-): Promise<string[]> {
+): Promise<{ date: string; planType: string }[]> {
   const user = await getAuthUser();
   const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
   const lastDay = new Date(year, month, 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
   const rows = await db
-    .select({ date: dailyPlans.date })
+    .select({ date: dailyPlans.date, planType: dailyPlans.planType })
     .from(dailyPlans)
     .innerJoin(weeklyPlans, eq(dailyPlans.weeklyPlanId, weeklyPlans.id))
     .where(
@@ -142,7 +142,9 @@ export async function getDatesWithPlansForMonth(
         isNotNull(dailyPlans.date)
       )
     );
-  return rows.map((r) => r.date).filter(Boolean) as string[];
+  return rows
+    .filter((r) => r.date)
+    .map((r) => ({ date: r.date as string, planType: r.planType }));
 }
 
 export async function getTodayDashboardData() {

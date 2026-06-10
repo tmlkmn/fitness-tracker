@@ -10,6 +10,7 @@ import {
   readinessBandColor,
   type ReadinessBand,
 } from "@/lib/readiness-policy";
+import { getPlanTypeIcon, getPlanTypeColor } from "@/lib/icon-map";
 
 interface WeekStripProps {
   weekStartDate: Date;
@@ -18,6 +19,7 @@ interface WeekStripProps {
   onPrevWeek: () => void;
   onNextWeek: () => void;
   datesWithPlans?: Set<string>;
+  planTypeByDate?: Map<string, string>;
   weekStartsOn?: WeekStart;
   readinessByDate?: Map<string, ReadinessBand>;
 }
@@ -40,6 +42,7 @@ export function WeekStrip({
   onPrevWeek,
   onNextWeek,
   datesWithPlans,
+  planTypeByDate,
   weekStartsOn = "monday",
   readinessByDate,
 }: WeekStripProps) {
@@ -84,6 +87,8 @@ export function WeekStrip({
           const isToday = dateStr === todayStr;
           const hasPlan = datesWithPlans?.has(dateStr) ?? false;
           const band = readinessByDate?.get(dateStr);
+          const planType = planTypeByDate?.get(dateStr);
+          const PlanIcon = planType ? getPlanTypeIcon(planType) : null;
           return (
             <button
               key={dateStr}
@@ -108,8 +113,20 @@ export function WeekStrip({
               <span className={cn("text-lg font-bold", isToday && !isSelected && "text-primary")}>
                 {dayNum}
               </span>
-              {hasPlan && !isSelected && !band && (
-                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+              {PlanIcon && planType ? (
+                <PlanIcon
+                  className={cn(
+                    "h-3 w-3 mt-0.5",
+                    isSelected ? "text-primary-foreground/80" : getPlanTypeColor(planType),
+                  )}
+                  aria-hidden
+                />
+              ) : (
+                hasPlan &&
+                !isSelected &&
+                !band && (
+                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+                )
               )}
               {band && (
                 <span

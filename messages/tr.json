@@ -394,6 +394,7 @@
     "weeklyView": "Haftalık Görünüm",
     "today": "Bugün",
     "fullCalendar": "Tüm Takvim",
+    "goToDayDetail": "Gün sayfası",
     "aiWeeklyPlan": "AI ile Haftalık Plan {action}",
     "aiWeeklyPlanShort": "AI ile Haftalık Plan",
     "actionCreate": "Oluştur",

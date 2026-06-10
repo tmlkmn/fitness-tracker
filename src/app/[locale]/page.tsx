@@ -17,8 +17,6 @@ import {
   Bot,
   ShoppingCart,
   CreditCard,
-  Moon,
-  Waves,
   ChevronRight,
   Target,
   Scale,
@@ -48,13 +46,7 @@ import { PageTour } from "@/components/onboarding/page-tour";
 import { GettingStartedChecklist } from "@/components/onboarding/getting-started-checklist";
 import { NotificationPromptCard } from "@/components/notifications/notification-prompt-card";
 import { useDailyGreeting } from "@/hooks/use-greeting";
-
-const PLAN_TYPE_ICONS: Record<string, { icon: typeof Dumbbell; color: string }> = {
-  workout: { icon: Dumbbell, color: "text-green-400 bg-green-400/10" },
-  swimming: { icon: Waves, color: "text-blue-400 bg-blue-400/10" },
-  rest: { icon: Moon, color: "text-yellow-400 bg-yellow-400/10" },
-  nutrition: { icon: Utensils, color: "text-emerald-400 bg-emerald-400/10" },
-};
+import { PLAN_TYPE_ICONS } from "@/lib/icon-map";
 
 function ProgressBar({ completed, total, color }: { completed: number; total: number; color: string }) {
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -273,7 +265,7 @@ export default function HomePage() {
                 const cfg = PLAN_TYPE_ICONS[today.dailyPlan.planType] ?? PLAN_TYPE_ICONS.workout;
                 const Icon = cfg.icon;
                 return (
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.color}`}>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.color} ${cfg.bg}`}>
                     <Icon className="h-3 w-3" />
                     {planTypeLabel(today.dailyPlan.planType)}
                   </span>

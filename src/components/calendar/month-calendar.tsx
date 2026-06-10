@@ -6,6 +6,7 @@ import { getWeekDayLabels, type WeekStart } from "@/lib/week";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
+import { getPlanTypeIcon, getPlanTypeColor } from "@/lib/icon-map";
 
 interface MonthCalendarProps {
   selectedDate: string;
@@ -14,6 +15,7 @@ interface MonthCalendarProps {
   viewMonth: number; // 1-indexed
   onChangeMonth: (year: number, month: number) => void;
   datesWithPlans?: Set<string>;
+  planTypeByDate?: Map<string, string>;
   weekStartsOn?: WeekStart;
 }
 
@@ -71,6 +73,7 @@ export function MonthCalendar({
   viewMonth,
   onChangeMonth,
   datesWithPlans,
+  planTypeByDate,
   weekStartsOn = "monday",
 }: MonthCalendarProps) {
   const t = useTranslations("calendar");
@@ -139,6 +142,8 @@ export function MonthCalendar({
           const isSelected = dateStr === selectedDate;
           const isToday = dateStr === todayStr;
           const hasPlan = datesWithPlans?.has(dateStr) ?? false;
+          const planType = isCurrentMonth ? planTypeByDate?.get(dateStr) : undefined;
+          const PlanIcon = planType ? getPlanTypeIcon(planType) : null;
 
           return (
             <button
@@ -157,8 +162,25 @@ export function MonthCalendar({
               )}
             >
               {dayNum}
-              {hasPlan && !isSelected && !isToday && isCurrentMonth && (
-                <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-primary" />
+              {PlanIcon && planType ? (
+                <PlanIcon
+                  className={cn(
+                    "absolute bottom-0.5 h-2.5 w-2.5",
+                    isSelected
+                      ? "text-primary-foreground/80"
+                      : isToday
+                        ? "text-primary"
+                        : getPlanTypeColor(planType),
+                  )}
+                  aria-hidden
+                />
+              ) : (
+                hasPlan &&
+                !isSelected &&
+                !isToday &&
+                isCurrentMonth && (
+                  <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-primary" />
+                )
               )}
             </button>
           );

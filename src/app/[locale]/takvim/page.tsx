@@ -36,6 +36,7 @@ import {
   Calendar,
   CalendarDays,
   ChevronUp,
+  ChevronRight,
   CircleDot,
   Sparkles,
   Plus,
@@ -103,11 +104,17 @@ export default function TakvimPage() {
   const { data: weekPlanDates } = useDatesWithPlans(weekYear, weekMonth);
 
   const datesWithPlans = useMemo(() => {
-    const set = new Set(planDates ?? []);
-    if (weekPlanDates) {
-      for (const d of weekPlanDates) set.add(d);
-    }
+    const set = new Set<string>();
+    for (const d of planDates ?? []) set.add(d.date);
+    for (const d of weekPlanDates ?? []) set.add(d.date);
     return set;
+  }, [planDates, weekPlanDates]);
+
+  const planTypeByDate = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const d of planDates ?? []) map.set(d.date, d.planType);
+    for (const d of weekPlanDates ?? []) map.set(d.date, d.planType);
+    return map;
   }, [planDates, weekPlanDates]);
 
   const selectedDayPlan = data?.dailyPlans.find(
@@ -289,6 +296,7 @@ export default function TakvimPage() {
                 setViewMonth(m);
               }}
               datesWithPlans={datesWithPlans}
+              planTypeByDate={planTypeByDate}
               weekStartsOn={weekStartsOn}
             />
             <Button
@@ -322,6 +330,7 @@ export default function TakvimPage() {
                 onPrevWeek={handlePrevWeek}
                 onNextWeek={handleNextWeek}
                 datesWithPlans={datesWithPlans}
+                planTypeByDate={planTypeByDate}
                 weekStartsOn={weekStartsOn}
                 readinessByDate={readinessByDate}
               />
@@ -470,9 +479,23 @@ export default function TakvimPage() {
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground">
-          {formatLocaleDate(selectedDate, locale)}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm text-muted-foreground">
+            {formatLocaleDate(selectedDate, locale)}
+          </p>
+          {activeDailyPlanId && (
+            <Link href={`/gun/${activeDailyPlanId}`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-muted-foreground hover:text-foreground"
+              >
+                {t("goToDayDetail")}
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          )}
+        </div>
 
         <div data-tour="day-detail">
         {isLoading ? (
