@@ -15,9 +15,9 @@ export interface AdminBreadcrumbSegment {
 }
 
 /**
- * Sticky breadcrumb shown under the page header on admin sub-pages so
- * the admin can always retrace their steps. Last segment is rendered
- * as plain text (current page); earlier segments link back.
+ * Sticky breadcrumb pinned to the top of admin sub-pages (which render no
+ * page Header) so the admin can always retrace their steps. Last segment is
+ * rendered as plain text (current page); earlier segments link back.
  */
 export function AdminBreadcrumb({
   segments,
@@ -26,7 +26,7 @@ export function AdminBreadcrumb({
   return (
     <nav
       aria-label="Breadcrumb"
-      className="sticky top-14 z-30 border-b border-border/60 bg-background/95 backdrop-blur px-4 py-2"
+      className="sticky top-0 z-30 border-b border-border/60 bg-background/95 backdrop-blur px-4 py-2"
     >
       <ol className="max-w-lg mx-auto flex items-center gap-1 text-xs text-muted-foreground overflow-x-auto scrollbar-none">
         {segments.map((seg, i) => {
