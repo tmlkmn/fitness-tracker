@@ -3,7 +3,6 @@
 import { db } from "@/db";
 import { sleepLogs } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 
 function computeDurationMinutes(bedtime: string, wakeTime: string): number {
@@ -60,8 +59,6 @@ export async function upsertSleepLog(data: SleepData) {
         notes: data.notes ?? null,
       },
     });
-
-  revalidatePath("/");
 }
 
 export async function deleteSleepLog(id: number) {
@@ -73,7 +70,6 @@ export async function deleteSleepLog(id: number) {
   if (!log) throw new Error("Not found");
 
   await db.delete(sleepLogs).where(eq(sleepLogs.id, id));
-  revalidatePath("/");
 }
 
 export async function getSleepLogs(limit = 30) {

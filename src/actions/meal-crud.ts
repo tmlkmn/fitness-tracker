@@ -3,7 +3,6 @@
 import { db } from "@/db";
 import { meals } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
   verifyMealOwnership,
@@ -45,7 +44,6 @@ export async function createMeal(dailyPlanId: number, data: MealInput) {
     })
     .returning({ id: meals.id });
 
-  revalidatePath("/");
   return meal;
 }
 
@@ -66,8 +64,6 @@ export async function updateMeal(mealId: number, data: MealInput) {
       icon: data.icon ?? null,
     })
     .where(eq(meals.id, mealId));
-
-  revalidatePath("/");
 }
 
 export async function deleteMeal(mealId: number) {
@@ -89,9 +85,6 @@ export async function deleteMeal(mealId: number) {
     )
     WHERE meal_ids @> ${JSON.stringify([mealId])}::jsonb
   `);
-
-  revalidatePath("/");
-  revalidatePath("/alisveris");
 }
 
 export async function bulkCreateMeals(dailyPlanId: number, items: MealInput[]) {
@@ -113,8 +106,6 @@ export async function bulkCreateMeals(dailyPlanId: number, items: MealInput[]) {
       sortOrder: i,
     });
   }
-
-  revalidatePath("/");
 }
 
 export async function deleteAllMeals(dailyPlanId: number) {
@@ -122,6 +113,4 @@ export async function deleteAllMeals(dailyPlanId: number) {
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
   await db.delete(meals).where(eq(meals.dailyPlanId, dailyPlanId));
-
-  revalidatePath("/");
 }

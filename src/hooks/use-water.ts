@@ -78,9 +78,12 @@ export function useIncrementWater() {
       qc.setQueryData(["water-today"], context?.prevToday ?? null);
     },
     onSettled: (_data, _err, { dateStr }) => {
-      qc.invalidateQueries({ queryKey: ["water", dateStr] });
-      qc.invalidateQueries({ queryKey: ["water-today"] });
-      qc.invalidateQueries({ queryKey: ["water-logs"] });
+      // Mark stale without an immediate refetch — refetching the water server
+      // actions would re-render the route's Server Components on every +/- tap.
+      // The optimistic count already reflects the change.
+      qc.invalidateQueries({ queryKey: ["water", dateStr], refetchType: "none" });
+      qc.invalidateQueries({ queryKey: ["water-today"], refetchType: "none" });
+      qc.invalidateQueries({ queryKey: ["water-logs"], refetchType: "none" });
     },
   });
 }

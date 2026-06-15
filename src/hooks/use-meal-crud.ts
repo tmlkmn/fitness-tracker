@@ -63,8 +63,48 @@ export function useUpdateMeal() {
         fatG?: string | null;
       };
     }) => updateMeal(mealId, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
+    onMutate: async ({ mealId, data }) => {
+      await qc.cancelQueries({ queryKey: ["meals.byDay"] });
+      const queries = qc.getQueriesData<MealSnapshot[]>({
+        queryKey: ["meals.byDay"],
+      });
+      for (const [key, cached] of queries) {
+        if (Array.isArray(cached)) {
+          qc.setQueryData(
+            key,
+            cached.map((m) =>
+              m.id === mealId
+                ? {
+                    ...m,
+                    mealTime: data.mealTime,
+                    mealLabel: data.mealLabel,
+                    content: data.content,
+                    calories: data.calories ?? null,
+                    proteinG: data.proteinG ?? null,
+                    carbsG: data.carbsG ?? null,
+                    fatG: data.fatG ?? null,
+                  }
+                : m,
+            ),
+          );
+        }
+      }
+      return { queries };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.queries) {
+        for (const [key, cached] of context.queries) {
+          qc.setQueryData(key, cached);
+        }
+      }
+      toast.error("Öğün güncellenemedi");
+    },
+    onSettled: () => {
+      // Mark stale without an immediate refetch — refetching getMealsByDay
+      // (a server action) would re-render the route's Server Components and
+      // cause a visible full-page refresh. The optimistic patch already shows
+      // the change; reconciliation happens on next mount/refetch.
+      qc.invalidateQueries({ queryKey: ["meals.byDay"], refetchType: "none" });
     },
   });
 }
@@ -111,7 +151,7 @@ export function useDeleteMeal() {
           label: "Geri Al",
           onClick: async () => {
             try {
-              await createMeal(snap.dailyPlanId, {
+              const created = await createMeal(snap.dailyPlanId, {
                 mealTime: snap.mealTime,
                 mealLabel: snap.mealLabel,
                 content: snap.content,
@@ -120,8 +160,16 @@ export function useDeleteMeal() {
                 carbsG: snap.carbsG ?? null,
                 fatG: snap.fatG ?? null,
               });
-              qc.invalidateQueries({ queryKey: ["meals.byDay"] });
-              qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+              const key = ["meals.byDay", snap.dailyPlanId];
+              const existing = qc.getQueryData<MealSnapshot[]>(key);
+              if (Array.isArray(existing)) {
+                qc.setQueryData(key, [
+                  ...existing,
+                  { ...snap, id: created.id },
+                ]);
+              }
+              qc.invalidateQueries({ queryKey: ["meals.byDay"], refetchType: "none" });
+              qc.invalidateQueries({ queryKey: ["today-dashboard"], refetchType: "none" });
               toast.success("Geri alındı");
             } catch {
               toast.error("Geri alma başarısız");
@@ -131,7 +179,10 @@ export function useDeleteMeal() {
       });
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
+      qc.invalidateQueries({ queryKey: ["meals.byDay"], refetchType: "none" });
+      // deleteMeal also strips this meal from any shopping-list references;
+      // mark shopping stale so it reconciles when that page is next visited.
+      qc.invalidateQueries({ queryKey: ["shopping"], refetchType: "none" });
     },
   });
 }
@@ -180,6 +231,8 @@ export function useDeleteAllMeals() {
                   fatG: m.fatG ?? null,
                 })),
               );
+              // bulkCreateMeals doesn't return ids; refetch to get fresh rows
+              // (re-inserting stale snapshot ids would break toggles).
               qc.invalidateQueries({ queryKey: ["meals.byDay"] });
               qc.invalidateQueries({ queryKey: ["today-dashboard"] });
               toast.success(`${count} öğün geri yüklendi`);
@@ -191,7 +244,7 @@ export function useDeleteAllMeals() {
       });
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
+      qc.invalidateQueries({ queryKey: ["meals.byDay"], refetchType: "none" });
     },
   });
 }

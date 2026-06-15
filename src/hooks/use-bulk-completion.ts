@@ -35,8 +35,8 @@ export function useBulkCompleteMeals() {
       }
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["meals.byDay"] });
-      qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["meals.byDay"], refetchType: "none" });
+      qc.invalidateQueries({ queryKey: ["today-dashboard"], refetchType: "none" });
     },
   });
 }
@@ -63,8 +63,8 @@ export function useBulkCompleteExercises() {
       }
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["exercises"] });
-      qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["exercises"], refetchType: "none" });
+      qc.invalidateQueries({ queryKey: ["today-dashboard"], refetchType: "none" });
     },
   });
 }
