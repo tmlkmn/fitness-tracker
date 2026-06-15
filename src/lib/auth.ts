@@ -51,6 +51,16 @@ export const auth = betterAuth({
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
+    // Cache the session (incl. additionalFields like isApproved, role,
+    // membership/billing) in a signed cookie so every getAuthUser() call no
+    // longer round-trips to the DB. A single dashboard load fires ~6 server
+    // actions, each previously doing its own session lookup; this collapses
+    // them to a cookie read. Tradeoff: approval/membership/billing changes can
+    // be up to `maxAge` stale before the cookie is refreshed.
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5, // 5 minutes
+    },
   },
   plugins: [
     admin({

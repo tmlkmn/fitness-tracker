@@ -106,9 +106,21 @@ export async function getWeeklyPlanByDate(dateStr: string) {
 }
 
 export async function getDailyPlansForWeekByDate(dateStr: string) {
-  const weekly = await getWeeklyPlanByDate(dateStr);
+  // Resolve the weekly plan id once via the day, then fetch the weekly plan and
+  // its days in parallel. `daily` is already user-scoped, so its weeklyPlanId is
+  // owned — this avoids getWeeklyPlanByDate's extra getDailyPlanByDate call and
+  // getDailyPlansByWeek's redundant ownership-verify query.
+  const daily = await getDailyPlanByDate(dateStr);
+  if (!daily?.weeklyPlanId) return { weeklyPlan: null, dailyPlans: [] };
+  const [weekly, days] = await Promise.all([
+    getWeeklyPlanById(daily.weeklyPlanId),
+    db
+      .select()
+      .from(dailyPlans)
+      .where(eq(dailyPlans.weeklyPlanId, daily.weeklyPlanId))
+      .orderBy(asc(dailyPlans.dayOfWeek)),
+  ]);
   if (!weekly) return { weeklyPlan: null, dailyPlans: [] };
-  const days = await getDailyPlansByWeek(weekly.id);
   return { weeklyPlan: weekly, dailyPlans: days };
 }
 
@@ -154,6 +166,9 @@ export async function getTodayDashboardData() {
   const dailyPlan = await getDailyPlanByDate(todayStr);
   if (!dailyPlan) return { dailyPlan: null, meals: [], exercises: [], weeklyPlan: null };
 
+  // `dailyPlan` is already scoped to the user (join on weeklyPlans.userId), so
+  // its weeklyPlanId is owned — fetch the weekly plan by id directly instead of
+  // calling getWeeklyPlanByDate, which would re-run getDailyPlanByDate.
   const [mealRows, exerciseRows, weeklyPlan] = await Promise.all([
     db
       .select()
@@ -165,7 +180,9 @@ export async function getTodayDashboardData() {
       .from(exercises)
       .where(eq(exercises.dailyPlanId, dailyPlan.id))
       .orderBy(exercises.sortOrder),
-    getWeeklyPlanByDate(todayStr),
+    dailyPlan.weeklyPlanId
+      ? getWeeklyPlanById(dailyPlan.weeklyPlanId)
+      : Promise.resolve(null),
   ]);
 
   return { dailyPlan, meals: mealRows, exercises: exerciseRows, weeklyPlan };
