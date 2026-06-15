@@ -3,7 +3,6 @@
 import { db } from "@/db";
 import { exercises } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import {
   verifyExerciseOwnership,
@@ -45,7 +44,6 @@ export async function createExercise(
     })
     .returning({ id: exercises.id });
 
-  revalidatePath("/");
   return exercise;
 }
 
@@ -69,8 +67,6 @@ export async function updateExercise(
       notes: data.notes ?? null,
     })
     .where(eq(exercises.id, exerciseId));
-
-  revalidatePath("/");
 }
 
 export async function deleteExercise(exerciseId: number) {
@@ -78,8 +74,6 @@ export async function deleteExercise(exerciseId: number) {
   await verifyExerciseOwnership(exerciseId, user.id);
 
   await db.delete(exercises).where(eq(exercises.id, exerciseId));
-
-  revalidatePath("/");
 }
 
 export async function bulkCreateExercises(
@@ -105,8 +99,6 @@ export async function bulkCreateExercises(
       sortOrder: i,
     });
   }
-
-  revalidatePath("/");
 }
 
 export async function deleteAllExercises(dailyPlanId: number) {
@@ -114,6 +106,4 @@ export async function deleteAllExercises(dailyPlanId: number) {
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
   await db.delete(exercises).where(eq(exercises.dailyPlanId, dailyPlanId));
-
-  revalidatePath("/");
 }

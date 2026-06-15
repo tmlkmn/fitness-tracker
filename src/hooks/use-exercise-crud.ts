@@ -65,8 +65,49 @@ export function useUpdateExercise() {
         notes?: string | null;
       };
     }) => updateExercise(exerciseId, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["exercises"] });
+    onMutate: async ({ exerciseId, data }) => {
+      await qc.cancelQueries({ queryKey: ["exercises"] });
+      const queries = qc.getQueriesData<ExerciseSnapshot[]>({
+        queryKey: ["exercises"],
+      });
+      for (const [key, cached] of queries) {
+        if (Array.isArray(cached)) {
+          qc.setQueryData(
+            key,
+            cached.map((e) =>
+              e.id === exerciseId
+                ? {
+                    ...e,
+                    section: data.section,
+                    sectionLabel: data.sectionLabel,
+                    name: data.name,
+                    sets: data.sets ?? null,
+                    reps: data.reps ?? null,
+                    restSeconds: data.restSeconds ?? null,
+                    durationMinutes: data.durationMinutes ?? null,
+                    notes: data.notes ?? null,
+                  }
+                : e,
+            ),
+          );
+        }
+      }
+      return { queries };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.queries) {
+        for (const [key, cached] of context.queries) {
+          qc.setQueryData(key, cached);
+        }
+      }
+      toast.error("Egzersiz güncellenemedi");
+    },
+    onSettled: () => {
+      // Mark stale without an immediate refetch — refetching getExercisesByDay
+      // (a server action) would re-render the route's Server Components and
+      // cause a visible full-page refresh. The optimistic patch already shows
+      // the change; reconciliation happens on next mount/refetch.
+      qc.invalidateQueries({ queryKey: ["exercises"], refetchType: "none" });
     },
   });
 }
@@ -113,7 +154,7 @@ export function useDeleteExercise() {
           label: "Geri Al",
           onClick: async () => {
             try {
-              await createExercise(snap.dailyPlanId, {
+              const created = await createExercise(snap.dailyPlanId, {
                 section: snap.section,
                 sectionLabel: snap.sectionLabel,
                 name: snap.name,
@@ -123,8 +164,16 @@ export function useDeleteExercise() {
                 durationMinutes: snap.durationMinutes ?? null,
                 notes: snap.notes ?? null,
               });
-              qc.invalidateQueries({ queryKey: ["exercises"] });
-              qc.invalidateQueries({ queryKey: ["today-dashboard"] });
+              const key = ["exercises", snap.dailyPlanId];
+              const existing = qc.getQueryData<ExerciseSnapshot[]>(key);
+              if (Array.isArray(existing)) {
+                qc.setQueryData(key, [
+                  ...existing,
+                  { ...snap, id: created.id },
+                ]);
+              }
+              qc.invalidateQueries({ queryKey: ["exercises"], refetchType: "none" });
+              qc.invalidateQueries({ queryKey: ["today-dashboard"], refetchType: "none" });
               toast.success("Geri alındı");
             } catch {
               toast.error("Geri alma başarısız");
@@ -134,7 +183,7 @@ export function useDeleteExercise() {
       });
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["exercises"] });
+      qc.invalidateQueries({ queryKey: ["exercises"], refetchType: "none" });
     },
   });
 }
@@ -184,6 +233,8 @@ export function useDeleteAllExercises() {
                   notes: e.notes ?? null,
                 })),
               );
+              // bulkCreateExercises doesn't return ids; refetch to get fresh
+              // rows (re-inserting stale snapshot ids would break toggles).
               qc.invalidateQueries({ queryKey: ["exercises"] });
               qc.invalidateQueries({ queryKey: ["today-dashboard"] });
               toast.success(`${count} egzersiz geri yüklendi`);
@@ -195,7 +246,7 @@ export function useDeleteAllExercises() {
       });
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["exercises"] });
+      qc.invalidateQueries({ queryKey: ["exercises"], refetchType: "none" });
     },
   });
 }
