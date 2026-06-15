@@ -87,6 +87,11 @@ export function useWeekPlansByDate(dateStr: string) {
     queryKey: ["week-plans-date", dateStr],
     queryFn: () => getDailyPlansForWeekByDate(dateStr),
     enabled: !!dateStr,
+    // Persist the week structure to IndexedDB so the calendar's day-detail panel
+    // restores instantly on reload/return instead of showing a skeleton behind a
+    // network round-trip. Mutations still invalidate this key in-session; the
+    // 60s staleTime triggers a silent background refresh after restore.
+    meta: { persist: true },
   });
 }
 
@@ -95,6 +100,9 @@ export function useDatesWithPlans(year: number, month: number) {
     queryKey: ["dates-with-plans", year, month],
     queryFn: () => getDatesWithPlansForMonth(year, month),
     enabled: !!year && !!month,
+    // Persist the month's plan markers so the week strip / month grid dots render
+    // instantly from IndexedDB on revisit rather than re-fetching each load.
+    meta: { persist: true },
   });
 }
 
