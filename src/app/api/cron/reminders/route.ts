@@ -79,12 +79,12 @@ function timeToMinutes(time: string): number {
   return h * 60 + m;
 }
 
-// Cron runs every 5 min (vercel.json), so target times rarely line up with
-// the firing minute exactly. A reminder at 09:03 must fire from the 09:05
+// Cron runs every 30 min (vercel.json), so target times rarely line up with
+// the firing minute exactly. A reminder at 09:03 must fire from the 09:30
 // invocation. TOLERANCE_MIN is the look-back window: a target is "due" if it
 // fell in [current - TOLERANCE_MIN + 1, current]. Keep this in sync with the
 // cron schedule.
-const TOLERANCE_MIN = 5;
+const TOLERANCE_MIN = 30;
 
 function isDue(targetHhmm: string, currentHhmm: string): boolean {
   const t = timeToMinutes(targetHhmm);
