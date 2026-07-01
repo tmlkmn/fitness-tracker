@@ -87,7 +87,7 @@ export function getAIClient(): Anthropic {
 
 export const AI_MODELS = {
   fast: "claude-haiku-4-5",
-  smart: "claude-sonnet-4-6",
+  smart: "claude-sonnet-5",
 } as const;
 
 // Feature-based daily rate limits
@@ -229,12 +229,45 @@ export async function getRemainingQuota(
   return { remaining: Math.max(0, limit - (row?.count ?? 0)), limit };
 }
 
+// Per-MTok USD pricing keyed by model id. Sonnet 5 ships with introductory
+// pricing ($2/$10) through 2026-08-31, reverting to standard ($3/$15) after.
+// Note: inputTokens here is the full-price (uncached) input the call sites log;
+// cache read/write tokens aren't tracked, so this is a slight over-estimate of
+// the real bill when prompt caching hits. Good enough for the admin dashboards.
+const SONNET_5_INTRO_END_MS = Date.UTC(2026, 8, 1); // 2026-09-01 UTC (intro valid through Aug 31)
+
+function getModelRates(model: string | undefined): { input: number; output: number } | null {
+  switch (model) {
+    case AI_MODELS.fast: // claude-haiku-4-5
+      return { input: 1, output: 5 };
+    case AI_MODELS.smart: // claude-sonnet-5
+      return Date.now() < SONNET_5_INTRO_END_MS
+        ? { input: 2, output: 10 }
+        : { input: 3, output: 15 };
+    default:
+      return null;
+  }
+}
+
+function computeEstCost(
+  model: string | undefined,
+  inputTokens: number | undefined,
+  outputTokens: number | undefined,
+): number | undefined {
+  const rates = getModelRates(model);
+  if (!rates || inputTokens == null || outputTokens == null) return undefined;
+  return (inputTokens * rates.input + outputTokens * rates.output) / 1_000_000;
+}
+
 export async function logAiUsage(
   userId: string,
   feature: AIFeature,
   options?: LogAiUsageOptions,
 ): Promise<void> {
   try {
+    const estCost =
+      options?.estCostUsd ??
+      computeEstCost(options?.model, options?.inputTokens, options?.outputTokens);
     await db.insert(aiUsageLogs).values({
       userId,
       feature,
@@ -245,7 +278,7 @@ export async function logAiUsage(
       durationMs: options?.durationMs ?? null,
       model: options?.model ?? null,
       promptVersion: options?.promptVersion ?? null,
-      estCostUsd: options?.estCostUsd != null ? String(options.estCostUsd) : null,
+      estCostUsd: estCost != null ? String(estCost) : null,
     });
   } catch (err) {
     // Logging must not break the feature — but a silent catch hid real DB
