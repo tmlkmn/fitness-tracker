@@ -1994,6 +1994,10 @@
       "save": "Kaydet",
       "cancel": "İptal",
       "selectEvent": "Etkinlik seç",
+      "hint": "Tipik bir gününü saat saat ekle. Öğün ve antrenman hatırlatıcıları bu akışa göre zamanlanır.",
+      "useTemplate": "Örnek akışla başla",
+      "saved": "Günlük akış kaydedildi",
+      "saveError": "Kaydedilemedi",
       "events": {
         "Uyanış": "Uyanış",
         "Kahvaltı": "Kahvaltı",
@@ -2014,6 +2018,10 @@
       "cancel": "İptal",
       "selectTime": "Zaman seçin",
       "supplementsPlaceholder": "ör. Omega-3, Kreatin",
+      "hint": "Takviyelerini hangi zaman diliminde aldığını ekle.",
+      "useTemplate": "Örnekle başla",
+      "saved": "Takviye takvimi kaydedildi",
+      "saveError": "Kaydedilemedi",
       "periods": {
         "Sabah": "Sabah (uyanınca)",
         "Kahvaltı ile": "Kahvaltı ile",

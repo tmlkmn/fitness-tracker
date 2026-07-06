@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { updateDailyRoutine, updateWeekendRoutine } from "@/actions/user";
 import { useUserProfile } from "@/hooks/use-user";
 import {
@@ -12,11 +13,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTINE_EVENTS, normalizeEvent } from "@/lib/routine-constants";
-import { AlertTriangle, Loader2, Plus, Trash2 } from "lucide-react";
+import { Clock, Loader2, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 
 type RoutineItem = { time: string; event: string };
+
+const EVENT_ICONS: Record<string, string> = {
+  "Uyanış": "🌅",
+  "Kahvaltı": "🍳",
+  "İşe Gidiş": "🚗",
+  "Öğle Yemeği": "🥗",
+  "İşten Çıkış": "🏠",
+  "Akşam Yemeği": "🍽️",
+  "Antrenman": "🏋️",
+  "Uyku": "😴",
+};
+
+const TEMPLATE: RoutineItem[] = [
+  { time: "07:00", event: "Uyanış" },
+  { time: "08:00", event: "Kahvaltı" },
+  { time: "12:30", event: "Öğle Yemeği" },
+  { time: "17:00", event: "Antrenman" },
+  { time: "19:00", event: "Akşam Yemeği" },
+  { time: "23:00", event: "Uyku" },
+];
 
 interface Props {
   profile: ReturnType<typeof useUserProfile>["data"];
@@ -27,12 +49,11 @@ export function DailyRoutineEditor({ profile }: Props) {
   const t = useTranslations("settings.dailyRoutine");
   const [weekdayItems, setWeekdayItems] = useState<RoutineItem[]>([]);
   const [weekendItems, setWeekendItems] = useState<RoutineItem[]>([]);
-  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"weekday" | "weekend">("weekday");
 
   useEffect(() => {
-    if (profile?.dailyRoutine && Array.isArray(profile.dailyRoutine)) {
+    if (Array.isArray(profile?.dailyRoutine)) {
       setWeekdayItems(
         (profile.dailyRoutine as RoutineItem[]).map((r) => ({
           ...r,
@@ -40,7 +61,7 @@ export function DailyRoutineEditor({ profile }: Props) {
         })),
       );
     }
-    if (profile?.weekendRoutine && Array.isArray(profile.weekendRoutine)) {
+    if (Array.isArray(profile?.weekendRoutine)) {
       setWeekendItems(
         (profile.weekendRoutine as RoutineItem[]).map((r) => ({
           ...r,
@@ -50,219 +71,172 @@ export function DailyRoutineEditor({ profile }: Props) {
     }
   }, [profile?.dailyRoutine, profile?.weekendRoutine]);
 
+  const items = activeTab === "weekday" ? weekdayItems : weekendItems;
+  const setItems = activeTab === "weekday" ? setWeekdayItems : setWeekendItems;
+
   const handleSave = async () => {
-    const filteredWeekday = weekdayItems
-      .filter((i) => i.time.trim() && i.event.trim())
-      .sort((a, b) => a.time.localeCompare(b.time));
-    const filteredWeekend = weekendItems
-      .filter((i) => i.time.trim() && i.event.trim())
-      .sort((a, b) => a.time.localeCompare(b.time));
+    const clean = (arr: RoutineItem[]) =>
+      arr
+        .filter((i) => i.time.trim() && i.event.trim())
+        .sort((a, b) => a.time.localeCompare(b.time));
+    const fw = clean(weekdayItems);
+    const fwe = clean(weekendItems);
     setSaving(true);
     try {
-      await updateDailyRoutine(filteredWeekday);
-      await updateWeekendRoutine(filteredWeekend);
-      setWeekdayItems(filteredWeekday);
-      setWeekendItems(filteredWeekend);
+      await updateDailyRoutine(fw);
+      await updateWeekendRoutine(fwe);
+      setWeekdayItems(fw);
+      setWeekendItems(fwe);
       await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      setEditing(false);
+      toast.success(t("saved"));
+    } catch {
+      toast.error(t("saveError"));
     } finally {
       setSaving(false);
     }
   };
 
-  const items = activeTab === "weekday" ? weekdayItems : weekendItems;
-  const setItems = activeTab === "weekday" ? setWeekdayItems : setWeekendItems;
+  if (!profile) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-3 w-3/4" />
+        <Skeleton className="h-10 w-full rounded-lg" />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-14 w-full rounded-lg" />
+        ))}
+        <Skeleton className="h-10 w-full rounded-lg" />
+      </div>
+    );
+  }
 
-  const startEditing = () => {
-    setWeekdayItems((prev) => [...prev].sort((a, b) => a.time.localeCompare(b.time)));
-    setWeekendItems((prev) => [...prev].sort((a, b) => a.time.localeCompare(b.time)));
-    setEditing(true);
-  };
-
-  const eventLabel = (event: string) => {
-    const known = ROUTINE_EVENTS.find((ev) => ev.value === event);
-    return known ? t(`events.${known.value}`) : event;
-  };
-
-  const tabButton = (tab: "weekday" | "weekend", label: string) => (
+  const tab = (key: "weekday" | "weekend", count: number) => (
     <button
-      onClick={() => setActiveTab(tab)}
-      className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-        activeTab === tab
-          ? "bg-primary/15 border-primary/40 text-primary"
-          : "bg-muted/50 border-transparent text-muted-foreground hover:bg-muted"
+      type="button"
+      onClick={() => setActiveTab(key)}
+      className={`h-9 rounded-md text-sm font-medium transition-colors ${
+        activeTab === key
+          ? "bg-background shadow-sm text-foreground"
+          : "text-muted-foreground hover:text-foreground"
       }`}
     >
-      {label}
+      {t(key)}
+      {count > 0 && (
+        <span className="ml-1.5 text-xs tabular-nums text-muted-foreground">
+          {count}
+        </span>
+      )}
     </button>
   );
 
-  if (!profile) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-3 w-20" />
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-5 w-full" />
-        ))}
-        <Skeleton className="h-8 w-full mt-2" />
-      </div>
-    );
-  }
-
-  if (!editing) {
-    const hasWeekend = weekendItems.length > 0;
-    return (
-      <div className="space-y-2">
-        {weekdayItems.length > 0 ? (
-          <>
-            {hasWeekend && (
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                {t("weekday")}
-              </p>
-            )}
-            {weekdayItems.map((item, i) => (
-              <div key={i} className="flex justify-between text-sm">
-                <span className="text-muted-foreground font-mono">{item.time}</span>
-                <span>{eventLabel(item.event)}</span>
-              </div>
-            ))}
-          </>
-        ) : (
-          <div className="space-y-1.5">
-            <p className="text-sm text-muted-foreground">{t("empty")}</p>
-            <div className="opacity-40 space-y-1">
-              {[
-                { time: "07:00", event: "Uyanış" },
-                { time: "08:00", event: "Kahvaltı" },
-                { time: "12:30", event: "Öğle Yemeği" },
-                { time: "17:00", event: "Antrenman" },
-                { time: "19:00", event: "Akşam Yemeği" },
-                { time: "23:00", event: "Uyku" },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between text-xs">
-                  <span className="font-mono">{item.time}</span>
-                  <span>{eventLabel(item.event)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {hasWeekend && (
-          <>
-            <div className="border-t border-border/50 my-2" />
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-              {t("weekend")}
-            </p>
-            {weekendItems.map((item, i) => (
-              <div key={i} className="flex justify-between text-sm">
-                <span className="text-muted-foreground font-mono">{item.time}</span>
-                <span>{eventLabel(item.event)}</span>
-              </div>
-            ))}
-          </>
-        )}
-        {weekdayItems.length > 0 && !hasWeekend && (
-          <>
-            <div className="border-t border-border/50 my-2" />
-            <button
-              onClick={startEditing}
-              className="flex items-center gap-2 text-xs text-yellow-500 hover:underline"
-            >
-              <AlertTriangle className="h-3 w-3" />
-              {t("weekendMissing")}
-            </button>
-          </>
-        )}
-        <button
-          onClick={startEditing}
-          className="text-xs text-primary hover:underline mt-2"
-        >
-          {weekdayItems.length > 0 ? t("edit") : t("add")}
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
-        {tabButton("weekday", t("weekday"))}
-        {tabButton("weekend", t("weekend"))}
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground leading-relaxed">{t("hint")}</p>
+
+      <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+        {tab("weekday", weekdayItems.length)}
+        {tab("weekend", weekendItems.length)}
       </div>
 
-      {items.map((item, i) => (
-        <div key={`${activeTab}-${i}`} className="flex items-center gap-2">
-          <input
-            type="time"
-            value={item.time}
-            onChange={(e) => {
-              const copy = [...items];
-              copy[i] = { ...copy[i], time: e.target.value };
-              setItems(copy);
-            }}
-            className="flex h-8 w-24 rounded-md border border-input bg-background px-2 text-xs font-mono"
-          />
-          <Select
-            value={item.event}
-            onValueChange={(val) => {
-              const copy = [...items];
-              copy[i] = { ...copy[i], event: val };
-              setItems(copy);
-            }}
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-8 px-4 text-center">
+          <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
+            <Clock className="h-5 w-5 text-primary" />
+          </div>
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setItems(TEMPLATE)}
           >
-            <SelectTrigger className="h-8 flex-1 text-xs">
-              <SelectValue placeholder={t("selectEvent")} />
-            </SelectTrigger>
-            <SelectContent>
-              {ROUTINE_EVENTS.map((ev) => {
-                const usedByOther = items.some(
-                  (it, j) => j !== i && it.event === ev.value,
-                );
-                return (
-                  <SelectItem key={ev.value} value={ev.value} disabled={usedByOther}>
-                    {t(`events.${ev.value}`)}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-          <button
-            onClick={() => setItems(items.filter((_, j) => j !== i))}
-            className="text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+            <Sparkles className="h-3.5 w-3.5" />
+            {t("useTemplate")}
+          </Button>
         </div>
-      ))}
+      ) : (
+        <div className="space-y-2">
+          {items.map((item, i) => (
+            <div
+              key={`${activeTab}-${i}`}
+              className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/20 p-2"
+            >
+              <input
+                type="time"
+                value={item.time}
+                onChange={(e) => {
+                  const copy = [...items];
+                  copy[i] = { ...copy[i], time: e.target.value };
+                  setItems(copy);
+                }}
+                className="h-10 w-28 shrink-0 rounded-md border border-input bg-background px-2 text-sm font-mono tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <Select
+                value={item.event}
+                onValueChange={(val) => {
+                  const copy = [...items];
+                  copy[i] = { ...copy[i], event: val };
+                  setItems(copy);
+                }}
+              >
+                <SelectTrigger className="h-10 flex-1 text-sm">
+                  <SelectValue placeholder={t("selectEvent")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROUTINE_EVENTS.map((ev) => {
+                    const usedByOther = items.some(
+                      (it, j) => j !== i && it.event === ev.value,
+                    );
+                    return (
+                      <SelectItem
+                        key={ev.value}
+                        value={ev.value}
+                        disabled={usedByOther}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span aria-hidden>{EVENT_ICONS[ev.value]}</span>
+                          {t(`events.${ev.value}`)}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <button
+                type="button"
+                onClick={() => setItems(items.filter((_, j) => j !== i))}
+                aria-label={t("cancel")}
+                className="h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <button
+        type="button"
         onClick={() => setItems([...items, { time: "", event: "" }])}
-        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+        className="w-full inline-flex items-center justify-center gap-1.5 h-10 rounded-lg border border-dashed border-border text-sm font-medium text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
       >
-        <Plus className="h-3 w-3" /> {t("addRow")}
+        <Plus className="h-4 w-4" /> {t("addRow")}
       </button>
-      <div className="flex gap-2 pt-1">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : t("save")}
-        </button>
-        <button
-          onClick={() => {
-            if (profile?.dailyRoutine && Array.isArray(profile.dailyRoutine)) {
-              setWeekdayItems(profile.dailyRoutine as RoutineItem[]);
-            }
-            if (profile?.weekendRoutine && Array.isArray(profile.weekendRoutine)) {
-              setWeekendItems(profile.weekendRoutine as RoutineItem[]);
-            }
-            setEditing(false);
-          }}
-          className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-input text-xs font-medium hover:bg-accent"
-        >
-          {t("cancel")}
-        </button>
-      </div>
+
+      <Button
+        type="button"
+        size="sm"
+        className="w-full h-10 gap-1.5"
+        onClick={handleSave}
+        disabled={saving}
+      >
+        {saving ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Save className="h-4 w-4" />
+        )}
+        {t("save")}
+      </Button>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { updateSupplementSchedule } from "@/actions/user";
 import { useUserProfile } from "@/hooks/use-user";
 import {
@@ -12,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Pill, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 
 type SupplementItem = { period: string; supplements: string };
 
@@ -27,6 +29,28 @@ const SUPPLEMENT_PERIODS = [
   "Yatmadan önce",
 ] as const;
 
+type Period = (typeof SUPPLEMENT_PERIODS)[number];
+
+const PERIOD_ICONS: Record<Period, string> = {
+  "Sabah": "🌅",
+  "Kahvaltı ile": "🍳",
+  "Öğle": "☀️",
+  "Antrenman öncesi": "⚡",
+  "Antrenman sonrası": "💪",
+  "Akşam yemeği ile": "🍽️",
+  "Yatmadan önce": "🌙",
+};
+
+const TEMPLATE: SupplementItem[] = [
+  { period: "Sabah", supplements: "Omega-3, Vitamin D" },
+  { period: "Antrenman öncesi", supplements: "Kreatin, Kafein" },
+  { period: "Yatmadan önce", supplements: "Magnezyum, ZMA" },
+];
+
+function isPeriod(v: string): v is Period {
+  return (SUPPLEMENT_PERIODS as readonly string[]).includes(v);
+}
+
 interface Props {
   profile: ReturnType<typeof useUserProfile>["data"];
 }
@@ -35,11 +59,10 @@ export function SupplementScheduleEditor({ profile }: Props) {
   const queryClient = useQueryClient();
   const t = useTranslations("settings.supplementSchedule");
   const [items, setItems] = useState<SupplementItem[]>([]);
-  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (profile?.supplementSchedule && Array.isArray(profile.supplementSchedule)) {
+    if (Array.isArray(profile?.supplementSchedule)) {
       setItems(profile.supplementSchedule as SupplementItem[]);
     }
   }, [profile?.supplementSchedule]);
@@ -49,152 +72,134 @@ export function SupplementScheduleEditor({ profile }: Props) {
     setSaving(true);
     try {
       await updateSupplementSchedule(filtered);
+      setItems(filtered);
       await queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      setEditing(false);
+      toast.success(t("saved"));
+    } catch {
+      toast.error(t("saveError"));
     } finally {
       setSaving(false);
     }
   };
 
-  const periodLabel = (period: string) =>
-    SUPPLEMENT_PERIODS.includes(period as (typeof SUPPLEMENT_PERIODS)[number])
-      ? t(`periods.${period}`)
-      : period;
-
   if (!profile) {
     return (
-      <div className="space-y-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex justify-between gap-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-32" />
-          </div>
+      <div className="space-y-3">
+        <Skeleton className="h-3 w-3/4" />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 w-full rounded-lg" />
         ))}
-        <Skeleton className="h-8 w-full mt-2" />
-      </div>
-    );
-  }
-
-  if (!editing) {
-    return (
-      <div className="space-y-2">
-        {items.length > 0 ? (
-          items.map((item, i) => (
-            <div key={i} className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{periodLabel(item.period)}:</span>
-              <span className="font-medium">{item.supplements}</span>
-            </div>
-          ))
-        ) : (
-          <div className="space-y-1.5">
-            <p className="text-sm text-muted-foreground">
-              {t("empty")}
-            </p>
-            <div className="opacity-40 space-y-1">
-              {[
-                { period: "Sabah", supplements: "Omega-3, Vitamin D" },
-                { period: "Antrenman öncesi", supplements: "Kreatin, Kafein" },
-                { period: "Yatmadan önce", supplements: "Magnezyum, ZMA" },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between text-xs">
-                  <span>{periodLabel(item.period)}:</span>
-                  <span>{item.supplements}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        <button
-          onClick={() => setEditing(true)}
-          className="text-xs text-primary hover:underline mt-2"
-        >
-          {items.length > 0 ? t("edit") : t("add")}
-        </button>
+        <Skeleton className="h-10 w-full rounded-lg" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {items.map((item, i) => {
-        const usedPeriods = items
-          .map((it, idx) => (idx !== i ? it.period : null))
-          .filter(Boolean);
-        return (
-          <div key={i} className="flex items-center gap-2">
-            <Select
-              value={
-                SUPPLEMENT_PERIODS.includes(item.period as (typeof SUPPLEMENT_PERIODS)[number])
-                  ? item.period
-                  : ""
-              }
-              onValueChange={(val) => {
-                const copy = [...items];
-                copy[i] = { ...copy[i], period: val };
-                setItems(copy);
-              }}
-            >
-              <SelectTrigger className="h-8 w-40 text-xs shrink-0">
-                <SelectValue placeholder={t("selectTime")} />
-              </SelectTrigger>
-              <SelectContent>
-                {SUPPLEMENT_PERIODS.map((period) => (
-                  <SelectItem
-                    key={period}
-                    value={period}
-                    disabled={usedPeriods.includes(period)}
-                    className="text-xs"
-                  >
-                    {t(`periods.${period}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <input
-              value={item.supplements}
-              onChange={(e) => {
-                const copy = [...items];
-                copy[i] = { ...copy[i], supplements: e.target.value };
-                setItems(copy);
-              }}
-              placeholder={t("supplementsPlaceholder")}
-              className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
-            />
-            <button
-              onClick={() => setItems(items.filter((_, j) => j !== i))}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground leading-relaxed">{t("hint")}</p>
+
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-8 px-4 text-center">
+          <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
+            <Pill className="h-5 w-5 text-primary" />
           </div>
-        );
-      })}
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setItems(TEMPLATE)}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            {t("useTemplate")}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item, i) => {
+            const usedPeriods = items
+              .map((it, idx) => (idx !== i ? it.period : null))
+              .filter(Boolean) as string[];
+            return (
+              <div
+                key={i}
+                className="rounded-lg border border-border/70 bg-muted/20 p-3 space-y-2"
+              >
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={isPeriod(item.period) ? item.period : ""}
+                    onValueChange={(val) => {
+                      const copy = [...items];
+                      copy[i] = { ...copy[i], period: val };
+                      setItems(copy);
+                    }}
+                  >
+                    <SelectTrigger className="h-10 flex-1 text-sm">
+                      <SelectValue placeholder={t("selectTime")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPLEMENT_PERIODS.map((period) => (
+                        <SelectItem
+                          key={period}
+                          value={period}
+                          disabled={usedPeriods.includes(period)}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span aria-hidden>{PERIOD_ICONS[period]}</span>
+                            {t(`periods.${period}`)}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <button
+                    type="button"
+                    onClick={() => setItems(items.filter((_, j) => j !== i))}
+                    aria-label={t("cancel")}
+                    className="h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                <input
+                  value={item.supplements}
+                  onChange={(e) => {
+                    const copy = [...items];
+                    copy[i] = { ...copy[i], supplements: e.target.value };
+                    setItems(copy);
+                  }}
+                  placeholder={t("supplementsPlaceholder")}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <button
+        type="button"
         onClick={() => setItems([...items, { period: "", supplements: "" }])}
-        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+        className="w-full inline-flex items-center justify-center gap-1.5 h-10 rounded-lg border border-dashed border-border text-sm font-medium text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
       >
-        <Plus className="h-3 w-3" /> {t("addRow")}
+        <Plus className="h-4 w-4" /> {t("addRow")}
       </button>
-      <div className="flex gap-2 pt-1">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : t("save")}
-        </button>
-        <button
-          onClick={() => {
-            if (profile?.supplementSchedule && Array.isArray(profile.supplementSchedule)) {
-              setItems(profile.supplementSchedule as SupplementItem[]);
-            }
-            setEditing(false);
-          }}
-          className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-input text-xs font-medium hover:bg-accent"
-        >
-          {t("cancel")}
-        </button>
-      </div>
+
+      <Button
+        type="button"
+        size="sm"
+        className="w-full h-10 gap-1.5"
+        onClick={handleSave}
+        disabled={saving}
+      >
+        {saving ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Save className="h-4 w-4" />
+        )}
+        {t("save")}
+      </Button>
     </div>
   );
 }

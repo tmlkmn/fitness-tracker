@@ -1994,6 +1994,10 @@
       "save": "Save",
       "cancel": "Cancel",
       "selectEvent": "Select event",
+      "hint": "Add a typical day hour by hour. Meal and workout reminders are timed around this flow.",
+      "useTemplate": "Start with an example",
+      "saved": "Daily flow saved",
+      "saveError": "Could not save",
       "events": {
         "Uyanış": "Wake up",
         "Kahvaltı": "Breakfast",
@@ -2014,6 +2018,10 @@
       "cancel": "Cancel",
       "selectTime": "Select time",
       "supplementsPlaceholder": "e.g. Omega-3, Creatine",
+      "hint": "Add which time of day you take each supplement.",
+      "useTemplate": "Start with an example",
+      "saved": "Supplement schedule saved",
+      "saveError": "Could not save",
       "periods": {
         "Sabah": "Morning (on waking)",
         "Kahvaltı ile": "With breakfast",
