@@ -6,6 +6,7 @@ import { getAtRiskUsers, getAdminKpiSummary } from "@/actions/admin-operations";
 import { AtRiskList } from "@/components/admin/at-risk-list";
 import { KpiSummary } from "@/components/admin/kpi-summary";
 import { AdminQuickNav } from "@/components/admin/admin-quick-nav";
+import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 
 export default async function AdminPage({
   params,
@@ -15,6 +16,7 @@ export default async function AdminPage({
   const { locale } = await params;
   const t = await getTranslations("admin");
   const tOps = await getTranslations("admin.ops");
+  const tNav = await getTranslations("nav");
 
   let atRisk;
   let kpi;
@@ -33,6 +35,12 @@ export default async function AdminPage({
 
   return (
     <div className="min-h-dvh pb-8">
+      <AdminBreadcrumb
+        segments={[
+          { label: tNav("settings"), href: "/ayarlar" },
+          { label: tOps("title") },
+        ]}
+      />
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -62,15 +70,6 @@ export default async function AdminPage({
         <AdminQuickNav />
 
         <AtRiskList users={atRisk} />
-
-        <div className="text-center pt-2">
-          <Link
-            href={{ pathname: "/ayarlar" }}
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            {t("backToSettings")}
-          </Link>
-        </div>
       </div>
     </div>
   );
