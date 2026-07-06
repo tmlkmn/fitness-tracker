@@ -1946,6 +1946,7 @@
     "healthProfile": {
       "title": "Yeni profil bilgileri",
       "intro": "Kalori hesaplamaları ve aralıklı açlık güvenliği için kullanılır. Sağlık verileri KVKK kapsamında özel kategori olarak korunur.",
+      "basicTitle": "Temel bilgiler",
       "genderTitle": "Biyolojik cinsiyet",
       "activityTitle": "Günlük aktivite (antrenman dışı)",
       "flagsTitle": "Sağlık durumları",
@@ -2028,14 +2029,14 @@
     "onboardingBannerTitle": "Profilinizi Tamamlayın",
     "onboardingBannerDesc": "Günlük akış, sağlık notları, fitness seviyesi ve supplement bilgileriniz AI değerlendirmelerinde kullanılır. Ne kadar detaylı doldurursanız, size özel program o kadar isabetli olur.",
     "groups": {
-      "profileHealth": "Profil & Sağlık",
+      "profileHealth": "Profil & Akış & Sağlık",
       "goals": "Hedefler",
       "app": "Uygulama",
       "sharingData": "Paylaşım ve Veri"
     },
     "items": {
-      "healthTitle": "Yeni profil bilgileri",
-      "healthSubtitle": "Cinsiyet, günlük aktivite, sağlık durumları",
+      "healthTitle": "Profil Bilgileri",
+      "healthSubtitle": "Yaş, boy, hedef, sağlık ve aktivite bilgilerin",
       "routineTitle": "Günlük Akış",
       "routineSubtitle": "Hafta içi ve hafta sonu rutinin",
       "supplementsTitle": "Takviye Takvimi",
@@ -2068,8 +2069,8 @@
       "preferencesSubtitle": "Birim ve panel ayarları",
       "supplementsTitle": "Takviye Takvimi",
       "supplementsSubtitle": "Supplement ve ilaç zamanlaması",
-      "healthTitle": "Sağlık Profili",
-      "healthSubtitle": "Cinsiyet, aktivite, sağlık durumları",
+      "healthTitle": "Profil Bilgileri",
+      "healthSubtitle": "Yaş, boy, hedef, sağlık ve aktivite bilgilerin",
       "sharingTitle": "Plan Paylaşımı",
       "sharingSubtitle": "Programını başka kullanıcılarla paylaş",
       "routineTitle": "Günlük Akış",

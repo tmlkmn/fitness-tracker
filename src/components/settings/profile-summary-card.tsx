@@ -3,22 +3,19 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from "next-intl";
 import { useUserProfile } from "@/hooks/use-user";
 import { useSession } from "@/lib/auth-client";
 import { computeProfileCompleteness } from "@/lib/profile-completeness";
-import { ProfileEditorDialog } from "./profile-editor-dialog";
-import { Pencil, User } from "lucide-react";
+import { User } from "lucide-react";
 
 export function ProfileSummaryCard() {
   const { data: session, isPending: sessionPending } = useSession();
   const { data: profile, isLoading: profileLoading } = useUserProfile();
   const t = useTranslations("settings.profileSummary");
   const tTypes = useTranslations("settings.membershipTypes");
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const user = session?.user;
   const completeness = computeProfileCompleteness(profile);
@@ -119,64 +116,45 @@ export function ProfileSummaryCard() {
   }
 
   return (
-    <>
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <User className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">
-                {user?.name || user?.email || t("fallbackName")}
-              </p>
-              {user?.email && user?.name && (
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-              )}
-            </div>
-            {membershipLabel && (
-              <Badge variant={membershipExpired ? "destructive" : "secondary"}>
-                {membershipLabel}
-                {membershipRemaining != null && ` · ${membershipRemaining}${t("remainingDaysSuffix")}`}
-              </Badge>
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <User className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">
+              {user?.name || user?.email || t("fallbackName")}
+            </p>
+            {user?.email && user?.name && (
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             )}
           </div>
+          {membershipLabel && (
+            <Badge variant={membershipExpired ? "destructive" : "secondary"}>
+              {membershipLabel}
+              {membershipRemaining != null && ` · ${membershipRemaining}${t("remainingDaysSuffix")}`}
+            </Badge>
+          )}
+        </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">{t("completion")}</span>
-              <span className="text-xs font-medium tabular-nums">
-                %{completeness.percent}
-              </span>
-            </div>
-            <Progress value={completeness.percent} />
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{t("completion")}</span>
+            <span className="text-xs font-medium tabular-nums">
+              %{completeness.percent}
+            </span>
           </div>
+          <Progress value={completeness.percent} />
+        </div>
 
-          <div className="flex gap-1.5">
-            {chip({ label: t("age"), value: profile?.age != null ? String(profile.age) : null })}
-            {chip({ label: t("height"), value: profile?.height != null ? String(profile.height) : null, unit: "cm" })}
-            {chip({ label: t("weight"), value: profile?.weight || null, unit: "kg" })}
-            {chip({ label: t("target"), value: profile?.targetWeight || null, unit: "kg", primary: true })}
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-1.5"
-            onClick={() => setDialogOpen(true)}
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            {t("edit")}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <ProfileEditorDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        profile={profile}
-        userEmail={user?.email}
-      />
-    </>
+        <div className="flex gap-1.5">
+          {chip({ label: t("age"), value: profile?.age != null ? String(profile.age) : null })}
+          {chip({ label: t("height"), value: profile?.height != null ? String(profile.height) : null, unit: "cm" })}
+          {chip({ label: t("weight"), value: profile?.weight || null, unit: "kg" })}
+          {chip({ label: t("target"), value: profile?.targetWeight || null, unit: "kg", primary: true })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

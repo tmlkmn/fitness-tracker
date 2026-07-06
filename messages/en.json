@@ -1946,6 +1946,7 @@
     "healthProfile": {
       "title": "Profile information",
       "intro": "Used for calorie calculations and intermittent-fasting safety. Health data is protected as a special category under privacy regulations.",
+      "basicTitle": "Basics",
       "genderTitle": "Biological sex",
       "activityTitle": "Daily activity (excluding workouts)",
       "flagsTitle": "Health conditions",
@@ -2028,14 +2029,14 @@
     "onboardingBannerTitle": "Complete Your Profile",
     "onboardingBannerDesc": "Your daily routine, health notes, fitness level, and supplement info are used in AI evaluations. The more detail you provide, the more personalized your program.",
     "groups": {
-      "profileHealth": "Profile & Health",
+      "profileHealth": "Profile & Flow & Health",
       "goals": "Goals",
       "app": "App",
       "sharingData": "Sharing & Data"
     },
     "items": {
-      "healthTitle": "New profile info",
-      "healthSubtitle": "Gender, daily activity, health conditions",
+      "healthTitle": "Profile Info",
+      "healthSubtitle": "Age, height, goal, health & activity info",
       "routineTitle": "Daily Routine",
       "routineSubtitle": "Your weekday and weekend routine",
       "supplementsTitle": "Supplement Schedule",
@@ -2068,8 +2069,8 @@
       "preferencesSubtitle": "Units and dashboard settings",
       "supplementsTitle": "Supplement Schedule",
       "supplementsSubtitle": "Supplement and medication timing",
-      "healthTitle": "Health Profile",
-      "healthSubtitle": "Gender, activity, health conditions",
+      "healthTitle": "Profile Info",
+      "healthSubtitle": "Age, height, goal, health & activity info",
       "sharingTitle": "Plan Sharing",
       "sharingSubtitle": "Share your program with other users",
       "routineTitle": "Daily Routine",
