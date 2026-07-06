@@ -40,6 +40,10 @@ export function invalidateWeeklyPlanQueries(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: ["meals.byDay"] });
   qc.invalidateQueries({ queryKey: ["exercises"] });
   qc.invalidateQueries({ queryKey: ["week-plans-date"] });
+  // Drives the week strip / month grid plan-type icons (dumbbell, rest, …).
+  // Without this the markers stay stale until a hard refresh because the query
+  // is persisted to IndexedDB and stays mounted on the calendar page.
+  qc.invalidateQueries({ queryKey: ["dates-with-plans"] });
   invalidateAiQuotaQueries(qc);
   refetchTodayDashboard(qc);
 }

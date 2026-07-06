@@ -162,9 +162,11 @@ interface RoutineTimes {
   dinner: number | null;
   sleep: number | null;
   workout: number | null;
+  /** User-specified "Ara Öğün" times (minutes since midnight). May repeat. */
+  snacks: number[];
 }
 
-const DEFAULTS: Required<Omit<RoutineTimes, "workout">> = {
+const DEFAULTS: Required<Omit<RoutineTimes, "workout" | "snacks">> = {
   wake: 7 * 60,
   breakfast: 8 * 60 + 30,
   lunch: 13 * 60,
@@ -182,10 +184,11 @@ function extractRoutineTimes(
     dinner: null,
     sleep: null,
     workout: null,
+    snacks: [],
   };
   if (!Array.isArray(routine) || routine.length === 0) {
     return {
-      times: { ...DEFAULTS, workout: null },
+      times: { ...DEFAULTS, workout: null, snacks: [] },
       source: "default",
     };
   }
@@ -212,6 +215,9 @@ function extractRoutineTimes(
       case "Antrenman":
         times.workout = minutes;
         break;
+      case "Ara Öğün":
+        times.snacks.push(minutes);
+        break;
     }
   }
   // Fill missing from defaults but track source as "user" since at least
@@ -224,6 +230,7 @@ function extractRoutineTimes(
       dinner: times.dinner ?? DEFAULTS.dinner,
       sleep: times.sleep ?? DEFAULTS.sleep,
       workout: times.workout,
+      snacks: times.snacks,
     },
     source: "user",
   };
@@ -456,6 +463,36 @@ function generateSlots(
         rationale: `Akşam ${formatTime(times.dinner)} → Uyku ${formatTime(times.sleep)} arası ${(gap / 60).toFixed(1)}h`,
         size: "small",
         ...SLOT_NUTRITION.eveningSnack,
+      });
+    }
+  }
+
+  // 5. User-specified snacks — the user explicitly added "Ara Öğün" entries to
+  //    their routine, so honor those exact times. Added on top of the derived
+  //    slots but deduped against main meals and any slot already placed nearby,
+  //    so an explicit snack never stacks on a meal or an auto-derived snack.
+  if (times.snacks.length > 0) {
+    const mainAnchors = [times.breakfast, times.lunch, times.dinner].filter(
+      (m): m is number => m != null,
+    );
+    const snackNutrition =
+      policy === "moderate"
+        ? SLOT_NUTRITION.interMainModerate
+        : SLOT_NUTRITION.interMainFrequent;
+    for (const snackMin of times.snacks) {
+      const nearMain = mainAnchors.some(
+        (m) => Math.abs(snackMin - m) < MAIN_MEAL_COLLISION_MIN,
+      );
+      const nearSlot = slots.some(
+        (s) => Math.abs((parseTime(s.time) ?? -1440) - snackMin) < 20,
+      );
+      if (nearMain || nearSlot) continue;
+      slots.push({
+        time: formatTime(roundTo5(snackMin)),
+        label: "Ara Öğün",
+        rationale: `Kullanıcının belirttiği ara öğün saati (${formatTime(snackMin)})`,
+        size: policy === "moderate" ? "small" : "medium",
+        ...snackNutrition,
       });
     }
   }

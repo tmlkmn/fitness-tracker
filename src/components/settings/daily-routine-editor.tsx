@@ -15,7 +15,11 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ROUTINE_EVENTS, normalizeEvent } from "@/lib/routine-constants";
+import {
+  ROUTINE_EVENTS,
+  normalizeEvent,
+  isRepeatableEvent,
+} from "@/lib/routine-constants";
 import { Clock, Loader2, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 
 type RoutineItem = { time: string; event: string };
@@ -25,6 +29,7 @@ const EVENT_ICONS: Record<string, string> = {
   "Kahvaltı": "🍳",
   "İşe Gidiş": "🚗",
   "Öğle Yemeği": "🥗",
+  "Ara Öğün": "🍎",
   "İşten Çıkış": "🏠",
   "Akşam Yemeği": "🍽️",
   "Antrenman": "🏋️",
@@ -184,9 +189,11 @@ export function DailyRoutineEditor({ profile }: Props) {
                 </SelectTrigger>
                 <SelectContent>
                   {ROUTINE_EVENTS.map((ev) => {
-                    const usedByOther = items.some(
-                      (it, j) => j !== i && it.event === ev.value,
-                    );
+                    // Repeatable events (snacks) can appear multiple times; all
+                    // others stay unique so wake/sleep can't be picked twice.
+                    const usedByOther =
+                      !isRepeatableEvent(ev.value) &&
+                      items.some((it, j) => j !== i && it.event === ev.value);
                     return (
                       <SelectItem
                         key={ev.value}
