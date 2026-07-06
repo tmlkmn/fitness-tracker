@@ -22,5 +22,20 @@ export async function updateUserLocale(locale: Locale) {
     sameSite: "lax",
   });
 
+  // Expire better-auth's cached session copy (and any chunked parts) so the next
+  // getSession() reads the fresh locale from the DB instead of the 5-minute
+  // cookieCache. Otherwise the client session still reports the old locale and
+  // LocaleSync bounces the URL straight back to the previous language.
+  for (const c of cookieStore.getAll()) {
+    if (
+      c.name === "better-auth.session_data" ||
+      c.name.startsWith("better-auth.session_data.") ||
+      c.name === "__Secure-better-auth.session_data" ||
+      c.name.startsWith("__Secure-better-auth.session_data.")
+    ) {
+      cookieStore.delete(c.name);
+    }
+  }
+
   return { success: true, locale };
 }
