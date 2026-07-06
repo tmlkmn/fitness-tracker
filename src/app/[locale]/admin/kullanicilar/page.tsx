@@ -17,7 +17,6 @@ import {
   UserPlus,
   Loader2,
   Search,
-  ArrowLeft,
 } from "lucide-react";
 import { ExtendDialog } from "@/components/admin/extend-dialog";
 import { ConfirmFreezeDialog } from "@/components/admin/confirm-freeze-dialog";
@@ -35,6 +34,7 @@ type StatusFilter =
 export default function AdminUsersPage() {
   const router = useRouter();
   const t = useTranslations("admin");
+  const tNav = useTranslations("nav");
   const tList = useTranslations("admin.usersList");
   const tFreeze = useTranslations("admin.freeze");
   const searchParams = useSearchParams();
@@ -163,24 +163,16 @@ export default function AdminUsersPage() {
     <div className="min-h-dvh pb-8">
       <AdminBreadcrumb
         segments={[
-          { label: t("breadcrumbRoot"), href: "/admin" },
+          { label: tNav("settings"), href: "/ayarlar" },
+          { label: t("ops.title"), href: "/admin" },
           { label: tList("title") },
         ]}
       />
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href={{ pathname: "/admin" }}
-              className="h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
-              aria-label={tList("title")}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-bold">{tList("title")}</h1>
-            </div>
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-bold">{tList("title")}</h1>
           </div>
           <Link
             href={{ pathname: "/admin/davet" }}

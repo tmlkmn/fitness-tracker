@@ -15,7 +15,6 @@ import {
 } from "@/actions/admin-operations";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  ArrowLeft,
   Bot,
   BarChart3,
   DollarSign,
@@ -36,6 +35,7 @@ function formatUsd(v: number): string {
 export default function AdminAiUsagePage() {
   const router = useRouter();
   const t = useTranslations("admin");
+  const tNav = useTranslations("nav");
   const tAi = useTranslations("admin.aiUsage");
   const featureLabel = useFeatureLabel();
   const formatTimeAgo = useTimeAgo();
@@ -82,19 +82,13 @@ export default function AdminAiUsagePage() {
     <div className="min-h-dvh pb-8">
       <AdminBreadcrumb
         segments={[
-          { label: t("breadcrumbRoot"), href: "/admin" },
+          { label: tNav("settings"), href: "/ayarlar" },
+          { label: t("ops.title"), href: "/admin" },
           { label: tAi("title") },
         ]}
       />
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center gap-3">
-          <Link
-            href={{ pathname: "/admin" }}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
-            aria-label={tAi("title")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
           <h1 className="text-lg font-bold flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
             {tAi("title")}

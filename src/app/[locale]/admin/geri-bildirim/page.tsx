@@ -18,7 +18,6 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  ArrowLeft,
 } from "lucide-react";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 
@@ -150,8 +149,8 @@ function RespondDialog({
 export default function AdminFeedbackPage() {
   const router = useRouter();
   const t = useTranslations("admin.feedbackPage");
-  const tCommon = useTranslations("common");
   const tAdmin = useTranslations("admin");
+  const tNav = useTranslations("nav");
   const formatTimeAgo = useTimeAgo();
   const [feedbackList, setFeedbackList] = useState<FeedbackWithUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -220,19 +219,13 @@ export default function AdminFeedbackPage() {
     <div className="min-h-dvh pb-8">
       <AdminBreadcrumb
         segments={[
-          { label: tAdmin("breadcrumbRoot"), href: "/admin" },
+          { label: tNav("settings"), href: "/ayarlar" },
+          { label: tAdmin("ops.title"), href: "/admin" },
           { label: t("title") },
         ]}
       />
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-6">
         <div className="flex items-center gap-3">
-          <Link
-            href="/admin"
-            className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-accent transition-colors shrink-0"
-            aria-label={tCommon("back")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <MessageSquare className="h-5 w-5 text-primary" />
           </div>

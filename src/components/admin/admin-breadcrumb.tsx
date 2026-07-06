@@ -27,15 +27,15 @@ export function AdminBreadcrumb({
   return (
     <nav
       aria-label="Breadcrumb"
-      className="sticky top-0 z-30 border-b border-border/60 bg-background/95 backdrop-blur px-4 py-2"
+      className="sticky top-0 z-30 border-b border-border/60 bg-background/95 backdrop-blur px-4 py-2.5"
     >
-      <ol className="max-w-lg mx-auto flex items-center gap-1 text-xs text-muted-foreground overflow-x-auto scrollbar-none">
+      <ol className="max-w-lg mx-auto flex items-center gap-1.5 text-sm text-muted-foreground overflow-x-auto scrollbar-none">
         {segments.map((seg, i) => {
           const isLast = i === segments.length - 1;
           return (
-            <li key={`${seg.label}-${i}`} className="flex items-center gap-1 shrink-0">
+            <li key={`${seg.label}-${i}`} className="flex items-center gap-1.5 shrink-0">
               {i > 0 && (
-                <ChevronRight className="h-3 w-3 text-muted-foreground/50" aria-hidden />
+                <ChevronRight className="h-4 w-4 text-muted-foreground/50" aria-hidden />
               )}
               {!isLast && seg.href ? (
                 <Link

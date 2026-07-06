@@ -16,8 +16,9 @@ import {
   YAxis,
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Loader2, AlertTriangle, BarChart3 } from "lucide-react";
+import { Loader2, AlertTriangle, BarChart3 } from "lucide-react";
 import { getAiWarningsAnalytics, type AiWarningsAnalytics } from "@/actions/admin";
+import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import {
   CHART_TOOLTIP_CURSOR,
   CHART_TOOLTIP_ITEM_STYLE,
@@ -59,6 +60,8 @@ export default function AiWarningsPage() {
   const locale = useLocale() as Locale;
   const t = useTranslations("admin.aiWarningsPage");
   const tFeatures = useTranslations("admin.aiWarningsPage.featureLabels");
+  const tNav = useTranslations("nav");
+  const tAdmin = useTranslations("admin");
   const [data, setData] = useState<AiWarningsAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -122,14 +125,15 @@ export default function AiWarningsPage() {
 
   return (
     <div className="min-h-dvh pb-8">
+      <AdminBreadcrumb
+        segments={[
+          { label: tNav("settings"), href: "/ayarlar" },
+          { label: tAdmin("ops.title"), href: "/admin" },
+          { label: tAdmin("aiWarnings") },
+        ]}
+      />
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
         <div className="flex items-center gap-3">
-          <Link
-            href="/admin"
-            className="h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-accent transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
           <div className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
               <AlertTriangle className="h-4 w-4 text-amber-500" />

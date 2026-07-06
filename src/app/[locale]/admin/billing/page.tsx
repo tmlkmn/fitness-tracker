@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Link } from "@/i18n/navigation";
-import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   getBillingStats,
@@ -10,6 +9,7 @@ import {
 } from "@/actions/admin";
 import { AdminBillingTools } from "@/components/admin/admin-billing-tools";
 import { BillingMetrics } from "@/components/admin/billing-metrics";
+import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 
 export const metadata: Metadata = {
   title: "Abonelik Yönetimi",
@@ -29,24 +29,27 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 
 export default async function AdminBillingPage() {
   // Each of these runs getAuthAdmin() — throws for non-admins.
-  const [stats, metrics, invoiceLog, webhookLog] = await Promise.all([
-    getBillingStats(),
-    getBillingMetrics(),
-    getRecentInvoices(),
-    getRecentWebhookEvents(),
-  ]);
+  const [stats, metrics, invoiceLog, webhookLog, tNav, tAdmin] =
+    await Promise.all([
+      getBillingStats(),
+      getBillingMetrics(),
+      getRecentInvoices(),
+      getRecentWebhookEvents(),
+      getTranslations("nav"),
+      getTranslations("admin"),
+    ]);
 
   return (
-    <div className="px-4 py-6 space-y-5">
-      <Link
-        href="/admin"
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Admin
-      </Link>
-
-      <h1 className="text-2xl font-bold tracking-tight">Abonelik Yönetimi</h1>
+    <div className="min-h-dvh pb-8">
+      <AdminBreadcrumb
+        segments={[
+          { label: tNav("settings"), href: "/ayarlar" },
+          { label: tAdmin("ops.title"), href: "/admin" },
+          { label: tAdmin("nav.billing") },
+        ]}
+      />
+      <div className="px-4 py-6 space-y-5">
+        <h1 className="text-2xl font-bold tracking-tight">Abonelik Yönetimi</h1>
 
       <div className="grid grid-cols-2 gap-3">
         <Stat label="Aktif" value={stats.active} />
@@ -155,6 +158,7 @@ export default async function AdminBillingPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
