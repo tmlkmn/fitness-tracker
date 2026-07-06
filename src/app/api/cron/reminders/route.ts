@@ -371,6 +371,10 @@ async function handleMealReminder(
   return fired;
 }
 
+// Üyelik bitişinden sonra en fazla kaç gün hatırlatma maili atılacağı.
+// Günlük çalışan cron gün 0/-1/-2'de birer mail atar (toplam max 3), sonra durur.
+const EXPIRED_REMINDER_FLOOR_DAYS = 2;
+
 async function checkMembershipExpiry(): Promise<number> {
   const now = new Date();
 
@@ -407,6 +411,8 @@ async function checkMembershipExpiry(): Promise<number> {
     if (daysLeft > 7) continue;
     if (daysLeft > 3 && daysLeft < 7) continue;
     if (daysLeft > 1 && daysLeft < 3) continue;
+    // Bitiş sonrası en fazla 3 hatırlatma (gün 0, -1, -2), sonra dur — sonsuz mail bug fix
+    if (daysLeft < -EXPIRED_REMINDER_FLOOR_DAYS) continue;
 
     // Rate-limit: max 1 notification per ~20 hours
     if (user.membershipNotifiedAt) {

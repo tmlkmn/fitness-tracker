@@ -158,6 +158,10 @@ export async function getAtRiskUsers(): Promise<AtRiskUser[]> {
   const result: AtRiskUser[] = [];
 
   for (const u of allUsers) {
+    // Üyeliği zaten dolmuş kullanıcılar operasyon at-risk listesinde gösterilmez;
+    // bunlar /admin/kullanicilar "expired" filtresinden yönetilir.
+    if (u.membershipEndDate && new Date(u.membershipEndDate) <= now) continue;
+
     const risks: RiskTag[] = [];
 
     let daysUntilExpiry: number | null = null;

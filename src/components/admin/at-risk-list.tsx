@@ -3,8 +3,13 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { AlertTriangle, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import type { AtRiskUser, RiskTag } from "@/actions/admin-operations-types";
 import { RISK_PRIORITY } from "@/actions/admin-operations-types";
 import { RiskBadge } from "./risk-badge";
@@ -35,6 +40,7 @@ function urgencyClass(tag: RiskTag, isActive: boolean): string {
 export function AtRiskList({ users }: { users: AtRiskUser[] }) {
   const t = useTranslations("admin.atRisk");
   const [active, setActive] = useState<Set<RiskTag>>(new Set());
+  const [open, setOpen] = useState(true);
 
   const filtered = useMemo(() => {
     if (active.size === 0) return users;
@@ -67,67 +73,76 @@ export function AtRiskList({ users }: { users: AtRiskUser[] }) {
   );
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-warning" />
-          <h2 className="text-sm font-semibold">{t("title")}</h2>
-        </div>
-        <p className="text-xs text-muted-foreground tabular-nums">
-          {t("totalsLine", { total: users.length, urgent: urgentCount })}
-        </p>
-      </div>
+    <Collapsible asChild open={open} onOpenChange={setOpen}>
+      <section className="space-y-3">
+        <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-warning" />
+            <h2 className="text-sm font-semibold">{t("title")}</h2>
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform ${
+                open ? "rotate-180" : ""
+              }`}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {t("totalsLine", { total: users.length, urgent: urgentCount })}
+          </p>
+        </CollapsibleTrigger>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTER_TAGS.map((tag) => {
-          const count = counts.get(tag) ?? 0;
-          const isActive = active.has(tag);
-          const isDisabled = count === 0;
-          return (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => toggle(tag)}
-              disabled={isDisabled}
-              aria-pressed={isActive}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors border ${urgencyClass(tag, isActive)} disabled:opacity-40 disabled:cursor-not-allowed`}
-            >
-              <span>{t(`filters.${camelCase(tag)}` as never)}</span>
-              <span
-                className={`inline-flex items-center justify-center min-w-5 h-4 px-1 rounded-full text-[10px] tabular-nums font-semibold ${
-                  isActive ? "bg-white/25" : "bg-background/80 text-foreground"
-                }`}
+        <CollapsibleContent className="space-y-3">
+          <div className="flex flex-wrap gap-1.5">
+            {FILTER_TAGS.map((tag) => {
+              const count = counts.get(tag) ?? 0;
+              const isActive = active.has(tag);
+              const isDisabled = count === 0;
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggle(tag)}
+                  disabled={isDisabled}
+                  aria-pressed={isActive}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors border ${urgencyClass(tag, isActive)} disabled:opacity-40 disabled:cursor-not-allowed`}
+                >
+                  <span>{t(`filters.${camelCase(tag)}` as never)}</span>
+                  <span
+                    className={`inline-flex items-center justify-center min-w-5 h-4 px-1 rounded-full text-[10px] tabular-nums font-semibold ${
+                      isActive ? "bg-white/25" : "bg-background/80 text-foreground"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+            {active.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setActive(new Set())}
+                className="text-xs text-muted-foreground hover:text-foreground px-2"
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-        {active.size > 0 && (
-          <button
-            type="button"
-            onClick={() => setActive(new Set())}
-            className="text-xs text-muted-foreground hover:text-foreground px-2"
-          >
-            {t("clearFilters")}
-          </button>
-        )}
-      </div>
+                {t("clearFilters")}
+              </button>
+            )}
+          </div>
 
-      {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">{t("empty")}</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((u) => (
-            <AtRiskRow key={u.user.id} user={u} />
-          ))}
-        </div>
-      )}
-    </section>
+          {filtered.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-sm text-muted-foreground">{t("empty")}</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {filtered.map((u) => (
+                <AtRiskRow key={u.user.id} user={u} />
+              ))}
+            </div>
+          )}
+        </CollapsibleContent>
+      </section>
+    </Collapsible>
   );
 }
 

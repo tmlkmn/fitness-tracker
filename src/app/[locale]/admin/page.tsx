@@ -57,11 +57,11 @@ export default async function AdminPage({
           </Link>
         </div>
 
-        <AtRiskList users={atRisk} />
-
         <KpiSummary kpi={kpi} />
 
         <AdminQuickNav />
+
+        <AtRiskList users={atRisk} />
 
         <div className="text-center pt-2">
           <Link
