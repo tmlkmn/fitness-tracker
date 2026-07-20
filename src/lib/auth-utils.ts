@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getEntitlement, type BillingUserFields } from "@/lib/billing/entitlement";
+import { getAccessDenial, type AccountAccessFields } from "@/lib/account-access";
 
 export async function getAuthSession() {
   const session = await auth.api.getSession({
@@ -16,22 +17,11 @@ export async function getAuthSession() {
 
 export async function getAuthUser() {
   const user = await getAuthSession();
-  if (!user.isApproved) {
-    throw new Error("NotApproved");
-  }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const u = user as any;
-  // Admin users are exempt from membership checks
-  if (u.role === "admin") return user;
-  // Legacy membership expiry (admin-invited users predating the billing system).
-  if (u.membershipEndDate && new Date(u.membershipEndDate) <= new Date()) {
-    throw new Error("MembershipExpired");
-  }
-  // Billing / trial expiry. Legacy users are already handled above, so a
-  // non-active "legacy" entitlement here just means an unlimited account.
-  const entitlement = getEntitlement(u as BillingUserFields);
-  if (!entitlement.isActive && entitlement.status !== "legacy") {
-    throw new Error("TrialExpired");
+  // Approval, freeze, legacy membership and billing gates all live in
+  // getAccessDenial() so server actions and API routes can never drift apart.
+  const denial = getAccessDenial(user as unknown as AccountAccessFields);
+  if (denial) {
+    throw new Error(denial);
   }
   return user;
 }

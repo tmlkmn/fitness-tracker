@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { getEntitlement, type BillingUserFields } from "@/lib/billing/entitlement";
+import type { BillingUserFields } from "@/lib/billing/entitlement";
+import { getAccessDenial } from "@/lib/account-access";
 
 /**
  * Unified auth wrapper for API route handlers (under `src/app/api/**`).
@@ -32,6 +33,7 @@ interface SessionUserShape extends BillingUserFields {
   name?: string | null;
   locale?: string | null;
   isApproved?: boolean | null;
+  frozenAt?: Date | string | null;
 }
 
 export interface ApiAuthOptions {
@@ -48,6 +50,13 @@ export interface ApiAuthOptions {
    *   - Account export (KVKK — must work post-expiry)
    */
   requireActiveBilling?: boolean;
+  /**
+   * Let a frozen (admin-suspended) account through. Default false.
+   *
+   * Only for flows a suspended user must still complete: KVKK account export,
+   * invoice PDF download, and push unsubscribe.
+   */
+  allowFrozen?: boolean;
 }
 
 export type ApiAuthResult =
@@ -61,36 +70,17 @@ function deny(error: string, status: number): ApiAuthResult {
 export async function requireApiUser(
   options: ApiAuthOptions = {},
 ): Promise<ApiAuthResult> {
-  const { requireApproved = true, requireActiveBilling = true } = options;
-
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
     return deny("Unauthorized", 401);
   }
   const user = session.user as unknown as SessionUserShape;
 
-  // Admin shortcut — admins bypass approval + billing.
-  if (user.role === "admin") {
-    return { user, response: null };
-  }
-
-  if (requireApproved && !user.isApproved) {
-    return deny("NotApproved", 403);
-  }
-
-  // Legacy membership expiry (admin-invited pre-billing users).
-  if (
-    user.membershipEndDate &&
-    new Date(user.membershipEndDate) <= new Date()
-  ) {
-    return deny("MembershipExpired", 403);
-  }
-
-  if (requireActiveBilling) {
-    const entitlement = getEntitlement(user);
-    if (!entitlement.isActive && entitlement.status !== "legacy") {
-      return deny("TrialExpired", 403);
-    }
+  // Approval, freeze, legacy membership and billing gates all live in
+  // getAccessDenial() so route handlers and server actions stay in lockstep.
+  const denial = getAccessDenial(user, options);
+  if (denial) {
+    return deny(denial, 403);
   }
 
   return { user, response: null };

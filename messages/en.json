@@ -336,6 +336,11 @@
       "title": "Your Trial Has Ended",
       "description": "Your 14-day trial is over. Choose a plan to continue.",
       "cta": "View Plans"
+    },
+    "accountFrozen": {
+      "title": "Your Account Is Suspended",
+      "description": "An administrator has temporarily suspended your account. While it is suspended you cannot use the app or receive notifications.",
+      "contact": "Contact Support"
     }
   },
   "dashboard": {

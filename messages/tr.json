@@ -336,6 +336,11 @@
       "title": "Deneme Süren Doldu",
       "description": "14 günlük deneme süren sona erdi. Devam etmek için bir plan seç.",
       "cta": "Planları Gör"
+    },
+    "accountFrozen": {
+      "title": "Hesabınız Donduruldu",
+      "description": "Hesabınız yönetici tarafından geçici olarak askıya alındı. Bu süre boyunca uygulamayı kullanamaz ve bildirim alamazsınız.",
+      "contact": "Destek ile İletişime Geç"
     }
   },
   "dashboard": {

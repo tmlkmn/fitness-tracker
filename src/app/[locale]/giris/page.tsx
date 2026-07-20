@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { signIn, signOut, authClient } from "@/lib/auth-client";
 import { useRouter, Link } from "@/i18n/navigation";
+import {
+  resolveStatusRouteKey,
+  STATUS_ROUTES,
+} from "@/lib/account-status-route";
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Eye, EyeOff } from "lucide-react";
@@ -48,30 +52,26 @@ export default function GirisPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = sessionData?.user as any;
 
-        if (user?.mustChangePassword) {
-          if (
-            user.inviteExpiresAt &&
-            new Date(user.inviteExpiresAt) < new Date()
-          ) {
-            setError(t("errors.inviteExpired"));
-            await signOut();
-            return;
-          }
-          router.push("/sifre-degistir");
-        } else if (user?.frozenAt) {
+        // Single source of truth for status → destination, shared with the
+        // proxy middleware. A temp-password user with an already-expired invite
+        // is the one case login handles specially (sign out + explain).
+        const key = resolveStatusRouteKey(user);
+        if (
+          key === "changePassword" &&
+          user.inviteExpiresAt &&
+          new Date(user.inviteExpiresAt) < new Date()
+        ) {
+          setError(t("errors.inviteExpired"));
           await signOut();
-          setError(t("errors.accountFrozen"));
           return;
-        } else if (user?.isApproved) {
-          if (user.membershipEndDate && new Date(user.membershipEndDate) < new Date()) {
-            router.push("/uyelik-doldu");
-          } else if (!user.height || !user.weight) {
-            router.push("/profil-tamamla");
-          } else {
-            router.push("/");
-          }
+        }
+        if (key) {
+          // @/i18n/navigation router localizes the canonical TR path.
+          router.push(STATUS_ROUTES[key].tr);
+        } else if (!user.height || !user.weight) {
+          router.push("/profil-tamamla");
         } else {
-          router.push("/bekliyor");
+          router.push("/");
         }
         router.refresh();
       }

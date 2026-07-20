@@ -6,10 +6,11 @@ import { and, eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   // Unsubscribe must always succeed for any authenticated user, regardless of
-  // approval / billing state — they need a way out.
+  // approval / billing / freeze state — they need a way out.
   const { user, response } = await requireApiUser({
     requireApproved: false,
     requireActiveBilling: false,
+    allowFrozen: true,
   });
   if (response) return response;
 

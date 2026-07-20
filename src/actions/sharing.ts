@@ -156,5 +156,12 @@ export async function getShareableUsers() {
       email: users.email,
     })
     .from(users)
-    .where(and(eq(users.isApproved, true), ne(users.id, user.id)));
+    // Frozen accounts can't open a shared plan, so don't offer them as targets.
+    .where(
+      and(
+        eq(users.isApproved, true),
+        isNull(users.frozenAt),
+        ne(users.id, user.id)
+      )
+    );
 }

@@ -6,10 +6,11 @@ export const runtime = "nodejs";
 
 export async function GET() {
   // KVKK / data portability: any logged-in user must be able to export, even
-  // if approval was revoked or billing lapsed.
+  // if approval was revoked, billing lapsed, or the account was frozen.
   const { user, response } = await requireApiUser({
     requireApproved: false,
     requireActiveBilling: false,
+    allowFrozen: true,
   });
   if (response) return response;
 

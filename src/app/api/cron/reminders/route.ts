@@ -9,13 +9,14 @@ import {
   meals,
   users,
 } from "@/db/schema";
-import { eq, and, isNotNull } from "drizzle-orm";
+import { eq, and, isNotNull, isNull } from "drizzle-orm";
 import { sendNotification } from "@/lib/notifications";
 import { sendMembershipExpiryEmail } from "@/lib/email";
 import { normalizeLocale } from "@/lib/locale";
 import { formatDate } from "@/lib/date-format";
 import { getReminderTemplateText, isReminderTemplateKey } from "@/lib/reminder-templates";
 import { getServerTranslator } from "@/lib/i18n-server";
+import { getAccessDenial } from "@/lib/account-access";
 
 function getCurrentTimeInTz(timezone: string): { hhmm: string; dayOfWeek: number; dateStr: string } {
   const now = new Date();
@@ -145,6 +146,14 @@ export async function GET(request: NextRequest) {
       timezone: notificationPreferences.timezone,
       defaultWorkoutTime: notificationPreferences.defaultWorkoutTime,
       userLocale: users.locale,
+      userRole: users.role,
+      userIsApproved: users.isApproved,
+      userFrozenAt: users.frozenAt,
+      userMembershipEndDate: users.membershipEndDate,
+      userBillingTier: users.billingTier,
+      userSubscriptionStatus: users.subscriptionStatus,
+      userTrialEndsAt: users.trialEndsAt,
+      userNextBillingDate: users.nextBillingDate,
     })
     .from(reminders)
     .leftJoin(
@@ -157,6 +166,25 @@ export async function GET(request: NextRequest) {
   let firedCount = 0;
 
   for (const reminder of allReminders) {
+    // Reminders are engagement traffic — only active members get them.
+    // sendNotification() would suppress them anyway, but bailing here also
+    // avoids burning lastFiredAt / disabling a "once" reminder that was never
+    // actually delivered.
+    if (
+      getAccessDenial({
+        role: reminder.userRole,
+        isApproved: reminder.userIsApproved,
+        frozenAt: reminder.userFrozenAt,
+        membershipEndDate: reminder.userMembershipEndDate,
+        billingTier: reminder.userBillingTier,
+        subscriptionStatus: reminder.userSubscriptionStatus,
+        trialEndsAt: reminder.userTrialEndsAt,
+        nextBillingDate: reminder.userNextBillingDate,
+      })
+    ) {
+      continue;
+    }
+
     const tz = reminder.timezone ?? "Europe/Istanbul";
     const { hhmm, dayOfWeek, dateStr } = getCurrentTimeInTz(tz);
 
@@ -393,7 +421,9 @@ async function checkMembershipExpiry(): Promise<number> {
     .where(
       and(
         eq(users.isApproved, true),
-        isNotNull(users.membershipEndDate)
+        isNotNull(users.membershipEndDate),
+        // Admin-suspended accounts aren't chased about renewal.
+        isNull(users.frozenAt)
       )
     );
 
@@ -487,6 +517,8 @@ async function checkTrialEnding(): Promise<number> {
       and(
         eq(users.subscriptionStatus, "trialing"),
         isNotNull(users.trialEndsAt),
+        // Admin-suspended accounts aren't chased about renewal.
+        isNull(users.frozenAt),
       ),
     );
 

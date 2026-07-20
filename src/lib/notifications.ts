@@ -10,6 +10,33 @@ import { sendNotificationEmail } from "@/lib/email";
 import { sendPushNotification } from "@/lib/web-push";
 import { normalizeLocale } from "@/lib/locale";
 import { redactId } from "@/lib/log-redact";
+import { getAccessDenial } from "@/lib/account-access";
+
+/**
+ * Notification types that must still reach a suspended / lapsed account: they
+ * either explain why access stopped or are the path back to an active
+ * membership. Everything else (reminders, shares, engagement nudges) is
+ * withheld until the account is active again.
+ *
+ * `billing_*` is matched by prefix — see `notifyBillingEvent` in the Lemon
+ * Squeezy and iyzico webhooks.
+ */
+const ACCOUNT_CRITICAL_TYPES = new Set([
+  "user_invited",
+  "membership_extended",
+  "membership_expiring",
+  "membership_expired",
+  "trial_ending",
+  "trial_ended",
+  // Admin-initiated: staff deliberately reaching out to this specific user.
+  "admin_nudge",
+  // Reply to a support ticket the user themselves opened.
+  "feedback_response",
+]);
+
+function isAccountCritical(type: string): boolean {
+  return type.startsWith("billing_") || ACCOUNT_CRITICAL_TYPES.has(type);
+}
 
 function isInQuietHours(
   start: string | null | undefined,
@@ -50,6 +77,39 @@ export async function sendNotification(params: {
   const { userId, type, title, body, link, metadata, skipEmail, forceEmail } =
     params;
 
+  // Only active accounts receive system-initiated traffic. A frozen, unapproved
+  // or lapsed user keeps getting account-critical mail (expiry, billing,
+  // invites) but no reminders, shares or other engagement pushes.
+  const [recipient] = await db
+    .select({
+      email: users.email,
+      locale: users.locale,
+      role: users.role,
+      isApproved: users.isApproved,
+      frozenAt: users.frozenAt,
+      membershipType: users.membershipType,
+      membershipEndDate: users.membershipEndDate,
+      billingTier: users.billingTier,
+      subscriptionStatus: users.subscriptionStatus,
+      trialEndsAt: users.trialEndsAt,
+      nextBillingDate: users.nextBillingDate,
+    })
+    .from(users)
+    .where(eq(users.id, userId));
+
+  if (!recipient) {
+    console.warn(`[notification] Unknown recipient user=${redactId(userId)} type=${type}`);
+    return;
+  }
+
+  const denial = getAccessDenial(recipient);
+  if (denial && !isAccountCritical(type)) {
+    console.log(
+      `[notification] suppressed user=${redactId(userId)} type=${type} reason=${denial}`
+    );
+    return;
+  }
+
   // Get user preferences (defaults: all enabled)
   const [prefs] = await db
     .select()
@@ -78,19 +138,15 @@ export async function sendNotification(params: {
   // 2. Email notification. Normally gated by the user's email preference and
   // quiet hours; forceEmail overrides both for critical transactional mail.
   if (!skipEmail && (forceEmail || (emailEnabled && !quiet))) {
-    const [user] = await db
-      .select({ email: users.email, locale: users.locale })
-      .from(users)
-      .where(eq(users.id, userId));
-    if (user?.email) {
+    if (recipient.email) {
       try {
         await sendNotificationEmail(
-          user.email,
+          recipient.email,
           title,
           title,
           body,
           link,
-          normalizeLocale(user.locale),
+          normalizeLocale(recipient.locale),
         );
       } catch (err) {
         console.error("Notification email failed:", err);

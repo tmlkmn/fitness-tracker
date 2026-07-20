@@ -19,10 +19,12 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  // Users must be able to download receipts even after subscription expires.
+  // Users must be able to download receipts even after subscription expires
+  // or the account is frozen.
   const { user: sessionUser, response } = await requireApiUser({
     requireApproved: false,
     requireActiveBilling: false,
+    allowFrozen: true,
   });
   if (response) return response;
 

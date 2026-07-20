@@ -38,6 +38,7 @@ export const routing = defineRouting({
     "/sifre-sifirla": { tr: "/sifre-sifirla", en: "/reset-password" },
     "/uyelik-doldu": { tr: "/uyelik-doldu", en: "/membership-expired" },
     "/deneme-bitti": { tr: "/deneme-bitti", en: "/trial-expired" },
+    "/dondurulmus": { tr: "/dondurulmus", en: "/suspended" },
     "/profil-tamamla": { tr: "/profil-tamamla", en: "/complete-profile" },
 
     // Sharing
