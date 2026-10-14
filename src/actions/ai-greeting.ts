@@ -21,6 +21,7 @@ import {
   discriminateAiError,
   getAIClient,
   logAiUsage,
+  extractText,
 } from "@/lib/ai";
 import { getDailyGreetingPrompt } from "@/lib/ai-prompts";
 import { addDaysStr, getTurkeyTodayStr } from "@/lib/utils";
@@ -391,7 +392,7 @@ export async function getDailyGreeting(): Promise<DailyGreeting> {
     inputTokens = response.usage.input_tokens;
     outputTokens = response.usage.output_tokens;
 
-    const raw = response.content[0]?.type === "text" ? response.content[0].text : "";
+    const raw = extractText(response.content);
     const clean = sanitizeAiMessage(raw, firstName);
     message = clean || fallbackMessage(tod, locale, dayKind);
 

@@ -16,6 +16,7 @@ import {
   logAiUsage,
   discriminateAiError,
   PROMPT_VERSION,
+  extractText,
 } from "@/lib/ai";
 import { getShoppingListPrompt } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
@@ -100,8 +101,7 @@ export async function generateShoppingList(weeklyPlanId: number) {
     inputTokens = message.usage.input_tokens;
     outputTokens = message.usage.output_tokens;
 
-    const text =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const text = extractText(message.content);
     const wasTruncated = message.stop_reason !== "end_turn";
 
     let parsed: {

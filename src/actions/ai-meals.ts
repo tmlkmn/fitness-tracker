@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { meals, users, aiDailyMealSuggestions } from "@/db/schema";
+import { aiDailyMealSuggestions } from "@/db/schema";
 import { eq, and, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
@@ -12,28 +12,12 @@ import {
   discriminateAiError,
   PROMPT_VERSION,
 } from "@/lib/ai";
-import { callAIText, executeAIWithRetries, buildExecMetadata } from "@/lib/ai-runtime";
-import { AI_MAX_TOKENS, AI_RETRY_TIMEOUT_MS } from "@/lib/ai-config";
-import { buildDailyMealPrompt } from "@/lib/ai-prompt-builders";
+import { buildExecMetadata } from "@/lib/ai-runtime";
+import { userFacingWarnings } from "@/lib/ai-warning-telemetry";
+import { prepareDailyMeals, executeDailyMeals } from "@/lib/ai-daily-meal-service";
 import { replaceMealsForDay } from "@/lib/ai-persistence";
 import { verifyDailyPlanOwnership } from "@/lib/ownership";
-import { getDailyMealsPrompt, getNutritionOnlyMealsPrompt } from "@/lib/ai-prompts";
 import { getUserLocale } from "@/lib/locale";
-import { buildMealContext } from "@/lib/ai-meal-context";
-import { resolveTargetsForDay } from "@/lib/macro-targets";
-import {
-  getDailySupplementBudget,
-  subtractSupplementBudget,
-} from "@/lib/supplement-budget";
-import {
-  validateDailyMealArray,
-  dailyMealsNeedRetry,
-  buildDailyMealsRetryNudge,
-  scoreMealValidationGaps,
-} from "@/lib/ai-daily-validators";
-import { parseAiJson } from "@/lib/ai-json-repair";
-import { parseUserAllergens } from "@/lib/allergen-detect";
-import { enforceMealFloors } from "@/lib/ai-weekly-postprocess";
 
 export interface AIMeal {
   mealTime: string;
@@ -52,162 +36,29 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
   await checkRateLimit(user.id, "daily-meal");
   await verifyDailyPlanOwnership(dailyPlanId, user.id);
 
-  // Get current meals for comparison display
-  const currentMealRows = await db
-    .select()
-    .from(meals)
-    .where(eq(meals.dailyPlanId, dailyPlanId))
-    .orderBy(asc(meals.sortOrder));
-
-  const currentMeals: AIMeal[] = currentMealRows.map((m) => ({
-    mealTime: m.mealTime,
-    mealLabel: m.mealLabel,
-    content: m.content,
-    calories: m.calories ?? null,
-    proteinG: m.proteinG ?? null,
-    carbsG: m.carbsG ?? null,
-    fatG: m.fatG ?? null,
-  }));
-
-  // Get user profile (service type for prompt + macro fields for targets +
-  // foodAllergens for post-gen guard)
-  const [userRow] = await db
-    .select({
-      serviceType: users.serviceType,
-      weight: users.weight,
-      targetWeight: users.targetWeight,
-      height: users.height,
-      age: users.age,
-      gender: users.gender,
-      dailyActivityLevel: users.dailyActivityLevel,
-      fitnessGoal: users.fitnessGoal,
-      targetCalories: users.targetCalories,
-      targetProteinG: users.targetProteinG,
-      targetCarbsG: users.targetCarbsG,
-      targetFatG: users.targetFatG,
-      targetCalorieDelta: users.targetCalorieDelta,
-      targetProteinPerKg: users.targetProteinPerKg,
-      targetFatPct: users.targetFatPct,
-      foodAllergens: users.foodAllergens,
-    })
-    .from(users)
-    .where(eq(users.id, user.id));
-  const isNutritionOnly = userRow?.serviceType === "nutrition";
-  const locale = getUserLocale(user);
-  const systemPrompt = isNutritionOnly
-    ? getNutritionOnlyMealsPrompt(locale)
-    : getDailyMealsPrompt(locale);
-
-  const { context: mealContext, totalMealsTarget, planType, weeklyPlanId } = await buildMealContext(dailyPlanId, user.id);
-
-  const rawTargets = userRow ? await resolveTargetsForDay(userRow, user.id, planType) : null;
-  const supplementBudget = await getDailySupplementBudget(user.id, weeklyPlanId);
-  const targets = rawTargets
-    ? subtractSupplementBudget(rawTargets, supplementBudget)
-    : null;
-
-  const userMessage = buildDailyMealPrompt({
-    locale,
-    mealContext,
-    targets,
-    isNutritionOnly,
-    userNote: userNote ?? null,
-    currentMeals: currentMeals.length > 0
-      ? currentMeals.map((m) => ({
-          mealTime: m.mealTime,
-          mealLabel: m.mealLabel,
-          content: m.content,
-        }))
-      : undefined,
-    supplementBudget,
+  const prep = await prepareDailyMeals({
+    userId: user.id,
+    locale: getUserLocale(user),
+    dailyPlanId,
+    userNote,
   });
 
   const startTime = Date.now();
   let inputTokens: number | undefined;
   let outputTokens: number | undefined;
-  // Use the meal-timing policy's totalMealsTarget when available — it already
-  // factors serviceType, goal, age, and health flags. Fallback floor of 3 when
-  // no user row / policy could be derived.
-  const minMealsExpected = totalMealsTarget ?? 3;
-  const userAllergens = parseUserAllergens(userRow?.foodAllergens);
-  const expectedTargets = targets
-    ? {
-        calories: targets.calories,
-        protein: targets.protein,
-        carbs: targets.carbs,
-        fat: targets.fat,
-      }
-    : undefined;
-  const validatorOpts = { minMealsExpected, userAllergens, expectedTargets };
 
   try {
-    const callOpts = {
-      systemPrompt,
-      maxTokens: AI_MAX_TOKENS.dailyMeal,
-      model: "smart" as const,
-    };
-    const parseFailureAddendum = locale === "en"
-      ? `\n\nPREVIOUS RESPONSE RETURNED INVALID JSON. Keep contents SHORT: content max 40 words, single-sentence recipe instead of mechanical list. Reply with valid JSON only: { "meals": [...] }`
-      : `\n\nÖNCEKİ YANIT HATALI JSON DÖNDÜ. İçerikleri KISA tut: content max 40 kelime, mekanik liste yerine tek cümle tarif. Sadece geçerli JSON yanıt ver: { "meals": [...] }`;
-
-    const exec = await executeAIWithRetries({
-      userMessage,
-      initial: () => callAIText({ ...callOpts, userMessage }),
-      retry: (msg, step) => callAIText({ ...callOpts, userMessage: msg, timeoutMs: step.timeoutMs }),
-      consume: (raw) => validateDailyMealArray(parseAiJson(raw.text), validatorOpts),
-      onParseFailure: async () => {
-        const raw = await callAIText({
-          ...callOpts,
-          userMessage: `${userMessage}${parseFailureAddendum}`,
-          timeoutMs: AI_RETRY_TIMEOUT_MS.dailyMeal,
-        });
-        return { raw, result: validateDailyMealArray(parseAiJson(raw.text), validatorOpts) };
-      },
-      retries: [
-        {
-          buildRetryMessage: (current) =>
-            dailyMealsNeedRetry(current)
-              ? buildDailyMealsRetryNudge(current, minMealsExpected, expectedTargets)
-              : null,
-          shouldKeep: (prev, candidate) =>
-            scoreMealValidationGaps(candidate) < scoreMealValidationGaps(prev),
-          timeoutMs: AI_RETRY_TIMEOUT_MS.dailyMeal,
-        },
-      ],
-    });
-
-    const validation = exec.result;
+    const { suggestedMeals, warnings, exec } = await executeDailyMeals(prep);
     inputTokens = exec.inputTokens;
     outputTokens = exec.outputTokens;
 
-    const suggestedMeals: AIMeal[] = validation.meals;
-
-    // Deterministic protein/fat floor net (the last word after the AI + its
-    // retries — mirrors the weekly flow). A single-day regen must not collapse
-    // protein/fat; if it falls short of the supplement-adjusted floor we append
-    // one standardized "Macro Top-Up" meal to close the gap. Mutates in place.
-    const bodyWeightKg = userRow?.weight ? parseFloat(userRow.weight) : null;
-    const mealCountBeforeFloor = suggestedMeals.length;
-    const isTrainingDay = planType === "workout" || planType === "swimming";
-    // Only offer whey to users who take protein powder and aren't nutrition-only.
-    const useProteinPowder = supplementBudget.hasProteinPowder && !isNutritionOnly;
-    enforceMealFloors(suggestedMeals, targets, bodyWeightKg, locale, {
-      isTrainingDay,
-      useProteinPowder,
-      // Training day + whey user → always surface a visible post-workout shake.
-      forceWhey: isTrainingDay && useProteinPowder,
-    });
-    if (suggestedMeals.length > mealCountBeforeFloor) {
-      validation.warnings.push(
-        "[daily-macro-floor] appended Macro Top-Up meal to meet the protein/fat floor",
-      );
-    }
-
-    const hasWarnings = validation.warnings.length > 0;
+    // Macro-engine notes stay in telemetry; the user sees real warnings only.
+    const shownWarnings = userFacingWarnings(warnings);
+    const hasWarnings = shownWarnings.length > 0;
 
     await logAiUsage(user.id, "daily-meal", {
       status: hasWarnings ? "success_with_warnings" : "success",
-      errorMessage: buildExecMetadata(exec, validation.warnings),
+      errorMessage: buildExecMetadata(exec, warnings),
       inputTokens,
       outputTokens,
       durationMs: Date.now() - startTime,
@@ -217,8 +68,8 @@ export async function generateDailyMeals(dailyPlanId: number, userNote?: string)
 
     return {
       suggestedMeals,
-      currentMeals,
-      validationWarnings: validation.warnings.slice(),
+      currentMeals: prep.currentMeals,
+      validationWarnings: shownWarnings,
     };
   } catch (error) {
     const { status, errorMessage } = discriminateAiError(error);

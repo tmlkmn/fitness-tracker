@@ -12,6 +12,7 @@ import {
   buildUserNotePriorityBlock,
   discriminateAiError,
   PROMPT_VERSION,
+  extractText,
 } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import {
@@ -55,7 +56,7 @@ async function callMealVariation(
     messages: [{ role: "user", content: userMessage }],
   });
 
-  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  const text = extractText(message.content);
   let suggestions: MealVariationSuggestion[];
   try {
     const parsed = parseAiJson(text) as Record<string, unknown>;
@@ -364,7 +365,7 @@ async function callAIForTips(
     ],
   });
   return {
-    text: message.content[0].type === "text" ? message.content[0].text : "",
+    text: extractText(message.content),
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,
   };

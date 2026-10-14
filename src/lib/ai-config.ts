@@ -3,27 +3,61 @@
  * cache TTLs. Tuning any of these in production is a single-file change.
  */
 
-export const AI_MAX_TOKENS = {
-  dailyMeal: 5000,
-  workoutReplace: 5000,
-  workoutSection: 3000,
-  workoutVariation: 1500,
-  weeklyNutrition: 6000,
-  weeklyWorkout: 8000,
-} as const;
-
-export const AI_TIMEOUTS = {
-  weeklyCall: 240_000,
-  weeklyRetry: 180_000,
+/**
+ * output_config.effort for the three plan-generation flows (weekly plan, daily
+ * meals, daily workout). "high" is Sonnet 5.5's default, set explicitly so this
+ * stays the single knob to tune; setting it also routes the call through a
+ * stream (see sendMessage in ai-runtime), which the 32k budgets below need.
+ * Sonnet 5.5's docs reserve "xhigh" for long agentic work — raise it only if an
+ * eval shows these plans improve. Every other AI call sends no effort.
+ * Smart model only: Haiku 4.5 rejects effort.
+ */
+export const AI_EFFORT = {
+  weekly: "high",
+  dailyMeal: "high",
+  workoutReplace: "high",
 } as const;
 
 /**
- * Per-feature retry timeout. Initial calls use SDK default; retries cap the
- * abort window so a stuck retry doesn't tie up the request for ~10 minutes.
+ * max_tokens caps thinking + reply together. Sonnet 5.5 thinks by default, so
+ * the plan flows need room on top of their 5-8k of JSON (a 5k budget got eaten
+ * by thinking → truncated JSON → timeouts). 32k is roughly what Sonnet emits
+ * inside a 300s call timeout — a higher cap would trade truncation for timeouts.
+ */
+export const AI_MAX_TOKENS = {
+  dailyMeal: 32_000,
+  workoutReplace: 32_000,
+  workoutSection: 3000,
+  workoutVariation: 1500,
+  weeklyNutrition: 32_000,
+  weeklyWorkout: 32_000,
+} as const;
+
+export const AI_TIMEOUTS = {
+  weeklyCall: 300_000,
+  weeklyRetry: 180_000,
+  /**
+   * Wall-clock budget for one whole weekly generation (both legs + retries).
+   * Every call is capped by what's left of it, so the run ends inside the
+   * route's 800s maxDuration — with ~80s spare for context loading and saving —
+   * instead of being killed mid-call by the platform.
+   */
+  weeklyBudget: 720_000,
+  /** Don't start a weekly call or retry with less budget than this left. */
+  weeklyMinCallWindow: 90_000,
+  /** Initial-call timeouts of the daily plan flows (retries: see below). */
+  dailyMealCall: 300_000,
+  workoutReplaceCall: 300_000,
+} as const;
+
+/**
+ * Per-feature retry timeout, so a stuck retry doesn't tie up the request. The
+ * plan flows get 200s: initial 300s + parse-fail retry 200s + quality retry
+ * 200s = 700s, inside the 800s maxDuration of the pages hosting those actions.
  */
 export const AI_RETRY_TIMEOUT_MS = {
-  dailyMeal: 60_000,
-  workoutReplace: 60_000,
+  dailyMeal: 200_000,
+  workoutReplace: 200_000,
   workoutSection: 45_000,
   workoutVariation: 30_000,
 } as const;

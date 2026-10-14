@@ -15,7 +15,7 @@ import {
   runWeeklyGeneration,
   mergeWeeklyResults,
 } from "@/lib/ai-weekly-service";
-import { categorizeWarnings } from "@/lib/ai-warning-telemetry";
+import { categorizeWarnings, isSystemNote, sampleWarnings } from "@/lib/ai-warning-telemetry";
 
 // "both" generation runs the workout + nutrition legs sequentially, each with
 // up to 3 quality retries, so the worst case is ~6-8 back-to-back Sonnet calls.
@@ -124,7 +124,8 @@ export async function POST(request: Request) {
             ...(outcome.workoutResult?.warnings ?? []),
           ];
           const warningCategories = categorizeWarnings(allWarnings);
-          const hasCategorizedWarnings = Object.keys(warningCategories).length > 0;
+          // System notes ([volume-adjusted], …) are logged but aren't problems.
+          const hasCategorizedWarnings = allWarnings.some((w) => !isSystemNote(w));
           const metaPayload = {
             retryFlags: outcome.retryFlags,
             deloadWeek,
@@ -132,6 +133,7 @@ export async function POST(request: Request) {
             supplementKcal,
             supplementsCount,
             warningCategories,
+            warnings: sampleWarnings(allWarnings),
           };
           const cyclingActive = carbCyclingProfile !== "off";
           const supplementsActive = supplementsCount > 0;

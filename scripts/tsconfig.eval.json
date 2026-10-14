@@ -1,0 +1,11 @@
+{
+  "//": "Used only by scripts/eval-plans.ts (tsx --tsconfig). Next.js aliases `server-only` internally; outside Next we point it at Next's own empty stub so the server-only modules load in a plain Node process.",
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["./src/*"],
+      "server-only": ["./node_modules/next/dist/compiled/server-only/empty.js"]
+    }
+  }
+}

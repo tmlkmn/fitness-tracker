@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { exerciseDemos } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage } from "@/lib/ai";
+import { getAIClient, AI_MODELS, checkRateLimit, logAiUsage, extractText } from "@/lib/ai";
 import { EXERCISE_MATCH_PROMPT } from "@/lib/ai-prompts";
 import {
   getExerciseDBList,
@@ -121,9 +121,7 @@ export async function getExerciseDemo(
     ],
   });
 
-  const aiResponse =
-    (message.content[0].type === "text" ? message.content[0].text : "")
-      .trim();
+  const aiResponse = extractText(message.content).trim();
 
   if (aiResponse === "NOT_FOUND" || !aiResponse) {
     await db.insert(exerciseDemos).values({

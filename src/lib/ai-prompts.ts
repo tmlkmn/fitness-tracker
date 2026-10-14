@@ -166,6 +166,18 @@ const MEAL_CONTENT_FORMAT_BLOCK_EN = `## Content Format (VERY IMPORTANT)
 - INCORRECT example: "150g cottage cheese, 80g whole-grain pasta, 1 tomato, 1 cucumber"
 - INCORRECT example: "📋 Content Details:\\n- 150g cottage cheese (strained)\\n- 80g pasta..."`;
 
+// Meal flows running through the macro engine (src/lib/macro-engine.ts):
+// ingredients + a recipe template instead of prose content and totals.
+const INGREDIENTS_BLOCK_TR = `## Malzemeler ve Porsiyonlar (hesabı sistem yapar)
+- Her öğünü "ingredients" + "recipe" olarak ver. Her malzeme için: ad (kullanıcının okuyacağı gibi; pişmiş/kuru olduğunu belirt, ör. "bulgur pilavı (pişmiş)"), gram, adetli besinlerde pieceGrams (yumurta ≈ 50, ekmek dilimi ≈ 30, değilse null), 100 gramdaki kcal/protein/karbonhidrat/yağ ve rol: protein (öğünün ana protein kaynağı), carb (ana karbonhidrat kaynağı), fat (eklenen yağ: zeytinyağı, tereyağı, kuruyemiş), veg (sebze/yeşillik), other.
+- Öğün veya gün toplamı HESAPLAMA, kalori yazma — sistem toplamları malzemelerden hesaplar ve protein/karb/yağ porsiyonlarını günün hedeflerine göre ölçekler. Porsiyonları hedeflere yakın, makul seç: sistem porsiyonları yalnızca sınırlı ölçüde değiştirebilir (protein −%20/+%25, karbonhidrat −%40/+%60, eklenen yağ −%50/+%80). Yağlı protein kaynaklarındaki (tam yağlı peynir, bütün yumurta, somon, kıyma, tavuk but) yağ ancak protein porsiyonuyla birlikte azalır; günün yağ hedefi düşükse yağsız protein (tavuk göğsü, lor, yağsız yoğurt, beyaz balık, yumurta beyazı) tercih et.
+- recipe: İçerik Formatı kurallarındaki tek satırlık şef tarzı metin; ama kendi yazacağın sayıların yerine n. malzemenin miktarının geleceği yere {n} yaz (n 0'dan başlar); her malzeme en az bir kez {n} olarak geçsin. Örnek — malzemeler 0 yumurta (pieceGrams 50), 1 lor, 2 tam buğday ekmek (pieceGrams 30): "{0} yumurtayı {1} lor ve doğranmış yeşilliklerle çırpıp zeytinyağında omlet yap, yanına {2} dilim tam buğday ekmek ekle". Sistem bunları "2", "150g", "2" ile doldurur.`;
+
+const INGREDIENTS_BLOCK_EN = `## Ingredients & Portions (the system does the math)
+- Give each meal as "ingredients" + "recipe". For every ingredient: name (as the user reads it; say cooked or dry, e.g. "bulgur pilaf (cooked)"), grams, pieceGrams for countable foods (egg ≈ 50, bread slice ≈ 30, otherwise null), its per-100g kcal/protein/carbs/fat, and role: protein (the meal's main protein source), carb (main carb source), fat (added fat: oil, butter, nuts), veg (vegetables/greens), other.
+- Do NOT add up meal or day totals and do not state calories — the system computes them from the ingredients and scales the protein/carb/fat portions onto the day's targets. Size portions sensibly toward the targets: the system can only adjust portions within limits (protein −20%/+25%, carbs −40%/+60%, added fat −50%/+80%). Fat inside fatty protein sources (full-fat cheese, whole eggs, salmon, ground beef, chicken thigh) only shrinks together with the protein portion; when the day's fat target is low, prefer lean protein (chicken breast, cottage cheese, non-fat yogurt, white fish, egg whites).
+- recipe: the single-line chef-style text from the Content Format rules, but write {n} wherever ingredient n's amount goes (n starts at 0) instead of any number of your own; every ingredient appears as {n} at least once. Example — ingredients 0 egg (pieceGrams 50), 1 cottage cheese, 2 whole-grain bread (pieceGrams 30): "Whisk {0} eggs with {1} cottage cheese and chopped herbs into an omelet in olive oil; serve with {2} slices of whole-grain bread". The system fills in "2", "150g", "2".`;
+
 const TOKEN_DISCIPLINE_BLOCK_TR = `## Token Disiplini (KRİTİK — JSON'un kesilmesini önler)
 - notes: max 10 kelime, tek cümle. Sadece tempo / yoğunluk tekniği / tek kısa ipucu
 - content (öğün): max 40 kelime, tek satırda akıcı tarif. Liste veya bullet YASAK
@@ -857,8 +869,8 @@ ${MEAL_CONTENT_FORMAT_BLOCK_EN}
 - Respond ONLY in valid JSON, no extra explanation or markdown
 - Strictly respect the user's health constraints, allergies, and dietary preferences
 - If the user has food allergies, NEVER include those ingredients or derivatives
-- Use realistic and consistent calorie/macro values (content must match)
-- JSON format: { "meals": [{ "mealTime": "08:00", "mealLabel": "Breakfast", "content": "...", "calories": 450, "proteinG": "30", "carbsG": "45", "fatG": "15" }] }`;
+${INGREDIENTS_BLOCK_EN}
+- JSON format: { "meals": [{ "mealTime": "08:00", "mealLabel": "Breakfast", "recipe": "...", "ingredients": [{ "name": "...", "grams": 100, "pieceGrams": null, "kcalPer100g": 0, "proteinPer100g": 0, "carbsPer100g": 0, "fatPer100g": 0, "role": "protein" }] }] }`;
   }
   return `Sen 10+ yıl deneyimli, Türkçe konuşan sertifikalı bir spor diyetisyeni ve beslenme uzmanısın. Görevin, kullanıcının vücut kompozisyonunu, antrenman programını ve hedeflerini analiz ederek kişiye özel günlük beslenme programı oluşturmak.
 
@@ -911,8 +923,8 @@ ${MEAL_CONTENT_FORMAT_BLOCK_TR}
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, alerjilerini ve diyet tercihlerini kesinlikle dikkate al
 - Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE önerme
-- Gerçekçi ve tutarlı kalori/makro değerleri kullan (içerikle uyumlu olmalı)
-- JSON formatı: { "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "content": "...", "calories": 450, "proteinG": "30", "carbsG": "45", "fatG": "15" }] }`;
+${INGREDIENTS_BLOCK_TR}
+- JSON formatı: { "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "recipe": "...", "ingredients": [{ "name": "...", "grams": 100, "pieceGrams": null, "kcalPer100g": 0, "proteinPer100g": 0, "carbsPer100g": 0, "fatPer100g": 0, "role": "protein" }] }] }`;
 }
 
 // ─── WEEKLY PLAN ───────────────────────────────────────────────────────────
@@ -1199,7 +1211,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_EN}
 - ⚠️ MOST COMMON MISTAKE: treating a rest day as a "small day" and cutting everything (protein included). WRONG. On a rest day ONLY carbs drop; protein and fat do NOT, so calories only dip slightly (stay ~85-90% of a training day), they do NOT halve. Example: target 185g protein / 2800 kcal → training day ~185g/3100 kcal (7 meals), rest day ALSO ~185g/2400 kcal (5 meals, denser protein per meal). You may NOT drop rest-day protein to 130g or calories to 1800.
 - ⚡ SUM AND CHECK: After drafting each day, SUM the meals' calories; it must be within ±5% of that day-type's ABSOLUTE kcal target. If under, ENLARGE carb portions (rice/oats/bread/pasta/fruit) and if needed fat sources (olive oil/nuts/avocado) — grow PORTIONS, don't add/remove meals. A lean-bulk training day is ~3000+ kcal; 7 small meals is NOT "low calorie" — don't stop at ~2400.
 - 🔒 PROTEIN IS THE ANCHOR: hit each day-type's protein target FIRST (it's the priority floor), then fat, then let CARBS fill the remaining calories. NEVER lower protein to hit a carb number — if calories run high, grow carbs, not protein down. Protein is the highest-priority macro in a muscle-gain plan; it must never be the lowest.
-- Activity level: derive from the user profile and the day types in the "TRAINING DAY CONTEXT" block. If no block, assume lightly active (TEE = BMR × 1.3).
+- Activity level is already built into the "COMPUTED DAILY MACRO TARGETS" — use those numbers; do not recompute BMR/TEE yourself. Only if that block is missing, assume lightly active (TEE = BMR × 1.3).
 
 ${GOAL_STRATEGY_REF_BLOCK_EN}
 
@@ -1269,7 +1281,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_TR}
 - ⚠️ EN SIK YAPILAN HATA: dinlenme gününü "küçük gün" sanıp protein dahil her şeyi kısmak. YANLIŞ. Dinlenme gününde SADECE karbonhidrat düşer; protein ve yağ düşmez, kalori bu yüzden sadece HAFİF iner (antrenman gününün ~%85-90'ı), yarı yarıya DÜŞMEZ. Örnek: hedef 185g protein / 2800 kcal → antrenman günü ~185g/3100 kcal (7 öğün), dinlenme günü de ~185g/2400 kcal (5 öğün, öğün başına daha yoğun protein). Dinlenme gününde proteini 130g'a veya kaloriyi 1800'e DÜŞÜREMEZSİN.
 - ⚡ TOPLA VE KONTROL ET: Her günü bitirince öğünlerin kalorisini TOPLA; o gün-tipinin MUTLAK kcal hedefinin ±%5'inde olmalı. Altındaysa karb porsiyonlarını (pirinç/yulaf/ekmek/makarna/meyve) ve gerekiyorsa yağ kaynaklarını (zeytinyağı/kuruyemiş/avokado) BÜYÜT — öğün ekleyip silme, PORSİYON büyüt. Lean-bulk antrenman günü ~3000+ kcal; 7 küçük öğün "az kalori" demek DEĞİL, ~2400'de durma.
 - 🔒 PROTEİN ÇAPADIR: önce o gün-tipinin protein hedefini tuttur (öncelikli taban), sonra yağı, kalan kaloriyi KARB doldursun. Karb sayısını tutturmak için proteini ASLA düşürme — kalori yükseldiyse karbı büyüt, proteini değil. Kas kazanım planında protein en yüksek öncelikli makrodur; asla en düşük makro olmamalı.
-- Aktivite seviyesi: kullanıcı profilindeki bilgilere ve "ANTRENMAN GÜN BAĞLAMI" bloğundaki gün tiplerine göre belirle. Bağlam bloğu yoksa hafif aktif (TEE = BMR × 1.3) varsay.
+- Aktivite seviyesi "HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ" bloğuna zaten dahildir — o sayıları kullan, BMR/TEE’yi kendin yeniden hesaplama. Yalnızca bu blok yoksa hafif aktif (TEE = BMR × 1.3) varsay.
 
 ${GOAL_STRATEGY_REF_BLOCK_TR}
 
@@ -1341,7 +1353,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_EN}
 ## Calories and Macros
 - Analyze body composition (weight, height, body fat %, muscle mass) and age
 - For calorie delta, protein/fat share, and carb base, apply the GOAL-DRIVEN STRATEGY block EXACTLY — not your own estimate
-- Estimate activity from the user's daily routine (physical work, walking, non-sport activity). Default: lightly active (TEE = BMR × 1.3-1.4). Sedentary (TEE = BMR × 1.2) only for office work + minimal movement.
+- Activity level is already built into the "COMPUTED DAILY MACRO TARGETS" — use those numbers; do not recompute BMR/TEE yourself. Only if that block is missing, estimate it from the daily routine (default lightly active, TEE = BMR × 1.3-1.4).
 - Weekly average macro targets stay fixed; 100-150 kcal daily variation is normal — depends on lifestyle
 
 ${GOAL_STRATEGY_REF_BLOCK_EN}
@@ -1367,8 +1379,8 @@ ${MEAL_CONTENT_FORMAT_BLOCK_EN}
 - Respond ONLY in valid JSON, no extra explanation or markdown
 - Strictly respect the user's health constraints, allergies, and medications
 - If the user has food allergies, NEVER include those ingredients or derivatives
-- Use realistic and consistent calorie/macro values
-- JSON format: { "meals": [{ "mealTime": "08:00", "mealLabel": "Breakfast", "content": "...", "calories": 450, "proteinG": "30", "carbsG": "45", "fatG": "15" }] }`;
+${INGREDIENTS_BLOCK_EN}
+- JSON format: { "meals": [{ "mealTime": "08:00", "mealLabel": "Breakfast", "recipe": "...", "ingredients": [{ "name": "...", "grams": 100, "pieceGrams": null, "kcalPer100g": 0, "proteinPer100g": 0, "carbsPer100g": 0, "fatPer100g": 0, "role": "protein" }] }] }`;
   }
   return `Sen 10+ yıl deneyimli, Türkçe konuşan sertifikalı bir diyetisyen ve beslenme uzmanısın. Görevin, kullanıcının vücut kompozisyonunu ve yaşam tarzını analiz ederek kişiye özel günlük beslenme programı oluşturmak.
 
@@ -1377,7 +1389,7 @@ ${GOAL_DRIVEN_STRATEGY_BLOCK_TR}
 ## Kalori ve Makro Hesaplama
 - Kullanıcının vücut kompozisyonu verilerini (kilo, boy, yağ oranı, kas kütlesi) ve yaşını analiz et
 - Kalori deltası, protein/yağ payı ve karbonhidrat tabanı için HEDEF-ODAKLI STRATEJİ bloğunu BİREBİR uygula — kendi tahminin değil, blok geçerli
-- Aktivite seviyesini kullanıcının günlük programından tahmin et (fiziksel iş, yürüyüş, spor dışı aktivite). Varsayılan: hafif aktif (TEE = BMR × 1.3-1.4). Sedanter (TEE = BMR × 1.2) sadece ofis işi + minimal hareket için.
+- Aktivite seviyesi "HESAPLANMIŞ GÜNLÜK MAKRO HEDEFLERİ" bloğuna zaten dahildir — o sayıları kullan, BMR/TEE’yi kendin yeniden hesaplama. Yalnızca bu blok yoksa günlük programdan tahmin et (varsayılan hafif aktif, TEE = BMR × 1.3-1.4).
 - Haftalık ortalama makro hedefleri sabit kalsın; günlük 100-150 kcal varyasyon normal — kullanıcının yaşam tarzına bağlı
 
 ${GOAL_STRATEGY_REF_BLOCK_TR}
@@ -1403,8 +1415,8 @@ ${MEAL_CONTENT_FORMAT_BLOCK_TR}
 - Sadece geçerli JSON formatında yanıt ver, başka açıklama veya markdown ekleme
 - Kullanıcının sağlık kısıtlarını, alerjilerini ve ilaçlarını kesinlikle dikkate al
 - Kullanıcının gıda alerjileri belirtilmişse, bu gıdaları ve türevlerini KESİNLİKLE önerme
-- Gerçekçi ve tutarlı kalori/makro değerleri kullan
-- JSON formatı: { "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "content": "...", "calories": 450, "proteinG": "30", "carbsG": "45", "fatG": "15" }] }`;
+${INGREDIENTS_BLOCK_TR}
+- JSON formatı: { "meals": [{ "mealTime": "08:00", "mealLabel": "Kahvaltı", "recipe": "...", "ingredients": [{ "name": "...", "grams": 100, "pieceGrams": null, "kcalPer100g": 0, "proteinPer100g": 0, "carbsPer100g": 0, "fatPer100g": 0, "role": "protein" }] }] }`;
 }
 
 // ─── WORKOUT-ONLY WEEKLY ───────────────────────────────────────────────────

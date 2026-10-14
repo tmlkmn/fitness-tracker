@@ -1,9 +1,8 @@
 /**
- * Shared AI call + retry runtime. Encapsulates the three patterns previously
+ * Shared AI call + retry runtime. Encapsulates the patterns previously
  * scattered across meals/workout/weekly actions:
- *   1. Single text response call with optional retries.
- *   2. Tool-use call with optional retries (weekly only).
- *   3. Token aggregation across the initial call and any retries.
+ *   1. Single text response call (optionally schema-constrained) with retries.
+ *   2. Token aggregation across the initial call and any retries.
  *
  * Each feature defines its own retry strategy via RetryPlanStep[] — generic
  * "retry on parse fail" is intentionally NOT baked in because retry triggers
@@ -11,10 +10,13 @@
  */
 
 import type Anthropic from "@anthropic-ai/sdk";
-import { getAIClient, AI_MODELS } from "@/lib/ai";
-import { categorizeWarnings } from "@/lib/ai-warning-telemetry";
+import { getAIClient, AI_MODELS, extractText } from "@/lib/ai";
+import { categorizeWarnings, sampleWarnings } from "@/lib/ai-warning-telemetry";
 
 export type AIModelKind = "fast" | "smart";
+
+/** Effort levels. SDK 0.88's OutputConfig type predates "xhigh". */
+export type AIEffort = "low" | "medium" | "high" | "xhigh" | "max";
 
 interface BaseCallOptions {
   systemPrompt: string;
@@ -23,18 +25,21 @@ interface BaseCallOptions {
   model?: AIModelKind;
   /** AbortController timeout in ms. Undefined = no timeout (SDK default). */
   timeoutMs?: number;
+  /**
+   * output_config.effort. Omit to send exactly the request callers have always
+   * sent (model-default effort, non-streaming). Smart model only — Haiku 4.5
+   * rejects the parameter with a 400.
+   */
+  effort?: AIEffort;
+  /**
+   * JSON schema for structured output (output_config.format) — the reply is
+   * then guaranteed to parse and match it. See ai-output-schemas.
+   */
+  outputSchema?: Record<string, unknown>;
 }
 
 export interface AITextResult {
   text: string;
-  inputTokens: number;
-  outputTokens: number;
-  stopReason: string | null;
-  modelId: string;
-}
-
-export interface AIToolResult {
-  toolInput: unknown;
   inputTokens: number;
   outputTokens: number;
   stopReason: string | null;
@@ -69,66 +74,53 @@ async function withOptionalTimeout<T>(
   }
 }
 
-export async function callAIText(opts: BaseCallOptions): Promise<AITextResult> {
+type EffortParam = NonNullable<
+  Anthropic.Messages.MessageCreateParamsNonStreaming["output_config"]
+>["effort"];
+
+/**
+ * Sends one request. Without `effort` this is the plain non-streaming
+ * `messages.create` every caller has always used. With it the call goes over a
+ * stream: high-effort requests can think for minutes and need a max_tokens
+ * above the ~21k the SDK allows on non-streaming calls. finalMessage()
+ * resolves to the same Message shape, so callers can't tell the difference.
+ */
+async function sendMessage(
+  params: Anthropic.Messages.MessageCreateParamsNonStreaming,
+  opts: Pick<BaseCallOptions, "effort" | "timeoutMs" | "outputSchema">,
+): Promise<Anthropic.Messages.Message> {
   const client = getAIClient();
+  const { effort, outputSchema } = opts;
+  if (effort && params.model !== AI_MODELS.smart) {
+    throw new Error(`effort is only supported on the smart model (got ${params.model})`);
+  }
+  const outputConfig = {
+    ...(effort ? { effort: effort as EffortParam } : {}),
+    ...(outputSchema ? { format: { type: "json_schema" as const, schema: outputSchema } } : {}),
+  };
+  const body = effort || outputSchema ? { ...params, output_config: outputConfig } : params;
+  return withOptionalTimeout(opts.timeoutMs, (signal) => {
+    const reqOpts = signal ? { signal } : undefined;
+    if (!effort) return client.messages.create(body, reqOpts);
+    return client.messages.stream(body, reqOpts).finalMessage();
+  });
+}
+
+export async function callAIText(opts: BaseCallOptions): Promise<AITextResult> {
   const modelId = resolveModel(opts.model);
-  const message = await withOptionalTimeout(opts.timeoutMs, (signal) =>
-    client.messages.create(
-      {
-        model: modelId,
-        max_tokens: opts.maxTokens,
-        system: buildSystem(opts.systemPrompt),
-        messages: [{ role: "user", content: opts.userMessage }],
-      },
-      signal ? { signal } : undefined,
-    ),
+  const message = await sendMessage(
+    {
+      model: modelId,
+      max_tokens: opts.maxTokens,
+      system: buildSystem(opts.systemPrompt),
+      messages: [{ role: "user", content: opts.userMessage }],
+    },
+    opts,
   );
 
-  const firstBlock = message.content[0];
-  const text = firstBlock?.type === "text" ? firstBlock.text : "";
+  const text = extractText(message.content);
   return {
     text,
-    inputTokens: message.usage.input_tokens,
-    outputTokens: message.usage.output_tokens,
-    stopReason: message.stop_reason ?? null,
-    modelId,
-  };
-}
-
-interface ToolDefinition {
-  name: string;
-  description?: string;
-  input_schema: Anthropic.Messages.Tool.InputSchema;
-}
-
-export interface CallAIToolOptions extends BaseCallOptions {
-  tool: ToolDefinition;
-}
-
-export async function callAITool(opts: CallAIToolOptions): Promise<AIToolResult> {
-  const client = getAIClient();
-  const modelId = resolveModel(opts.model);
-  const message = await withOptionalTimeout(opts.timeoutMs, (signal) =>
-    client.messages.create(
-      {
-        model: modelId,
-        max_tokens: opts.maxTokens,
-        system: buildSystem(opts.systemPrompt),
-        tools: [opts.tool],
-        tool_choice: { type: "tool", name: opts.tool.name },
-        messages: [{ role: "user", content: opts.userMessage }],
-      },
-      signal ? { signal } : undefined,
-    ),
-  );
-
-  const toolUse = message.content.find((b) => b.type === "tool_use");
-  if (!toolUse || toolUse.type !== "tool_use") {
-    throw new Error(`No tool_use block in AI response (model=${modelId})`);
-  }
-
-  return {
-    toolInput: toolUse.input,
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,
     stopReason: message.stop_reason ?? null,
@@ -167,6 +159,8 @@ interface ExecuteOptions<TCallResult, TResult> {
   /** Optional fallback if the *initial* `consume` throws. Lets parse-fail retries plug in. */
   onParseFailure?: () => Promise<{ result: TResult; raw: TCallResult }>;
   retries: RetryPlanStep<TResult>[];
+  /** Optional gap scorer (lower = better); recorded as `initialScore`. */
+  score?: (result: TResult) => number;
 }
 
 export interface ExecuteResult<TResult> {
@@ -181,6 +175,8 @@ export interface ExecuteResult<TResult> {
   keptRetryCount: number;
   /** Retry steps whose buildRetryMessage returned null (no AI call). */
   skippedRetryCount: number;
+  /** `score` of the result before any retry step — set when `score` is given. */
+  initialScore?: number;
 }
 
 interface CallResultWithUsage {
@@ -225,6 +221,8 @@ export async function executeAIWithRetries<TCallResult extends CallResultWithUsa
     outputTokens += recovered.raw.outputTokens;
     currentResult = recovered.result;
   }
+  // Scored now: callers mutate the final result (e.g. push warnings) afterwards.
+  const initialScore = opts.score?.(currentResult);
 
   for (let i = 0; i < opts.retries.length; i++) {
     const step = opts.retries[i];
@@ -258,6 +256,7 @@ export async function executeAIWithRetries<TCallResult extends CallResultWithUsa
     retryParseFailures,
     keptRetryCount,
     skippedRetryCount,
+    initialScore,
   };
 }
 
@@ -265,7 +264,8 @@ export async function executeAIWithRetries<TCallResult extends CallResultWithUsa
  * Build a JSON-serialized telemetry payload for `logAiUsage.errorMessage`.
  * Returns undefined when there is nothing meaningful to log (no warnings and
  * no retry activity), so successful single-shot calls don't pollute logs.
- * Includes a category-count rollup of warnings for admin dashboard parsing.
+ * Includes a category-count rollup of warnings plus a bounded sample of the
+ * raw prose (sampleWarnings), both read by the admin AI-warnings page.
  */
 export function buildExecMetadata<T>(
   exec: ExecuteResult<T>,
@@ -277,7 +277,7 @@ export function buildExecMetadata<T>(
 
   const payload: Record<string, unknown> = {};
   if (hasWarnings) {
-    payload.warnings = warnings;
+    payload.warnings = sampleWarnings(warnings);
     payload.warningCategories = categorizeWarnings(warnings);
   }
   if (hasRetryActivity) {
@@ -285,5 +285,5 @@ export function buildExecMetadata<T>(
     if (exec.retryParseFailures > 0) payload.retryParseFailures = exec.retryParseFailures;
     if (exec.keptRetryCount > 0) payload.keptRetryCount = exec.keptRetryCount;
   }
-  return JSON.stringify(payload).slice(0, 500);
+  return JSON.stringify(payload);
 }

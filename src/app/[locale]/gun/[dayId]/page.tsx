@@ -18,6 +18,9 @@ import { normalizeLocale } from "@/lib/locale";
 import { formatDate, parseDateOnly } from "@/lib/date-format";
 
 export const dynamic = "force-dynamic";
+// Server actions on this page include the AI plan flows (daily meals, daily
+// workout): up to 300s initial call + 2×200s retries — see AI_RETRY_TIMEOUT_MS.
+export const maxDuration = 800;
 
 interface PageProps {
   params: Promise<{ dayId: string; locale: string }>;

@@ -12,7 +12,9 @@ import { buildWeeklyPlanContext } from "@/actions/ai-weekly";
 import { buildUserNotePriorityBlock } from "@/lib/ai";
 import { getNutritionOnlyWeeklyPrompt, getWorkoutOnlyWeeklyPrompt } from "@/lib/ai-prompts";
 import { getMondayStr, addDaysStr } from "@/lib/utils";
-import { callAITool } from "@/lib/ai-runtime";
+import { callAIText, type AIEffort } from "@/lib/ai-runtime";
+import { parseAiJson } from "@/lib/ai-json-repair";
+import { WEEKLY_PLAN_SCHEMA } from "@/lib/ai-output-schemas";
 import {
   validateWeeklyPlan,
   type ExpectedTargets,
@@ -41,7 +43,7 @@ import {
   buildTrainingDayContextBlock,
   TURKISH_DAY_NAMES,
 } from "@/lib/ai-weekly-prompt-blocks";
-import { AI_MAX_TOKENS, AI_TIMEOUTS } from "@/lib/ai-config";
+import { AI_EFFORT, AI_MAX_TOKENS, AI_TIMEOUTS } from "@/lib/ai-config";
 import { parseUserAllergens } from "@/lib/allergen-detect";
 import { detectInjuryProtocols } from "@/lib/injury-protocols";
 import {
@@ -64,10 +66,13 @@ import {
 import {
   assessMuscleVolume,
   getMuscleVolumeBands,
+  loadDemosForPlan,
   MUSCLE_RAW_TO_GROUP,
   type MuscleGroup,
   type MuscleVolumeBandsResult,
 } from "@/lib/muscle-volume-validator";
+import { resolveExerciseDemos } from "@/lib/exercise-demo-service";
+import { adjustSetsToBands } from "@/lib/volume-adjuster";
 import {
   buildVolumeBandsBlock,
   buildPreviousVolumeBlock,
@@ -82,6 +87,7 @@ import type { Locale } from "@/lib/locale";
 
 const CALL_TIMEOUT = AI_TIMEOUTS.weeklyCall;
 const RETRY_TIMEOUT = AI_TIMEOUTS.weeklyRetry;
+const MIN_CALL_WINDOW = AI_TIMEOUTS.weeklyMinCallWindow;
 
 /**
  * Determines the expected 7-day mode map for a weekly generation request.
@@ -119,76 +125,18 @@ function resolveExpectedDayModes(input: {
   return modes;
 }
 
-// ─── Tool Use schema ────────────────────────────────────────────────────────
-
-const SUBMIT_WEEKLY_PLAN_TOOL = {
-  name: "submit_weekly_plan",
-  description: "7 günlük haftalık planı submit eder. Bu tool'u MUTLAKA çağır, JSON'u serbest metin olarak DÖNDÜRME.",
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      weekTitle: { type: "string" },
-      phase:     { type: "string" },
-      notes:     { type: ["string", "null"] },
-      strategyNote: {
-        type: ["string", "null"],
-        description:
-          "1-2 cümle (maks 250 char) strateji açıklaması — kullanıcının fitness seviyesi, hedefi, deload/carb-cycling durumu nasıl bu plana dönüştü? 2. tekil şahıs, somut ('Seni hipertrofiye taşımak için 4 antrenman günü, push/pull/lower split kuruldu.'). Generic AI-speak kullanma. Locale: kullanıcının dilinde yaz.",
-      },
-      days: {
-        type: "array",
-        minItems: 1,
-        maxItems: 7,
-        items: {
-          type: "object",
-          properties: {
-            dayOfWeek:    { type: "integer", minimum: 0, maximum: 6, description: "0=Pazartesi … 6=Pazar" },
-            dayName:      { type: "string" },
-            planType:     { type: "string", enum: ["workout", "swimming", "rest", "nutrition"] },
-            workoutTitle: { type: ["string", "null"] },
-            meals: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  mealTime:  { type: "string" },
-                  mealLabel: { type: "string" },
-                  content:   { type: "string" },
-                  calories:  { type: ["number", "null"] },
-                  proteinG:  { type: ["string", "null"] },
-                  carbsG:    { type: ["string", "null"] },
-                  fatG:      { type: ["string", "null"] },
-                },
-                required: ["mealTime", "mealLabel", "content"] as string[],
-              },
-            },
-            exercises: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  section:         { type: "string" },
-                  sectionLabel:    { type: "string" },
-                  name:            { type: "string" },
-                  englishName:     { type: ["string", "null"] },
-                  sets:            { type: ["integer", "null"] },
-                  reps:            { type: ["string", "null"] },
-                  restSeconds:     { type: ["integer", "null"] },
-                  durationMinutes: { type: ["number", "null"] },
-                  notes:           { type: ["string", "null"] },
-                  intensity:       { type: ["string", "null"], enum: ["low", "moderate", "high", null] },
-                },
-                required: ["section", "sectionLabel", "name"] as string[],
-              },
-            },
-          },
-          required: ["dayOfWeek", "dayName", "planType", "meals", "exercises"] as string[],
-        },
-      },
-    },
-    required: ["weekTitle", "days"] as string[],
-  },
-};
+/**
+ * Structured output guarantees valid JSON unless the reply was cut off at
+ * max_tokens; a truncated body becomes `null`, which validateWeeklyPlan
+ * treats as "all days missing" — the truncation-retry trigger.
+ */
+function parsePlanJson(text: string): unknown {
+  try {
+    return parseAiJson(text);
+  } catch {
+    return null;
+  }
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -208,9 +156,11 @@ interface AiCallResult {
   /** Telemetry flags for usage logging. */
   truncationRetryTriggered: boolean;
   qualityRetryTriggered: boolean;
+  /** Gap score of the first response, before any retry (eval telemetry). */
+  firstAttemptGapScore: number;
 }
 
-function scoreWeeklyValidationGaps(
+export function scoreWeeklyValidationGaps(
   result: ValidateWeeklyPlanResult,
   effectivePastDows: Set<number>,
 ): number {
@@ -359,22 +309,34 @@ interface RunAiCallOptions {
   isDeloadWeek?: boolean;
   /** Fired once when this leg enters a truncation or quality retry. */
   onRetry?: () => void;
+  /** Epoch ms this leg must finish by — see AI_TIMEOUTS.weeklyBudget. */
+  deadline: number;
+  /** Overrides AI_EFFORT.weekly — eval harness only. */
+  effort?: AIEffort;
 }
 
 async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
-  const { systemPrompt, userMessage, expectedDayModes, effectivePastDows, maxTokens, label, expectedTargets, userAllergens, previousWorkingSets, isDeloadWeek, onRetry } = opts;
+  const { systemPrompt, userMessage, expectedDayModes, effectivePastDows, maxTokens, label, expectedTargets, userAllergens, previousWorkingSets, isDeloadWeek, onRetry, deadline, effort = AI_EFFORT.weekly } = opts;
   const nonPastTotal = 7 - effectivePastDows.size;
+  // Every call is capped by what's left of the generation budget, so the run
+  // ends inside the route's maxDuration instead of being killed mid-call.
+  const timeLeft = () => deadline - Date.now();
 
+  if (timeLeft() < MIN_CALL_WINDOW) {
+    throw new Error(`[${label}] weekly time budget exhausted before the call (timeout)`);
+  }
   console.log(`[AI Weekly] ▶ ${label} call start (maxTokens=${maxTokens})`);
-  const first = await callAITool({
+  const firstStartedAt = Date.now();
+  const first = await callAIText({
     systemPrompt,
     userMessage,
     maxTokens,
     model: "smart",
-    timeoutMs: CALL_TIMEOUT,
-    tool: SUBMIT_WEEKLY_PLAN_TOOL,
+    effort,
+    timeoutMs: Math.min(CALL_TIMEOUT, timeLeft()),
+    outputSchema: WEEKLY_PLAN_SCHEMA,
   });
-  console.log(`[AI Weekly] ✓ ${label} call (stop=${first.stopReason}, in=${first.inputTokens}, out=${first.outputTokens})`);
+  console.log(`[AI Weekly] ✓ ${label} call (stop=${first.stopReason}, in=${first.inputTokens}, out=${first.outputTokens}, ${Math.round((Date.now() - firstStartedAt) / 1000)}s)`);
 
   let totalInput = first.inputTokens;
   let totalOutput = first.outputTokens;
@@ -386,7 +348,8 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
       previousWorkingSets,
       isDeloadWeek,
     });
-  let result = validate(first.toolInput);
+  let result = validate(parsePlanJson(first.text));
+  const firstAttemptGapScore = scoreWeeklyValidationGaps(result, effectivePastDows);
 
   const nonPastMissing = result.missingDays.filter((d) => !effectivePastDows.has(d)).length;
   const wasTruncated = first.stopReason === "max_tokens";
@@ -396,22 +359,27 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
 
   // Priority 1: truncation retry — fires only when the response is unusable.
   if (wasTruncated && nonPastTotal > 0 && nonPastMissing >= nonPastTotal) {
+    // The first response is unusable, so without time for a retry the leg fails.
+    if (timeLeft() < MIN_CALL_WINDOW) {
+      throw new Error(`[${label}] Truncated and no time budget left to retry (timeout)`);
+    }
     truncationRetryTriggered = true;
     onRetry?.();
     console.warn(`[AI Weekly] ⚠ ${label} truncated (${nonPastMissing}/${nonPastTotal} days empty) → retry`);
-    const retry = await callAITool({
+    const retry = await callAIText({
       systemPrompt,
       userMessage: `${userMessage}\n\nÖNCEKİ YANITINDA JSON KESİLDİ. Eksiksiz JSON döndür. Her alan MAX 8 kelime. KISALT.`,
       maxTokens,
       model: "smart",
-      timeoutMs: RETRY_TIMEOUT,
-      tool: SUBMIT_WEEKLY_PLAN_TOOL,
+      effort,
+      timeoutMs: Math.min(RETRY_TIMEOUT, timeLeft()),
+      outputSchema: WEEKLY_PLAN_SCHEMA,
     });
     totalInput += retry.inputTokens;
     totalOutput += retry.outputTokens;
     console.log(`[AI Weekly] ✓ ${label} retry (stop=${retry.stopReason}, out=${retry.outputTokens})`);
 
-    const retryResult = validate(retry.toolInput);
+    const retryResult = validate(parsePlanJson(retry.text));
     const retryMissing = retryResult.missingDays.filter((d) => !effectivePastDows.has(d)).length;
     if (retry.stopReason === "max_tokens" && retryMissing >= nonPastTotal) {
       throw new Error(`[${label}] Truncated even after retry — plan too large`);
@@ -427,28 +395,38 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
     // back up — is gone. One nudge handles the residual structural cases; the
     // net handles the rest. This is the main latency win.
     const summary = summarizeQualityIssues(result, effectivePastDows);
-    if (summary.hasAny) {
+    if (summary.hasAny && timeLeft() < MIN_CALL_WINDOW) {
+      // The first result is complete and still goes through the deterministic nets.
+      console.warn(`[AI Weekly] ⚠ ${label} quality issues but only ${Math.round(timeLeft() / 1000)}s budget left → keeping first result`);
+    } else if (summary.hasAny) {
       qualityRetryTriggered = true;
       onRetry?.();
       console.warn(`[AI Weekly] ⚠ ${label} quality issues → retry`);
-      const retry = await callAITool({
-        systemPrompt,
-        userMessage: `${userMessage}${buildQualityRetryMessage(summary)}`,
-        maxTokens,
-        model: "smart",
-        timeoutMs: RETRY_TIMEOUT,
-        tool: SUBMIT_WEEKLY_PLAN_TOOL,
-      });
-      totalInput += retry.inputTokens;
-      totalOutput += retry.outputTokens;
-      console.log(`[AI Weekly] ✓ ${label} quality retry (stop=${retry.stopReason}, out=${retry.outputTokens})`);
-      const retryResult = validate(retry.toolInput);
-      // Keep only when it's a strict improvement.
-      if (
-        scoreWeeklyValidationGaps(retryResult, effectivePastDows) <
-        scoreWeeklyValidationGaps(result, effectivePastDows)
-      ) {
-        result = retryResult;
+      try {
+        const retry = await callAIText({
+          systemPrompt,
+          userMessage: `${userMessage}${buildQualityRetryMessage(summary)}`,
+          maxTokens,
+          model: "smart",
+          effort,
+          timeoutMs: Math.min(RETRY_TIMEOUT, timeLeft()),
+          outputSchema: WEEKLY_PLAN_SCHEMA,
+        });
+        totalInput += retry.inputTokens;
+        totalOutput += retry.outputTokens;
+        console.log(`[AI Weekly] ✓ ${label} quality retry (stop=${retry.stopReason}, out=${retry.outputTokens})`);
+        const retryResult = validate(parsePlanJson(retry.text));
+        // Keep only when it's a strict improvement.
+        if (
+          scoreWeeklyValidationGaps(retryResult, effectivePastDows) <
+          scoreWeeklyValidationGaps(result, effectivePastDows)
+        ) {
+          result = retryResult;
+        }
+      } catch (err) {
+        // A failed quality retry is no worse than one that didn't improve:
+        // the first result is complete, so keep it instead of failing the run.
+        console.warn(`[AI Weekly] ⚠ ${label} quality retry failed → keeping first result:`, err);
       }
     }
   }
@@ -459,6 +437,7 @@ async function runAiCall(opts: RunAiCallOptions): Promise<AiCallResult> {
     outputTokens: totalOutput,
     truncationRetryTriggered,
     qualityRetryTriggered,
+    firstAttemptGapScore,
   };
 }
 
@@ -842,6 +821,14 @@ export async function loadPreviousWeekVolumeBreakdown(
     if (r.englishName) englishNames.add(r.englishName.toLowerCase().trim());
   }
 
+  // Fill the taxonomy cache first — exercises without an exercise_demos row
+  // aren't counted, and the current week is resolved the same way.
+  try {
+    await resolveExerciseDemos(englishNames);
+  } catch (err) {
+    console.warn("[AI Weekly] previous-week demo resolve failed:", err);
+  }
+
   // Per-muscle bucketing — requires exerciseDemos lookup. Same pattern as
   // muscle-volume-validator so distinct buckets per primary are de-duped.
   const byMuscle: Record<MuscleGroup, number> = { chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0 };
@@ -1071,6 +1058,11 @@ export interface WeeklyGenerationOutcome {
     workoutTruncationRetry: boolean;
     workoutQualityRetry: boolean;
   };
+  /** Per-leg gap score before any retry — lets evals see first-shot quality. */
+  firstAttemptGapScores: {
+    nutrition: number | null;
+    workout: number | null;
+  };
 }
 
 /**
@@ -1086,6 +1078,8 @@ export type WeeklyProgressEvent = {
 export interface RunWeeklyGenerationOptions {
   /** Locale used to render the produced workout summary block. */
   locale?: Locale;
+  /** Overrides AI_EFFORT.weekly for every call — eval harness only. */
+  effort?: AIEffort;
   /** Reports per-leg lifecycle transitions so callers can stream progress. */
   onProgress?: (ev: WeeklyProgressEvent) => void;
   /**
@@ -1111,6 +1105,10 @@ export async function runWeeklyGeneration(
   // Nutrition that is aware of the actual produced workout is strictly
   // higher quality and costs the same tokens; only latency differs.
   const sequential = Boolean(prompts.nutrition && prompts.workout);
+  // One budget for the whole run: in sequential mode nutrition gets whatever
+  // the workout leg left over.
+  const deadline = Date.now() + AI_TIMEOUTS.weeklyBudget;
+  const effort = opts.effort;
 
   let nutritionRaw: AiCallResult | null = null;
   let workoutRaw: AiCallResult | null = null;
@@ -1119,6 +1117,8 @@ export async function runWeeklyGeneration(
     opts.onProgress?.({ leg: "workout", phase: "start" });
     workoutRaw = await runAiCall({
       ...prompts.workout,
+      deadline,
+      effort,
       onRetry: () => opts.onProgress?.({ leg: "workout", phase: "retry" }),
     });
 
@@ -1142,6 +1142,8 @@ export async function runWeeklyGeneration(
     opts.onProgress?.({ leg: "nutrition", phase: "start" });
     nutritionRaw = await runAiCall({
       ...augmentedNutrition,
+      deadline,
+      effort,
       onRetry: () => opts.onProgress?.({ leg: "nutrition", phase: "retry" }),
     });
     opts.onProgress?.({ leg: "nutrition", phase: "done" });
@@ -1152,6 +1154,8 @@ export async function runWeeklyGeneration(
     const nutritionCallPromise = prompts.nutrition
       ? runAiCall({
           ...prompts.nutrition,
+          deadline,
+          effort,
           onRetry: () => opts.onProgress?.({ leg: "nutrition", phase: "retry" }),
         }).then((r) => {
           opts.onProgress?.({ leg: "nutrition", phase: "done" });
@@ -1161,6 +1165,8 @@ export async function runWeeklyGeneration(
     const workoutCallPromise = prompts.workout
       ? runAiCall({
           ...prompts.workout,
+          deadline,
+          effort,
           onRetry: () => opts.onProgress?.({ leg: "workout", phase: "retry" }),
         }).then((r) => {
           opts.onProgress?.({ leg: "workout", phase: "done" });
@@ -1180,6 +1186,31 @@ export async function runWeeklyGeneration(
   // when the caller didn't supply pre-computed bands.
   if (workoutRaw && opts.muscleVolumeBands) {
     try {
+      const plan = workoutRaw.validationResult.plan;
+      const workingNames = plan.days
+        .flatMap((d) => d.exercises)
+        .filter((e) => e.section === "main" || e.section === "swimming")
+        .flatMap((e) => (e.englishName ? [e.englishName] : []));
+      try {
+        await resolveExerciseDemos(workingNames);
+      } catch (err) {
+        console.warn("[AI Weekly] exercise demo resolve failed:", err);
+      }
+      // Deterministic ±1-set nudges into the MEV–MRV bands; the validators
+      // below then report on the plan the user actually gets.
+      const adjusted = adjustSetsToBands(
+        plan,
+        await loadDemosForPlan(plan),
+        opts.muscleVolumeBands,
+        prompts.workout?.effectivePastDows,
+      );
+      if (adjusted.changes.length > 0) {
+        workoutRaw.validationResult.plan = adjusted.plan;
+        workoutRaw.validationResult.warnings.push(
+          `[volume-adjusted] ${adjusted.changes.length} set change(s): ${adjusted.changes.join("; ")}`.slice(0, 400),
+        );
+      }
+
       const volReport = await assessMuscleVolume(
         workoutRaw.validationResult.plan,
         opts.muscleVolumeBands,
@@ -1245,6 +1276,10 @@ export async function runWeeklyGeneration(
       nutritionQualityRetry: nutritionRaw?.qualityRetryTriggered ?? false,
       workoutTruncationRetry: workoutRaw?.truncationRetryTriggered ?? false,
       workoutQualityRetry: workoutRaw?.qualityRetryTriggered ?? false,
+    },
+    firstAttemptGapScores: {
+      nutrition: nutritionRaw?.firstAttemptGapScore ?? null,
+      workout: workoutRaw?.firstAttemptGapScore ?? null,
     },
   };
 }

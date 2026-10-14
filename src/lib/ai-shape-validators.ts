@@ -6,6 +6,8 @@
  * trigger a content-retry based on accumulated warnings.
  */
 
+import { normalizeMealLabel } from "@/lib/meal-labels";
+
 // ─── Allowed-value enums ────────────────────────────────────────────────────
 
 export const ALLOWED_MEAL_LABELS = new Set([
@@ -88,6 +90,11 @@ export function sanitizeMealLabel(
 ): string {
   const value = String(raw ?? "").trim();
   if (ALLOWED_MEAL_LABELS.has(value)) return value;
+  // Localized display names ("Breakfast", "Snack") are what the EN prompts
+  // ask for — map them back to the canonical TR label instead of coercing
+  // every EN meal to the fallback.
+  const normalized = normalizeMealLabel(value);
+  if (normalized) return normalized;
   warnings.push(
     `${ctx}: invalid mealLabel "${value || "<empty>"}" → coerced to "${FALLBACK_MEAL_LABEL}"`,
   );

@@ -11,7 +11,8 @@
     "db:migrate": "npx drizzle-kit migrate",
     "db:push": "npx drizzle-kit push",
     "db:seed": "npx tsx scripts/seed.ts",
-    "db:studio": "npx drizzle-kit studio"
+    "db:studio": "npx drizzle-kit studio",
+    "eval:plans": "npx tsx --tsconfig scripts/tsconfig.eval.json scripts/eval-plans.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",

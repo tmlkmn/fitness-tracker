@@ -87,8 +87,22 @@ export function getAIClient(): Anthropic {
 
 export const AI_MODELS = {
   fast: "claude-haiku-4-5",
-  smart: "claude-sonnet-5",
+  smart: "claude-sonnet-5-5",
 } as const;
+
+/**
+ * Concatenates the `text` blocks of a response. Sonnet 5.5 runs adaptive
+ * thinking by default, so a response can lead with (empty) `thinking` blocks —
+ * reading `content[0].text` silently yields "" when it does.
+ */
+export function extractText(
+  content: readonly { type: string; text?: string }[],
+): string {
+  return content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text ?? "")
+    .join("");
+}
 
 // Feature-based daily rate limits
 export type AIFeature = "meal" | "exercise" | "analyze" | "chat" | "workout" | "daily-meal" | "weekly" | "exercise-demo" | "shopping" | "target-weight" | "macro-ai" | "greeting";
@@ -229,24 +243,21 @@ export async function getRemainingQuota(
   return { remaining: Math.max(0, limit - (row?.count ?? 0)), limit };
 }
 
-// Per-MTok USD pricing keyed by model id. Sonnet 5 ships with introductory
-// pricing ($2/$10) through 2026-08-31, reverting to standard ($3/$15) after.
+// Per-MTok USD pricing keyed by model id. Sonnet 5.5 and Sonnet 5 are both
+// $2/$10 — the "introductory" Sonnet 5 rate became the standard price, so the
+// scheduled 2026-09-01 increase to $3/$15 never happened.
 // Note: inputTokens here is the full-price (uncached) input the call sites log;
 // cache read/write tokens aren't tracked, so this is a slight over-estimate of
 // the real bill when prompt caching hits. Good enough for the admin dashboards.
-const SONNET_5_INTRO_END_MS = Date.UTC(2026, 8, 1); // 2026-09-01 UTC (intro valid through Aug 31)
+const MODEL_RATES: Record<string, { input: number; output: number }> = {
+  "claude-haiku-4-5": { input: 1, output: 5 },
+  "claude-sonnet-5-5": { input: 2, output: 10 },
+  // No longer in AI_MODELS — kept so rows logged before the 5.5 swap still price.
+  "claude-sonnet-5": { input: 2, output: 10 },
+};
 
 function getModelRates(model: string | undefined): { input: number; output: number } | null {
-  switch (model) {
-    case AI_MODELS.fast: // claude-haiku-4-5
-      return { input: 1, output: 5 };
-    case AI_MODELS.smart: // claude-sonnet-5
-      return Date.now() < SONNET_5_INTRO_END_MS
-        ? { input: 2, output: 10 }
-        : { input: 3, output: 15 };
-    default:
-      return null;
-  }
+  return model ? MODEL_RATES[model] ?? null : null;
 }
 
 function computeEstCost(

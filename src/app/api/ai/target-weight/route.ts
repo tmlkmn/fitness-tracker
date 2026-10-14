@@ -9,6 +9,7 @@ import {
   logAiUsage,
   discriminateAiError,
   PROMPT_VERSION,
+  extractText,
 } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { getTargetWeightPrompt } from "@/lib/ai-prompts";
@@ -130,8 +131,7 @@ Bu verilere göre gerçekçi bir hedef kilo öner.`;
     inputTokens = response.usage.input_tokens;
     outputTokens = response.usage.output_tokens;
 
-    const text =
-      response.content[0].type === "text" ? response.content[0].text : "";
+    const text = extractText(response.content);
 
     // Parse JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);

@@ -59,6 +59,15 @@ export function getLocalizedMealLabel(label: MealLabel, locale: Locale): string 
 }
 
 /**
+ * Every label string an AI response may use: the canonical TR labels plus
+ * their display names in each locale (the EN prompts ask for "Breakfast",
+ * "Snack", …). For output-schema enums; normalizeMealLabel maps them back.
+ */
+export const AI_MEAL_LABEL_VALUES: readonly string[] = Array.from(
+  new Set(Object.values(MEAL_LABEL_DISPLAY).flatMap((byLocale) => Object.values(byLocale))),
+);
+
+/**
  * Maps a (possibly localized) input string back to the canonical MealLabel.
  * Useful when AI returns a localized label that needs to be persisted.
  */
