@@ -142,7 +142,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
+  // Metadata routes (robots, sitemap, OG image) must skip the proxy — otherwise
+  // crawlers and link-preview bots get 307'd to the login page.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|favicon-.*\\.png|sw.js|sw.js.map|sw-push.js|manifest.webmanifest|icon\\.png|icon-.*\\.png|apple-touch-icon.png|serwist-worker-.*).*)",
+    "/((?!_next/static|_next/image|favicon.ico|favicon-.*\\.png|sw.js|sw.js.map|sw-push.js|manifest.webmanifest|icon\\.png|icon-.*\\.png|apple-touch-icon.png|serwist-worker-.*|robots\\.txt|sitemap\\.xml|opengraph-image).*)",
   ],
 };
