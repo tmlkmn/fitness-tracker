@@ -674,3 +674,21 @@ export interface SearchResultsDto {
   exercises: { id: number; name: string; dailyPlanId: number | null; date: DateString | null }[];
   foods: { id: number; name: string; portion: string; calories: number }[];
 }
+
+// ── Push (Expo) ─────────────────────────────────────────────────────────────
+
+/**
+ * `data` of every Expo push the server sends. `url` is the web path of the
+ * target page (e.g. "/tr/paylasilan") and `tag` the notification type — map
+ * them to a screen.
+ */
+export interface PushDataDto {
+  url: string | null;
+  tag: string | null;
+}
+
+/** POST /push/test */
+export interface PushTestResultDto {
+  /** Devices of this account the test was sent to (0 → nothing registered). */
+  devices: number;
+}

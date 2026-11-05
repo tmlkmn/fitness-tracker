@@ -12,6 +12,7 @@ import {
   accounts,
   notifications,
   pushSubscriptions,
+  expoPushTokens,
   notificationPreferences,
   reminders,
   exerciseTips,
@@ -85,6 +86,7 @@ export async function deleteMyAccount(
   await db.delete(progressLogs).where(eq(progressLogs.userId, uid));
   await db.delete(notifications).where(eq(notifications.userId, uid));
   await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, uid));
+  await db.delete(expoPushTokens).where(eq(expoPushTokens.userId, uid));
   await db
     .delete(notificationPreferences)
     .where(eq(notificationPreferences.userId, uid));

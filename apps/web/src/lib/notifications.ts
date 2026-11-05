@@ -8,6 +8,7 @@ import {
 import { eq } from "drizzle-orm";
 import { sendNotificationEmail } from "@/lib/email";
 import { sendPushNotification } from "@/lib/web-push";
+import { getExpoPushTokens, sendExpoPush } from "@/lib/expo-push";
 import { normalizeLocale } from "@fitmusc/shared/locale";
 import { redactId } from "@/lib/log-redact";
 import { getAccessDenial } from "@/lib/account-access";
@@ -154,15 +155,21 @@ export async function sendNotification(params: {
     }
   }
 
-  // 3. Push notifications (suppressed during quiet hours)
+  // 3. Push notifications (suppressed during quiet hours): web push
+  // subscriptions and the mobile app's Expo tokens.
   if (pushEnabled && !quiet) {
     const subs = await db
       .select()
       .from(pushSubscriptions)
       .where(eq(pushSubscriptions.userId, userId));
+    const expoTokens = await getExpoPushTokens(userId);
 
-    if (subs.length === 0) {
+    if (subs.length === 0 && expoTokens.length === 0) {
       console.warn(`[notification] No push subscriptions for user=${redactId(userId)}`);
+    }
+
+    if (expoTokens.length > 0) {
+      await sendExpoPush(expoTokens, { title, body, url: link, tag: type });
     }
 
     for (const sub of subs) {

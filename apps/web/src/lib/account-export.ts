@@ -14,6 +14,7 @@ import {
   sessions,
   notifications,
   pushSubscriptions,
+  expoPushTokens,
   notificationPreferences,
   reminders,
   exerciseTips,
@@ -130,6 +131,10 @@ export async function collectUserExport(
       .select()
       .from(pushSubscriptions)
       .where(eq(pushSubscriptions.userId, userId)),
+    expoPushTokens: await db
+      .select()
+      .from(expoPushTokens)
+      .where(eq(expoPushTokens.userId, userId)),
     notificationPreferences: await db
       .select()
       .from(notificationPreferences)

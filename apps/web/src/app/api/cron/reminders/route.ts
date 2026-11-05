@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { eq, and, isNotNull, isNull } from "drizzle-orm";
 import { sendNotification } from "@/lib/notifications";
+import { checkExpoPushReceipts } from "@/lib/expo-push";
 import { sendMembershipExpiryEmail } from "@/lib/email";
 import { normalizeLocale } from "@fitmusc/shared/locale";
 import { formatDate } from "@fitmusc/shared/date-format";
@@ -268,9 +269,19 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Housekeeping for the mobile app's push channel: prune device tokens whose
+  // delivery receipts came back DeviceNotRegistered.
+  let pushReceipts: { checked: number; pruned: number } | null = null;
+  try {
+    pushReceipts = await checkExpoPushReceipts();
+  } catch (err) {
+    console.error("[cron] expo push receipt check failed:", err);
+  }
+
   return NextResponse.json({
     ok: true,
     fired: firedCount,
+    pushReceipts,
     membershipFired,
     trialFired,
   });

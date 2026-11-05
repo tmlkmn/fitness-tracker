@@ -388,3 +388,20 @@ export const feedbackSchema = z.object({
   rating: rating.optional(),
   message: text(2000),
 });
+
+// ── Push (Expo) ─────────────────────────────────────────────────────────────
+
+/** `ExponentPushToken[…]` from expo-notifications' getExpoPushTokenAsync(). */
+export const expoPushToken = z
+  .string()
+  .max(200)
+  .regex(/^Expo(nent)?PushToken\[[^\]]+\]$/, "Expected an Expo push token");
+
+/** POST /push/expo-token — call after sign-in and whenever the token changes. */
+export const expoTokenSchema = z.object({
+  token: expoPushToken,
+  platform: z.enum(["ios", "android"]),
+});
+
+/** DELETE /push/expo-token — call before signing out. */
+export const expoTokenDeleteSchema = z.object({ token: expoPushToken });

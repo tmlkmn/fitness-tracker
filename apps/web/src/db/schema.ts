@@ -501,6 +501,42 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Expo push tokens of the mobile app (web push stays in push_subscriptions).
+// `token` is unique: a device belongs to whoever registered it last, so after
+// a sign-in on a shared phone the previous user stops getting pushes there.
+export const expoPushTokens = pgTable(
+  "expo_push_tokens",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    platform: text("platform").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => [
+    check("expo_push_tokens_platform_check", sql`${t.platform} IN ('ios', 'android')`),
+    index("expo_push_tokens_user_idx").on(t.userId),
+  ],
+);
+
+// Sent Expo pushes awaiting their delivery receipt. Expo often reports a dead
+// token (DeviceNotRegistered) only on the receipt, ~15 min after sending; the
+// reminders cron reads the receipts and prunes those tokens.
+export const expoPushTickets = pgTable(
+  "expo_push_tickets",
+  {
+    id: text("id").primaryKey(),
+    token: text("token")
+      .notNull()
+      .references(() => expoPushTokens.token, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [index("expo_push_tickets_created_idx").on(t.createdAt)],
+);
+
 export const notificationPreferences = pgTable("notification_preferences", {
   id: serial("id").primaryKey(),
   userId: text("user_id")
