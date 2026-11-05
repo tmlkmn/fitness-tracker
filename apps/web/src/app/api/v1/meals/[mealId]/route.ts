@@ -1,6 +1,6 @@
 import { z } from "zod";
+import { idParam, mealInputSchema } from "@fitmusc/shared/api/schemas";
 import { apiRoute } from "@/lib/api/handler";
-import { idParam, mealInputSchema } from "@/lib/api/schemas";
 import { updateMeal } from "@/actions/meal-crud";
 
 // PUT, not PATCH: updateMeal overwrites every field (omitted optionals → null).

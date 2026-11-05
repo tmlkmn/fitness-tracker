@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 import { buildPublicMetadata } from "@/lib/seo-metadata";
 import { isPublicSignupEnabled } from "@/lib/feature-flags";
 import TanitimClient from "./tanitim-client";

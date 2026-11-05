@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import Iyzipay from "iyzipay";
 import type { BillingInterval, BillingTier } from "@/lib/billing/tier-config";
 import type { BillingAddress } from "@/db/schema";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 interface IyzipayResult {
   status: "success" | "failure";

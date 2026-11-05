@@ -5,7 +5,7 @@ import { users, invoices } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthSession } from "@/lib/auth-utils";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 import {
   createCheckoutUrl,
   cancelLsSubscription,

@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from "next-intl";
 import { useUserProfile } from "@/hooks/use-user";
 import { useSession } from "@/lib/auth-client";
-import { computeProfileCompleteness } from "@/lib/profile-completeness";
+import { computeProfileCompleteness } from "@fitmusc/shared/profile-completeness";
 import { User } from "lucide-react";
 
 export function ProfileSummaryCard() {

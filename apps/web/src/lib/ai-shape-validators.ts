@@ -6,7 +6,7 @@
  * trigger a content-retry based on accumulated warnings.
  */
 
-import { normalizeMealLabel } from "@/lib/meal-labels";
+import { normalizeMealLabel } from "@fitmusc/shared/meal-labels";
 
 // ─── Allowed-value enums ────────────────────────────────────────────────────
 

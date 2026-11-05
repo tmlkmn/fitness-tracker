@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { requireApiUser } from "@/lib/api-auth";
 import { db } from "@/db";
 import { supplementCompletions, supplements, weeklyPlans } from "@/db/schema";
-import { isSupplementTogglePayload } from "@/lib/sync-payloads";
+import { isSupplementTogglePayload } from "@fitmusc/shared/sync-payloads";
 
 export async function POST(request: Request) {
   const { user, response } = await requireApiUser();

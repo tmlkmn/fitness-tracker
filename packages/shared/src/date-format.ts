@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "./locale";
 
 // Maps our app locale to the BCP-47 tag accepted by Intl APIs.
 export function intlLocale(locale: Locale): string {

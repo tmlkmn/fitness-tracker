@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { requireApiUser } from "@/lib/api-auth";
 import { createCheckoutUrl } from "@/lib/billing/lemonsqueezy";
 import { isBillingTier, isBillingInterval } from "@/lib/billing/tier-config";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 
 /**
  * Redirects an authenticated user to a Lemon Squeezy hosted checkout. Used as

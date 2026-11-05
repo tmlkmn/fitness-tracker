@@ -13,8 +13,8 @@ import {
 } from "@/hooks/use-shared-plans";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 interface PageProps {
   params: Promise<{ weeklyPlanId: string }>;

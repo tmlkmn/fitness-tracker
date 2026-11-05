@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { users, weeklyPlans, dailyPlans, meals, exercises, waterLogs, sleepLogs } from "@/db/schema";
 import { eq, desc, and, lte, asc, ne, inArray } from "drizzle-orm";
 import { resolveTargetsForDay, type MacroTargets } from "@/lib/macro-targets";
-import { computeMealMacros } from "@/lib/meal-macros";
+import { computeMealMacros } from "@fitmusc/shared/meal-macros";
 import {
   loadUserProfileRow,
   renderUserProfileLines,
@@ -12,7 +12,7 @@ import {
   getDailySupplementBudget,
   subtractSupplementBudget,
 } from "@/lib/supplement-budget";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 // 5-minute TTL memory cache for user context (keyed by userId + locale)
 const contextCache = new Map<string, { text: string; timestamp: number }>();

@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { Globe, Loader2 } from "lucide-react";
 import { updateUserLocale } from "@/actions/locale";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import { Card, CardContent } from "@/components/ui/card";
 
 const LOCALE_LABELS: Record<Locale, string> = {

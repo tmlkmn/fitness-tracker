@@ -6,7 +6,7 @@
  * remaining macro budget. These helpers are pure (no DB / no AI) so they're
  * unit-testable and live outside the "use server" action file.
  */
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 // Each suggestion's protein/carbs/fat (and kcal) must stay within this fraction
 // of the ORIGINAL meal's value.

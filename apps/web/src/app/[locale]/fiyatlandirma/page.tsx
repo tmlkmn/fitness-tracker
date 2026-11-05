@@ -6,7 +6,7 @@ import { PlanComparison } from "@/components/billing/plan-comparison";
 import { isPublicSignupEnabled } from "@/lib/feature-flags";
 import { countryFromHeaders } from "@/lib/billing/gateway-router";
 import { currencyForCountry } from "@/lib/billing/currency";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {

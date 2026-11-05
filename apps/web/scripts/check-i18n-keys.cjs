@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const tr = require('../messages/tr.json');
-const en = require('../messages/en.json');
+const tr = require('@fitmusc/shared/messages/tr.json');
+const en = require('@fitmusc/shared/messages/en.json');
 
 function hasKey(obj, dotted) {
   let cur = obj;

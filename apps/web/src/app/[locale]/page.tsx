@@ -25,8 +25,8 @@ import {
 } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate } from "@fitmusc/shared/date-format";
 import { useSession } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user";
 import { useTodayDashboard, useWeekPlansByDate, useAllWeeks } from "@/hooks/use-plans";

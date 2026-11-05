@@ -10,8 +10,8 @@ import {
 } from "../pdf-base";
 import { StyleSheet, Svg, Polyline, Line, Circle } from "@react-pdf/renderer";
 import type { ExportLabels } from "../blocks";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 import type { progressLogs } from "@/db/schema";
 
 type ProgressLogRow = typeof progressLogs.$inferSelect;

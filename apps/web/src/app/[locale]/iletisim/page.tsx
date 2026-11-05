@@ -3,7 +3,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Mail } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { users, progressLogs } from "@/db/schema";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
-import { normalizeEvent } from "@/lib/routine-constants";
+import { normalizeEvent } from "@fitmusc/shared/routine-constants";
 import {
   deriveGoalFallback,
   isFitnessGoal,

@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from "next-intl";
 import { LogIn, Sparkles, LineChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import { useTimeAgo } from "./admin-labels";
 
 export function ActivityTimeline({

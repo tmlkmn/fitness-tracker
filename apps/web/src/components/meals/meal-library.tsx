@@ -27,10 +27,10 @@ import {
 } from "@/hooks/use-meal-ai";
 import { useUpcomingDailyPlans } from "@/hooks/use-plans";
 import type { AIMeal } from "@/actions/ai-meals";
-import { computeMealMacros } from "@/lib/meal-macros";
+import { computeMealMacros } from "@fitmusc/shared/meal-macros";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 function useFormatRelativeDate() {
   const t = useTranslations("meals.library");

@@ -9,7 +9,7 @@ import {
 } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
 import { getCoachChatPrompt, getCoachTopicGatePrompt } from "@/lib/ai-prompts";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 import { db } from "@/db";
 import { chatMessages } from "@/db/schema";
 import type Anthropic from "@anthropic-ai/sdk";

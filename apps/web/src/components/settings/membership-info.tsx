@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate } from "@fitmusc/shared/date-format";
 
 interface MembershipInfoProps {
   profile: {

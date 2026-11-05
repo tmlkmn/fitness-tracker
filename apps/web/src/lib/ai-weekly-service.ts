@@ -83,7 +83,7 @@ import {
   bucketSetsByPattern,
   type BucketOverloadAssessment,
 } from "@/lib/progressive-overload-validator";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 const CALL_TIMEOUT = AI_TIMEOUTS.weeklyCall;
 const RETRY_TIMEOUT = AI_TIMEOUTS.weeklyRetry;

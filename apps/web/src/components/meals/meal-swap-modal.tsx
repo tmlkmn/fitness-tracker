@@ -21,11 +21,11 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Search, UtensilsCrossed, ArrowLeft } from "lucide-react";
 import { getMealPickerData, type MealCandidate } from "@/actions/meal-picker";
-import { MEAL_LABELS, MEAL_LABEL_COLORS, isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
+import { MEAL_LABELS, MEAL_LABEL_COLORS, isMealLabel, getLocalizedMealLabel } from "@fitmusc/shared/meal-labels";
 import { useUpdateMeal } from "@/hooks/use-meal-crud";
 import { cn } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 interface CandidateCardProps {
   candidate: MealCandidate;

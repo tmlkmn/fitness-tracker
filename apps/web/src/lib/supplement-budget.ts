@@ -5,7 +5,7 @@ import { and, desc, eq, lte } from "drizzle-orm";
 import { computeSupplementMacrosForSingle, isProteinPowder } from "@/lib/supplement-macros";
 import type { MacroTargets } from "@/lib/macro-targets";
 import type { WeeklyMacroTargets } from "@/lib/carb-cycling";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import { getTurkeyTodayStr } from "@/lib/utils";
 
 export interface SupplementLine {

@@ -43,7 +43,7 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from "@/hooks/use-notification-preferences";
-import { REMINDER_TEMPLATES } from "@/lib/reminder-templates";
+import { REMINDER_TEMPLATES } from "@fitmusc/shared/reminder-templates";
 import { ReminderItem } from "./reminder-item";
 import { AddReminderDialog } from "./add-reminder-dialog";
 import { useTranslations } from "next-intl";

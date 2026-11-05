@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { getAuthSession } from "@/lib/auth-utils";
-import { isLocale, type Locale } from "@/lib/locale";
+import { isLocale, type Locale } from "@fitmusc/shared/locale";
 
 export async function updateUserLocale(locale: Locale) {
   if (!isLocale(locale)) {

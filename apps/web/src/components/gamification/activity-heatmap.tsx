@@ -12,8 +12,8 @@ import { CalendarDays } from "lucide-react";
 import { useMemo, useRef } from "react";
 import type { ActivityStats } from "@/actions/activity-stats";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 interface ActivityHeatmapProps {
   completionMap: ActivityStats["completionMap"];

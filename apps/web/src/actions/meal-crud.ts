@@ -8,7 +8,7 @@ import {
   verifyMealOwnership,
   verifyDailyPlanOwnership,
 } from "@/lib/ownership";
-import { coerceMealLabel } from "@/lib/meal-labels";
+import { coerceMealLabel } from "@fitmusc/shared/meal-labels";
 
 interface MealInput {
   mealTime: string;

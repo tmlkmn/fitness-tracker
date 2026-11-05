@@ -8,7 +8,7 @@ import {
 import { eq } from "drizzle-orm";
 import { sendNotificationEmail } from "@/lib/email";
 import { sendPushNotification } from "@/lib/web-push";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 import { redactId } from "@/lib/log-redact";
 import { getAccessDenial } from "@/lib/account-access";
 

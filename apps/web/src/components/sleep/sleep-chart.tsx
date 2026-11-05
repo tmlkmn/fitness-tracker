@@ -24,8 +24,8 @@ import {
   chartGradientId,
 } from "@/lib/chart-theme";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 const SLEEP_HOURS_GRADIENT = chartGradientId("sleep-hours");
 const SLEEP_HOURS_COLOR = "hsl(240, 75%, 70%)";

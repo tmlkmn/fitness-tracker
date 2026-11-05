@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 // ─── Shared blocks (reused across workout prompts) ─────────────────────────
 

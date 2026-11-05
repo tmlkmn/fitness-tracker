@@ -9,7 +9,7 @@ import { notifyAdminsOfPaymentFailure } from "@/lib/billing/notify-admins";
 import { splitVatInclusive } from "@/lib/billing/currency";
 import { sendNotification } from "@/lib/notifications";
 import { getServerTranslator } from "@/lib/i18n-server";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 import type { SubscriptionStatus } from "@/lib/billing/entitlement";
 
 // iyzico subscription webhook payload — only consumed fields are typed.

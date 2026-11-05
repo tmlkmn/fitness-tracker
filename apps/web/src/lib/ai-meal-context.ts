@@ -6,7 +6,7 @@ import {
   weeklyPlans,
 } from "@/db/schema";
 import { eq, asc, desc, and, ne, isNotNull, inArray } from "drizzle-orm";
-import { normalizeEvent, MEAL_EVENTS } from "@/lib/routine-constants";
+import { normalizeEvent, MEAL_EVENTS } from "@fitmusc/shared/routine-constants";
 import {
   loadUserProfileRow,
   renderUserProfileLines,

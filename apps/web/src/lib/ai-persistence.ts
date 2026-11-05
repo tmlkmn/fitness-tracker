@@ -13,7 +13,7 @@ import { meals, exercises } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { AIMeal } from "@/actions/ai-meals";
 import type { AIExercise } from "@/actions/ai-workout";
-import { coerceMealLabel } from "@/lib/meal-labels";
+import { coerceMealLabel } from "@fitmusc/shared/meal-labels";
 import { getSectionSortOffset } from "@/lib/ai-config";
 
 /**

@@ -19,7 +19,7 @@ import {
   ROUTINE_EVENTS,
   normalizeEvent,
   isRepeatableEvent,
-} from "@/lib/routine-constants";
+} from "@fitmusc/shared/routine-constants";
 import { Clock, Loader2, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 
 type RoutineItem = { time: string; event: string };

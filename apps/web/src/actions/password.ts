@@ -8,7 +8,7 @@ import { getAuthSession } from "@/lib/auth-utils";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { computeMembershipEndDate } from "@/actions/admin";
-import { validatePasswordStrength } from "@/lib/password-validation";
+import { validatePasswordStrength } from "@fitmusc/shared/password-validation";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function forceChangePassword(newPassword: string) {

@@ -9,7 +9,7 @@ import type {
   MealTogglePayload,
   ExerciseTogglePayload,
   SupplementTogglePayload,
-} from "./sync-payloads";
+} from "@fitmusc/shared/sync-payloads";
 
 const DB_NAME = "fitmusc-outbox";
 const DB_VERSION = 1;

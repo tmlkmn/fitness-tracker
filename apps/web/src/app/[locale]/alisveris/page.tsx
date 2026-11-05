@@ -24,8 +24,8 @@ import { ExportButton } from "@/components/export/export-button";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { formatAiError } from "@/lib/ai-errors";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 function formatWeekLabel(startDate: string | null, weekNumber: number, locale: Locale, t: (key: string, values?: Record<string, string | number>) => string): string {
   if (!startDate) return t("weekShort", { week: weekNumber });

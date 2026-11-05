@@ -4,8 +4,8 @@ import { useState, useDeferredValue } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
+import type { Locale } from "@fitmusc/shared/locale";
+import { isMealLabel, getLocalizedMealLabel } from "@fitmusc/shared/meal-labels";
 import {
   Dialog,
   DialogContent,

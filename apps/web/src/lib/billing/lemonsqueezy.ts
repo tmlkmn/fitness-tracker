@@ -6,7 +6,7 @@ import {
   updateSubscription,
 } from "@lemonsqueezy/lemonsqueezy.js";
 import type { BillingInterval, BillingTier } from "@/lib/billing/tier-config";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 let configured = false;
 

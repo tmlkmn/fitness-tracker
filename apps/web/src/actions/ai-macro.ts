@@ -13,7 +13,7 @@ import {
   PROMPT_VERSION,
 } from "@/lib/ai";
 import { getMacroCalcPrompt } from "@/lib/ai-prompts";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 import { computeDefaultTargets, type MacroTargets } from "@/lib/macro-targets";
 
 /** Strategy nudge the AI selects; the arithmetic is done by code. */

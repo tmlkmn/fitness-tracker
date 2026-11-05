@@ -7,7 +7,7 @@ import {
   discriminateAiError,
   PROMPT_VERSION,
 } from "@/lib/ai";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 import { saveAiSuggestion } from "@/actions/ai-suggestions";
 import {
   resolveWeeklyGenerationRequest,

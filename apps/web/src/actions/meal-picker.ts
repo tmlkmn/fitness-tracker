@@ -10,8 +10,8 @@ import {
 } from "@/db/schema";
 import { and, desc, eq, gte, like, or, sql } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getUserLocale } from "@/lib/locale";
-import { formatDate as formatDateLocalized, parseDateOnly } from "@/lib/date-format";
+import { getUserLocale } from "@fitmusc/shared/locale";
+import { formatDate as formatDateLocalized, parseDateOnly } from "@fitmusc/shared/date-format";
 import type { AIMeal } from "./ai-meals";
 
 export interface MealCandidate {

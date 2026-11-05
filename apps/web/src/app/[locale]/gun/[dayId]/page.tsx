@@ -14,8 +14,8 @@ import { SleepEntry } from "@/components/sleep/sleep-entry";
 import { MacroTrendSparkline } from "@/components/meals/macro-trend-sparkline";
 import { PageTour } from "@/components/onboarding/page-tour";
 import { getTranslations } from "next-intl/server";
-import { normalizeLocale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import { normalizeLocale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 export const dynamic = "force-dynamic";
 // Server actions on this page include the AI plan flows (daily meals, daily

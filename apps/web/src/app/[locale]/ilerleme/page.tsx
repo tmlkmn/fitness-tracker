@@ -46,8 +46,8 @@ import { ActivityHeatmap } from "@/components/gamification/activity-heatmap";
 import { WaterChart } from "@/components/water/water-chart";
 import { SleepChart } from "@/components/sleep/sleep-chart";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 function formatLocaleDate(dateStr: string, locale: Locale): string {
   return formatDate(parseDateOnly(dateStr), locale, {

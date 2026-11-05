@@ -15,9 +15,9 @@ import { Pencil, Trash2, Sparkles, Star, ArrowLeftRight } from "lucide-react";
 import { SwipeableCard } from "@/components/ui/swipeable-card";
 import { useSaveMealSuggestion } from "@/hooks/use-saved-meals";
 import { useTranslations } from "next-intl";
-import { getLocalizedMealLabel, isMealLabel } from "@/lib/meal-labels";
+import { getLocalizedMealLabel, isMealLabel } from "@fitmusc/shared/meal-labels";
 import { useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 interface MealCardProps {
   id: number;

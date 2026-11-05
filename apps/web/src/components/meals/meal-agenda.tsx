@@ -7,8 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { stripEmoji, getMealIcon, DynamicIcon } from "@/lib/icon-map";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { isMealLabel, getLocalizedMealLabel } from "@/lib/meal-labels";
+import type { Locale } from "@fitmusc/shared/locale";
+import { isMealLabel, getLocalizedMealLabel } from "@fitmusc/shared/meal-labels";
 
 interface MealAgendaProps {
   dailyPlanId: number;

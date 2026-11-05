@@ -3,8 +3,8 @@
 import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, FileText, Download } from "lucide-react";
-import type { Locale } from "@/lib/locale";
-import { formatDate } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate } from "@fitmusc/shared/date-format";
 import { useInvoices } from "@/hooks/use-billing";
 
 export function InvoiceHistory() {

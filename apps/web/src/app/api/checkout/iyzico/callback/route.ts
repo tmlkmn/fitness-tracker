@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireApiUser } from "@/lib/api-auth";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 import { retrieveSubscriptionCheckout } from "@/lib/billing/iyzico";
 import { isBillingTier, isBillingInterval } from "@/lib/billing/tier-config";
 

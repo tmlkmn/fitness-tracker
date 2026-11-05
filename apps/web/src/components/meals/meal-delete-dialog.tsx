@@ -9,8 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useDeleteMeal } from "@/hooks/use-meal-crud";
 import { useLocale, useTranslations } from "next-intl";
-import { getLocalizedMealLabel, isMealLabel } from "@/lib/meal-labels";
-import type { Locale } from "@/lib/locale";
+import { getLocalizedMealLabel, isMealLabel } from "@fitmusc/shared/meal-labels";
+import type { Locale } from "@fitmusc/shared/locale";
 
 interface MealDeleteDialogProps {
   open: boolean;

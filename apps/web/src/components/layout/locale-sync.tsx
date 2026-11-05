@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useSession } from "@/lib/auth-client";
-import { isLocale, type Locale } from "@/lib/locale";
+import { isLocale, type Locale } from "@fitmusc/shared/locale";
 
 // Keeps the URL locale in sync with the authoritative DB locale stored on the
 // user record. Without this, a PWA whose start_url was baked at install time

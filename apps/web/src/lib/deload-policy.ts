@@ -7,7 +7,7 @@
  * wraps this lives in `src/actions/deload.ts`.
  */
 
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 export interface DeloadEvaluationInput {
   fitnessLevel: string | null;

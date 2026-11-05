@@ -1,4 +1,8 @@
-import { apiRoute } from "@/lib/api/handler";
+import type { UserProfileDto } from "@fitmusc/shared/api/dto";
+import { apiRoute, type JsonSource } from "@/lib/api/handler";
 import { getUserProfile } from "@/actions/user";
 
-export const GET = apiRoute({}, () => getUserProfile());
+export const GET = apiRoute(
+  {},
+  (): Promise<JsonSource<UserProfileDto>> => getUserProfile(),
+);

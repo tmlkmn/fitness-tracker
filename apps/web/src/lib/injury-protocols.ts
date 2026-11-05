@@ -12,7 +12,7 @@
  * context builder, which already loads `healthNotes`.
  */
 
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 interface InjuryProtocol {
   id: string;

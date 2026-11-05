@@ -8,7 +8,7 @@ import {
   energyUnitLabel,
   kcalToDisplay,
   type EnergyUnit,
-} from "@/lib/units";
+} from "@fitmusc/shared/units";
 import type { SupplementMacroTotals } from "@/lib/supplement-macros";
 import { Flame } from "lucide-react";
 import { useTranslations } from "next-intl";

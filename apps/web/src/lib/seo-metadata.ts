@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getPathname } from "@/i18n/navigation";
 import type { AppPathname } from "@/i18n/routing";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://fitmusc.com";
 

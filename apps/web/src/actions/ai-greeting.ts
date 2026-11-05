@@ -13,7 +13,7 @@ import {
 } from "@/db/schema";
 import { and, eq, gte, isNotNull, lt, sql } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
-import { getUserLocale, type Locale } from "@/lib/locale";
+import { getUserLocale, type Locale } from "@fitmusc/shared/locale";
 import {
   AI_MODELS,
   PROMPT_VERSION,

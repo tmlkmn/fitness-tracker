@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, Loader2, AlertTriangle } from "lucide-react";
-import type { Locale } from "@/lib/locale";
-import { formatDate } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate } from "@fitmusc/shared/date-format";
 import {
   useBilling,
   useCancelSubscription,

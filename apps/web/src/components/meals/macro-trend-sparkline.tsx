@@ -21,8 +21,8 @@ import {
   chartGradientId,
 } from "@/lib/chart-theme";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 type Metric = "calories" | "protein" | "carbs" | "fat";
 

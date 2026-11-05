@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 export type Gateway = "lemonsqueezy" | "iyzico";
 

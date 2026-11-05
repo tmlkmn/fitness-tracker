@@ -13,6 +13,8 @@ const cspScriptSrc = isDev
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@anthropic-ai/sdk", "@react-pdf/renderer"],
+  // Workspace package shipped as TypeScript source (no build step).
+  transpilePackages: ["@fitmusc/shared"],
   // The receipt PDF route reads a bundled font from disk at runtime — make
   // sure it ships inside that route's serverless function.
   outputFileTracingIncludes: {

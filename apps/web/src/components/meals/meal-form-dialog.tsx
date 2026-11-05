@@ -18,21 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MEAL_LABELS, isMealLabel, type MealLabel } from "@/lib/meal-labels";
+import { MEAL_LABELS, isMealLabel, type MealLabel } from "@fitmusc/shared/meal-labels";
 
 import { useCreateMeal, useUpdateMeal } from "@/hooks/use-meal-crud";
 import { useUserProfile } from "@/hooks/use-user";
-import { getDefaultMealTime, isWeekendDate } from "@/lib/meal-time-defaults";
+import { getDefaultMealTime, isWeekendDate } from "@fitmusc/shared/meal-time-defaults";
 import { saveMealSuggestion } from "@/actions/saved-meals";
 import { UnifiedMealPicker } from "./unified-meal-picker";
 import { FoodReferencePopover } from "./food-reference-popover";
 import { IconPicker } from "@/components/ui/icon-picker";
 import { Library, X } from "lucide-react";
-import { multiplyFood, formatScaledEntry, type FoodLike } from "@/lib/food-math";
+import { multiplyFood, formatScaledEntry, type FoodLike } from "@fitmusc/shared/food-math";
 import { useDialogCloseGuard } from "@/hooks/use-dialog-close-guard";
 import { useLocale, useTranslations } from "next-intl";
-import { getLocalizedMealLabel } from "@/lib/meal-labels";
-import type { Locale } from "@/lib/locale";
+import { getLocalizedMealLabel } from "@fitmusc/shared/meal-labels";
+import type { Locale } from "@fitmusc/shared/locale";
 
 interface MealData {
   id?: number;

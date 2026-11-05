@@ -1,13 +1,13 @@
 import { View, Text, baseStyles, PALETTE } from "./pdf-base";
 import { StyleSheet } from "@react-pdf/renderer";
 import type { MealRow, ExerciseRow } from "@/lib/export/collect-weekly-plan";
-import { computeMealMacros } from "@/lib/meal-macros";
+import { computeMealMacros } from "@fitmusc/shared/meal-macros";
 import {
   getLocalizedMealLabel,
   isMealLabel,
   type MealLabel,
-} from "@/lib/meal-labels";
-import type { Locale } from "@/lib/locale";
+} from "@fitmusc/shared/meal-labels";
+import type { Locale } from "@fitmusc/shared/locale";
 
 export interface ExportLabels {
   brand: string;

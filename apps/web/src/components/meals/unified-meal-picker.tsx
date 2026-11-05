@@ -25,11 +25,11 @@ import {
   isMealLabel,
   getLocalizedMealLabel,
   type MealLabel,
-} from "@/lib/meal-labels";
+} from "@fitmusc/shared/meal-labels";
 import { cn } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate } from "@fitmusc/shared/date-format";
 
 export interface SelectedMeal {
   mealLabel: string;

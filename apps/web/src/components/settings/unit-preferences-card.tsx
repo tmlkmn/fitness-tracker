@@ -12,7 +12,7 @@ import { useUserProfile } from "@/hooks/use-user";
 import { updateUnitPreferences } from "@/actions/user";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import type { WeightUnit, EnergyUnit } from "@/lib/units";
+import type { WeightUnit, EnergyUnit } from "@fitmusc/shared/units";
 
 function SegmentedButton<T extends string>({
   value,

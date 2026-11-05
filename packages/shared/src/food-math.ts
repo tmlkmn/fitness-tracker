@@ -1,4 +1,4 @@
-import type { Food } from "@/data/foods";
+import type { Food } from "./foods";
 
 export interface UserFoodLite {
   name: string;

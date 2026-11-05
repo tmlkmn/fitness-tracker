@@ -6,7 +6,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { TRIAL_DAYS } from "@/lib/billing/tier-config";
-import { normalizeLocale, type Locale } from "@/lib/locale";
+import { normalizeLocale, type Locale } from "@fitmusc/shared/locale";
 import { isPublicSignupEnabled } from "@/lib/feature-flags";
 
 export interface SignUpInput {

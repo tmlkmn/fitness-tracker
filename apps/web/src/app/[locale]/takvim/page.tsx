@@ -20,7 +20,7 @@ import { useUserProfile } from "@/hooks/use-user";
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
-import { getWeekStartDate, type WeekStart } from "@/lib/week";
+import { getWeekStartDate, type WeekStart } from "@fitmusc/shared/week";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,8 +49,8 @@ import { ensureDailyPlan } from "@/actions/ensure-plan";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 function formatLocaleDate(dateStr: string, locale: Locale): string {
   return formatDate(parseDateOnly(dateStr), locale, {

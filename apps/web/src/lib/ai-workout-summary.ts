@@ -9,7 +9,7 @@
  */
 
 import type { AIWeeklyPlan } from "@/lib/ai-weekly-types";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 export interface ProducedWorkoutDaySummary {
   dayOfWeek: number;

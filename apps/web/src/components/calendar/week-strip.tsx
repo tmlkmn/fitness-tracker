@@ -2,10 +2,10 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn, formatDateStr } from "@/lib/utils";
-import { getWeekDayLabels, type WeekStart } from "@/lib/week";
+import { getWeekDayLabels, type WeekStart } from "@fitmusc/shared/week";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate } from "@fitmusc/shared/date-format";
 import {
   readinessBandColor,
   type ReadinessBand,

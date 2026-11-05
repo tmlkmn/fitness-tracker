@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 import {
   pickGateway,
   countryFromHeaders,

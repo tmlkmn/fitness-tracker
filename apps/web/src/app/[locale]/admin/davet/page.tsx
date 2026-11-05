@@ -8,7 +8,7 @@ import { UserPlus, Loader2, CheckCircle, Copy, Check } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 const MEMBERSHIP_KEYS: { value: MembershipType; tKey: string }[] = [
   { value: "1-month", tKey: "1-month" },

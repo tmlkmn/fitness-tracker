@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 
 // Served at /manifest.webmanifest. Locale is read from the NEXT_LOCALE cookie
 // set by the next-intl middleware. When the browser fetches the manifest, it

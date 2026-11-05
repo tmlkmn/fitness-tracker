@@ -1,5 +1,5 @@
 import Mailjet from "node-mailjet";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import { getServerTranslator } from "@/lib/i18n-server";
 
 let client: ReturnType<typeof Mailjet.apiConnect> | null = null;

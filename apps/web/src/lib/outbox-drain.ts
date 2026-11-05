@@ -10,7 +10,7 @@ import {
   subscribeOutbox,
   type OutboxEntry,
 } from "./outbox";
-import { SYNC_ENDPOINTS } from "./sync-payloads";
+import { SYNC_ENDPOINTS } from "@fitmusc/shared/sync-payloads";
 
 type DrainResult = {
   succeeded: number;

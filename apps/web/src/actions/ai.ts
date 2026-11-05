@@ -19,7 +19,7 @@ import {
   getMealVariationPrompt,
   getExerciseTipsPrompt,
 } from "@/lib/ai-prompts";
-import { getUserLocale, type Locale } from "@/lib/locale";
+import { getUserLocale, type Locale } from "@fitmusc/shared/locale";
 import { parseAiJson } from "@/lib/ai-json-repair";
 import { categorizeWarnings } from "@/lib/ai-warning-telemetry";
 import {
@@ -336,7 +336,7 @@ async function callAIForTips(
   englishName: string | null,
   exerciseNotes: string | null,
   userContext: string,
-  locale: import("@/lib/locale").Locale,
+  locale: import("@fitmusc/shared/locale").Locale,
 ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const client = getAIClient();
   const exLabel = locale === "en" ? "Exercise" : "Egzersiz";

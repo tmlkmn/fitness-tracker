@@ -16,6 +16,7 @@
     "db:seed": "npm run db:seed -w @fitmusc/web",
     "db:studio": "npm run db:studio -w @fitmusc/web",
     "eval:plans": "npm run eval:plans -w @fitmusc/web --",
-    "check:macro-engine": "npm run check:macro-engine -w @fitmusc/web"
+    "check:macro-engine": "npm run check:macro-engine -w @fitmusc/web",
+    "typecheck:shared": "npm run typecheck -w @fitmusc/shared"
   }
 }

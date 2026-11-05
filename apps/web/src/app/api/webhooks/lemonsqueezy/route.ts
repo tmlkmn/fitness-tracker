@@ -9,7 +9,7 @@ import { resolveVariant } from "@/lib/billing/lemonsqueezy";
 import { notifyAdminsOfPaymentFailure } from "@/lib/billing/notify-admins";
 import { sendNotification } from "@/lib/notifications";
 import { getServerTranslator } from "@/lib/i18n-server";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 import type { SubscriptionStatus } from "@/lib/billing/entitlement";
 
 // Lemon Squeezy webhook payload — only the fields we consume are typed.

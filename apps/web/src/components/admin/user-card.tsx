@@ -1,8 +1,8 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate } from "@fitmusc/shared/date-format";
 import type { UserWithStatus } from "@/actions/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import {

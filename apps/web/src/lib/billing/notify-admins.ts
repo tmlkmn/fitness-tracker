@@ -3,7 +3,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { sendNotification } from "@/lib/notifications";
 import { getServerTranslator } from "@/lib/i18n-server";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 
 /**
  * Alerts every admin that a user's recurring payment failed. Best-effort —

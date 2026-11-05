@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { users, type BillingAddress } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireApiUser } from "@/lib/api-auth";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 import { createSubscriptionCheckout } from "@/lib/billing/iyzico";
 import { encryptIdentity } from "@/lib/billing/identity-encrypt";
 import { isBillingTier, isBillingInterval } from "@/lib/billing/tier-config";

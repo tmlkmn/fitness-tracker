@@ -6,8 +6,8 @@ import { db } from "@/db";
 import { shoppingLists, weeklyPlans } from "@/db/schema";
 import { requireApiUser } from "@/lib/api-auth";
 import { verifyWeeklyPlanReadAccess } from "@/lib/ownership";
-import { getUserLocale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import { getUserLocale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 import { buildExportLabels, slugForFilename } from "@/lib/pdf/labels";
 import {
   ShoppingListDocument,

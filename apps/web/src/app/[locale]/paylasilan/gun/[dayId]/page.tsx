@@ -11,8 +11,8 @@ import { MealCard } from "@/components/meals/meal-card";
 import { ExerciseCard } from "@/components/workout/exercise-card";
 import { Separator } from "@/components/ui/separator";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
 interface PageProps {
   params: Promise<{ dayId: string }>;

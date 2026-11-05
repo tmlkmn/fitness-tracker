@@ -17,7 +17,7 @@ import { userFacingWarnings } from "@/lib/ai-warning-telemetry";
 import { prepareDailyMeals, executeDailyMeals } from "@/lib/ai-daily-meal-service";
 import { replaceMealsForDay } from "@/lib/ai-persistence";
 import { verifyDailyPlanOwnership } from "@/lib/ownership";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 
 export interface AIMeal {
   mealTime: string;

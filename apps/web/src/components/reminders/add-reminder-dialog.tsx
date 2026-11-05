@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useCreateReminder } from "@/hooks/use-reminders";
-import { REMINDER_TEMPLATES, type ReminderTemplate } from "@/lib/reminder-templates";
+import { REMINDER_TEMPLATES, type ReminderTemplate } from "@fitmusc/shared/reminder-templates";
 import { DynamicIcon } from "@/lib/icon-map";
 import { useTranslations } from "next-intl";
 

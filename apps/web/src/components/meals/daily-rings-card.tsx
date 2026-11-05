@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MultiProgressRing } from "@/components/ui/progress-ring";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Flame, Drumstick, CheckCircle2 } from "lucide-react";
-import { computeMealMacros } from "@/lib/meal-macros";
+import { computeMealMacros } from "@fitmusc/shared/meal-macros";
 import { useUserProfile, useResolvedMacroTargets } from "@/hooks/use-user";
 import { useTodayDashboard } from "@/hooks/use-plans";
 import { useTranslations } from "next-intl";

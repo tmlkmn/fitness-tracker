@@ -12,8 +12,8 @@ import {
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Scale } from "lucide-react";
-import type { Locale } from "@/lib/locale";
-import { formatDate, parseDateOnly } from "@/lib/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 import {
   CHART_TOOLTIP_CURSOR,
   CHART_TOOLTIP_ITEM_STYLE,

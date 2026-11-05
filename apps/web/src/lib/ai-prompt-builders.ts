@@ -8,7 +8,7 @@
  */
 
 import "server-only";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import type { MacroTargets } from "@/lib/macro-targets";
 import type { SupplementBudget } from "@/lib/supplement-budget";
 import { buildSupplementInfoBlock } from "@/lib/supplement-budget";

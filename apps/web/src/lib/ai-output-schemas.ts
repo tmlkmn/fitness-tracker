@@ -11,7 +11,7 @@
  * counts, …) stay enforced by the validators.
  */
 
-import { AI_MEAL_LABEL_VALUES } from "@/lib/meal-labels";
+import { AI_MEAL_LABEL_VALUES } from "@fitmusc/shared/meal-labels";
 import { ALLOWED_SECTIONS } from "@/lib/ai-shape-validators";
 
 export type JsonSchema = Record<string, unknown>;

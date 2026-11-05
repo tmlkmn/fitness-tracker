@@ -32,9 +32,9 @@ import {
 import { AiGeneratingOverlay, type GeneratingStep } from "@/components/ai/ai-generating-overlay";
 import { MeasurementNudge } from "@/components/ai/measurement-nudge";
 import { useTranslations, useLocale } from "next-intl";
-import { getLocalizedMealLabel, isMealLabel } from "@/lib/meal-labels";
-import type { Locale } from "@/lib/locale";
-import { formatDate } from "@/lib/date-format";
+import { getLocalizedMealLabel, isMealLabel } from "@fitmusc/shared/meal-labels";
+import type { Locale } from "@fitmusc/shared/locale";
+import { formatDate } from "@fitmusc/shared/date-format";
 import { buildAiUserNote } from "@/lib/ai-user-note";
 import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";

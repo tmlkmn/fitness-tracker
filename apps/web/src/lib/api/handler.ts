@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import {
+  ACCESS_DENIALS,
+  type ApiErrorBody,
+  type ApiErrorCode,
+} from "@fitmusc/shared/api/errors";
+import {
   requireApiUser,
   type ApiAuthOptions,
   type ApiAuthResult,
 } from "@/lib/api-auth";
-import type { AccessDenial } from "@/lib/account-access";
 
 /**
  * Route-handler wrapper for the versioned mobile API (`src/app/api/v1/**`).
@@ -24,10 +28,25 @@ import type { AccessDenial } from "@/lib/account-access";
  *   3. run the handler; `undefined` → 204, anything else → JSON
  *   4. map thrown errors to HTTP status codes (see `toErrorResponse`)
  *
- * Error body shape: `{ error: CODE, details? }`.
+ * Error body shape: `ApiErrorBody` from @fitmusc/shared/api/errors.
  */
 
 export type ApiUser = NonNullable<ApiAuthResult["user"]>;
+
+/**
+ * Server-side values whose JSON serialization has the shape of the shared DTO
+ * `T` (a DTO string may come from a Date). Annotate a handler's return type
+ * with it so action results are checked against @fitmusc/shared/api/dto:
+ *
+ *   ({ params }): Promise<JsonSource<MealDto[]>> => getMealsByDay(params.dayId)
+ */
+export type JsonSource<T> = T extends string
+  ? T | Date
+  : T extends readonly (infer U)[]
+    ? readonly JsonSource<U>[]
+    : T extends object
+      ? { [K in keyof T]: JsonSource<T[K]> }
+      : T;
 
 export interface ApiHandlerArgs<TInput, TParams> {
   input: TInput;
@@ -49,7 +68,7 @@ interface ApiRouteOptions<TInput, TParams> {
 export class ApiError extends Error {
   constructor(
     readonly status: number,
-    readonly code: string,
+    readonly code: ApiErrorCode,
     readonly details?: unknown,
   ) {
     super(code);
@@ -110,13 +129,6 @@ async function readInput(request: Request): Promise<unknown> {
   }
 }
 
-const ACCESS_DENIALS = new Set<string>([
-  "AccountFrozen",
-  "NotApproved",
-  "MembershipExpired",
-  "TrialExpired",
-] satisfies AccessDenial[]);
-
 // Only cross-cutting errors from shared infrastructure are mapped here.
 // Action-specific business-rule errors are translated per endpoint (throw an
 // ApiError from the handler) — anything unmapped is a 500.
@@ -140,7 +152,8 @@ function toErrorResponse(err: unknown): Response {
   if (message === "Forbidden") return json(403, { error: "FORBIDDEN" });
   // getAuthUser() inside an action can still deny if the cached session and
   // the DB disagree mid-request.
-  if (ACCESS_DENIALS.has(message)) return json(403, { error: message });
+  const denial = ACCESS_DENIALS.find((code) => code === message);
+  if (denial) return json(403, { error: denial });
   if (message === "InvalidInput" || message === "INVALID_INPUT") {
     return json(400, { error: "INVALID_INPUT" });
   }
@@ -149,7 +162,7 @@ function toErrorResponse(err: unknown): Response {
   const rate = /^(RATE_LIMITED|COOLDOWN)(?::(\d+))?$/.exec(message);
   if (rate) {
     const headers = rate[2] ? { "Retry-After": rate[2] } : undefined;
-    return json(429, { error: rate[1] }, headers);
+    return json(429, { error: rate[1] as "RATE_LIMITED" | "COOLDOWN" }, headers);
   }
   if (message === "AI_UNAVAILABLE") return json(503, { error: "AI_UNAVAILABLE" });
 
@@ -158,6 +171,6 @@ function toErrorResponse(err: unknown): Response {
   return json(500, { error: "INTERNAL" });
 }
 
-function json(status: number, body: object, headers?: HeadersInit): Response {
+function json(status: number, body: ApiErrorBody, headers?: HeadersInit): Response {
   return NextResponse.json(body, { status, headers });
 }

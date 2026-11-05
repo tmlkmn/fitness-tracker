@@ -7,7 +7,7 @@ import { signIn } from "@/lib/auth-client";
 import { signUpWithTrial } from "@/actions/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dumbbell, Loader2, Eye, EyeOff } from "lucide-react";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const inputClass =

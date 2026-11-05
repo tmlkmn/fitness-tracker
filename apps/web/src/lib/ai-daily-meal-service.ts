@@ -13,7 +13,7 @@ import { db } from "@/db";
 import { meals, users } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
 import type { AIMeal } from "@/actions/ai-meals";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import {
   callAIText,
   executeAIWithRetries,

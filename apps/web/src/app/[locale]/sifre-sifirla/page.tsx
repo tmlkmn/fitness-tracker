@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { KeyRound, Loader2, CheckCircle, Eye, EyeOff, Check, X } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { validatePasswordStrength } from "@/lib/password-validation";
+import { validatePasswordStrength } from "@fitmusc/shared/password-validation";
 
 export default function SifreSifirlaPage() {
   return (

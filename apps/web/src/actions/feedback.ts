@@ -8,7 +8,7 @@ import { sendNotification } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
 import { invalidateAdminOpsCache } from "@/lib/admin-ops-cache";
 import { getServerTranslator } from "@/lib/i18n-server";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 
 // ── Types ──
 

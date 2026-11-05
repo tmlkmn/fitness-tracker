@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { normalizeLocale } from "@/lib/locale";
+import { normalizeLocale } from "@fitmusc/shared/locale";
 import { buildPublicMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {

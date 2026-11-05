@@ -43,7 +43,7 @@ import {
   getSectionReplacePrompt,
   getExerciseVariationPrompt,
 } from "@/lib/ai-prompts";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 import {
   validateDailyExerciseArray,
   dailyExercisesNeedRetry,

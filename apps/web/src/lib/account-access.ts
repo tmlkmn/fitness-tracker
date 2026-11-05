@@ -1,4 +1,5 @@
 import { getEntitlement, type BillingUserFields } from "@/lib/billing/entitlement";
+import type { AccessDenial } from "@fitmusc/shared/api/errors";
 
 /**
  * Single source of truth for "may this account still act, and may the system
@@ -15,12 +16,6 @@ import { getEntitlement, type BillingUserFields } from "@/lib/billing/entitlemen
  * subscription that still needs cancelling, so a frozen account must NOT read
  * as billing-inactive there).
  */
-
-export type AccessDenial =
-  | "AccountFrozen"
-  | "NotApproved"
-  | "MembershipExpired"
-  | "TrialExpired";
 
 export interface AccountAccessFields extends BillingUserFields {
   isApproved?: boolean | null;

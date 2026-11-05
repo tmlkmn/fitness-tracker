@@ -21,11 +21,11 @@ import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { useUserProfile, useResolvedMacroTargetsForDay } from "@/hooks/use-user";
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
-import { computeMealMacros } from "@/lib/meal-macros";
+import { computeMealMacros } from "@fitmusc/shared/meal-macros";
 import { computeSupplementMacros, isProteinPowder } from "@/lib/supplement-macros";
 import { useSupplementsForDay } from "@/hooks/use-supplements-for-day";
 import { formatAiError } from "@/lib/ai-errors";
-import { formatEnergy, type EnergyUnit } from "@/lib/units";
+import { formatEnergy, type EnergyUnit } from "@fitmusc/shared/units";
 import type { AIMeal } from "@/actions/ai-meals";
 import { useTranslations } from "next-intl";
 

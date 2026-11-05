@@ -1,4 +1,4 @@
-import { normalizeEvent } from "@/lib/routine-constants";
+import { normalizeEvent } from "@fitmusc/shared/routine-constants";
 import { GOAL_STRATEGIES } from "@/lib/strategy/goal-strategy";
 
 // ─── Types ───────────────────────────────────────────────────────────────────

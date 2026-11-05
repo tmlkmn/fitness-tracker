@@ -26,7 +26,7 @@ import path from "node:path";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users, dailyPlans, weeklyPlans } from "@/db/schema";
-import { normalizeLocale, type Locale } from "@/lib/locale";
+import { normalizeLocale, type Locale } from "@fitmusc/shared/locale";
 import { AI_MODELS } from "@/lib/ai";
 import type { AIEffort } from "@/lib/ai-runtime";
 import { categorizeWarnings, isSystemNote } from "@/lib/ai-warning-telemetry";

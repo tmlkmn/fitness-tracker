@@ -1,6 +1,6 @@
-import { TURKISH_FOODS } from "../turkish-foods";
+import { TURKISH_FOODS } from "./turkish-foods";
 import { ENGLISH_FOODS } from "./english-foods";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "../locale";
 
 export type FoodCategory =
   | "protein"

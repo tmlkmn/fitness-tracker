@@ -7,7 +7,7 @@
  * — these blocks just shrink the warning surface they have to fire on.
  */
 import type { MuscleVolumeBandsResult, MuscleGroup } from "@/lib/muscle-volume-validator";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import type { Pattern } from "@/lib/ai-workout-summary";
 
 const MUSCLE_ORDER: MuscleGroup[] = ["chest", "back", "legs", "shoulders", "arms"];

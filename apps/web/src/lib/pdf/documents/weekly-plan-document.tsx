@@ -17,7 +17,7 @@ import {
   type ExportLabels,
 } from "../blocks";
 import type { CollectedWeeklyPlan, CollectedDay } from "@/lib/export/collect-weekly-plan";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import type { MacroTargets } from "@/lib/macro-targets";
 
 const styles = StyleSheet.create({

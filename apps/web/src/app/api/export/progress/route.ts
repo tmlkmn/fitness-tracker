@@ -4,8 +4,8 @@ import { eq, asc } from "drizzle-orm";
 import { db } from "@/db";
 import { progressLogs } from "@/db/schema";
 import { requireApiUser } from "@/lib/api-auth";
-import { getUserLocale } from "@/lib/locale";
-import { formatDate } from "@/lib/date-format";
+import { getUserLocale } from "@fitmusc/shared/locale";
+import { formatDate } from "@fitmusc/shared/date-format";
 import { buildExportLabels } from "@/lib/pdf/labels";
 import {
   ProgressReportDocument,

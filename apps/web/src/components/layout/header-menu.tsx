@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { useGlobalSearch } from "./global-search-provider";
 import { updateUserLocale } from "@/actions/locale";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import type { TourSurface } from "@/lib/onboarding-storage";
 
 /** Maps the current route to its guided-tour surface, if it has one. */

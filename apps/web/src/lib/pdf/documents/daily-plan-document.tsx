@@ -13,7 +13,7 @@ import {
   type ExportLabels,
 } from "../blocks";
 import type { CollectedDay } from "@/lib/export/collect-weekly-plan";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 export interface DailyPlanDocData {
   day: CollectedDay;

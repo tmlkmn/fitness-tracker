@@ -19,7 +19,7 @@ import {
   extractText,
 } from "@/lib/ai";
 import { getShoppingListPrompt } from "@/lib/ai-prompts";
-import { getUserLocale } from "@/lib/locale";
+import { getUserLocale } from "@fitmusc/shared/locale";
 import { parseAiJson, repairTruncatedJson } from "@/lib/ai-json-repair";
 
 export async function toggleShoppingItem(id: number, isPurchased: boolean) {

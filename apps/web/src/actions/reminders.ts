@@ -5,8 +5,9 @@ import { reminders } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getAuthUser } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
-import { REMINDER_TEMPLATES, getReminderTemplateText } from "@/lib/reminder-templates";
-import { getUserLocale } from "@/lib/locale";
+import { REMINDER_TEMPLATES } from "@fitmusc/shared/reminder-templates";
+import { getReminderTemplateText } from "@/lib/reminder-template-text";
+import { getUserLocale } from "@fitmusc/shared/locale";
 
 export async function getReminders() {
   const user = await getAuthUser();

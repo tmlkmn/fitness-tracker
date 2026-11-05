@@ -1,5 +1,6 @@
 import { createTranslator } from "next-intl";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
+import { importMessages } from "@/i18n/messages";
 
 type MessageRecord = Record<string, unknown>;
 
@@ -8,7 +9,7 @@ const messagesCache: Partial<Record<Locale, MessageRecord>> = {};
 async function loadMessages(locale: Locale): Promise<MessageRecord> {
   let cached = messagesCache[locale];
   if (!cached) {
-    cached = (await import(`../../messages/${locale}.json`)).default as MessageRecord;
+    cached = (await importMessages(locale)) as MessageRecord;
     messagesCache[locale] = cached;
   }
   return cached;

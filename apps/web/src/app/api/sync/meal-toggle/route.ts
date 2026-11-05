@@ -4,7 +4,7 @@ import { requireApiUser } from "@/lib/api-auth";
 import { db } from "@/db";
 import { meals } from "@/db/schema";
 import { verifyMealOwnership } from "@/lib/ownership";
-import { isMealTogglePayload } from "@/lib/sync-payloads";
+import { isMealTogglePayload } from "@fitmusc/shared/sync-payloads";
 
 export async function POST(request: Request) {
   const { user, response } = await requireApiUser();

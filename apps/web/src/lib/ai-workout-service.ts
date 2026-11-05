@@ -14,7 +14,7 @@ import { db } from "@/db";
 import { dailyPlans, weeklyPlans, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import type { AIExercise } from "@/actions/ai-workout";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 import {
   callAIText,
   executeAIWithRetries,

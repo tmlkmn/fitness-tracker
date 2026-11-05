@@ -1,0 +1,17 @@
+{
+  "name": "@fitmusc/shared",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "exports": {
+    "./foods": "./src/foods/index.ts",
+    "./messages/*": "./messages/*",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  }
+}

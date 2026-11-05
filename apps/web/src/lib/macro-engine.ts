@@ -16,9 +16,9 @@
  * Pure functions, no I/O; see scripts/check-macro-engine.ts.
  */
 
-import { ENGLISH_FOODS } from "@/data/foods/english-foods";
-import { TURKISH_FOODS } from "@/data/turkish-foods";
-import type { Locale } from "@/lib/locale";
+import { ENGLISH_FOODS } from "@fitmusc/shared/foods/english-foods";
+import { TURKISH_FOODS } from "@fitmusc/shared/foods/turkish-foods";
+import type { Locale } from "@fitmusc/shared/locale";
 
 export type IngredientRole = "protein" | "carb" | "fat" | "veg" | "other";
 

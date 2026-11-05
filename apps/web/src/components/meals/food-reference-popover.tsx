@@ -14,12 +14,12 @@ import {
   getFoodsByLocale,
   FOOD_CATEGORY_KEYS,
   type FoodCategory,
-} from "@/data/foods";
+} from "@fitmusc/shared/foods";
 import { useUserFoods, useCreateUserFood, useDeleteUserFood } from "@/hooks/use-user-foods";
-import type { FoodLike } from "@/lib/food-math";
+import type { FoodLike } from "@fitmusc/shared/food-math";
 import { cn } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
-import type { Locale } from "@/lib/locale";
+import type { Locale } from "@fitmusc/shared/locale";
 
 interface FoodReferencePopoverProps {
   onAdd: (food: FoodLike, multiplier: number) => void;
