@@ -4,7 +4,13 @@ import { clearOutbox } from "@/lib/outbox";
 import { clearQueryCache } from "@/lib/query-persister";
 
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  // In the browser always hit the page's own origin. NEXT_PUBLIC_APP_URL is
+  // the production URL in every Vercel environment, so pinning to it made
+  // preview deployments POST cross-origin to production (CORS-blocked).
+  baseURL:
+    typeof window !== "undefined"
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   plugins: [adminClient()],
 });
 

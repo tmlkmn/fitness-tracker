@@ -10,8 +10,19 @@ import {
 } from "@/db/schema";
 import { sendResetEmail } from "@/lib/email";
 
+// Preview deployments inherit production's BETTER_AUTH_URL (env vars are set
+// for all environments), so their own origins must be trusted explicitly or
+// sign-in from the preview URL is rejected. Empty in production.
+const previewOrigins =
+  process.env.VERCEL_ENV === "preview"
+    ? [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+        .filter((host): host is string => !!host)
+        .map((host) => `https://${host}`)
+    : [];
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL,
+  trustedOrigins: previewOrigins,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: { user, session, account, verification },
