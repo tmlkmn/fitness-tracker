@@ -22,7 +22,12 @@
       "Bash(grep -n \"fitnessLevel\\\\|sportHistory\\\\|FITNESS_LEVEL_OPTIONS\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\app\\\\\\\\profil-tamamla\\\\\\\\page.tsx\")",
       "Bash(grep -n \"AI_FEATURES\\\\|workout.*15\\\\|exercise.*15\\\\|RATE_LIMITS\\\\|FEATURE_LIMITS\\\\|checkRateLimit\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\lib\\\\\\\\ai.ts\")",
       "Bash(grep -rn \"AiQuotaBadge\\\\|feature.*workout\\\\|feature.*exercise\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\components\\\\\\\\workout\" --include=\"*.tsx\")",
-      "Bash(grep -n \"EXERCISE_NAMING_RULES\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\lib\\\\\\\\ai-prompts.ts\")"
+      "Bash(grep -n \"EXERCISE_NAMING_RULES\" \"c:\\\\\\\\projects\\\\\\\\fitness-tracker\\\\\\\\src\\\\\\\\lib\\\\\\\\ai-prompts.ts\")",
+      "Bash(grep -v \"^.*requireApiUser\\(\\)$\")",
+      "Bash(node -p \"require\\('./node_modules/better-auth/package.json'\\).version\")",
+      "Bash(node -p \"Object.keys\\(require\\('./node_modules/better-auth/package.json'\\).exports\\).join\\('\\\\n'\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/better-auth/package.json'\\).exports['./cookies']; console.log\\(JSON.stringify\\(p,null,1\\)\\)\")",
+      "Bash(echo \"=== EXIT: $? ===\")"
     ],
     "additionalDirectories": [
       "\\tmp"
