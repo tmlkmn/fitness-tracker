@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins/admin";
+import { expo } from "@better-auth/expo";
 import { db } from "@/db";
 import {
   users as user,
@@ -20,9 +21,14 @@ const previewOrigins =
         .map((host) => `https://${host}`)
     : [];
 
+// Deep-link scheme of the Expo app (apps/mobile). The expo() plugin copies the
+// client's `expo-origin` header into `origin`, which must be trusted here.
+// Expo Go's `exp://` is added by the plugin itself in development.
+const MOBILE_APP_ORIGIN = "fitmusc://";
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL,
-  trustedOrigins: previewOrigins,
+  trustedOrigins: [...previewOrigins, MOBILE_APP_ORIGIN],
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: { user, session, account, verification },
@@ -77,5 +83,6 @@ export const auth = betterAuth({
     admin({
       defaultRole: "user",
     }),
+    expo(),
   ],
 });
