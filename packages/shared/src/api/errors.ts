@@ -23,7 +23,17 @@ export type ApiErrorCode =
   | "RATE_LIMITED" // 429 — see the Retry-After header
   | "COOLDOWN" // 429 — see the Retry-After header
   | "AI_UNAVAILABLE" // 503
-  | "INTERNAL"; // 500
+  | "AI_EMPTY_RESPONSE" // 502 — the model returned nothing usable; retry
+  | "INTERNAL" // 500
+  // ── Endpoint-specific business rules ──
+  | "SAME_DAY" // 400 — move/swap source and target are the same day
+  | "NOTHING_SELECTED" // 400 — move/swap with neither workout nor meals
+  | "DIFFERENT_WEEK" // 400 — move/swap only works within one week
+  | "NO_MEALS" // 422 — shopping list for a week without meals
+  | "EMAIL_MISMATCH" // 400 — account deletion confirmation email is wrong
+  | "CANNOT_SHARE_WITH_SELF" // 400
+  | "PAST_WEEK" // 400 — past weeks can't be shared
+  | "ALREADY_SHARED"; // 409
 
 export interface ApiErrorBody {
   error: ApiErrorCode;

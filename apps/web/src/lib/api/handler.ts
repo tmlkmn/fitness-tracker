@@ -62,6 +62,11 @@ interface ApiRouteOptions<TInput, TParams> {
   params?: z.ZodType<TParams>;
   /** Relax individual access gates — same flags as `requireApiUser`. */
   auth?: ApiAuthOptions;
+  /**
+   * Business-rule errors the wrapped action throws, keyed by the exact
+   * `Error.message` → `[status, code]`. Checked before the shared mapping.
+   */
+  errors?: Readonly<Record<string, readonly [number, ApiErrorCode]>>;
 }
 
 /** Throw from a handler to return a specific status + error code. */
@@ -103,9 +108,15 @@ export function apiRoute<TInput = undefined, TParams = undefined>(
         ? new Response(null, { status: 204 })
         : NextResponse.json(result);
     } catch (err) {
-      return toErrorResponse(err);
+      return toErrorResponse(err, options.errors);
     }
   };
+}
+
+/** For lookups by id: a missing row is a 404, not a `null` body. */
+export function orNotFound<T>(value: T | null | undefined): T {
+  if (value == null) throw new ApiError(404, "NOT_FOUND");
+  return value;
 }
 
 function parseParams<T>(schema: z.ZodType<T>, raw: unknown): T {
@@ -130,9 +141,13 @@ async function readInput(request: Request): Promise<unknown> {
 }
 
 // Only cross-cutting errors from shared infrastructure are mapped here.
-// Action-specific business-rule errors are translated per endpoint (throw an
-// ApiError from the handler) — anything unmapped is a 500.
-function toErrorResponse(err: unknown): Response {
+// Action-specific business-rule errors are translated per endpoint (the
+// route's `errors` option, or an ApiError from the handler) — anything
+// unmapped is a 500.
+function toErrorResponse(
+  err: unknown,
+  routeErrors: ApiRouteOptions<unknown, unknown>["errors"],
+): Response {
   if (err instanceof ApiError) {
     return json(err.status, { error: err.code, details: err.details });
   }
@@ -141,6 +156,12 @@ function toErrorResponse(err: unknown): Response {
   }
 
   const message = err instanceof Error ? err.message : "";
+
+  // hasOwn: an error message like "constructor" must not hit Object.prototype.
+  if (routeErrors && Object.hasOwn(routeErrors, message)) {
+    const [status, code] = routeErrors[message];
+    return json(status, { error: code });
+  }
 
   // The session was already validated by requireApiUser(), so an
   // "Unauthorized" thrown later comes from the ownership helpers
