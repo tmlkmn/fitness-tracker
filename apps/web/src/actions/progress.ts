@@ -6,45 +6,61 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 
-type ProgressData = {
-  logDate: string;
-  weight?: string;
-  fluidPercent?: string;
-  fluidKg?: string;
-  fatPercent?: string;
-  fatKg?: string;
-  bmi?: string;
-  leftArmFatPercent?: string;
-  leftArmFatKg?: string;
-  leftArmMusclePercent?: string;
-  leftArmMuscleKg?: string;
-  rightArmFatPercent?: string;
-  rightArmFatKg?: string;
-  rightArmMusclePercent?: string;
-  rightArmMuscleKg?: string;
-  torsoFatPercent?: string;
-  torsoFatKg?: string;
-  torsoMusclePercent?: string;
-  torsoMuscleKg?: string;
-  leftLegFatPercent?: string;
-  leftLegFatKg?: string;
-  leftLegMusclePercent?: string;
-  leftLegMuscleKg?: string;
-  rightLegFatPercent?: string;
-  rightLegFatKg?: string;
-  rightLegMusclePercent?: string;
-  rightLegMuscleKg?: string;
-  waistCm?: string;
-  rightArmCm?: string;
-  leftArmCm?: string;
-  rightLegCm?: string;
-  leftLegCm?: string;
-  notes?: string;
+// Writable columns of a progress log. Server actions are callable with any
+// payload, so writes copy only these keys — never userId / id / createdAt.
+const PROGRESS_FIELDS = [
+  "logDate",
+  "weight",
+  "fluidPercent",
+  "fluidKg",
+  "fatPercent",
+  "fatKg",
+  "bmi",
+  "leftArmFatPercent",
+  "leftArmFatKg",
+  "leftArmMusclePercent",
+  "leftArmMuscleKg",
+  "rightArmFatPercent",
+  "rightArmFatKg",
+  "rightArmMusclePercent",
+  "rightArmMuscleKg",
+  "torsoFatPercent",
+  "torsoFatKg",
+  "torsoMusclePercent",
+  "torsoMuscleKg",
+  "leftLegFatPercent",
+  "leftLegFatKg",
+  "leftLegMusclePercent",
+  "leftLegMuscleKg",
+  "rightLegFatPercent",
+  "rightLegFatKg",
+  "rightLegMusclePercent",
+  "rightLegMuscleKg",
+  "waistCm",
+  "rightArmCm",
+  "leftArmCm",
+  "rightLegCm",
+  "leftLegCm",
+  "notes",
+] as const;
+
+type ProgressField = (typeof PROGRESS_FIELDS)[number];
+
+type ProgressData = { logDate: string } & {
+  [K in Exclude<ProgressField, "logDate">]?: string;
 };
+
+function pickProgressFields(data: ProgressData): ProgressData {
+  const picked: Partial<Record<ProgressField, string>> = {};
+  for (const key of PROGRESS_FIELDS) picked[key] = data[key];
+  return picked as ProgressData;
+}
 
 export async function addProgressLog(data: ProgressData) {
   const user = await getAuthUser();
-  await db.insert(progressLogs).values({ ...data, userId: user.id });
+  await db
+    .insert(progressLogs)
+    .values({ ...pickProgressFields(data), userId: user.id });
   revalidatePath("/ilerleme");
 }
 
@@ -60,7 +76,7 @@ export async function updateProgressLog(id: number, data: ProgressData) {
 
   await db
     .update(progressLogs)
-    .set(data)
+    .set(pickProgressFields(data))
     .where(eq(progressLogs.id, id));
 
   revalidatePath("/ilerleme");

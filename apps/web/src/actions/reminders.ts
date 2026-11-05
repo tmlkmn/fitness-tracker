@@ -124,7 +124,25 @@ export async function updateReminder(
     throw new Error("Hatırlatıcı bulunamadı");
   }
 
-  await db.update(reminders).set(data).where(eq(reminders.id, id));
+  // Copy the editable fields one by one: server actions are callable with any
+  // payload, so spreading `data` would let a caller rewrite userId/type.
+  // Undefined keys are skipped by drizzle, keeping the partial update.
+  await db
+    .update(reminders)
+    .set({
+      title: data.title,
+      body: data.body,
+      time: data.time,
+      minutesBefore: data.minutesBefore,
+      recurrence: data.recurrence,
+      intervalMinutes: data.intervalMinutes,
+      intervalStart: data.intervalStart,
+      intervalEnd: data.intervalEnd,
+      daysOfWeek: data.daysOfWeek,
+      onceDate: data.onceDate,
+      skipEmail: data.skipEmail,
+    })
+    .where(eq(reminders.id, id));
   revalidatePath("/ayarlar");
 }
 

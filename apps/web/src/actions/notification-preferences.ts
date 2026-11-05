@@ -36,6 +36,20 @@ export async function updateNotificationPreferences(data: {
 }) {
   const user = await getAuthUser();
 
+  // Copy the editable fields one by one: server actions are callable with any
+  // payload, so spreading `data` would let a caller write another userId.
+  // Undefined keys are skipped by drizzle, keeping the partial update.
+  const fields = {
+    inAppEnabled: data.inAppEnabled,
+    emailEnabled: data.emailEnabled,
+    pushEnabled: data.pushEnabled,
+    defaultWorkoutTime: data.defaultWorkoutTime,
+    timezone: data.timezone,
+    quietHoursStart: data.quietHoursStart,
+    quietHoursEnd: data.quietHoursEnd,
+    weekStartsOn: data.weekStartsOn,
+  };
+
   const [existing] = await db
     .select({ id: notificationPreferences.id })
     .from(notificationPreferences)
@@ -44,12 +58,12 @@ export async function updateNotificationPreferences(data: {
   if (existing) {
     await db
       .update(notificationPreferences)
-      .set(data)
+      .set(fields)
       .where(eq(notificationPreferences.id, existing.id));
   } else {
     await db.insert(notificationPreferences).values({
       userId: user.id,
-      ...data,
+      ...fields,
     });
   }
 }
