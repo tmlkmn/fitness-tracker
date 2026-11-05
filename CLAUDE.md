@@ -4,7 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 @AGENTS.md
 
+## Monorepo Layout
+
+npm workspaces (root `package.json`). One lockfile at the root; run `npm install` from the root only.
+
+- `apps/web` (`@fitmusc/web`) — this Next.js app. **Every `src/`, `scripts/`, `messages/`, `drizzle/`, `public/` path in this file is relative to `apps/web/`.** `.env.local`, `.env.sentry-build-plugin`, `vercel.json` and `eval-results/` live there too.
+- `apps/mobile` — planned Expo app (consumes `/api/v1/*` only; never connects to Neon directly).
+- `packages/*` — planned shared pure-TS code (zod schemas, DTO types, i18n messages).
+- Vercel project Root Directory must be `apps/web`.
+
 ## Build & Development Commands
+
+Run from the repo root — each script proxies to the `@fitmusc/web` workspace (cwd `apps/web`).
 
 | Command | Purpose |
 |---|---|
@@ -17,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `npm run db:seed` | Seed DB with 4-week program data |
 | `npm run db:studio` | Open Drizzle Studio GUI |
 | `npm run eval:plans -- --label <name>` | Plan-quality eval (spends real API money; see below) |
-| `npx tsx scripts/check-macro-engine.ts` | Assertion checks for the macro engine |
+| `npm run check:macro-engine` | Assertion checks for the macro engine |
 
 No test framework is configured.
 
