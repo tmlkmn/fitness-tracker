@@ -3637,7 +3637,8 @@
       "mustChangePasswordTitle": "You need to change your password",
       "mustChangePasswordDescription": "You signed in with a temporary password. Set a new one on the web, then come back.",
       "openWeb": "Open on the web",
-      "retry": "Try again"
+      "retry": "Try again",
+      "inactiveDescription": "Your account isn't active right now. Once it's active again, tap \"Try again\" to continue."
     },
     "settings": {
       "title": "Settings",
@@ -3652,7 +3653,8 @@
       "pushError": "Couldn't register for notifications.",
       "pushEnable": "Turn on notifications",
       "openWebApp": "Open the web app",
-      "version": "Version {version}"
+      "version": "Version {version}",
+      "privacyAccount": "Privacy & account"
     },
     "errors": {
       "network": "Can't connect. Check your internet connection.",
@@ -3745,6 +3747,28 @@
     "reminders": {
       "titleRequired": "Enter a title.",
       "daysRequired": "Pick at least one day."
+    },
+    "aiConsent": {
+      "title": "AI and your data",
+      "body": "For suggestions, plans, analyses and the coach chat, your first name, age, height, weight and measurements, goals, health notes, allergies, plans and what you write are sent to Anthropic (Claude). Anthropic does not use this data to train models. If you don't allow it, everything except the AI features keeps working; you can withdraw your permission any time in Settings.",
+      "allow": "Allow",
+      "decline": "Not now",
+      "privacy": "Privacy policy",
+      "settingsTitle": "AI data sharing",
+      "granted": "You allowed your data to be sent to Anthropic for the AI features.",
+      "notGranted": "Not allowed — the AI features ask before sending any data.",
+      "revoke": "Withdraw permission"
+    },
+    "aiReport": {
+      "link": "Report content",
+      "title": "Report AI content",
+      "hint": "Report AI content you find wrong, harmful or inappropriate. Your report reaches our team together with the content.",
+      "reported": "Reported content",
+      "placeholder": "What's wrong? (optional)",
+      "send": "Report",
+      "sent": "Thanks — your report was received.",
+      "noNote": "No description",
+      "longPressHint": "Long-press to report"
     }
   }
 }

@@ -6,6 +6,7 @@ import { useTranslations } from "use-intl";
 
 import {
   AiButton,
+  AiConsentCard,
   AiDisclaimer,
   ErrorBox,
   LocationPicker,
@@ -19,6 +20,7 @@ import {
 import { useExerciseDetail } from "@/components/ai-results";
 import { AppText, Button, Card, ErrorView, LoadingView, Screen, Segmented, useErrorMessage } from "@/components/ui";
 import { useApplyExerciseVariation, useExerciseTips, useExerciseVariation } from "@/hooks/ai";
+import { useAiConsent } from "@/hooks/ai-consent";
 import { useDayExercises } from "@/hooks/plan";
 import { colors, spacing } from "@/lib/theme";
 
@@ -122,7 +124,7 @@ function Alternatives({ dayId, exercise }: { dayId: number; exercise: ExerciseDt
             disabled={apply.isPending}
             onPress={() => generate(true)}
           />
-          <AiDisclaimer />
+          <AiDisclaimer reportContext={result.alternatives.map((a) => [a.name, a.notes].filter(Boolean).join(" — ")).join("\n")} />
         </>
       ) : (
         <>
@@ -140,7 +142,10 @@ function Alternatives({ dayId, exercise }: { dayId: number; exercise: ExerciseDt
 
 function Tips({ exercise }: { exercise: ExerciseDto }) {
   const errorMessage = useErrorMessage();
-  const tips = useExerciseTips(exercise.name, exercise.notes, exercise.englishName, true);
+  const { granted } = useAiConsent();
+  // The tips load by themselves, so they wait for the AI data-sharing consent.
+  const tips = useExerciseTips(exercise.name, exercise.notes, exercise.englishName, granted === true);
+  if (granted === false) return <AiConsentCard />;
   if (tips.isLoading) return <LoadingView />;
   if (tips.error) return <ErrorBox message={errorMessage(tips.error)} />;
   if (!tips.data?.tips) return null;
@@ -149,7 +154,7 @@ function Tips({ exercise }: { exercise: ExerciseDto }) {
       <Card style={{ backgroundColor: colors.cardPressed }}>
         <Markdown>{tips.data.tips}</Markdown>
       </Card>
-      <AiDisclaimer />
+      <AiDisclaimer reportContext={`${exercise.name}: ${tips.data.tips}`} />
     </>
   );
 }

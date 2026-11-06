@@ -20,9 +20,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/invoices/[id]/pdf": ["./public/fonts/**"],
   },
-  experimental: {
-    viewTransition: true,
-  },
+  // <ViewTransition> (src/app/[locale]/layout.tsx) needs no flag since Next 16.4 / React 19.3.
   images: {
     remotePatterns: [
       {

@@ -171,7 +171,7 @@ function Variation({ dayId, meal }: { dayId: number; meal: MealDto }) {
               disabled={update.isPending}
               onPress={generate}
             />
-            <AiDisclaimer />
+            <AiDisclaimer reportContext={suggestions.map((s) => s.content).join("\n")} />
           </>
         ) : null}
 

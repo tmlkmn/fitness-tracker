@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@better-auth/core": "1.6.2",
-    "@better-auth/expo": "1.6.2",
+    "@better-auth/core": "1.6.34",
+    "@better-auth/expo": "1.6.34",
     "@expo/vector-icons": "^15.0.2",
     "@fitmusc/shared": "file:../../packages/shared",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -20,7 +20,7 @@
     "@tanstack/query-async-storage-persister": "^5.106.1",
     "@tanstack/react-query": "^5.106.1",
     "@tanstack/react-query-persist-client": "^5.106.1",
-    "better-auth": "1.6.2",
+    "better-auth": "1.6.34",
     "expo": "~58.0.23",
     "expo-constants": "~58.0.15",
     "expo-device": "~58.0.5",
@@ -46,7 +46,7 @@
     "react-native-svg": "15.16.0",
     "react-native-worklets": "0.13.0",
     "use-intl": "^4.14.9",
-    "zod": "4.3.6"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",

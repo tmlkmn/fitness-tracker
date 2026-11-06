@@ -250,7 +250,7 @@ function ResultActions({
         onPress={() => again.launch(jobBody(job))}
       />
       {extra}
-      <AiDisclaimer />
+      <AiDisclaimer reportContext={`AI job ${job.id} (${job.kind})`} />
     </>
   );
 }

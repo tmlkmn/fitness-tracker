@@ -111,7 +111,7 @@ function WeightTargetsForm({ start, target, canSuggest }: { start: string; targe
               <Button label="✕" variant="ghost" onPress={() => suggest.reset()} />
             </View>
           </Panel>
-          <AiDisclaimer />
+          <AiDisclaimer reportContext={`${suggestion.targetWeight} kg — ${suggestion.reasoning}`} />
         </>
       ) : null}
 

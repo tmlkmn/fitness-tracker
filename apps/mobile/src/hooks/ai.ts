@@ -28,6 +28,8 @@ import type { AiJobCreateBody } from "@fitmusc/shared/api/schemas";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
+import { useAiConsent } from "./ai-consent";
+
 import { aiWeekOf, isWeekdayToday, monthsOfMondays } from "@/lib/ai-weekly";
 import { api } from "@/lib/api";
 import { monthOf, todayStr, weekStartOf } from "@/lib/dates";
@@ -69,10 +71,13 @@ export function useInvalidateQuota() {
   return () => void qc.invalidateQueries({ queryKey: aiKeys.quota });
 }
 
+/** Written by the AI from the user's day — only once they allowed sharing data with it. */
 export function useGreeting() {
+  const { granted } = useAiConsent();
   return useQuery({
     queryKey: aiKeys.greeting,
     queryFn: () => api<DailyGreetingDto>("/ai/greeting"),
+    enabled: granted === true,
     // One message per day, cached on the server.
     staleTime: 60 * 60_000,
     retry: false,

@@ -3637,7 +3637,8 @@
       "mustChangePasswordTitle": "Şifreni değiştirmen gerekiyor",
       "mustChangePasswordDescription": "Geçici şifreyle giriş yaptın. Yeni şifreni web'de belirle, sonra buraya dön.",
       "openWeb": "Web'de aç",
-      "retry": "Tekrar dene"
+      "retry": "Tekrar dene",
+      "inactiveDescription": "Hesabın şu an aktif değil. Yeniden aktif olduğunda \"Tekrar dene\"ye dokunarak devam edebilirsin."
     },
     "settings": {
       "title": "Ayarlar",
@@ -3652,7 +3653,8 @@
       "pushError": "Bildirim kaydı yapılamadı.",
       "pushEnable": "Bildirimleri aç",
       "openWebApp": "Web uygulamasını aç",
-      "version": "Sürüm {version}"
+      "version": "Sürüm {version}",
+      "privacyAccount": "Gizlilik ve hesap"
     },
     "errors": {
       "network": "Bağlantı kurulamadı. İnternetini kontrol et.",
@@ -3745,6 +3747,28 @@
     "reminders": {
       "titleRequired": "Bir başlık yaz.",
       "daysRequired": "En az bir gün seç."
+    },
+    "aiConsent": {
+      "title": "Yapay zeka ve verilerin",
+      "body": "Öneriler, planlar, analizler ve koç sohbeti için adın, yaşın, boy-kilo ve ölçümlerin, hedeflerin, sağlık notların, alerjilerin, planların ve yazdıkların Anthropic'e (Claude) gönderilir. Anthropic bu verileri model eğitimi için kullanmaz. İzin vermezsen yapay zeka dışındaki her şey çalışmaya devam eder; iznini Ayarlar'dan istediğin zaman geri alabilirsin.",
+      "allow": "İzin veriyorum",
+      "decline": "Şimdi değil",
+      "privacy": "Gizlilik politikası",
+      "settingsTitle": "Yapay zeka veri paylaşımı",
+      "granted": "Yapay zeka özellikleri için verilerinin Anthropic'e gönderilmesine izin verdin.",
+      "notGranted": "İzin verilmedi; yapay zeka özellikleri veri göndermeden önce izin ister.",
+      "revoke": "İzni geri al"
+    },
+    "aiReport": {
+      "link": "İçeriği bildir",
+      "title": "Yapay zeka içeriğini bildir",
+      "hint": "Yanlış, zararlı ya da uygunsuz bulduğun yapay zeka içeriğini bildir. Bildirimin, içerikle birlikte ekibimize iletilir.",
+      "reported": "Bildirilen içerik",
+      "placeholder": "Sorun ne? (isteğe bağlı)",
+      "send": "Bildir",
+      "sent": "Teşekkürler, bildirimin alındı.",
+      "noNote": "Açıklama yok",
+      "longPressHint": "Bildirmek için basılı tut"
     }
   }
 }

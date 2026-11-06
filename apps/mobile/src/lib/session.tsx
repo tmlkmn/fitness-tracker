@@ -1,12 +1,10 @@
-import { storageAdapter } from "@better-auth/expo/client";
 import type { LocaleResultDto } from "@fitmusc/shared/api/dto";
 import { ACCESS_DENIALS, type AccessDenial } from "@fitmusc/shared/api/errors";
 import type { Locale } from "@fitmusc/shared/locale";
-import * as SecureStore from "expo-secure-store";
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { api, setApiErrorListener } from "./api";
-import { AUTH_STORAGE_PREFIX, authClient, type SessionUser } from "./auth-client";
+import { authClient, type SessionUser } from "./auth-client";
 import { forgetCache, persistCacheFor } from "./offline-cache";
 import { clearOutbox, setOutboxUser } from "./outbox";
 import { unregisterPush } from "./push";
@@ -35,29 +33,12 @@ const SessionContext = createContext<SessionValue | null>(null);
 const isAccessDenial = (code: string): code is AccessDenial =>
   (ACCESS_DENIALS as readonly string[]).includes(code);
 
-/**
- * The user of the last successful session check, which the expo plugin keeps
- * in SecureStore (cleared on sign-out). Used only while the server can't be
- * reached, so the app opens offline instead of showing the sign-in screen.
- */
-function cachedSessionUser(): SessionUser | null {
-  try {
-    if (!authClient.getCookie()) return null;
-    const raw = storageAdapter(SecureStore).getItem(`${AUTH_STORAGE_PREFIX}_session_data`);
-    const cached = raw ? (JSON.parse(raw) as { user?: SessionUser } | null) : null;
-    return cached?.user ?? null;
-  } catch {
-    return null;
-  }
-}
-
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const { data, isPending, error, refetch } = authClient.useSession();
-  // No answer (offline) or a server error — not a 4xx, which means signed out.
-  const status = (error as { status?: number } | null)?.status;
-  const unreachable = !data && error != null && !(status && status >= 400 && status < 500);
-  const offlineUser = useMemo(() => (unreachable ? cachedSessionUser() : null), [unreachable]);
-  const user = data?.user ?? offlineUser;
+  // The expo plugin starts from the session it cached in SecureStore (until it
+  // expires) and keeps it when a check fails without an answer, so the app
+  // also opens offline; only a 401 or a sign-out clears it.
+  const { data, isPending, refetch } = authClient.useSession();
+  const user = data?.user ?? null;
   const userId = user?.id ?? null;
   const userIdRef = useRef<string | null>(null);
   const [denial, setDenial] = useState<AccessDenial | null>(null);

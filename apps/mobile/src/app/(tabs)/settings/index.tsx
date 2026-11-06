@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
 import { AppText, Button, Card, Screen, useErrorMessage } from "@/components/ui";
+import { useAiConsent } from "@/hooks/ai-consent";
 import { usePushRegistration } from "@/hooks/push";
 import type { PushRegistration } from "@/lib/push";
 import { useSession } from "@/lib/session";
@@ -31,6 +32,7 @@ export default function SettingsScreen() {
   const errorMessage = useErrorMessage();
   const { user, setLocale, signOut } = useSession();
   const push = usePushRegistration();
+  const aiConsent = useAiConsent();
   const [localeError, setLocaleError] = useState<string | null>(null);
   const [changing, setChanging] = useState<Locale | null>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -106,6 +108,23 @@ export default function SettingsScreen() {
         <AppText variant="small">{t("settings.subpages.macroTitle")}</AppText>
         <AppText variant="muted">{t("meals.aiMacro.title")}</AppText>
         <Button label={t("settings.subpages.macroTitle")} variant="secondary" onPress={() => router.push("/macro-targets")} />
+      </Card>
+
+      <Card>
+        <AppText variant="small">{t("mobile.aiConsent.settingsTitle")}</AppText>
+        <AppText variant="muted">{t(aiConsent.granted ? "mobile.aiConsent.granted" : "mobile.aiConsent.notGranted")}</AppText>
+        {aiConsent.granted ? (
+          <Button label={t("mobile.aiConsent.revoke")} variant="secondary" onPress={() => void aiConsent.set(false)} />
+        ) : (
+          <Button label={t("mobile.aiConsent.allow")} variant="secondary" onPress={() => void aiConsent.set(true)} />
+        )}
+      </Card>
+
+      <Card>
+        <AppText variant="small">{t("mobile.settings.privacyAccount")}</AppText>
+        <Button label={t("cookieConsent.privacyLink")} variant="secondary" onPress={() => openWebPage("privacy", locale)} />
+        <Button label={t("footer.links.terms")} variant="secondary" onPress={() => openWebPage("terms", locale)} />
+        <Button label={t("account.delete.title")} variant="danger" onPress={() => router.push("/delete-account")} />
       </Card>
 
       <Button label={t("mobile.settings.openWebApp")} variant="secondary" onPress={() => openWebPage("home", locale)} />

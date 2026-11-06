@@ -33,6 +33,10 @@ Run from the repo root — each script proxies to the `@fitmusc/web` workspace (
 
 No test framework is configured.
 
+**Deliberate dependency pins** (`apps/web/package.json`):
+- `better-auth`, `@better-auth/core` and `@better-auth/expo` stay on `~1.6.x`, on both web and mobile. 1.7 adds a required `accounts.issuer` column (a production DB migration plus backfill) and makes the expo client's `getCookie()` async. The advisories npm audit still lists for 1.6.x need plugins this app doesn't use: device authorization, OAuth proxy, Magic Link with social login.
+- `eslint-plugin-react-hooks` is pinned to `7.0.1`, with `eslint-config-next` kept at 16.2.x for it. 7.1.x reports 15 existing set-state-in-effect / refs patterns in the web UI; adopting it is a separate cleanup.
+
 ## Architecture
 
 **Stack**: Next.js 16 (App Router) · React 19 · TypeScript · Neon PostgreSQL · Drizzle ORM · TanStack React Query · Tailwind CSS v4 · shadcn/ui · better-auth

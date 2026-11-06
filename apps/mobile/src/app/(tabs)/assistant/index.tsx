@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ChatMessageDto } from "@fitmusc/shared/api/dto";
 import { useQueryClient } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useEffect, useRef, useState, type ComponentRef } from "react";
 import {
@@ -22,6 +22,7 @@ import { useTranslations } from "use-intl";
 import { AiDisclaimer, ErrorBox, Markdown, QuotaBadge } from "@/components/ai";
 import { AppText, Chip, ErrorView, LoadingView, useErrorMessage } from "@/components/ui";
 import { aiKeys, useChatHistory, useClearChat, useInvalidateQuota, useQuota } from "@/hooks/ai";
+import { useRequireAiConsent } from "@/hooks/ai-consent";
 import { apiStream } from "@/lib/api";
 import { colors, radius, spacing } from "@/lib/theme";
 
@@ -36,6 +37,7 @@ export default function AssistantScreen() {
   const t = useTranslations("assistant");
   const tr = useTranslations();
   const qc = useQueryClient();
+  const router = useRouter();
   const errorMessage = useErrorMessage();
   const headerHeight = useHeaderHeight();
   const history = useChatHistory();
@@ -55,9 +57,13 @@ export default function AssistantScreen() {
   // Leaving the tab mid-answer stops the stream.
   useEffect(() => () => abort.current?.abort(), []);
 
-  const send = async (text: string) => {
+  const requireConsent = useRequireAiConsent();
+  const send = (text: string) => {
+    if (!text.trim() || pending || exhausted) return;
+    requireConsent(() => void ask(text));
+  };
+  const ask = async (text: string) => {
     const question = text.trim();
-    if (!question || pending || exhausted) return;
     setError(null);
     setDraft("");
     const all: Turn[] = messages.map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content }));
@@ -146,7 +152,13 @@ export default function AssistantScreen() {
             </View>
           ) : null}
           {messages.map((m) => (
-            <Bubble key={m.id} role={m.role === "user" ? "user" : "assistant"} content={m.content} />
+            <Bubble
+              key={m.id}
+              role={m.role === "user" ? "user" : "assistant"}
+              content={m.content}
+              // Long-press an answer to report it (Google Play's AI-generated content policy).
+              onReport={() => router.push({ pathname: "/ai/report", params: { context: m.content.slice(0, 1500) } })}
+            />
           ))}
           {pending ? (
             <>
@@ -155,7 +167,9 @@ export default function AssistantScreen() {
             </>
           ) : null}
           {error ? <ErrorBox message={error} /> : null}
-          {messages.length > 0 ? <AiDisclaimer /> : null}
+          {messages.length > 0 ? (
+            <AiDisclaimer reportContext={messages.findLast((m) => m.role === "assistant")?.content} />
+          ) : null}
         </ScrollView>
 
         <SafeAreaView edges={["bottom"]} style={styles.inputBar}>
@@ -196,7 +210,18 @@ export default function AssistantScreen() {
   );
 }
 
-function Bubble({ role, content, streaming }: { role: "user" | "assistant"; content: string; streaming?: boolean }) {
+function Bubble({
+  role,
+  content,
+  streaming,
+  onReport,
+}: {
+  role: "user" | "assistant";
+  content: string;
+  streaming?: boolean;
+  onReport?: () => void;
+}) {
+  const t = useTranslations("mobile.aiReport");
   if (role === "user") {
     return (
       <View style={[styles.bubble, styles.userBubble]}>
@@ -205,10 +230,15 @@ function Bubble({ role, content, streaming }: { role: "user" | "assistant"; cont
     );
   }
   return (
-    <View style={[styles.bubble, styles.botBubble]}>
+    <Pressable
+      onLongPress={onReport}
+      disabled={!onReport}
+      accessibilityHint={onReport ? t("longPressHint") : undefined}
+      style={[styles.bubble, styles.botBubble]}
+    >
       {content ? <Markdown>{content}</Markdown> : null}
       {streaming && !content ? <ActivityIndicator size="small" color={colors.textMuted} /> : null}
-    </View>
+    </Pressable>
   );
 }
 

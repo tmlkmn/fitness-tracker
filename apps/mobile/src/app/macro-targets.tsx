@@ -87,7 +87,7 @@ export default function MacroTargetsScreen() {
                 <Button label={t("cancel")} variant="ghost" onPress={() => ai.reset()} />
               </View>
             </Panel>
-            <AiDisclaimer />
+            <AiDisclaimer reportContext={ai.data.explanation ?? undefined} />
           </>
         ) : null}
       </Screen>

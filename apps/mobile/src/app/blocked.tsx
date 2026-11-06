@@ -23,10 +23,14 @@ export default function BlockedScreen() {
   if (!blocked) return null;
 
   const mustChange = blocked === "MustChangePassword";
+  // An expired trial or membership is renewed outside the app; the store rules
+  // forbid pointing there (App Store 3.1.1), so the app only says it's inactive.
+  const lapsed = blocked === "TrialExpired" || blocked === "MembershipExpired";
   const title = mustChange ? t("mobile.blocked.mustChangePasswordTitle") : t(`auth.${AUTH_KEY[blocked]}.title`);
-  const description = mustChange
-    ? t("mobile.blocked.mustChangePasswordDescription")
-    : t(`auth.${AUTH_KEY[blocked]}.description`);
+  let description: string;
+  if (blocked === "MustChangePassword") description = t("mobile.blocked.mustChangePasswordDescription");
+  else if (lapsed) description = t("mobile.blocked.inactiveDescription");
+  else description = t(`auth.${AUTH_KEY[blocked]}.description`);
 
   return (
     <View style={styles.container}>
@@ -39,11 +43,12 @@ export default function BlockedScreen() {
         </AppText>
       </View>
       <View style={styles.actions}>
-        {/* No in-app purchase: renewing happens on the web. */}
-        <Button
-          label={t("mobile.blocked.openWeb")}
-          onPress={() => openWebPage(mustChange ? "changePassword" : "home", locale)}
-        />
+        {lapsed ? null : (
+          <Button
+            label={t("mobile.blocked.openWeb")}
+            onPress={() => openWebPage(mustChange ? "changePassword" : "home", locale)}
+          />
+        )}
         <Button label={t("mobile.blocked.retry")} variant="secondary" onPress={retryAccess} />
         <Button label={t("nav.signOut")} variant="ghost" onPress={signOut} />
       </View>

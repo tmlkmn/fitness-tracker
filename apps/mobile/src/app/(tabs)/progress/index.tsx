@@ -166,7 +166,7 @@ function AiAnalysis() {
         loading={loading}
         onPress={() => void analyze()}
       />
-      {text && !loading ? <AiDisclaimer /> : null}
+      {text && !loading ? <AiDisclaimer reportContext={text} /> : null}
     </Card>
   );
 }

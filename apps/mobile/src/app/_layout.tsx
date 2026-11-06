@@ -57,6 +57,8 @@ function AppStack() {
             <Stack.Screen name="ai/workout" options={{ title: "", presentation: "modal" }} />
             <Stack.Screen name="ai/weekly" options={{ title: "", presentation: "modal" }} />
             <Stack.Screen name="ai/job/[jobId]" options={{ title: "", presentation: "modal" }} />
+            <Stack.Screen name="ai/report" options={{ title: "", presentation: "modal" }} />
+            <Stack.Screen name="delete-account" options={{ title: "" }} />
             <Stack.Screen name="weight-targets" options={{ title: "", presentation: "modal" }} />
             <Stack.Screen name="macro-targets" options={{ title: "" }} />
             <Stack.Screen name="notifications" options={{ title: "" }} />

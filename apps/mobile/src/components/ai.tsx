@@ -9,6 +9,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { useLocale, useTranslations } from "use-intl";
 
 import { isActiveJob, useJobBanner, useQuota } from "@/hooks/ai";
+import { useAiConsent, useRequireAiConsent } from "@/hooks/ai-consent";
 import { useProgressLogs } from "@/hooks/wellness";
 import { colors, radius, spacing } from "@/lib/theme";
 import { openWebPage } from "@/lib/web-links";
@@ -75,6 +76,7 @@ export function AiButton({
   variant?: "primary" | "secondary";
 }) {
   const quota = useQuota(feature ?? "meal");
+  const requireConsent = useRequireAiConsent();
   const exhausted = feature != null && quota != null && quota.remaining <= 0;
   const inactive = disabled || loading || exhausted;
   const primary = variant === "primary";
@@ -84,7 +86,8 @@ export function AiButton({
       accessibilityRole="button"
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
-      onPress={onPress}
+      // Nothing reaches the AI provider before the user allowed it.
+      onPress={() => requireConsent(onPress)}
       style={({ pressed }) => [
         styles.aiButton,
         primary ? styles.aiButtonPrimary : styles.aiButtonSecondary,
@@ -203,9 +206,16 @@ export function ProfileMissing({ missing }: { missing: string[] }) {
 
 // ── Notes & disclaimers ──────────────────────────────────────────────────────
 
-export function AiDisclaimer() {
+/**
+ * Under every AI result: the medical disclaimer and a way to report the
+ * output (Google Play's AI-generated content policy). `reportContext` — the
+ * generated text, or what identifies it — goes along with the report.
+ */
+export function AiDisclaimer({ reportContext }: { reportContext?: string }) {
   const t = useTranslations("disclaimer");
+  const tr = useTranslations("mobile.aiReport");
   const locale = useLocale() as Locale;
+  const router = useRouter();
   return (
     <View style={styles.disclaimer}>
       <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
@@ -214,8 +224,31 @@ export function AiDisclaimer() {
         <Text style={styles.link} onPress={() => void openWebPage("disclaimer", locale)}>
           {t("moreInfo")} →
         </Text>
+        {"  "}
+        <Text
+          style={styles.link}
+          accessibilityRole="button"
+          onPress={() => router.push({ pathname: "/ai/report", params: reportContext ? { context: reportContext.slice(0, 1500) } : {} })}
+        >
+          {tr("link")}
+        </Text>
       </AppText>
     </View>
+  );
+}
+
+/** In place of an AI feature that starts by itself (tips, …) until the user allows sharing data with the AI provider. */
+export function AiConsentCard() {
+  const t = useTranslations("mobile.aiConsent");
+  const locale = useLocale() as Locale;
+  const { set } = useAiConsent();
+  return (
+    <Card>
+      <AppText variant="heading">{t("title")}</AppText>
+      <AppText variant="muted">{t("body")}</AppText>
+      <Button label={t("allow")} onPress={() => void set(true)} />
+      <Button label={t("privacy")} variant="ghost" onPress={() => void openWebPage("privacy", locale)} />
+    </Card>
   );
 }
 

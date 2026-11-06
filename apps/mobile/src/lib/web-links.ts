@@ -11,6 +11,8 @@ const PATHS = {
   changePassword: { tr: "/sifre-degistir", en: "/change-password" },
   settings: { tr: "/ayarlar", en: "/settings" },
   disclaimer: { tr: "/feragatname", en: "/disclaimer" },
+  privacy: { tr: "/gizlilik", en: "/privacy" },
+  terms: { tr: "/kullanim-sartlari", en: "/terms" },
 } as const satisfies Record<string, Record<Locale, string>>;
 
 export function openWebPage(page: keyof typeof PATHS, locale: Locale) {
