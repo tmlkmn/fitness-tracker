@@ -25,7 +25,8 @@ import {
  *   1. `requireApiUser()` — session + approval / freeze / membership / billing
  *   2. zod-validate route params (failure → 404) and input (failure → 400);
  *      input is the query string for GET/HEAD, the JSON body otherwise
- *   3. run the handler; `undefined` → 204, anything else → JSON
+ *   3. run the handler; `undefined` → 204, a `Response` (streams) is passed
+ *      through as is, anything else → JSON
  *   4. map thrown errors to HTTP status codes (see `toErrorResponse`)
  *
  * Error body shape: `ApiErrorBody` from @fitmusc/shared/api/errors.
@@ -67,6 +68,8 @@ interface ApiRouteOptions<TInput, TParams> {
    * `Error.message` → `[status, code]`. Checked before the shared mapping.
    */
   errors?: Readonly<Record<string, readonly [number, ApiErrorCode]>>;
+  /** Status of a JSON success response — e.g. 202 for a started background job. */
+  status?: number;
 }
 
 /** Throw from a handler to return a specific status + error code. */
@@ -104,9 +107,9 @@ export function apiRoute<TInput = undefined, TParams = undefined>(
         : (undefined as TInput);
 
       const result = await handler({ input, params, user, request });
-      return result === undefined
-        ? new Response(null, { status: 204 })
-        : NextResponse.json(result);
+      if (result === undefined) return new Response(null, { status: 204 });
+      if (result instanceof Response) return result;
+      return NextResponse.json(result, { status: options.status });
     } catch (err) {
       return toErrorResponse(err, options.errors);
     }
@@ -140,19 +143,26 @@ async function readInput(request: Request): Promise<unknown> {
   }
 }
 
+interface ClassifiedError {
+  status: number;
+  code: ApiErrorCode;
+  details?: unknown;
+  retryAfter?: string;
+}
+
+type RouteErrors = ApiRouteOptions<unknown, unknown>["errors"];
+
 // Only cross-cutting errors from shared infrastructure are mapped here.
 // Action-specific business-rule errors are translated per endpoint (the
 // route's `errors` option, or an ApiError from the handler) — anything
-// unmapped is a 500.
-function toErrorResponse(
-  err: unknown,
-  routeErrors: ApiRouteOptions<unknown, unknown>["errors"],
-): Response {
+// unmapped is a 500, reported to Sentry. The AI job runner
+// (src/lib/ai-jobs.ts) uses it too, to store a failed job's code.
+export function classifyError(err: unknown, routeErrors?: RouteErrors): ClassifiedError {
   if (err instanceof ApiError) {
-    return json(err.status, { error: err.code, details: err.details });
+    return { status: err.status, code: err.code, details: err.details };
   }
   if (err instanceof z.ZodError) {
-    return json(400, { error: "INVALID_INPUT", details: err.issues });
+    return { status: 400, code: "INVALID_INPUT", details: err.issues };
   }
 
   const message = err instanceof Error ? err.message : "";
@@ -160,7 +170,7 @@ function toErrorResponse(
   // hasOwn: an error message like "constructor" must not hit Object.prototype.
   if (routeErrors && Object.hasOwn(routeErrors, message)) {
     const [status, code] = routeErrors[message];
-    return json(status, { error: code });
+    return { status, code };
   }
 
   // The session was already validated by requireApiUser(), so an
@@ -168,28 +178,33 @@ function toErrorResponse(
   // (src/lib/ownership.ts): the record is someone else's or doesn't exist.
   // Must be 404, never 401 — a 401 makes the mobile client drop a valid session.
   if (message === "Unauthorized" || message === "Not found" || message === "NOT_FOUND") {
-    return json(404, { error: "NOT_FOUND" });
+    return { status: 404, code: "NOT_FOUND" };
   }
-  if (message === "Forbidden") return json(403, { error: "FORBIDDEN" });
+  if (message === "Forbidden") return { status: 403, code: "FORBIDDEN" };
   // getAuthUser() inside an action can still deny if the cached session and
   // the DB disagree mid-request.
   const denial = ACCESS_DENIALS.find((code) => code === message);
-  if (denial) return json(403, { error: denial });
+  if (denial) return { status: 403, code: denial };
   if (message === "InvalidInput" || message === "INVALID_INPUT") {
-    return json(400, { error: "INVALID_INPUT" });
+    return { status: 400, code: "INVALID_INPUT" };
   }
 
   // checkRateLimit (src/lib/ai.ts) and rateLimit (src/lib/rate-limit.ts)
   const rate = /^(RATE_LIMITED|COOLDOWN)(?::(\d+))?$/.exec(message);
   if (rate) {
-    const headers = rate[2] ? { "Retry-After": rate[2] } : undefined;
-    return json(429, { error: rate[1] as "RATE_LIMITED" | "COOLDOWN" }, headers);
+    return { status: 429, code: rate[1] as "RATE_LIMITED" | "COOLDOWN", retryAfter: rate[2] };
   }
-  if (message === "AI_UNAVAILABLE") return json(503, { error: "AI_UNAVAILABLE" });
+  if (message === "AI_UNAVAILABLE") return { status: 503, code: "AI_UNAVAILABLE" };
 
   console.error("[api/v1] unhandled error:", err);
   Sentry.captureException(err, { tags: { area: "api-v1" } });
-  return json(500, { error: "INTERNAL" });
+  return { status: 500, code: "INTERNAL" };
+}
+
+function toErrorResponse(err: unknown, routeErrors: RouteErrors): Response {
+  const { status, code, details, retryAfter } = classifyError(err, routeErrors);
+  const headers = retryAfter ? { "Retry-After": retryAfter } : undefined;
+  return json(status, { error: code, details }, headers);
 }
 
 function json(status: number, body: ApiErrorBody, headers?: HeadersInit): Response {

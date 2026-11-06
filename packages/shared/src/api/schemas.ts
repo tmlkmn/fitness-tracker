@@ -155,8 +155,9 @@ export const exerciseInputSchema = z.object({
   name: z.string().min(1).max(120),
   sets: z.number().int().min(0).max(100).nullable().optional(),
   reps: z.string().max(30).nullable().optional(),
-  restSeconds: z.number().int().min(0).max(3600).nullable().optional(),
-  durationMinutes: z.number().int().min(0).max(600).nullable().optional(),
+  // Bounds follow the exercises table CHECK constraints.
+  restSeconds: z.number().int().min(30).max(300).nullable().optional(),
+  durationMinutes: z.number().int().min(1).max(90).nullable().optional(),
   notes: z.string().max(1000).nullable().optional(),
 });
 
@@ -405,3 +406,205 @@ export const expoTokenSchema = z.object({
 
 /** DELETE /push/expo-token — call before signing out. */
 export const expoTokenDeleteSchema = z.object({ token: expoPushToken });
+
+// ── AI ──────────────────────────────────────────────────────────────────────
+
+const bodyId = z.number().int().positive();
+const userNote = z.string().max(2000).optional();
+// Macro grams as the AI flows emit them (numeric columns, no fixed scale).
+const aiGrams = z.string().regex(/^\d{1,5}(\.\d{1,3})?$/, "Expected grams like 35.5").nullable();
+
+/** One meal of an AI suggestion — what the generate endpoints return, sent back to apply. */
+export const aiMealSchema = z.object({
+  mealTime: z.string().min(1).max(20),
+  mealLabel: z.string().min(1).max(50),
+  content: z.string().min(1).max(5000),
+  calories: z.number().int().min(0).max(10_000).nullable(),
+  proteinG: aiGrams,
+  carbsG: aiGrams,
+  fatG: aiGrams,
+});
+
+// Bounds follow the exercises table CHECK constraints.
+const aiExerciseFields = {
+  name: z.string().min(1).max(120),
+  englishName: z.string().max(120).nullable(),
+  sets: z.number().int().min(0).max(100).nullable(),
+  reps: z.string().max(30).nullable(),
+  restSeconds: z.number().int().min(30).max(300).nullable(),
+  durationMinutes: z.number().int().min(1).max(90).nullable(),
+  notes: z.string().max(1000).nullable(),
+};
+
+export const aiExerciseSchema = z.object({
+  ...aiExerciseFields,
+  section: z.enum(EXERCISE_SECTIONS),
+  sectionLabel: z.string().min(1).max(50),
+  intensity: z.enum(["low", "moderate", "high"]).nullable().default(null),
+});
+
+/** One of the alternatives from POST /ai/exercise-variation. */
+export const aiExerciseVariationSchema = z.object(aiExerciseFields);
+
+export const WEEKLY_GENERATE_MODES = ["both", "nutrition", "workout"] as const;
+const dayOfWeek = z.number().int().min(0).max(6);
+const pastDows = z.array(dayOfWeek).max(7).optional();
+
+/** POST /ai/jobs — long generations run in the background; poll GET /ai/jobs/[id]. */
+export const aiJobCreateSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("daily-meals"), dailyPlanId: bodyId, userNote }),
+  z.object({ kind: z.literal("workout"), dailyPlanId: bodyId, userNote }),
+  z.object({
+    kind: z.literal("weekly"),
+    /** Any date in the target week. */
+    dateStr: dateString,
+    userNote,
+    generateMode: z.enum(WEEKLY_GENERATE_MODES).optional(),
+    /** Day of week ("0" = Monday) → requested day type. */
+    dayModes: z.record(z.string().regex(/^[0-6]$/), z.enum(PLAN_TYPES)).optional(),
+    /** Days already behind us — generated as rest, never overwritten on apply. */
+    pastDows,
+    deloadWeek: z.boolean().optional(),
+  }),
+]);
+
+export type AiJobCreateBody = z.infer<typeof aiJobCreateSchema>;
+
+export const aiJobsQuery = z.object({ limit: z.coerce.number().int().min(1).max(20).optional() });
+
+export const aiDailyMealsApplySchema = z.object({
+  dailyPlanId: bodyId,
+  meals: z.array(aiMealSchema).min(1).max(15),
+});
+
+export const aiWorkoutApplySchema = z.object({
+  dailyPlanId: bodyId,
+  // Empty is valid: a rest day's workout is "no exercises".
+  exercises: z.array(aiExerciseSchema).max(50),
+});
+
+export const aiWorkoutSectionSchema = z.object({
+  dailyPlanId: bodyId,
+  section: z.enum(EXERCISE_SECTIONS),
+  sectionLabel: z.string().min(1).max(50),
+  userNote,
+});
+
+export const aiWorkoutSectionApplySchema = z.object({
+  dailyPlanId: bodyId,
+  section: z.enum(EXERCISE_SECTIONS),
+  exercises: z.array(aiExerciseSchema).min(1).max(30),
+});
+
+export const aiExerciseVariationRequestSchema = z.object({
+  exerciseId: bodyId,
+  userNote,
+  /** Skip the 30-day alternatives cache. */
+  forceRefresh: z.boolean().optional(),
+});
+
+export const aiExerciseVariationApplySchema = z.object({
+  exerciseId: bodyId,
+  exercise: aiExerciseVariationSchema,
+});
+
+const macroTargetsSchema = z.object({
+  calories: z.number().min(0).max(20_000),
+  protein: z.number().min(0).max(2000),
+  carbs: z.number().min(0).max(2000),
+  fat: z.number().min(0).max(2000),
+});
+
+const multiplier = z.number().min(0).max(5);
+
+export const aiWeeklyPlanSchema = z.object({
+  weekTitle: z.string().min(1).max(200),
+  phase: z.string().min(1).max(100),
+  notes: z.string().max(5000).nullable(),
+  strategyNote: z.string().max(1000).nullable().default(null),
+  days: z
+    .array(
+      z.object({
+        dayOfWeek,
+        dayName: z.string().min(1).max(30),
+        planType: z.enum(PLAN_TYPES),
+        workoutTitle: z.string().max(200).nullable(),
+        meals: z.array(aiMealSchema).max(15),
+        exercises: z.array(aiExerciseSchema).max(50),
+      }),
+    )
+    .min(1)
+    .max(7)
+    .refine((days) => new Set(days.map((d) => d.dayOfWeek)).size === days.length, "Duplicate dayOfWeek"),
+  macroTargetSnapshot: z
+    .object({
+      baseline: macroTargetsSchema,
+      perDayType: z.object({
+        workout: macroTargetsSchema,
+        swimming: macroTargetsSchema,
+        rest: macroTargetsSchema,
+        nutrition: macroTargetsSchema,
+      }),
+      cyclingProfile: z.object({
+        enabled: z.boolean(),
+        workoutCarbMultiplier: multiplier,
+        swimmingCarbMultiplier: multiplier,
+        restCarbMultiplier: multiplier,
+        label: z.enum(["off", "moderate", "aggressive"]),
+      }),
+    })
+    .nullable()
+    .optional(),
+});
+
+export const aiWeeklyApplySchema = z.object({
+  dateStr: dateString,
+  plan: aiWeeklyPlanSchema,
+  applyMode: z.enum(WEEKLY_GENERATE_MODES).optional(),
+  pastDows,
+});
+
+export const aiMealVariationSchema = z.object({
+  mealLabel: z.string().min(1).max(50),
+  currentContent: z.string().min(1).max(5000),
+  calories: z.number().int().min(0).max(10_000).nullable().optional(),
+  proteinG: aiGrams.optional(),
+  carbsG: aiGrams.optional(),
+  fatG: aiGrams.optional(),
+  mealId: bodyId.nullable().optional(),
+  dailyPlanId: bodyId.nullable().optional(),
+  /** Contents of earlier suggestions, so the next round doesn't repeat them. */
+  previousSuggestions: z.array(z.string().max(5000)).max(10).optional(),
+  userNote: z.string().max(2000).nullable().optional(),
+});
+
+export const aiExerciseTipsSchema = z.object({
+  exerciseName: z.string().trim().min(1).max(120),
+  exerciseNotes: z.string().max(1000).nullable(),
+  englishName: z.string().max(120).nullable().optional(),
+  /** Ignore the 30-day tips cache (counts against the quota). */
+  regenerate: z.boolean().optional(),
+});
+
+export const aiMacroTargetsSchema = z.object({
+  /** Free-text body description; trimmed length 20–600. */
+  description: z.string().trim().min(20).max(600),
+});
+
+export const aiChatSchema = z.object({
+  /** The conversation so far, oldest first; the last one is the new question. */
+  messages: z
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(5000) }))
+    .min(1)
+    .max(50)
+    // zod runs refinements even after .min(1) failed — the list may be empty here.
+    .refine((list) => list.at(-1)?.role === "user", "The last message must be the user's"),
+});
+
+export const aiDailyMealSuggestionSchema = z.object({
+  planType: z.enum(PLAN_TYPES),
+  meals: z.array(aiMealSchema).min(1).max(15),
+  userNote,
+});
+
+export const aiDailyMealSuggestionsQuery = z.object({ planType: z.enum(PLAN_TYPES).optional() });

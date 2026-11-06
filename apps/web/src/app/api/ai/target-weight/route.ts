@@ -1,21 +1,15 @@
 import { requireApiUser } from "@/lib/api-auth";
-import { db } from "@/db";
-import { progressLogs, users } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
-import {
-  getAIClient,
-  AI_MODELS,
-  checkRateLimit,
-  logAiUsage,
-  discriminateAiError,
-  PROMPT_VERSION,
-  extractText,
-} from "@/lib/ai";
-import { buildUserContext } from "@/lib/ai-context";
-import { getTargetWeightPrompt } from "@/lib/ai-prompts";
+import { checkRateLimit } from "@/lib/ai";
 import { getUserLocale } from "@fitmusc/shared/locale";
+import { suggestTargetWeight } from "@/lib/ai-target-weight";
 
 export const maxDuration = 30;
+
+const ERRORS: Record<string, [number, string]> = {
+  NOT_FOUND: [400, "Kullanıcı bulunamadı."],
+  NOT_ENOUGH_DATA: [400, "Hedef kilo önerisi için en az 1 ölçüm kaydı gerekli."],
+  AI_EMPTY_RESPONSE: [500, "AI yanıtı işlenemedi. Lütfen tekrar deneyin."],
+};
 
 export async function POST() {
   const { user: sessionUser, response } = await requireApiUser();
@@ -33,154 +27,13 @@ export async function POST() {
     return Response.json({ error: msg }, { status: 429 });
   }
 
-  // Fetch user profile (only fields actually used here; the rest comes via
-  // buildUserContext below — fitness level + service type already render there)
-  const [user] = await db
-    .select({
-      height: users.height,
-      weight: users.weight,
-      age: users.age,
-      healthNotes: users.healthNotes,
-    })
-    .from(users)
-    .where(eq(users.id, userId));
-
-  if (!user) {
-    return Response.json({ error: "Kullanıcı bulunamadı." }, { status: 400 });
-  }
-
-  // Fetch latest progress log
-  const [latestLog] = await db
-    .select({
-      weight: progressLogs.weight,
-      fatPercent: progressLogs.fatPercent,
-      fatKg: progressLogs.fatKg,
-      bmi: progressLogs.bmi,
-      waistCm: progressLogs.waistCm,
-      torsoFatPercent: progressLogs.torsoFatPercent,
-      logDate: progressLogs.logDate,
-    })
-    .from(progressLogs)
-    .where(eq(progressLogs.userId, userId))
-    .orderBy(desc(progressLogs.logDate))
-    .limit(1);
-
-  if (!latestLog?.weight) {
-    return Response.json(
-      { error: "Hedef kilo önerisi için en az 1 ölçüm kaydı gerekli." },
-      { status: 400 },
-    );
-  }
-
-  const userContext = await buildUserContext(userId, { locale });
-
-  // userContext (via buildUserContext) already includes fitness level / service
-  // type / health notes in human-readable form. We only re-state the latest
-  // physical metrics here so the prompt has them concentrated near the call.
-  const profileParts: string[] = [];
-  if (user.height) profileParts.push(`Boy: ${user.height}cm`);
-  if (user.age) profileParts.push(`Yaş: ${user.age}`);
-  if (user.weight) profileParts.push(`Başlangıç kilo: ${user.weight}kg`);
-
-  const logParts: string[] = [`Tarih: ${latestLog.logDate}`];
-  if (latestLog.weight) logParts.push(`Kilo: ${latestLog.weight}kg`);
-  if (latestLog.fatPercent) logParts.push(`Yağ: %${latestLog.fatPercent}`);
-  if (latestLog.fatKg) logParts.push(`Yağ: ${latestLog.fatKg}kg`);
-  if (latestLog.bmi) logParts.push(`BMI: ${latestLog.bmi}`);
-  if (latestLog.waistCm) logParts.push(`Bel: ${latestLog.waistCm}cm`);
-  if (latestLog.torsoFatPercent) logParts.push(`Gövde yağ: %${latestLog.torsoFatPercent}`);
-
-  let healthNotesStr = "";
-  if (user.healthNotes) {
-    try {
-      const notes = JSON.parse(user.healthNotes);
-      if (Array.isArray(notes) && notes.length > 0) {
-        healthNotesStr = `\nSağlık notları: ${notes.join(". ")}`;
-      }
-    } catch {
-      healthNotesStr = `\nSağlık notları: ${user.healthNotes}`;
-    }
-  }
-
-  const prompt = `${userContext}
-
-Profil: ${profileParts.join(", ")}
-Son ölçüm: ${logParts.join(", ")}${healthNotesStr}
-
-Bu verilere göre gerçekçi bir hedef kilo öner.`;
-
-  const client = getAIClient();
-  const startTime = Date.now();
-  let inputTokens: number | undefined;
-  let outputTokens: number | undefined;
-
   try {
-    const response = await client.messages.create({
-      model: AI_MODELS.smart,
-      max_tokens: 1000,
-      system: [
-        {
-          type: "text",
-          text: getTargetWeightPrompt(locale),
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    inputTokens = response.usage.input_tokens;
-    outputTokens = response.usage.output_tokens;
-
-    const text = extractText(response.content);
-
-    // Parse JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      await logAiUsage(userId, "target-weight", {
-        status: "parse_error",
-        errorMessage: "no JSON object in response",
-        inputTokens,
-        outputTokens,
-        durationMs: Date.now() - startTime,
-        model: AI_MODELS.smart,
-        promptVersion: PROMPT_VERSION,
-      });
-      return Response.json(
-        { error: "AI yanıtı işlenemedi. Lütfen tekrar deneyin." },
-        { status: 500 },
-      );
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    await logAiUsage(userId, "target-weight", {
-      status: "success",
-      inputTokens,
-      outputTokens,
-      durationMs: Date.now() - startTime,
-      model: AI_MODELS.smart,
-      promptVersion: PROMPT_VERSION,
-    });
-
-    return Response.json({
-      targetWeight: Number(parsed.targetWeight),
-      reasoning: String(parsed.reasoning),
-      timelineWeeks: Number(parsed.timelineWeeks),
-    });
-  } catch (error) {
-    const { status, errorMessage } = discriminateAiError(error);
-    await logAiUsage(userId, "target-weight", {
-      status,
-      errorMessage,
-      inputTokens,
-      outputTokens,
-      durationMs: Date.now() - startTime,
-      model: AI_MODELS.smart,
-      promptVersion: PROMPT_VERSION,
-    });
-    return Response.json(
-      { error: "AI servisi şu anda kullanılamıyor." },
-      { status: 500 },
-    );
+    return Response.json(await suggestTargetWeight(userId, locale));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    const [status, error] = Object.hasOwn(ERRORS, message)
+      ? ERRORS[message]
+      : [500, "AI servisi şu anda kullanılamıyor."];
+    return Response.json({ error }, { status });
   }
 }

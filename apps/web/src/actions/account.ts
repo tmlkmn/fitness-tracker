@@ -20,6 +20,7 @@ import {
   aiUsageLogs,
   aiPlanSuggestions,
   aiDailyMealSuggestions,
+  aiJobs,
   savedMealSuggestions,
   chatMessages,
   feedbacks,
@@ -100,6 +101,7 @@ export async function deleteMyAccount(
   await db
     .delete(aiDailyMealSuggestions)
     .where(eq(aiDailyMealSuggestions.userId, uid));
+  await db.delete(aiJobs).where(eq(aiJobs.userId, uid));
   await db
     .delete(savedMealSuggestions)
     .where(eq(savedMealSuggestions.userId, uid));

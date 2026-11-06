@@ -15,6 +15,7 @@ import {
   extractText,
 } from "@/lib/ai";
 import { buildUserContext } from "@/lib/ai-context";
+import { verifyDailyPlanOwnership, verifyMealOwnership } from "@/lib/ownership";
 import {
   getMealVariationPrompt,
   getExerciseTipsPrompt,
@@ -130,6 +131,10 @@ export async function generateMealVariation(
     userNote,
   } = options;
   const user = await getAuthUser();
+  // Both ids feed the week context (other meals of that week) — a foreign id
+  // would put another user's meals into the prompt.
+  if (mealId) await verifyMealOwnership(mealId, user.id);
+  if (dailyPlanIdOpt) await verifyDailyPlanOwnership(dailyPlanIdOpt, user.id);
   await checkRateLimit(user.id, "meal");
   const locale = getUserLocale(user);
 

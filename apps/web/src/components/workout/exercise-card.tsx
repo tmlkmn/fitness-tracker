@@ -66,7 +66,7 @@ export function ExerciseCard({
 
   const handleGenerate = (userNote?: string, forceRefresh?: boolean) => {
     if (!dailyPlanId) return;
-    generate.mutate({ exerciseId: id, dailyPlanId, userNote, forceRefresh });
+    generate.mutate({ exerciseId: id, userNote, forceRefresh });
   };
 
   const handleApply = (alternative: AIExerciseVariation) => {

@@ -1,21 +1,8 @@
 import { z } from "zod";
 import { requireApiUser } from "@/lib/api-auth";
-import {
-  AI_MODELS,
-  checkRateLimit,
-  logAiUsage,
-  discriminateAiError,
-  PROMPT_VERSION,
-} from "@/lib/ai";
+import { checkRateLimit } from "@/lib/ai";
 import { getUserLocale } from "@fitmusc/shared/locale";
-import { saveAiSuggestion } from "@/actions/ai-suggestions";
-import {
-  resolveWeeklyGenerationRequest,
-  buildWeeklyPrompts,
-  runWeeklyGeneration,
-  mergeWeeklyResults,
-} from "@/lib/ai-weekly-service";
-import { categorizeWarnings, isSystemNote, sampleWarnings } from "@/lib/ai-warning-telemetry";
+import { generateWeeklyPlan } from "@/lib/ai-weekly-generate";
 
 // "both" generation runs the workout + nutrition legs sequentially, each with
 // up to 3 quality retries, so the worst case is ~6-8 back-to-back Sonnet calls.
@@ -64,7 +51,6 @@ export async function POST(request: Request) {
     return Response.json({ error: msg }, { status: 429 });
   }
 
-  const startTime = Date.now();
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -77,99 +63,12 @@ export async function POST(request: Request) {
         }
       };
 
-      let totalInputTokens = 0;
-      let totalOutputTokens = 0;
-
       try {
-        emit({ type: "status", step: "profile" });
-
-        const req = await resolveWeeklyGenerationRequest(parsedBody, userId, locale);
-        const prompts = buildWeeklyPrompts(req);
-
-        // Bands + previous-week breakdown are computed in the resolve phase
-        // (single source) and reused for both proactive prompt blocks and
-        // post-validation. The route just forwards them to runWeeklyGeneration.
-        // Per-leg lifecycle events (start/retry/done) are streamed straight to
-        // the client so the progress overlay reflects real backend work — for
-        // both the sequential ("both") path and single-mode requests.
-        const outcome = await runWeeklyGeneration(prompts, {
-          locale,
-          onProgress: (ev) =>
-            emit({ type: "status", step: ev.leg, phase: ev.phase }),
-          muscleVolumeBands: req.muscleVolumeBands,
-          previousWeekBreakdown: req.previousWeekBreakdown,
-          isDeloadWeek: req.deloadWeek,
-        });
-        totalInputTokens += outcome.inputTokens;
-        totalOutputTokens += outcome.outputTokens;
-
-        emit({ type: "status", step: "merging" });
-
-        const suggestedPlan = mergeWeeklyResults(outcome, req);
-
-        saveAiSuggestion({
-          plan: suggestedPlan,
-          userNote: req.rawUserNote,
-          originalDate: req.monday,
-        }).catch(() => {});
-
-        try {
-          const flagsAny = Object.values(outcome.retryFlags).some(Boolean);
-          const deloadWeek = Boolean(parsedBody.deloadWeek);
-          const carbCyclingProfile = req.resolvedTargets?.cyclingProfile.label ?? "off";
-          const supplementKcal = req.supplementBudget.calories;
-          const supplementsCount = req.supplementBudget.supplementsCount;
-          const allWarnings = [
-            ...(outcome.nutritionResult?.warnings ?? []),
-            ...(outcome.workoutResult?.warnings ?? []),
-          ];
-          const warningCategories = categorizeWarnings(allWarnings);
-          // System notes ([volume-adjusted], …) are logged but aren't problems.
-          const hasCategorizedWarnings = allWarnings.some((w) => !isSystemNote(w));
-          const metaPayload = {
-            retryFlags: outcome.retryFlags,
-            deloadWeek,
-            carbCyclingProfile,
-            supplementKcal,
-            supplementsCount,
-            warningCategories,
-            warnings: sampleWarnings(allWarnings),
-          };
-          const cyclingActive = carbCyclingProfile !== "off";
-          const supplementsActive = supplementsCount > 0;
-          await logAiUsage(userId, "weekly", {
-            status: flagsAny || hasCategorizedWarnings ? "success_with_warnings" : "success",
-            errorMessage: flagsAny || hasCategorizedWarnings || deloadWeek || cyclingActive || supplementsActive ? JSON.stringify(metaPayload) : undefined,
-            inputTokens: totalInputTokens,
-            outputTokens: totalOutputTokens,
-            durationMs: Date.now() - startTime,
-            model: AI_MODELS.smart,
-            promptVersion: PROMPT_VERSION,
-          });
-        } catch {
-          // Non-fatal
-        }
-
-        console.log(`[AI Weekly] ✓ SUCCESS (in=${totalInputTokens}, out=${totalOutputTokens}, t=${Date.now() - startTime}ms)`);
+        const suggestedPlan = await generateWeeklyPlan(userId, locale, parsedBody, (ev) =>
+          emit({ type: "status", ...ev }),
+        );
         emit({ type: "done", suggestedPlan });
       } catch (error) {
-        const { status, errorMessage } = discriminateAiError(error);
-        console.error(`[AI Weekly] ✗ ERROR`, error);
-
-        try {
-          await logAiUsage(userId, "weekly", {
-            status,
-            errorMessage,
-            inputTokens: totalInputTokens,
-            outputTokens: totalOutputTokens,
-            durationMs: Date.now() - startTime,
-            model: AI_MODELS.smart,
-            promptVersion: PROMPT_VERSION,
-          });
-        } catch {
-          // Non-fatal
-        }
-
         const userFacingError = error instanceof Error && error.message && !error.message.startsWith("[")
           ? error.message
           : "AI servisi şu anda kullanılamıyor. Lütfen tekrar deneyin.";

@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   check,
   primaryKey,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 // Type-only import (erased at runtime — no module cycle): the weekly plan
@@ -535,6 +536,41 @@ export const expoPushTickets = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
   },
   (t) => [index("expo_push_tickets_created_idx").on(t.createdAt)],
+);
+
+// Long AI generations started by the mobile app (src/lib/ai-jobs.ts): the
+// request returns 202 + id, the work runs in after(), the app polls the row.
+export const aiJobs = pgTable(
+  "ai_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    status: text("status").notNull().default("queued"),
+    input: jsonb("input").notNull(),
+    progress: jsonb("progress"),
+    result: jsonb("result"),
+    // ApiErrorCode when status = 'failed'
+    error: text("error"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    startedAt: timestamp("started_at"),
+    finishedAt: timestamp("finished_at"),
+  },
+  (t) => [
+    check("ai_jobs_kind_check", sql`${t.kind} IN ('daily-meals', 'workout', 'weekly')`),
+    check(
+      "ai_jobs_status_check",
+      sql`${t.status} IN ('queued', 'running', 'succeeded', 'failed')`,
+    ),
+    index("ai_jobs_user_created_idx").on(t.userId, t.createdAt),
+    // One unfinished job per user and kind — concurrent starts would each pass
+    // the quota check (it counts finished calls only).
+    uniqueIndex("ai_jobs_one_active_idx")
+      .on(t.userId, t.kind)
+      .where(sql`${t.status} IN ('queued', 'running')`),
+  ],
 );
 
 export const notificationPreferences = pgTable("notification_preferences", {

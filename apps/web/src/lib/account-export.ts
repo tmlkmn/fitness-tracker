@@ -22,6 +22,7 @@ import {
   aiUsageLogs,
   aiPlanSuggestions,
   aiDailyMealSuggestions,
+  aiJobs,
   savedMealSuggestions,
   chatMessages,
   feedbacks,
@@ -163,6 +164,10 @@ export async function collectUserExport(
       .select()
       .from(aiDailyMealSuggestions)
       .where(eq(aiDailyMealSuggestions.userId, userId)),
+    aiJobs: await db
+      .select()
+      .from(aiJobs)
+      .where(eq(aiJobs.userId, userId)),
     savedMealSuggestions: await db
       .select()
       .from(savedMealSuggestions)

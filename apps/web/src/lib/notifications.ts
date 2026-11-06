@@ -63,6 +63,35 @@ function isInQuietHours(
   return s < e ? now >= s && now < e : now >= s || now < e;
 }
 
+/**
+ * Push to the user's mobile devices only — no in-app row, email or web push.
+ * For events the app itself started, e.g. a finished AI job. Honors the push
+ * preference and quiet hours like sendNotification. Never throws.
+ */
+export async function sendMobilePush(
+  userId: string,
+  payload: { title: string; body: string; tag: string; jobId?: string },
+): Promise<void> {
+  try {
+    const [prefs] = await db
+      .select({
+        pushEnabled: notificationPreferences.pushEnabled,
+        quietHoursStart: notificationPreferences.quietHoursStart,
+        quietHoursEnd: notificationPreferences.quietHoursEnd,
+        timezone: notificationPreferences.timezone,
+      })
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId));
+    if (!(prefs?.pushEnabled ?? true)) return;
+    if (isInQuietHours(prefs?.quietHoursStart, prefs?.quietHoursEnd, prefs?.timezone)) return;
+
+    const tokens = await getExpoPushTokens(userId);
+    if (tokens.length > 0) await sendExpoPush(tokens, payload);
+  } catch (err) {
+    console.error(`[notification] mobile push failed user=${redactId(userId)} tag=${payload.tag}:`, err);
+  }
+}
+
 export async function sendNotification(params: {
   userId: string;
   type: string;

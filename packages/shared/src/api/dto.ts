@@ -5,6 +5,8 @@
 //
 // Endpoints that return nothing answer 204 with an empty body.
 
+import type { ApiErrorCode } from "./errors";
+
 /** Decimal string from a Postgres numeric column, e.g. "12.50". */
 export type DecimalString = string;
 
@@ -685,10 +687,218 @@ export interface SearchResultsDto {
 export interface PushDataDto {
   url: string | null;
   tag: string | null;
+  /** Set on `tag: "ai-job"` pushes — the finished job to open (GET /ai/jobs/[id]). */
+  jobId?: string;
 }
 
 /** POST /push/test */
 export interface PushTestResultDto {
   /** Devices of this account the test was sent to (0 → nothing registered). */
   devices: number;
+}
+
+// ── AI ──────────────────────────────────────────────────────────────────────
+
+/** Features with a daily AI quota, as GET /ai/quota reports them. */
+export type AiQuotaFeature =
+  | "meal"
+  | "exercise"
+  | "analyze"
+  | "chat"
+  | "workout"
+  | "daily-meal"
+  | "weekly"
+  | "exercise-demo"
+  | "target-weight"
+  | "macro-ai";
+
+/** GET /ai/quota — resets at midnight Europe/Istanbul. */
+export type AiQuotaDto = Record<AiQuotaFeature, { remaining: number; limit: number }>;
+
+/** GET /ai/greeting — one message per day, cached server-side. */
+export interface DailyGreetingDto {
+  message: string;
+  firstName: string;
+  cached: boolean;
+}
+
+/** A suggested meal; send it back unchanged (or a subset) to apply it. */
+export interface AiMealDto {
+  mealTime: string;
+  /** Canonical TR label — display through getLocalizedMealLabel. */
+  mealLabel: string;
+  content: string;
+  calories: number | null;
+  proteinG: DecimalString | null;
+  carbsG: DecimalString | null;
+  fatG: DecimalString | null;
+}
+
+export interface AiExerciseDto {
+  name: string;
+  englishName: string | null;
+  section: string;
+  sectionLabel: string;
+  sets: number | null;
+  reps: string | null;
+  restSeconds: number | null;
+  durationMinutes: number | null;
+  notes: string | null;
+  intensity?: "low" | "moderate" | "high" | null;
+}
+
+export type AiExerciseVariationDto = Omit<AiExerciseDto, "section" | "sectionLabel" | "intensity">;
+
+/** POST /ai/meal-variation */
+export interface MealVariationResultDto {
+  suggestions: {
+    content: string;
+    calories: number | null;
+    proteinG: DecimalString | null;
+    carbsG: DecimalString | null;
+    fatG: DecimalString | null;
+  }[];
+  validationWarnings: string[];
+}
+
+/** POST /ai/exercise-tips — markdown text. */
+export interface ExerciseTipsDto {
+  tips: string;
+}
+
+/** POST /ai/exercise-variation — up to 3 alternatives. */
+export interface ExerciseVariationResultDto {
+  currentExercise: ExerciseDto;
+  alternatives: AiExerciseVariationDto[];
+  /** Served from the 30-day cache (no quota used). */
+  fromCache: boolean;
+}
+
+/** POST /ai/workout-section */
+export interface SectionReplacementResultDto {
+  currentExercises: ExerciseDto[];
+  suggestedExercises: AiExerciseDto[];
+}
+
+export interface AiWeeklyDayDto {
+  /** 0 = Monday … 6 = Sunday */
+  dayOfWeek: number;
+  dayName: string;
+  planType: string;
+  workoutTitle: string | null;
+  meals: AiMealDto[];
+  exercises: AiExerciseDto[];
+}
+
+export interface AiWeeklyPlanDto {
+  weekTitle: string;
+  phase: string;
+  notes: string | null;
+  strategyNote: string | null;
+  days: AiWeeklyDayDto[];
+  macroTargetSnapshot?: WeeklyMacroTargetsDto | null;
+}
+
+/** `result` of a finished "daily-meals" job. */
+export interface DailyMealsJobResultDto {
+  suggestedMeals: AiMealDto[];
+  currentMeals: AiMealDto[];
+  validationWarnings: string[];
+}
+
+/** `result` of a finished "workout" job. */
+export interface WorkoutJobResultDto {
+  currentExercises: ExerciseDto[];
+  suggestedExercises: AiExerciseDto[];
+  validationWarnings: string[];
+}
+
+/** `result` of a finished "weekly" job (also kept under GET /ai/weekly-suggestions). */
+export interface WeeklyJobResultDto {
+  suggestedPlan: AiWeeklyPlanDto;
+}
+
+export type AiJobLegStatus = "pending" | "active" | "retrying" | "done";
+
+/** `progress` of a running "weekly" job — each leg advances independently. */
+export interface WeeklyJobProgressDto {
+  phase: "profile" | "generating" | "merging";
+  workout: AiJobLegStatus;
+  nutrition: AiJobLegStatus;
+}
+
+export type AiJobKind = "daily-meals" | "workout" | "weekly";
+export type AiJobStatus = "queued" | "running" | "succeeded" | "failed";
+
+/** GET /ai/jobs — newest first, without results. */
+export interface AiJobSummaryDto {
+  id: string;
+  kind: AiJobKind;
+  status: AiJobStatus;
+  /** Set when `status` is "failed": AI_UNAVAILABLE, AI_EMPTY_RESPONSE, JOB_TIMEOUT, … */
+  error: ApiErrorCode | null;
+  createdAt: IsoDateTime;
+  finishedAt: IsoDateTime | null;
+}
+
+/**
+ * POST /ai/jobs (202) and GET /ai/jobs/[id]. Poll until `status` is
+ * "succeeded" or "failed" (a push with `tag: "ai-job"` also arrives), then
+ * apply the result through the matching /ai/…/apply endpoint.
+ */
+export type AiJobDto = AiJobSummaryDto &
+  (
+    | { kind: "daily-meals"; progress: null; result: DailyMealsJobResultDto | null }
+    | { kind: "workout"; progress: null; result: WorkoutJobResultDto | null }
+    | { kind: "weekly"; progress: WeeklyJobProgressDto | null; result: WeeklyJobResultDto | null }
+  );
+
+/** POST /ai/macro-targets — `strategy` is what PUT /me/macro-strategy saves. */
+export interface AiMacroResultDto {
+  strategy: { calorieDelta: number; proteinPerKgBW: number; fatPct: number };
+  macros: MacroTargetsDto;
+  explanation: string;
+}
+
+/** POST /ai/target-weight */
+export interface TargetWeightSuggestionDto {
+  targetWeight: number;
+  reasoning: string;
+  timelineWeeks: number;
+}
+
+/** GET /ai/chat/history — oldest first. */
+export interface ChatMessageDto {
+  id: number;
+  role: string;
+  content: string;
+  createdAt: IsoDateTime;
+}
+
+/** GET /ai/daily-meal-suggestions */
+export interface SavedDailyMealSuggestionDto {
+  id: number;
+  planType: string;
+  userNote: string | null;
+  meals: AiMealDto[];
+  createdAt: IsoDateTime;
+}
+
+/** GET /ai/weekly-suggestions — generated weekly plans of this and future weeks. */
+export interface SavedWeeklySuggestionDto {
+  id: number;
+  title: string;
+  phase: string;
+  userNote: string | null;
+  originalDate: DateString | null;
+  createdAt: IsoDateTime;
+}
+
+/** GET /ai/weekly-suggestions/[id] */
+export interface SavedWeeklySuggestionDetailDto {
+  id: number;
+  title: string;
+  phase: string;
+  userNote: string | null;
+  plan: AiWeeklyPlanDto;
 }

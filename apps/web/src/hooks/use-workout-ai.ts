@@ -87,15 +87,13 @@ export function useGenerateExerciseVariation() {
   return useMutation({
     mutationFn: ({
       exerciseId,
-      dailyPlanId,
       userNote,
       forceRefresh,
     }: {
       exerciseId: number;
-      dailyPlanId: number;
       userNote?: string;
       forceRefresh?: boolean;
-    }) => generateExerciseVariation(exerciseId, dailyPlanId, userNote, forceRefresh),
+    }) => generateExerciseVariation(exerciseId, userNote, forceRefresh),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["ai.quota"] });
     },

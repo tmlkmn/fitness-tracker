@@ -100,8 +100,13 @@ export async function getExpoPushTokens(userId: string): Promise<string[]> {
  */
 export async function sendExpoPush(
   tokens: string[],
-  payload: { title: string; body: string; url?: string; tag?: string },
+  payload: { title: string; body: string; url?: string; tag?: string; jobId?: string },
 ): Promise<void> {
+  const data = {
+    url: payload.url ?? null,
+    tag: payload.tag ?? null,
+    ...(payload.jobId ? { jobId: payload.jobId } : {}),
+  };
   for (let i = 0; i < tokens.length; i += SEND_CHUNK) {
     const chunk = tokens.slice(i, i + SEND_CHUNK);
     const tickets = await postExpo<ExpoResult[]>(
@@ -111,7 +116,7 @@ export async function sendExpoPush(
         title: payload.title,
         body: payload.body,
         sound: "default",
-        data: { url: payload.url ?? null, tag: payload.tag ?? null },
+        data,
       })),
     );
     if (!tickets) continue;

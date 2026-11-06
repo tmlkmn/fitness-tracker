@@ -325,7 +325,6 @@ export async function applySectionReplacement(
 
 export async function generateExerciseVariation(
   exerciseId: number,
-  dailyPlanId: number,
   userNote?: string,
   forceRefresh?: boolean,
 ) {
@@ -339,9 +338,13 @@ export async function generateExerciseVariation(
     .from(exercises)
     .where(eq(exercises.id, exerciseId));
 
-  if (!currentExercise) {
+  if (!currentExercise?.dailyPlanId) {
     throw new Error("Exercise not found");
   }
+  // The day comes from the (ownership-checked) exercise row, never from the
+  // caller — a foreign dailyPlanId would pull another user's exercise names
+  // into the prompt context.
+  const dailyPlanId = currentExercise.dailyPlanId;
 
   // Cache key now includes section so the same exercise name returns
   // section-appropriate alternatives (e.g. bench press in main vs warmup
