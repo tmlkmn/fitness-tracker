@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "FitMusc",
+    "slug": "fitmusc",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "fitmusc",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0c0a09",
+    "ios": {
+      "bundleIdentifier": "app.fitmusc.mobile",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "app.fitmusc.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0c0a09",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0c0a09",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 120
+        }
+      ],
+      "expo-localization",
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

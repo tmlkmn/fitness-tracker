@@ -3598,5 +3598,87 @@
     "weightTrend": "Weight Trend",
     "notes": "Notes",
     "noData": "No data yet."
+  },
+  "mobile": {
+    "signIn": {
+      "webOnly": "Sign-up and password reset happen on fitmusc.com.",
+      "openForgotPassword": "Forgot password (web)"
+    },
+    "today": {
+      "title": "Today",
+      "noPlanHint": "Create your plan on the web or from the Calendar.",
+      "openDay": "Full day",
+      "meals": "Meals",
+      "workout": "Workout",
+      "water": "Water",
+      "waterGlasses": "{count} / {target} glasses",
+      "addGlass": "Add a glass",
+      "removeGlass": "Remove a glass",
+      "supplements": "Supplements",
+      "macros": "Macros",
+      "sleep": "Sleep"
+    },
+    "day": {
+      "noMeals": "No meals for this day.",
+      "noExercises": "No workout for this day.",
+      "restDay": "Rest day — no workout.",
+      "sets": "{sets} sets",
+      "rest": "{seconds}s rest",
+      "minutes": "{minutes} min"
+    },
+    "macros": {
+      "calories": "Calories",
+      "kcal": "{value} / {target} kcal",
+      "grams": "{value} / {target} g"
+    },
+    "blocked": {
+      "mustChangePasswordTitle": "You need to change your password",
+      "mustChangePasswordDescription": "You signed in with a temporary password. Set a new one on the web, then come back.",
+      "openWeb": "Open on the web",
+      "retry": "Try again"
+    },
+    "settings": {
+      "title": "Settings",
+      "account": "Account",
+      "language": "Language",
+      "notifications": "Notifications",
+      "pushRegistered": "This device receives notifications.",
+      "pushDenied": "Notifications are not allowed. You can turn them on in the phone settings.",
+      "pushExpoGoAndroid": "Expo Go on Android has no notifications; a development build is needed.",
+      "pushNoProjectId": "Notifications aren't set up yet (no EAS project id).",
+      "pushSimulator": "Notifications only work on a real device.",
+      "pushError": "Couldn't register for notifications.",
+      "pushEnable": "Turn on notifications",
+      "openWebApp": "Open the web app",
+      "version": "Version {version}"
+    },
+    "errors": {
+      "network": "Can't connect. Check your internet connection.",
+      "generic": "Something went wrong.",
+      "rateLimited": "Too many tries. Try again in {seconds}s.",
+      "retry": "Try again",
+      "aiUnavailable": "AI is unavailable right now. Try again shortly."
+    },
+    "calendar": {
+      "noPlanHint": "You can add a plan for this day on the web.",
+      "counts": "{meals, plural, one {# meal} other {# meals}} · {exercises, plural, one {# exercise} other {# exercises}}",
+      "legend": "Day types"
+    },
+    "progress": {
+      "chartHint": "Tap the chart to see a value.",
+      "invalidNumber": "Enter numbers like 72.5 (up to 4 digits, 2 decimals).",
+      "nothingEntered": "Enter at least one measurement.",
+      "keepsValues": "Fields you leave empty keep their saved value.",
+      "bodyPartsHint": "Segment values from a body composition scale (optional)."
+    },
+    "sleep": {
+      "deleteTitle": "Delete sleep log",
+      "deleteConfirm": "Delete the sleep log for this day?",
+      "duration": "{hours} h {minutes} min"
+    },
+    "shopping": {
+      "noWeeks": "No weekly plans yet.",
+      "generateConfirm": "The shopping list will be built with AI from this week's meals. Continue?"
+    }
   }
 }

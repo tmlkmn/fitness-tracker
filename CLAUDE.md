@@ -6,11 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Monorepo Layout
 
-npm workspaces (root `package.json`). One lockfile at the root; run `npm install` from the root only.
+npm workspaces (root `package.json`: `apps/web` + `packages/*`). One lockfile at the root for those; run `npm install` from the root. `apps/mobile` is the exception (below).
 
 - `apps/web` (`@fitmusc/web`) — this Next.js app. **Every `src/`, `scripts/`, `drizzle/`, `public/` path in this file is relative to `apps/web/`.** `.env.local`, `.env.sentry-build-plugin`, `vercel.json` and `eval-results/` live there too.
 - `packages/shared` (`@fitmusc/shared`) — pure TypeScript used by web and mobile: locale / date / unit helpers, meal labels + macros, food reference data, sync payloads, reminder templates, the v1 API contract (`api/schemas` zod request schemas, `api/dto` response types, `api/errors` error codes) and the i18n catalogs (`packages/shared/messages/{tr,en}.json`). Shipped as TS source, no build step (`transpilePackages` in `next.config.ts`). Import as `@fitmusc/shared/<module>`, e.g. `@fitmusc/shared/date-format`, `@fitmusc/shared/foods`. **Rules:** nothing from `apps/*`, `@/`, db, next, React or Node APIs — the code must also run in React Native; relative imports inside the package. `npm run typecheck:shared` type-checks it without DOM/Node globals.
-- `apps/mobile` — planned Expo app (consumes `/api/v1/*` only; never connects to Neon directly).
+- `apps/mobile` (`@fitmusc/mobile`) — Expo SDK 58 app (expo-router, React Native 0.88, React 19.3). Consumes `/api/v1/*` only; never connects to Neon directly. **Not an npm workspace**: it has its own `package-lock.json` and is installed with `npm install` inside `apps/mobile`, so React Native never shares a dependency tree or React version with the web app (and Vercel's `npm ci` never installs it). It reads `packages/shared` through a `file:` dependency; `apps/mobile/metro.config.js` watches the package and resolves its imports from the app's own `node_modules`. See `apps/mobile/CLAUDE.md`.
 - Vercel project Root Directory must be `apps/web`.
 
 ## Build & Development Commands

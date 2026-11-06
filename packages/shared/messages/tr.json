@@ -3598,5 +3598,87 @@
     "weightTrend": "Kilo Değişimi",
     "notes": "Notlar",
     "noData": "Henüz veri yok."
+  },
+  "mobile": {
+    "signIn": {
+      "webOnly": "Hesap oluşturma ve şifre sıfırlama fitmusc.com üzerinden yapılır.",
+      "openForgotPassword": "Şifremi unuttum (web)"
+    },
+    "today": {
+      "title": "Bugün",
+      "noPlanHint": "Planını web'de veya Takvim'den oluşturabilirsin.",
+      "openDay": "Günün tamamı",
+      "meals": "Öğünler",
+      "workout": "Antrenman",
+      "water": "Su",
+      "waterGlasses": "{count} / {target} bardak",
+      "addGlass": "Bardak ekle",
+      "removeGlass": "Bardak çıkar",
+      "supplements": "Takviyeler",
+      "macros": "Makrolar",
+      "sleep": "Uyku"
+    },
+    "day": {
+      "noMeals": "Bu güne ait öğün yok.",
+      "noExercises": "Bu gün için antrenman yok.",
+      "restDay": "Dinlenme günü — antrenman yok.",
+      "sets": "{sets} set",
+      "rest": "{seconds} sn dinlenme",
+      "minutes": "{minutes} dk"
+    },
+    "macros": {
+      "calories": "Kalori",
+      "kcal": "{value} / {target} kcal",
+      "grams": "{value} / {target} g"
+    },
+    "blocked": {
+      "mustChangePasswordTitle": "Şifreni değiştirmen gerekiyor",
+      "mustChangePasswordDescription": "Geçici şifreyle giriş yaptın. Yeni şifreni web'de belirle, sonra buraya dön.",
+      "openWeb": "Web'de aç",
+      "retry": "Tekrar dene"
+    },
+    "settings": {
+      "title": "Ayarlar",
+      "account": "Hesap",
+      "language": "Dil",
+      "notifications": "Bildirimler",
+      "pushRegistered": "Bu cihaz bildirim alıyor.",
+      "pushDenied": "Bildirim izni verilmedi. Telefon ayarlarından açabilirsin.",
+      "pushExpoGoAndroid": "Android'de Expo Go bildirim desteklemiyor; geliştirme sürümü gerekir.",
+      "pushNoProjectId": "Bildirimler henüz yapılandırılmadı (EAS proje kimliği yok).",
+      "pushSimulator": "Bildirimler yalnızca gerçek cihazda çalışır.",
+      "pushError": "Bildirim kaydı yapılamadı.",
+      "pushEnable": "Bildirimleri aç",
+      "openWebApp": "Web uygulamasını aç",
+      "version": "Sürüm {version}"
+    },
+    "errors": {
+      "network": "Bağlantı kurulamadı. İnternetini kontrol et.",
+      "generic": "Bir şeyler ters gitti.",
+      "rateLimited": "Çok sık denedin. {seconds} sn sonra tekrar dene.",
+      "retry": "Tekrar dene",
+      "aiUnavailable": "AI şu anda kullanılamıyor. Biraz sonra tekrar dene."
+    },
+    "calendar": {
+      "noPlanHint": "Bu güne planı web'den ekleyebilirsin.",
+      "counts": "{meals} öğün · {exercises} egzersiz",
+      "legend": "Gün tipleri"
+    },
+    "progress": {
+      "chartHint": "Bir değeri görmek için grafiğe dokun.",
+      "invalidNumber": "Sayıları 72.5 gibi gir (en fazla 4 basamak, 2 ondalık).",
+      "nothingEntered": "En az bir ölçüm gir.",
+      "keepsValues": "Boş bıraktığın alanlar kayıtlı değerini korur.",
+      "bodyPartsHint": "Vücut analizi cihazının bölgesel değerleri (isteğe bağlı)."
+    },
+    "sleep": {
+      "deleteTitle": "Uyku kaydını sil",
+      "deleteConfirm": "Bu güne ait uyku kaydı silinsin mi?",
+      "duration": "{hours} sa {minutes} dk"
+    },
+    "shopping": {
+      "noWeeks": "Henüz haftalık plan yok.",
+      "generateConfirm": "Alışveriş listesi bu haftanın öğünlerinden AI ile oluşturulacak. Devam edilsin mi?"
+    }
   }
 }
