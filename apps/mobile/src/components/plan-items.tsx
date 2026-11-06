@@ -130,12 +130,16 @@ export function ExerciseSections({
   onToggle,
   onPress,
   onAi,
+  onSectionAi,
 }: {
   exercises: ExerciseDto[];
   onToggle?: (exercise: ExerciseDto, isCompleted: boolean) => void;
   onPress?: (exercise: ExerciseDto) => void;
   onAi?: (exercise: ExerciseDto) => void;
+  /** Regenerates one section with AI (web: the section header's ✦). */
+  onSectionAi?: (section: string, sectionLabel: string) => void;
 }) {
+  const ts = useTranslations("workout.section");
   const sections: { label: string; items: ExerciseDto[] }[] = [];
   for (const exercise of exercises) {
     const last = sections[sections.length - 1];
@@ -146,7 +150,17 @@ export function ExerciseSections({
     <>
       {sections.map((section, i) => (
         <Card key={`${section.label}-${i}`}>
-          <AppText variant="heading">{section.label}</AppText>
+          <View style={styles.row}>
+            <AppText variant="heading" style={styles.grow}>
+              {section.label}
+            </AppText>
+            {onSectionAi ? (
+              <AiIconButton
+                label={ts("aiChangeSection", { section: section.label })}
+                onPress={() => onSectionAi(section.items[0].section, section.label)}
+              />
+            ) : null}
+          </View>
           {section.items.map((exercise) => (
             <ExerciseItem
               key={exercise.id}

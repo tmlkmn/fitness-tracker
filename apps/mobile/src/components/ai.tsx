@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import type { AiJobDto, AiJobKind, AiJobSummaryDto, AiQuotaFeature } from "@fitmusc/shared/api/dto";
+import type { AiJobDto, AiJobKind, AiJobSummaryDto, AiQuotaFeature, UserProfileDto } from "@fitmusc/shared/api/dto";
 import { formatDate } from "@fitmusc/shared/date-format";
 import type { Locale } from "@fitmusc/shared/locale";
 import { useRouter } from "expo-router";
@@ -14,7 +14,7 @@ import { colors, radius, spacing } from "@/lib/theme";
 import { openWebPage } from "@/lib/web-links";
 
 import { Input } from "./form";
-import { AppText, Card, Chip } from "./ui";
+import { AppText, Button, Card, Chip } from "./ui";
 
 // ── Quota ────────────────────────────────────────────────────────────────────
 
@@ -160,6 +160,44 @@ export function MonthGateNotice({ emptyWeekCount }: { emptyWeekCount: number }) 
         <AppText variant="small">{t("body", { month, count: emptyWeekCount })}</AppText>
       </View>
     </View>
+  );
+}
+
+// ── Profile completeness ─────────────────────────────────────────────────────
+
+// Same required fields as the web's useProfileCheck (apps/web/src/hooks/use-profile-check.ts).
+const REQUIRED_PROFILE: { key: string; missing: (p: UserProfileDto) => boolean }[] = [
+  { key: "age", missing: (p) => !p.age },
+  { key: "height", missing: (p) => !p.height },
+  { key: "weight", missing: (p) => !p.weight },
+  { key: "targetWeight", missing: (p) => !p.targetWeight },
+  { key: "fitnessLevel", missing: (p) => !p.fitnessLevel },
+  { key: "sportHistory", missing: (p) => !p.sportHistory },
+  { key: "currentMedications", missing: (p) => !p.currentMedications },
+  { key: "healthNotes", missing: (p) => !p.healthNotes },
+  { key: "foodAllergens", missing: (p) => !p.foodAllergens },
+  { key: "dailyRoutine", missing: (p) => !Array.isArray(p.dailyRoutine) || p.dailyRoutine.length === 0 },
+];
+
+/** Keys of the profile fields the web requires before a weekly plan or a section swap. */
+export function missingProfileFields(profile: UserProfileDto): string[] {
+  return REQUIRED_PROFILE.filter((f) => f.missing(profile)).map((f) => f.key);
+}
+
+/** Web ProfileMissingWarning — the fields to fill in (on the web) first. */
+export function ProfileMissing({ missing }: { missing: string[] }) {
+  const t = useTranslations("assistant.profileMissing");
+  const tf = useTranslations("mobile.ai.profileFields");
+  const locale = useLocale() as Locale;
+  return (
+    <Card>
+      <AppText variant="heading">{t("title")}</AppText>
+      <AppText variant="muted">{t("body")}</AppText>
+      {missing.map((key) => (
+        <AppText key={key}>• {tf(key)}</AppText>
+      ))}
+      <Button label={t("cta")} variant="secondary" onPress={() => void openWebPage("settings", locale)} />
+    </Card>
   );
 }
 

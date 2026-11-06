@@ -453,7 +453,16 @@ const pastDows = z.array(dayOfWeek).max(7).optional();
 /** POST /ai/jobs — long generations run in the background; poll GET /ai/jobs/[id]. */
 export const aiJobCreateSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("daily-meals"), dailyPlanId: bodyId, userNote }),
-  z.object({ kind: z.literal("workout"), dailyPlanId: bodyId, userNote }),
+  z
+    .object({
+      kind: z.literal("workout"),
+      dailyPlanId: bodyId,
+      userNote,
+      /** Replace only this section (web: the section's ✦ button); omitted → the whole workout. */
+      section: z.enum(EXERCISE_SECTIONS).optional(),
+      sectionLabel: z.string().min(1).max(50).optional(),
+    })
+    .refine((body) => (body.section == null) === (body.sectionLabel == null), "section and sectionLabel go together"),
   z.object({
     kind: z.literal("weekly"),
     /** Any date in the target week. */

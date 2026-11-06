@@ -1,5 +1,6 @@
 import type { Locale } from "@fitmusc/shared/locale";
 import Constants from "expo-constants";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
@@ -24,6 +25,7 @@ const PUSH_TEXT: Record<PushOutcome, string> = {
 };
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const errorMessage = useErrorMessage();
@@ -90,6 +92,12 @@ export default function SettingsScreen() {
             onPress={() => push.refetch()}
           />
         ) : null}
+      </Card>
+
+      <Card>
+        <AppText variant="small">{t("settings.subpages.macroTitle")}</AppText>
+        <AppText variant="muted">{t("meals.aiMacro.title")}</AppText>
+        <Button label={t("settings.subpages.macroTitle")} variant="secondary" onPress={() => router.push("/macro-targets")} />
       </Card>
 
       <Button label={t("mobile.settings.openWebApp")} variant="secondary" onPress={() => openWebPage("home", locale)} />

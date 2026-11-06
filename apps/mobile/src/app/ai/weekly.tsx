@@ -16,7 +16,9 @@ import {
   MeasurementNudge,
   MultiChips,
   NoteInput,
+  ProfileMissing,
   buildAiUserNote,
+  missingProfileFields,
   useWorkoutPrefs,
 } from "@/components/ai";
 import { WeeklyPreview, useApplyWeekTo, useLaunchJob } from "@/components/ai-results";
@@ -32,24 +34,9 @@ import {
 import { useProfile } from "@/hooks/wellness";
 import { aiWeekOf, cycleDayChoice, type AiWeek, type DayChoice } from "@/lib/ai-weekly";
 import { colors, spacing } from "@/lib/theme";
-import { openWebPage } from "@/lib/web-links";
 
 type Mode = "both" | "nutrition" | "workout";
 type Tab = "suggest" | "saved";
-
-// Same required fields as the web's useProfileCheck (apps/web/src/hooks/use-profile-check.ts).
-const REQUIRED_PROFILE: { key: string; missing: (p: UserProfileDto) => boolean }[] = [
-  { key: "age", missing: (p) => !p.age },
-  { key: "height", missing: (p) => !p.height },
-  { key: "weight", missing: (p) => !p.weight },
-  { key: "targetWeight", missing: (p) => !p.targetWeight },
-  { key: "fitnessLevel", missing: (p) => !p.fitnessLevel },
-  { key: "sportHistory", missing: (p) => !p.sportHistory },
-  { key: "currentMedications", missing: (p) => !p.currentMedications },
-  { key: "healthNotes", missing: (p) => !p.healthNotes },
-  { key: "foodAllergens", missing: (p) => !p.foodAllergens },
-  { key: "dailyRoutine", missing: (p) => !Array.isArray(p.dailyRoutine) || p.dailyRoutine.length === 0 },
-];
 
 export default function AiWeeklyScreen() {
   const t = useTranslations("calendar.aiWeekly");
@@ -103,22 +90,6 @@ function GateNotice({ date, week }: { date: string; week: AiWeek }) {
   return <Banner icon={<Ionicons name="lock-closed" size={14} color={colors.warning} />}>{message}</Banner>;
 }
 
-function ProfileMissing({ missing }: { missing: string[] }) {
-  const t = useTranslations("assistant.profileMissing");
-  const tf = useTranslations("mobile.ai.profileFields");
-  const locale = useLocale() as Locale;
-  return (
-    <Card>
-      <AppText variant="heading">{t("title")}</AppText>
-      <AppText variant="muted">{t("body")}</AppText>
-      {missing.map((key) => (
-        <AppText key={key}>• {tf(key)}</AppText>
-      ))}
-      <Button label={t("cta")} variant="secondary" onPress={() => void openWebPage("settings", locale)} />
-    </Card>
-  );
-}
-
 function WeeklyOptions({ date, profile }: { date: string; profile: UserProfileDto }) {
   const t = useTranslations("calendar.aiWeekly");
   const tIngredients = useTranslations("meals.aiSuggestion");
@@ -145,7 +116,7 @@ function WeeklyOptions({ date, profile }: { date: string; profile: UserProfileDt
   const deload = useDeloadRecommendation(week.monday, deloadAvailable);
   const deloadWeek = deloadOverride ?? deload.data?.recommended ?? false;
 
-  const missing = REQUIRED_PROFILE.filter((f) => f.missing(profile)).map((f) => f.key);
+  const missing = missingProfileFields(profile);
   if (missing.length > 0) return <ProfileMissing missing={missing} />;
 
   const dayLabels = t.raw("days") as { label: string; full: string }[];

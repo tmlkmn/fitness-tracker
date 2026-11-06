@@ -806,7 +806,7 @@ export interface DailyMealsJobResultDto {
   validationWarnings: string[];
 }
 
-/** `result` of a finished "workout" job. */
+/** `result` of a finished "workout" job (a section job: that section's exercises only). */
 export interface WorkoutJobResultDto {
   currentExercises: ExerciseDto[];
   suggestedExercises: AiExerciseDto[];
@@ -836,6 +836,12 @@ export interface DailyPlanJobInputDto {
   userNote?: string;
 }
 
+/** `input` of a "workout" job; `section` set → only that section was regenerated. */
+export interface WorkoutJobInputDto extends DailyPlanJobInputDto {
+  section?: string;
+  sectionLabel?: string;
+}
+
 /** `input` of a "weekly" job — the POST /ai/jobs body without `kind`. */
 export interface WeeklyJobInputDto {
   dateStr: DateString;
@@ -863,7 +869,7 @@ interface AiJobBase {
  */
 export type AiJobSummaryDto =
   | (AiJobBase & { kind: "daily-meals"; input: DailyPlanJobInputDto })
-  | (AiJobBase & { kind: "workout"; input: DailyPlanJobInputDto })
+  | (AiJobBase & { kind: "workout"; input: WorkoutJobInputDto })
   | (AiJobBase & { kind: "weekly"; input: WeeklyJobInputDto });
 
 /**
@@ -880,7 +886,7 @@ export type AiJobDto =
     })
   | (AiJobBase & {
       kind: "workout";
-      input: DailyPlanJobInputDto;
+      input: WorkoutJobInputDto;
       progress: null;
       result: WorkoutJobResultDto | null;
     })

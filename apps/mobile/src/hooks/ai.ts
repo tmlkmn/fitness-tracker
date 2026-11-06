@@ -4,6 +4,7 @@ import type {
   AiJobDto,
   AiJobKind,
   AiJobSummaryDto,
+  AiMacroResultDto,
   AiMealDto,
   AiQuotaDto,
   AiQuotaFeature,
@@ -15,11 +16,13 @@ import type {
   ExerciseTipsDto,
   ExerciseVariationResultDto,
   IdDto,
+  MacroTargetsDto,
   MealVariationResultDto,
   SavedDailyMealSuggestionDto,
   SavedMealDto,
   SavedWeeklySuggestionDetailDto,
   SavedWeeklySuggestionDto,
+  TargetWeightSuggestionDto,
 } from "@fitmusc/shared/api/dto";
 import type { AiJobCreateBody } from "@fitmusc/shared/api/schemas";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -177,6 +180,16 @@ export function useApplyWorkout(dayId: number) {
   return useMutation({
     mutationFn: (exercises: AiExerciseDto[]) =>
       api("/ai/workout/apply", { method: "POST", body: { dailyPlanId: dayId, exercises } }),
+    onSuccess: invalidate,
+  });
+}
+
+/** Replaces one section of the day's workout (exercises of other sections are ignored by the server). */
+export function useApplyWorkoutSection(dayId: number) {
+  const invalidate = useInvalidateDay(dayId, "exercises");
+  return useMutation({
+    mutationFn: ({ section, exercises }: { section: string; exercises: AiExerciseDto[] }) =>
+      api("/ai/workout-section/apply", { method: "POST", body: { dailyPlanId: dayId, section, exercises } }),
     onSuccess: invalidate,
   });
 }
@@ -412,6 +425,62 @@ export function useDeloadRecommendation(date: string, enabled: boolean) {
     queryFn: () => api<DeloadRecommendationDto>(`/deload?date=${date}`),
     enabled,
     staleTime: 5 * 60_000,
+  });
+}
+
+// ── Targets: weight & macros ─────────────────────────────────────────────────
+
+/** Suggestion only — PUT /me/weight-targets saves it. */
+export function useSuggestTargetWeight() {
+  const invalidateQuota = useInvalidateQuota();
+  return useMutation({
+    mutationFn: () => api<TargetWeightSuggestionDto>("/ai/target-weight", { method: "POST" }),
+    onSettled: invalidateQuota,
+  });
+}
+
+/** PUT: an omitted field is cleared, so always send both. */
+export function useSaveWeightTargets() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { weight?: string; targetWeight?: string }) => api("/me/weight-targets", { method: "PUT", body }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["me.profile"] });
+      // Default macro targets follow the weight.
+      void qc.invalidateQueries({ queryKey: ["macros.forDay"] });
+      void qc.invalidateQueries({ queryKey: ["me.macroTargets"] });
+    },
+  });
+}
+
+/** The resolved daily targets (null until the profile has weight, height, …). */
+export function useResolvedMacroTargets() {
+  return useQuery({ queryKey: ["me.macroTargets"], queryFn: () => api<MacroTargetsDto | null>("/me/macro-targets") });
+}
+
+/** A macro strategy from a free-text body description — nothing is saved until PUT /me/macro-strategy. */
+export function useMacroAi() {
+  const invalidateQuota = useInvalidateQuota();
+  return useMutation({
+    mutationFn: (description: string) => api<AiMacroResultDto>("/ai/macro-targets", { method: "POST", body: { description } }),
+    onSettled: invalidateQuota,
+  });
+}
+
+/** Saves the strategy (delta, protein/kg, fat %), not frozen grams — targets stay live with weight and goal. */
+export function useSaveMacroStrategy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (strategy: AiMacroResultDto["strategy"]) =>
+      api("/me/macro-strategy", {
+        method: "PUT",
+        body: { calorieDelta: strategy.calorieDelta, proteinPerKg: strategy.proteinPerKgBW, fatPct: strategy.fatPct },
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["me.profile"] });
+      void qc.invalidateQueries({ queryKey: ["macros.forDay"] });
+      void qc.invalidateQueries({ queryKey: ["me.macroTargets"] });
+    },
   });
 }
 

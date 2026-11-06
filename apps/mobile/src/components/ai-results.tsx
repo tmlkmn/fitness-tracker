@@ -5,7 +5,6 @@ import type {
   AiMealDto,
   AiWeeklyDayDto,
   AiWeeklyPlanDto,
-  ExerciseDto,
 } from "@fitmusc/shared/api/dto";
 import type { AiJobCreateBody } from "@fitmusc/shared/api/schemas";
 import type { Locale } from "@fitmusc/shared/locale";
@@ -21,6 +20,7 @@ import {
   useApplyDailyMeals,
   useApplyWeekly,
   useApplyWorkout,
+  useApplyWorkoutSection,
   useCalendarWeek,
   useSaveDailySuggestion,
   useSeenJobs,
@@ -63,8 +63,8 @@ export function useLaunchJob(errorMessage: (err: unknown) => string) {
 
 /** What POST /ai/jobs got the first time — "new suggestion" runs it again. */
 export function jobBody(job: AiJobDto): AiJobCreateBody {
-  if (job.kind === "weekly") return { kind: "weekly", ...job.input };
-  return { kind: job.kind, ...job.input };
+  // `input` is the validated body the server stored, so it parses again.
+  return { kind: job.kind, ...job.input } as AiJobCreateBody;
 }
 
 // ── Rows ─────────────────────────────────────────────────────────────────────
@@ -223,6 +223,7 @@ function ResultActions({
   onApply,
   extra,
   applyError,
+  canApply = true,
 }: {
   job: AiJobDto;
   errorMessage: (err: unknown) => string;
@@ -230,6 +231,7 @@ function ResultActions({
   onApply: () => void;
   extra?: ReactNode;
   applyError: string | null;
+  canApply?: boolean;
 }) {
   const t = useTranslations("meals.aiModal");
   const again = useLaunchJob(errorMessage);
@@ -238,7 +240,7 @@ function ResultActions({
     <>
       {again.error ? <ErrorBox message={again.error} /> : null}
       {applyError ? <ErrorBox message={applyError} /> : null}
-      <Button label={t("approve")} loading={applying} disabled={again.isPending} onPress={onApply} />
+      <Button label={t("approve")} loading={applying} disabled={again.isPending || !canApply} onPress={onApply} />
       <AiButton
         label={t("newSuggestion")}
         feature={feature}
@@ -302,27 +304,38 @@ export function DailyMealsResult({ job, errorMessage, onDone }: ResultProps<"dai
 
 export function WorkoutResult({ job, errorMessage, onDone }: ResultProps<"workout">) {
   const t = useTranslations("workout.aiModal");
-  const apply = useApplyWorkout(job.input.dailyPlanId);
+  const dayId = job.input.dailyPlanId;
+  const section = job.input.section ?? null;
+  const applyDay = useApplyWorkout(dayId);
+  const applySection = useApplyWorkoutSection(dayId);
   const [applyError, setApplyError] = useState<string | null>(null);
   const result = job.result;
   if (!result) return null;
+  // A section job replaces only its section. A server before the section
+  // jobs answers with the whole day — keep that section's part of it.
+  const inSection = <T extends { section: string }>(list: T[]) => (section ? list.filter((e) => e.section === section) : list);
+  const current = inSection(result.currentExercises);
+  const suggested = inSection(result.suggestedExercises);
+  const done = { onSuccess: onDone, onError: (err: unknown) => setApplyError(errorMessage(err)) };
   return (
     <>
       <Panel title={t("currentProgram")}>
-        <ExerciseRows exercises={result.currentExercises as ExerciseDto[]} />
+        <ExerciseRows exercises={current} />
       </Panel>
       <Warnings title={t("warningsTitle")} items={result.validationWarnings} />
       <Panel title={t("suggestedProgram")} tone="suggested">
-        <ExerciseRows exercises={result.suggestedExercises} />
+        <ExerciseRows exercises={suggested} />
       </Panel>
       <ResultActions
         job={job}
         errorMessage={errorMessage}
-        applying={apply.isPending}
+        applying={applyDay.isPending || applySection.isPending}
         applyError={applyError}
+        canApply={!section || suggested.length > 0}
         onApply={() => {
           setApplyError(null);
-          apply.mutate(result.suggestedExercises, { onSuccess: onDone, onError: (err) => setApplyError(errorMessage(err)) });
+          if (section) applySection.mutate({ section, exercises: suggested }, done);
+          else applyDay.mutate(suggested, done);
         }}
       />
     </>

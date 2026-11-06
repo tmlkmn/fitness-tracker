@@ -41,7 +41,9 @@ export default function AiJobScreen() {
 function useJobTitle(job: AiJobDto) {
   const t = useTranslations();
   if (job.kind === "daily-meals") return t("meals.aiModal.title");
-  if (job.kind === "workout") return t("workout.list.aiChangeTitle");
+  if (job.kind === "workout") {
+    return job.input.sectionLabel ? t("workout.section.aiChangeSection", { section: job.input.sectionLabel }) : t("workout.list.aiChangeTitle");
+  }
   return t("calendar.aiWeekly.title");
 }
 

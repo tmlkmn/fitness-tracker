@@ -72,6 +72,8 @@ export default function ProgressScreen() {
 
 function Summary({ logs, startWeight, targetWeight }: { logs: ProgressLogDto[]; startWeight: string | null; targetWeight: string | null }) {
   const t = useTranslations("progress.summary");
+  const tw = useTranslations("progress.weightTarget");
+  const router = useRouter();
   const latest = logs.find((l) => l.weight)?.weight ?? null;
   const now = latest ?? startWeight;
   const diff = latest && startWeight ? Number(latest) - Number(startWeight) : null;
@@ -82,19 +84,45 @@ function Summary({ logs, startWeight, targetWeight }: { logs: ProgressLogDto[]; 
     <View style={styles.tiles}>
       <Tile value={now ?? "—"} label={t("now")} />
       <Tile value={diffText} label={t("diff")} color={diffColor} />
-      <Tile value={targetWeight ?? "—"} label={t("target")} color={targetWeight ? colors.primary : undefined} />
+      <Tile
+        value={targetWeight ?? "—"}
+        label={t("target")}
+        color={targetWeight ? colors.primary : undefined}
+        // Start / target weight + the AI target suggestion (web: the pencil on this tile).
+        onPress={() => router.push("/weight-targets")}
+        accessibilityLabel={tw("title")}
+      />
     </View>
   );
 }
 
-function Tile({ value, label, color }: { value: string; label: string; color?: string }) {
-  return (
-    <Card style={styles.tile}>
+function Tile({
+  value,
+  label,
+  color,
+  onPress,
+  accessibilityLabel,
+}: {
+  value: string;
+  label: string;
+  color?: string;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+}) {
+  const card = (pressed: boolean) => (
+    <Card style={[styles.tile, pressed && { backgroundColor: colors.cardPressed }]}>
+      {onPress ? <Ionicons name="pencil" size={12} color={colors.textMuted} style={styles.tileEdit} /> : null}
       <AppText style={[styles.tileValue, color ? { color } : null]}>{value}</AppText>
       <AppText variant="small" style={styles.center}>
         {label}
       </AppText>
     </Card>
+  );
+  if (!onPress) return card(false);
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={styles.tilePress}>
+      {({ pressed }) => card(pressed)}
+    </Pressable>
   );
 }
 
@@ -285,6 +313,8 @@ function HistoryRow({ log, last }: { log: ProgressLogDto; last: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  tileEdit: { position: "absolute", top: spacing.sm, right: spacing.sm },
+  tilePress: { flex: 1 },
   analysisHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   tiles: { flexDirection: "row", gap: spacing.md },
   tile: { flex: 1, alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.sm },

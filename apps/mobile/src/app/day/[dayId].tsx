@@ -288,6 +288,9 @@ function WorkoutTab({
                   : (exercise) =>
                       router.push({ pathname: "/ai/exercise", params: { dayId: String(day.id), exerciseId: String(exercise.id) } })
               }
+              onSectionAi={
+                readOnly ? undefined : (section) => router.push({ pathname: "/ai/workout", params: { dayId: String(day.id), section } })
+              }
             />
             {add}
             {ai}

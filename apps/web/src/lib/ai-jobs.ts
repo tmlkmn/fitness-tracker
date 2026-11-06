@@ -34,7 +34,7 @@ import { ApiError, classifyError, type ApiUser, type JsonSource } from "@/lib/ap
 import { checkRateLimit, type AIFeature } from "@/lib/ai";
 import { verifyDailyPlanOwnership } from "@/lib/ownership";
 import { generateDailyMeals } from "@/actions/ai-meals";
-import { generateWorkoutReplacement } from "@/actions/ai-workout";
+import { generateSectionReplacement, generateWorkoutReplacement } from "@/actions/ai-workout";
 import { generateWeeklyPlan, type WeeklyGenerationStep } from "@/lib/ai-weekly-generate";
 import { sendMobilePush } from "@/lib/notifications";
 
@@ -189,6 +189,12 @@ async function execute(
       return result;
     }
     case "workout": {
+      // One section (same quota and model as the whole workout; the web calls it synchronously).
+      if (body.section && body.sectionLabel) {
+        const section = await generateSectionReplacement(body.dailyPlanId, body.section, body.sectionLabel, body.userNote);
+        const result: JsonSource<WorkoutJobResultDto> = { ...section, validationWarnings: [] };
+        return result;
+      }
       const result: JsonSource<WorkoutJobResultDto> = await generateWorkoutReplacement(body.dailyPlanId, body.userNote);
       return result;
     }
