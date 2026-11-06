@@ -13,7 +13,7 @@
  *   3. Fitness-level default — first-time or fresh weeks.
  */
 import type { DayModeChoice } from "@/lib/ai-weekly-types";
-import { defaultDayModesForLevel } from "@/lib/day-modes-default";
+import { defaultDayModesForLevel } from "@fitmusc/shared/day-modes-default";
 
 export type TrainingDayMode = "workout" | "swimming" | "rest";
 

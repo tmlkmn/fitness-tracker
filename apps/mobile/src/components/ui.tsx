@@ -102,14 +102,24 @@ export function LoadingView() {
 export function useErrorMessage() {
   const t = useTranslations("mobile.errors");
   return (error: unknown): string => {
-    if (error instanceof ApiRequestError) {
-      if (error.code === "NETWORK") return t("network");
-      if (error.code === "RATE_LIMITED" || error.code === "COOLDOWN") {
-        return t("rateLimited", { seconds: error.retryAfter ?? 60 });
-      }
-      if (error.code === "AI_UNAVAILABLE" || error.code === "AI_EMPTY_RESPONSE") return t("aiUnavailable");
+    if (!(error instanceof ApiRequestError)) return t("generic");
+    switch (error.code) {
+      case "NETWORK":
+        return t("network");
+      case "RATE_LIMITED":
+      case "COOLDOWN":
+        // A daily AI quota answers RATE_LIMITED without Retry-After.
+        return error.retryAfter ? t("rateLimited", { seconds: error.retryAfter }) : t("quotaReached");
+      case "AI_UNAVAILABLE":
+      case "AI_EMPTY_RESPONSE":
+        return t("aiUnavailable");
+      case "JOB_TIMEOUT":
+        return t("jobTimeout");
+      case "NOT_ENOUGH_DATA":
+        return t("notEnoughData");
+      default:
+        return t("generic");
     }
-    return t("generic");
   };
 }
 

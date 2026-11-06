@@ -3659,7 +3659,10 @@
       "generic": "Bir şeyler ters gitti.",
       "rateLimited": "Çok sık denedin. {seconds} sn sonra tekrar dene.",
       "retry": "Tekrar dene",
-      "aiUnavailable": "AI şu anda kullanılamıyor. Biraz sonra tekrar dene."
+      "aiUnavailable": "AI şu anda kullanılamıyor. Biraz sonra tekrar dene.",
+      "quotaReached": "Bugünkü AI hakkın doldu. Gece yarısı yenilenir.",
+      "jobTimeout": "Oluşturma çok uzun sürdü ve yarıda kesildi. Tekrar dene.",
+      "notEnoughData": "Bunun için önce bir ölçüm kaydı ekle."
     },
     "calendar": {
       "noPlanHint": "Günü manuel oluşturup öğün ve egzersiz ekleyebilirsin.",
@@ -3691,6 +3694,33 @@
     "exerciseForm": {
       "nameRequired": "Egzersiz adını yaz.",
       "invalidNumbers": "Set 0–100, dinlenme 30–300 sn, süre 1–90 dk aralığında olmalı."
+    },
+    "ai": {
+      "countdownHours": "{h} sa {m} dk",
+      "countdownMinutes": "{m} dk",
+      "backgroundHint": "Arka planda hazırlanıyor; bu ekranı ya da uygulamayı kapatabilirsin. Hazır olunca bildirim gelir, Gün veya Takvim ekranındaki banttan da dönebilirsin.",
+      "weekOf": "{date} haftası",
+      "pastWeek": "Geçmiş haftalar için plan oluşturulamaz.",
+      "emptyWeekGap": "Önce bu haftadan önceki plansız haftaları planla.",
+      "formTips": "Form ipuçları",
+      "exerciseAi": "{name} için AI",
+      "bannerRunning": "AI önerin hazırlanıyor…",
+      "bannerReady": "AI önerin hazır, incele",
+      "bannerFailed": "AI önerisi oluşturulamadı, ayrıntılar",
+      "stop": "Durdur",
+      "send": "Gönder",
+      "profileFields": {
+        "age": "Yaş",
+        "height": "Boy",
+        "weight": "Başlangıç kilosu",
+        "targetWeight": "Hedef kilo",
+        "fitnessLevel": "Fitness seviyesi",
+        "sportHistory": "Spor geçmişi",
+        "currentMedications": "İlaçlar / takviyeler",
+        "healthNotes": "Sağlık notları",
+        "foodAllergens": "Gıda alerjileri",
+        "dailyRoutine": "Günlük akış"
+      }
     }
   }
 }

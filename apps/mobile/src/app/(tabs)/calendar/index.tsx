@@ -6,9 +6,12 @@ import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
+import { AiButton, JobBanner } from "@/components/ai";
 import { PLAN_TYPES_SHOWN, PlanTypeIcon, planTypeStyle } from "@/components/plan-type";
 import { AppText, Button, Card, Chip, LoadingView, Screen, Segmented, useErrorMessage } from "@/components/ui";
+import { useCalendarWeek, useWeeklyAiGate } from "@/hooks/ai";
 import { useDayByDate, useDaySummaries, usePlanTypes, useWeekStart } from "@/hooks/calendar";
+import { aiWeekOf } from "@/lib/ai-weekly";
 import { useEnsureDay } from "@/hooks/edit";
 import { addDays, monthGrid, monthOf, shiftMonth, todayStr, weekDates } from "@/lib/dates";
 import { colors, radius, spacing } from "@/lib/theme";
@@ -138,8 +141,36 @@ export default function CalendarScreen() {
         )}
       </Card>
 
+      <WeeklyAi date={selected} />
       <SelectedDay date={selected} day={day} summaries={summaries} />
     </Screen>
+  );
+}
+
+/** "AI ile Haftalık Plan Oluştur / Değiştir" for the (Monday-based) week of the selected day. */
+function WeeklyAi({ date }: { date: string }) {
+  const t = useTranslations("calendar");
+  const tm = useTranslations("mobile.ai");
+  const router = useRouter();
+  const week = useCalendarWeek(date);
+  const hasPlan = week.data?.weeklyPlan != null;
+  const gate = useWeeklyAiGate(date, hasPlan);
+  const monday = aiWeekOf(date).monday;
+  return (
+    <>
+      <JobBanner kind="weekly" belongs={(job) => job.kind === "weekly" && aiWeekOf(job.input.dateStr).monday === monday} />
+      {week.data && gate.shown ? (
+        <>
+          <AiButton
+            label={t("aiWeeklyPlan", { action: hasPlan ? t("actionChange") : t("actionCreate") })}
+            feature="weekly"
+            disabled={gate.gap}
+            onPress={() => router.push({ pathname: "/ai/weekly", params: { date } })}
+          />
+          {gate.gap ? <AppText variant="small">{tm("emptyWeekGap")}</AppText> : null}
+        </>
+      ) : null}
+    </>
   );
 }
 

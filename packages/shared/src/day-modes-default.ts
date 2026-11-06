@@ -1,11 +1,11 @@
 /**
  * Single source of truth for the default 7-day workout/rest split based on
- * the user's fitness level. Both the weekly-plan modal (UI default) and the
- * AI weekly service (backend fallback) consume this so the two stay in sync.
+ * the user's fitness level. The weekly-plan modals (web + mobile UI default)
+ * and the AI weekly service (backend fallback) consume this so they stay in sync.
  */
-import type { DayModeChoice } from "@/lib/ai-weekly-types";
 
-export type DayMode = DayModeChoice;
+/** Same union as `DayModeChoice` in apps/web/src/lib/ai-weekly-types.ts. */
+export type DayMode = "workout" | "swimming" | "rest" | "nutrition";
 export type DayModesMap = Partial<Record<number, DayMode>>;
 
 /**

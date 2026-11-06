@@ -830,10 +830,25 @@ export interface WeeklyJobProgressDto {
 export type AiJobKind = "daily-meals" | "workout" | "weekly";
 export type AiJobStatus = "queued" | "running" | "succeeded" | "failed";
 
-/** GET /ai/jobs — newest first, without results. */
-export interface AiJobSummaryDto {
+/** `input` of a "daily-meals" / "workout" job — the POST /ai/jobs body without `kind`. */
+export interface DailyPlanJobInputDto {
+  dailyPlanId: number;
+  userNote?: string;
+}
+
+/** `input` of a "weekly" job — the POST /ai/jobs body without `kind`. */
+export interface WeeklyJobInputDto {
+  dateStr: DateString;
+  userNote?: string;
+  generateMode?: "both" | "nutrition" | "workout";
+  /** "0" = Monday … "6" = Sunday */
+  dayModes?: Record<string, PlanType>;
+  pastDows?: number[];
+  deloadWeek?: boolean;
+}
+
+interface AiJobBase {
   id: string;
-  kind: AiJobKind;
   status: AiJobStatus;
   /** Set when `status` is "failed": AI_UNAVAILABLE, AI_EMPTY_RESPONSE, JOB_TIMEOUT, … */
   error: ApiErrorCode | null;
@@ -842,16 +857,39 @@ export interface AiJobSummaryDto {
 }
 
 /**
+ * GET /ai/jobs — newest first, without results. `input` says which day/week a
+ * job belongs to, so the app can apply a result it lost track of (after a
+ * restart or a push tap).
+ */
+export type AiJobSummaryDto =
+  | (AiJobBase & { kind: "daily-meals"; input: DailyPlanJobInputDto })
+  | (AiJobBase & { kind: "workout"; input: DailyPlanJobInputDto })
+  | (AiJobBase & { kind: "weekly"; input: WeeklyJobInputDto });
+
+/**
  * POST /ai/jobs (202) and GET /ai/jobs/[id]. Poll until `status` is
  * "succeeded" or "failed" (a push with `tag: "ai-job"` also arrives), then
  * apply the result through the matching /ai/…/apply endpoint.
  */
-export type AiJobDto = AiJobSummaryDto &
-  (
-    | { kind: "daily-meals"; progress: null; result: DailyMealsJobResultDto | null }
-    | { kind: "workout"; progress: null; result: WorkoutJobResultDto | null }
-    | { kind: "weekly"; progress: WeeklyJobProgressDto | null; result: WeeklyJobResultDto | null }
-  );
+export type AiJobDto =
+  | (AiJobBase & {
+      kind: "daily-meals";
+      input: DailyPlanJobInputDto;
+      progress: null;
+      result: DailyMealsJobResultDto | null;
+    })
+  | (AiJobBase & {
+      kind: "workout";
+      input: DailyPlanJobInputDto;
+      progress: null;
+      result: WorkoutJobResultDto | null;
+    })
+  | (AiJobBase & {
+      kind: "weekly";
+      input: WeeklyJobInputDto;
+      progress: WeeklyJobProgressDto | null;
+      result: WeeklyJobResultDto | null;
+    });
 
 /** POST /ai/macro-targets — `strategy` is what PUT /me/macro-strategy saves. */
 export interface AiMacroResultDto {

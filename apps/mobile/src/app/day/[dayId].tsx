@@ -9,9 +9,11 @@ import { useState, type ReactNode } from "react";
 import { Alert } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
+import { AiButton, JobBanner, MonthGateNotice } from "@/components/ai";
 import { ExerciseSections, MacroSummary, MealItem } from "@/components/plan-items";
 import { AppText, Banner, Button, Card, ErrorView, LoadingView, Screen, Segmented, useErrorMessage } from "@/components/ui";
 import { SleepCard, WaterCard } from "@/components/wellness";
+import { useMonthGate } from "@/hooks/ai";
 import { useCopyLastWeek } from "@/hooks/edit";
 import { useCompleteAll, useDay, useDayExercises, useDayMeals, useMacroTargets, useToggleExercise, useToggleMeal } from "@/hooks/plan";
 import { todayStr } from "@/lib/dates";
@@ -68,6 +70,25 @@ export default function DayScreen() {
   );
 }
 
+/** The day's "AI ile oluştur / değiştir" button — or, while the month gate is closed (web rule), why not. */
+function AiEntry({
+  date,
+  label,
+  feature,
+  primary,
+  onPress,
+}: {
+  date: string | null;
+  label: string;
+  feature: "daily-meal" | "workout";
+  primary: boolean;
+  onPress: () => void;
+}) {
+  const monthGate = useMonthGate();
+  if (date != null && monthGate.isBlocked(date)) return <MonthGateNotice emptyWeekCount={monthGate.emptyWeekCount} />;
+  return <AiButton label={label} feature={feature} variant={primary ? "primary" : "secondary"} onPress={onPress} />;
+}
+
 /** Loading / error / empty states shared by both list tabs. */
 function ListState<T>({
   query,
@@ -107,40 +128,68 @@ function NutritionTab({
   const targets = useMacroTargets(day.planType);
   const toggle = useToggleMeal(day.id);
   const completeAll = useCompleteAll(day.id, "meals");
+  const hasMeals = (meals.data?.length ?? 0) > 0;
   const add = readOnly ? null : (
     <Button label={`＋ ${t("meals.list.addMeal")}`} variant="secondary" onPress={() => router.push({ pathname: "/meal-form", params: { dayId: String(day.id) } })} />
   );
+  const ai = readOnly ? null : (
+    <AiEntry
+      date={day.date}
+      label={t(hasMeals ? "meals.list.changeWithAI" : "meals.list.generateWithAI")}
+      feature="daily-meal"
+      primary={!hasMeals}
+      onPress={() => router.push({ pathname: "/ai/day-meals", params: { dayId: String(day.id) } })}
+    />
+  );
   return (
-    <ListState query={meals} empty={t("mobile.day.noMeals")} emptyActions={add}>
-      {(list) => (
-        <>
-          <Card>
-            <MacroSummary meals={list} targets={targets.data?.targets} />
-          </Card>
-          {list.map((meal) => (
-            <MealItem
-              key={meal.id}
-              meal={meal}
-              onToggle={readOnly ? undefined : (isCompleted) => toggle.mutate({ id: meal.id, isCompleted })}
-              onPress={
-                readOnly
-                  ? undefined
-                  : () => router.push({ pathname: "/meal-form", params: { dayId: String(day.id), mealId: String(meal.id) } })
-              }
-            />
-          ))}
-          {add}
-          {!readOnly && list.some((m) => !m.isCompleted) ? (
-            <Button
-              label={t("meals.list.completeAll")}
-              variant="secondary"
-              loading={completeAll.isPending}
-              onPress={() => completeAll.mutate()}
-            />
-          ) : null}
-        </>
-      )}
-    </ListState>
+    <>
+      <JobBanner kind="daily-meals" belongs={(job) => job.kind === "daily-meals" && job.input.dailyPlanId === day.id} />
+      <ListState
+        query={meals}
+        empty={t("mobile.day.noMeals")}
+        emptyActions={
+          <>
+            {ai}
+            {add}
+          </>
+        }
+      >
+        {(list) => (
+          <>
+            <Card>
+              <MacroSummary meals={list} targets={targets.data?.targets} />
+            </Card>
+            {list.map((meal) => (
+              <MealItem
+                key={meal.id}
+                meal={meal}
+                onToggle={readOnly ? undefined : (isCompleted) => toggle.mutate({ id: meal.id, isCompleted })}
+                onPress={
+                  readOnly
+                    ? undefined
+                    : () => router.push({ pathname: "/meal-form", params: { dayId: String(day.id), mealId: String(meal.id) } })
+                }
+                onAi={
+                  readOnly
+                    ? undefined
+                    : () => router.push({ pathname: "/ai/meal-variation", params: { dayId: String(day.id), mealId: String(meal.id) } })
+                }
+              />
+            ))}
+            {add}
+            {ai}
+            {!readOnly && list.some((m) => !m.isCompleted) ? (
+              <Button
+                label={t("meals.list.completeAll")}
+                variant="secondary"
+                loading={completeAll.isPending}
+                onPress={() => completeAll.mutate()}
+              />
+            ) : null}
+          </>
+        )}
+      </ListState>
+    </>
   );
 }
 
@@ -160,6 +209,7 @@ function WorkoutTab({
   const completeAll = useCompleteAll(day.id, "exercises");
   const { copy, fetchPrevious } = useCopyLastWeek(day.id);
   const [loadingPrevious, setLoadingPrevious] = useState(false);
+  const hasExercises = (exercises.data?.length ?? 0) > 0;
 
   const copyLastWeek = async () => {
     setLoadingPrevious(true);
@@ -192,8 +242,18 @@ function WorkoutTab({
       onPress={() => router.push({ pathname: "/exercise-form", params: { dayId: String(day.id) } })}
     />
   );
+  const ai = readOnly ? null : (
+    <AiEntry
+      date={day.date}
+      label={t(hasExercises ? "workout.list.changeWithAI" : "workout.list.generateWithAI")}
+      feature="workout"
+      primary={!hasExercises}
+      onPress={() => router.push({ pathname: "/ai/workout", params: { dayId: String(day.id) } })}
+    />
+  );
   const emptyActions = readOnly ? null : (
     <>
+      {ai}
       {add}
       <Button
         label={`↺ ${t("workout.list.fromLastWeek")}`}
@@ -204,34 +264,44 @@ function WorkoutTab({
     </>
   );
   return (
-    <ListState
-      query={exercises}
-      empty={t(day.planType === "rest" ? "mobile.day.restDay" : "mobile.day.noExercises")}
-      emptyActions={emptyActions}
-    >
-      {(list) => (
-        <>
-          <ExerciseSections
-            exercises={list}
-            onToggle={readOnly ? undefined : (exercise, isCompleted) => toggle.mutate({ id: exercise.id, isCompleted })}
-            onPress={
-              readOnly
-                ? undefined
-                : (exercise) =>
-                    router.push({ pathname: "/exercise-form", params: { dayId: String(day.id), exerciseId: String(exercise.id) } })
-            }
-          />
-          {add}
-          {!readOnly && list.some((e) => !e.isCompleted) ? (
-            <Button
-              label={t("workout.list.completeAll")}
-              variant="secondary"
-              loading={completeAll.isPending}
-              onPress={() => completeAll.mutate()}
+    <>
+      <JobBanner kind="workout" belongs={(job) => job.kind === "workout" && job.input.dailyPlanId === day.id} />
+      <ListState
+        query={exercises}
+        empty={t(day.planType === "rest" ? "mobile.day.restDay" : "mobile.day.noExercises")}
+        emptyActions={emptyActions}
+      >
+        {(list) => (
+          <>
+            <ExerciseSections
+              exercises={list}
+              onToggle={readOnly ? undefined : (exercise, isCompleted) => toggle.mutate({ id: exercise.id, isCompleted })}
+              onPress={
+                readOnly
+                  ? undefined
+                  : (exercise) =>
+                      router.push({ pathname: "/exercise-form", params: { dayId: String(day.id), exerciseId: String(exercise.id) } })
+              }
+              onAi={
+                readOnly
+                  ? undefined
+                  : (exercise) =>
+                      router.push({ pathname: "/ai/exercise", params: { dayId: String(day.id), exerciseId: String(exercise.id) } })
+              }
             />
-          ) : null}
-        </>
-      )}
-    </ListState>
+            {add}
+            {ai}
+            {!readOnly && list.some((e) => !e.isCompleted) ? (
+              <Button
+                label={t("workout.list.completeAll")}
+                variant="secondary"
+                loading={completeAll.isPending}
+                onPress={() => completeAll.mutate()}
+              />
+            ) : null}
+          </>
+        )}
+      </ListState>
+    </>
   );
 }

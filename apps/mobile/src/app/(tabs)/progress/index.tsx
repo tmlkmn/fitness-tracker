@@ -7,9 +7,12 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
+import { AiButton, AiDisclaimer, ErrorBox, Markdown } from "@/components/ai";
 import { BarChart, LineChart, type ChartPoint } from "@/components/charts";
-import { AppText, Button, Card, Chip, ErrorView, LoadingView, Screen, SectionTitle } from "@/components/ui";
+import { AppText, Button, Card, Chip, ErrorView, LoadingView, Screen, SectionTitle, useErrorMessage } from "@/components/ui";
+import { useInvalidateQuota } from "@/hooks/ai";
 import { useProfile, useProgressLogs, useSleepLogs, useWaterLogs } from "@/hooks/wellness";
+import { apiStream } from "@/lib/api";
 import { CHART_METRICS, type ChartMetric } from "@/lib/progress-metrics";
 import { colors, radius, seriesColors, spacing } from "@/lib/theme";
 
@@ -49,6 +52,7 @@ export default function ProgressScreen() {
     <Screen refreshing={logs.isRefetching} onRefresh={refresh}>
       <Summary logs={list} startWeight={profile.data?.weight ?? null} targetWeight={profile.data?.targetWeight ?? null} />
       <MetricChart logs={list} />
+      {list.length > 0 ? <AiAnalysis /> : null}
       <WaterChart />
       <SleepChart />
       <Button label={`＋ ${t("addMeasurement")}`} onPress={() => router.push("/progress-log")} />
@@ -90,6 +94,51 @@ function Tile({ value, label, color }: { value: string; label: string; color?: s
       <AppText variant="small" style={styles.center}>
         {label}
       </AppText>
+    </Card>
+  );
+}
+
+/** Streams the coach's read of the latest measurements (web: ProgressAiAnalysis). */
+function AiAnalysis() {
+  const t = useTranslations("progress.aiAnalysis");
+  const errorMessage = useErrorMessage();
+  const invalidateQuota = useInvalidateQuota();
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const analyze = async () => {
+    setLoading(true);
+    setError(null);
+    setText("");
+    try {
+      await apiStream("/ai/analyze", { onText: setText });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setLoading(false);
+      invalidateQuota();
+    }
+  };
+
+  return (
+    <Card>
+      <View style={styles.analysisHead}>
+        <Ionicons name="sparkles" size={16} color={colors.primary} />
+        <AppText variant="heading" style={{ flex: 1 }}>
+          {t("title")}
+        </AppText>
+      </View>
+      {error ? <ErrorBox message={error} /> : null}
+      {text ? <Markdown>{text}</Markdown> : null}
+      <AiButton
+        label={loading ? t("analyzing") : text ? t("refresh") : t("analyze")}
+        feature="analyze"
+        variant={text ? "secondary" : "primary"}
+        loading={loading}
+        onPress={() => void analyze()}
+      />
+      {text && !loading ? <AiDisclaimer /> : null}
     </Card>
   );
 }
@@ -236,6 +285,7 @@ function HistoryRow({ log, last }: { log: ProgressLogDto; last: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  analysisHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   tiles: { flexDirection: "row", gap: spacing.md },
   tile: { flex: 1, alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.sm },
   tileValue: { fontSize: 20, fontWeight: "700" },

@@ -58,7 +58,7 @@ import {
   buildDeloadNutritionBlock,
   buildReturnWeekWorkoutBlock,
 } from "@/lib/deload-policy";
-import { defaultDayModesForLevel } from "@/lib/day-modes-default";
+import { defaultDayModesForLevel } from "@fitmusc/shared/day-modes-default";
 import {
   resolveUnderlyingTrainingDayModes,
   hasAnyTrainingDay,

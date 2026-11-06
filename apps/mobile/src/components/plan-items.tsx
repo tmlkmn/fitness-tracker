@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "use-intl";
 
 import { colors, radius, spacing } from "@/lib/theme";
 
+import { AiIconButton } from "./ai";
 import { AppText, Card, ProgressBar } from "./ui";
 
 const MEAL_EMOJI: Record<string, string> = {
@@ -40,14 +41,18 @@ export function MealItem({
   meal,
   onToggle,
   onPress,
+  onAi,
 }: {
   meal: MealDto;
   onToggle?: (isCompleted: boolean) => void;
   /** Opens the meal for editing. */
   onPress?: () => void;
+  /** Opens the AI alternatives for this meal. */
+  onAi?: () => void;
 }) {
   const locale = useLocale() as Locale;
   const t = useTranslations("meals.macroSummary");
+  const ta = useTranslations("meals.aiSuggestion");
   const done = Boolean(meal.isCompleted);
   const label = getLocalizedMealLabel(coerceMealLabel(meal.mealLabel), locale);
   const macros = [
@@ -65,6 +70,7 @@ export function MealItem({
           <AppText variant="heading">{label}</AppText>
           <AppText variant="small">{meal.mealTime}</AppText>
         </View>
+        {onAi ? <AiIconButton label={ta("buttonLabel")} onPress={onAi} /> : null}
         {onToggle ? <CheckButton checked={done} label={label} onPress={() => onToggle(!done)} /> : null}
       </View>
       <AppText style={done && styles.struck}>{meal.content}</AppText>
@@ -83,12 +89,16 @@ export function ExerciseItem({
   exercise,
   onToggle,
   onPress,
+  onAi,
 }: {
   exercise: ExerciseDto;
   onToggle?: (isCompleted: boolean) => void;
   onPress?: () => void;
+  /** Opens alternatives / form tips for this exercise. */
+  onAi?: () => void;
 }) {
   const t = useTranslations("mobile.day");
+  const ta = useTranslations("mobile.ai");
   const done = Boolean(exercise.isCompleted);
   const detail = [
     exercise.sets ? `${t("sets", { sets: exercise.sets })}${exercise.reps ? ` × ${exercise.reps}` : ""}` : exercise.reps,
@@ -108,6 +118,7 @@ export function ExerciseItem({
         {detail.length > 0 ? <AppText variant="small">{detail.join(" · ")}</AppText> : null}
         {exercise.notes ? <AppText variant="muted">{exercise.notes}</AppText> : null}
       </Pressable>
+      {onAi ? <AiIconButton label={ta("exerciseAi", { name: exercise.name })} onPress={onAi} /> : null}
       {onToggle ? <CheckButton checked={done} label={exercise.name} onPress={() => onToggle(!done)} /> : null}
     </View>
   );
@@ -118,10 +129,12 @@ export function ExerciseSections({
   exercises,
   onToggle,
   onPress,
+  onAi,
 }: {
   exercises: ExerciseDto[];
   onToggle?: (exercise: ExerciseDto, isCompleted: boolean) => void;
   onPress?: (exercise: ExerciseDto) => void;
+  onAi?: (exercise: ExerciseDto) => void;
 }) {
   const sections: { label: string; items: ExerciseDto[] }[] = [];
   for (const exercise of exercises) {
@@ -140,6 +153,7 @@ export function ExerciseSections({
               exercise={exercise}
               onToggle={onToggle ? (done) => onToggle(exercise, done) : undefined}
               onPress={onPress ? () => onPress(exercise) : undefined}
+              onAi={onAi ? () => onAi(exercise) : undefined}
             />
           ))}
         </Card>

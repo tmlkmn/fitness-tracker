@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { ExerciseSections, MacroSummary, MealItem } from "@/components/plan-items";
 import { AppText, Button, Card, ErrorView, LoadingView, ProgressBar, Screen, SectionTitle } from "@/components/ui";
 import { SleepCard, WaterCard } from "@/components/wellness";
+import { useGreeting } from "@/hooks/ai";
 import {
   useDaySupplements,
   useMacroTargets,
@@ -27,6 +28,7 @@ export default function TodayScreen() {
   const { user } = useSession();
   const today = todayStr();
   const dashboard = useTodayDashboard();
+  const greeting = useGreeting();
   const day = dashboard.data?.dailyPlan ?? null;
   const dayId = day?.id ?? 0;
   const targets = useMacroTargets(day?.planType);
@@ -45,6 +47,7 @@ export default function TodayScreen() {
       <View style={{ gap: spacing.xs }}>
         <AppText variant="muted">{formatDate(parseDateOnly(today), locale, { weekday: "long", day: "numeric", month: "long" })}</AppText>
         {firstName ? <AppText variant="heading">{t("dashboard.welcome", { name: firstName })}</AppText> : null}
+        {greeting.data?.message ? <AppText variant="muted">{greeting.data.message}</AppText> : null}
       </View>
 
       {!day ? (
@@ -91,6 +94,7 @@ export default function TodayScreen() {
               meal={meal}
               onToggle={(isCompleted) => toggleMeal.mutate({ id: meal.id, isCompleted })}
               onPress={() => router.push({ pathname: "/meal-form", params: { dayId: String(dayId), mealId: String(meal.id) } })}
+              onAi={() => router.push({ pathname: "/ai/meal-variation", params: { dayId: String(dayId), mealId: String(meal.id) } })}
             />
           ))}
 
@@ -102,6 +106,9 @@ export default function TodayScreen() {
                 onToggle={(exercise, isCompleted) => toggleExercise.mutate({ id: exercise.id, isCompleted })}
                 onPress={(exercise) =>
                   router.push({ pathname: "/exercise-form", params: { dayId: String(dayId), exerciseId: String(exercise.id) } })
+                }
+                onAi={(exercise) =>
+                  router.push({ pathname: "/ai/exercise", params: { dayId: String(dayId), exerciseId: String(exercise.id) } })
                 }
               />
             </>

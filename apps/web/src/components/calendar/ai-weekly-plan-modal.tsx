@@ -59,7 +59,7 @@ import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 import { isMealLabel, getLocalizedMealLabel } from "@fitmusc/shared/meal-labels";
 import { buildAiUserNote } from "@/lib/ai-user-note";
 import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
-import { defaultUiDayModesForLevel } from "@/lib/day-modes-default";
+import { defaultUiDayModesForLevel } from "@fitmusc/shared/day-modes-default";
 import { pastDowsOfWeek } from "@fitmusc/shared/week";
 import { DayModeLevelHint } from "@/components/calendar/day-mode-level-hint";
 import { DeloadRecommendationBanner } from "@/components/calendar/deload-recommendation-banner";

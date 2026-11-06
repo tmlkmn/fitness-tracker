@@ -62,15 +62,17 @@ const WEEKLY_EMPTY_PLAN_ERRORS = new Set([
 
 type AiJobRow = typeof aiJobs.$inferSelect;
 
+// kind/input are written together by startAiJob below (the validated body).
 function toSummary(row: AiJobRow): JsonSource<AiJobSummaryDto> {
   return {
     id: row.id,
     kind: row.kind as AiJobKind,
     status: row.status as AiJobSummaryDto["status"],
+    input: row.input,
     error: row.error as ApiErrorCode | null,
     createdAt: row.createdAt,
     finishedAt: row.finishedAt,
-  };
+  } as JsonSource<AiJobSummaryDto>;
 }
 
 // progress/result are jsonb written by runJob below, in the DTO shapes.

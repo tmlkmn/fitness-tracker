@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { getLevelRecommendation, type FitnessLevel } from "@/lib/day-modes-default";
+import { getLevelRecommendation, type FitnessLevel } from "@fitmusc/shared/day-modes-default";
 
 interface DayModeLevelHintProps {
   fitnessLevel: string | null | undefined;

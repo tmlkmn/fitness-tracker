@@ -3659,7 +3659,10 @@
       "generic": "Something went wrong.",
       "rateLimited": "Too many tries. Try again in {seconds}s.",
       "retry": "Try again",
-      "aiUnavailable": "AI is unavailable right now. Try again shortly."
+      "aiUnavailable": "AI is unavailable right now. Try again shortly.",
+      "quotaReached": "You've used today's AI quota. It resets at midnight.",
+      "jobTimeout": "The generation took too long and was cut off. Try again.",
+      "notEnoughData": "Add a measurement first."
     },
     "calendar": {
       "noPlanHint": "Create the day manually, then add meals and exercises.",
@@ -3691,6 +3694,33 @@
     "exerciseForm": {
       "nameRequired": "Enter the exercise name.",
       "invalidNumbers": "Sets 0–100, rest 30–300 s, duration 1–90 min."
+    },
+    "ai": {
+      "countdownHours": "{h}h {m}m",
+      "countdownMinutes": "{m}m",
+      "backgroundHint": "This runs in the background, so you can close this screen or the app. You'll get a notification when it's ready, or come back through the banner on the Day or Calendar screen.",
+      "weekOf": "Week of {date}",
+      "pastWeek": "Plans can't be made for past weeks.",
+      "emptyWeekGap": "First plan the weeks before this one that have no plan.",
+      "formTips": "Form tips",
+      "exerciseAi": "AI for {name}",
+      "bannerRunning": "Your AI suggestion is being prepared…",
+      "bannerReady": "Your AI suggestion is ready to review",
+      "bannerFailed": "The AI suggestion failed, see details",
+      "stop": "Stop",
+      "send": "Send",
+      "profileFields": {
+        "age": "Age",
+        "height": "Height",
+        "weight": "Starting weight",
+        "targetWeight": "Target weight",
+        "fitnessLevel": "Fitness level",
+        "sportHistory": "Sport history",
+        "currentMedications": "Medications / supplements",
+        "healthNotes": "Health notes",
+        "foodAllergens": "Food allergies",
+        "dailyRoutine": "Daily routine"
+      }
     }
   }
 }

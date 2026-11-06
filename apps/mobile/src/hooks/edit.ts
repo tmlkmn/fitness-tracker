@@ -11,7 +11,7 @@ import { keys } from "./plan";
 // every field, so callers send the whole record (including the meal's icon).
 
 /** Everything a change to a day's meals or exercises can make stale. */
-function useInvalidateDay(dayId: number, kind: "meals" | "exercises") {
+export function useInvalidateDay(dayId: number, kind: "meals" | "exercises") {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: kind === "meals" ? keys.meals(dayId) : keys.exercises(dayId) });
