@@ -49,6 +49,8 @@ function AppStack() {
             <Stack.Screen name="shopping" options={{ title: "" }} />
             <Stack.Screen name="progress-log" options={{ title: "", presentation: "modal" }} />
             <Stack.Screen name="sleep/[date]" options={{ title: "", presentation: "modal" }} />
+            <Stack.Screen name="meal-form" options={{ title: "", presentation: "modal" }} />
+            <Stack.Screen name="exercise-form" options={{ title: "", presentation: "modal" }} />
           </Stack.Protected>
           <Stack.Protected guard={!!user && !!blocked}>
             <Stack.Screen name="blocked" options={{ headerShown: false }} />

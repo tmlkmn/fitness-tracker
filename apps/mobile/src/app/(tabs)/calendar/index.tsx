@@ -7,8 +7,9 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
 import { PLAN_TYPES_SHOWN, PlanTypeIcon, planTypeStyle } from "@/components/plan-type";
-import { AppText, Button, Card, Chip, LoadingView, Screen, Segmented } from "@/components/ui";
+import { AppText, Button, Card, Chip, LoadingView, Screen, Segmented, useErrorMessage } from "@/components/ui";
 import { useDayByDate, useDaySummaries, usePlanTypes, useWeekStart } from "@/hooks/calendar";
+import { useEnsureDay } from "@/hooks/edit";
 import { addDays, monthGrid, monthOf, shiftMonth, todayStr, weekDates } from "@/lib/dates";
 import { colors, radius, spacing } from "@/lib/theme";
 import { openWebPage } from "@/lib/web-links";
@@ -220,6 +221,8 @@ function SelectedDay({
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const router = useRouter();
+  const ensureDay = useEnsureDay();
+  const errorMessage = useErrorMessage();
   const heading = formatDate(parseDateOnly(date), locale, { weekday: "long", day: "numeric", month: "long" });
 
   if (day.isLoading) {
@@ -237,7 +240,13 @@ function SelectedDay({
         <AppText variant="heading">{heading}</AppText>
         <AppText variant="muted">{t("calendar.noPlanForDate")}</AppText>
         <AppText variant="small">{t("mobile.calendar.noPlanHint")}</AppText>
-        <Button label={t("mobile.blocked.openWeb")} variant="secondary" onPress={() => openWebPage("home", locale)} />
+        {ensureDay.error ? <AppText style={{ color: colors.danger }}>{errorMessage(ensureDay.error)}</AppText> : null}
+        <Button
+          label={`＋ ${t("calendar.manualAdd")}`}
+          loading={ensureDay.isPending}
+          onPress={() => ensureDay.mutate(date, { onSuccess: ({ id }) => router.push(`/day/${id}`) })}
+        />
+        <Button label={t("mobile.blocked.openWeb")} variant="ghost" onPress={() => openWebPage("home", locale)} />
       </Card>
     );
   }

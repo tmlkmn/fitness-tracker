@@ -3624,7 +3624,9 @@
       "restDay": "Dinlenme günü — antrenman yok.",
       "sets": "{sets} set",
       "rest": "{seconds} sn dinlenme",
-      "minutes": "{minutes} dk"
+      "minutes": "{minutes} dk",
+      "copyLastWeekConfirm": "Geçen haftanın aynı gününden {count} egzersiz eklenecek.",
+      "copyLastWeekEmpty": "Geçen hafta bu gün için egzersiz yok."
     },
     "macros": {
       "calories": "Kalori",
@@ -3660,7 +3662,7 @@
       "aiUnavailable": "AI şu anda kullanılamıyor. Biraz sonra tekrar dene."
     },
     "calendar": {
-      "noPlanHint": "Bu güne planı web'den ekleyebilirsin.",
+      "noPlanHint": "Günü manuel oluşturup öğün ve egzersiz ekleyebilirsin.",
       "counts": "{meals} öğün · {exercises} egzersiz",
       "legend": "Gün tipleri"
     },
@@ -3679,6 +3681,16 @@
     "shopping": {
       "noWeeks": "Henüz haftalık plan yok.",
       "generateConfirm": "Alışveriş listesi bu haftanın öğünlerinden AI ile oluşturulacak. Devam edilsin mi?"
+    },
+    "mealForm": {
+      "labelRequired": "Öğün adını seç.",
+      "contentRequired": "Ne yediğini yaz.",
+      "invalidMacros": "Kalori tam sayı, makrolar 12.5 gibi olmalı.",
+      "noCandidates": "Sonuç yok."
+    },
+    "exerciseForm": {
+      "nameRequired": "Egzersiz adını yaz.",
+      "invalidNumbers": "Set 0–100, dinlenme 30–300 sn, süre 1–90 dk aralığında olmalı."
     }
   }
 }

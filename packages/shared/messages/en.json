@@ -3624,7 +3624,9 @@
       "restDay": "Rest day — no workout.",
       "sets": "{sets} sets",
       "rest": "{seconds}s rest",
-      "minutes": "{minutes} min"
+      "minutes": "{minutes} min",
+      "copyLastWeekConfirm": "{count, plural, one {# exercise} other {# exercises}} from the same day last week will be added.",
+      "copyLastWeekEmpty": "No exercises on this day last week."
     },
     "macros": {
       "calories": "Calories",
@@ -3660,7 +3662,7 @@
       "aiUnavailable": "AI is unavailable right now. Try again shortly."
     },
     "calendar": {
-      "noPlanHint": "You can add a plan for this day on the web.",
+      "noPlanHint": "Create the day manually, then add meals and exercises.",
       "counts": "{meals, plural, one {# meal} other {# meals}} · {exercises, plural, one {# exercise} other {# exercises}}",
       "legend": "Day types"
     },
@@ -3679,6 +3681,16 @@
     "shopping": {
       "noWeeks": "No weekly plans yet.",
       "generateConfirm": "The shopping list will be built with AI from this week's meals. Continue?"
+    },
+    "mealForm": {
+      "labelRequired": "Choose a meal name.",
+      "contentRequired": "Describe what you eat.",
+      "invalidMacros": "Calories must be a whole number, macros like 12.5.",
+      "noCandidates": "No results."
+    },
+    "exerciseForm": {
+      "nameRequired": "Enter the exercise name.",
+      "invalidNumbers": "Sets 0–100, rest 30–300 s, duration 1–90 min."
     }
   }
 }

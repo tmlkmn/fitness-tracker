@@ -36,7 +36,16 @@ function CheckButton({ checked, onPress, label }: { checked: boolean; onPress: (
   );
 }
 
-export function MealItem({ meal, onToggle }: { meal: MealDto; onToggle?: (isCompleted: boolean) => void }) {
+export function MealItem({
+  meal,
+  onToggle,
+  onPress,
+}: {
+  meal: MealDto;
+  onToggle?: (isCompleted: boolean) => void;
+  /** Opens the meal for editing. */
+  onPress?: () => void;
+}) {
   const locale = useLocale() as Locale;
   const t = useTranslations("meals.macroSummary");
   const done = Boolean(meal.isCompleted);
@@ -48,8 +57,8 @@ export function MealItem({ meal, onToggle }: { meal: MealDto; onToggle?: (isComp
     meal.fatG ? `${t("fat")} ${Math.round(Number(meal.fatG))}g` : null,
   ].filter(Boolean);
 
-  return (
-    <Card style={done && styles.done}>
+  const card = (pressed: boolean) => (
+    <Card style={[done && styles.done, pressed && styles.pressed]}>
       <View style={styles.row}>
         <AppText style={styles.emoji}>{meal.icon || MEAL_EMOJI[meal.mealLabel] || "🍴"}</AppText>
         <View style={styles.grow}>
@@ -62,9 +71,23 @@ export function MealItem({ meal, onToggle }: { meal: MealDto; onToggle?: (isComp
       {macros.length > 0 ? <AppText variant="small">{macros.join(" · ")}</AppText> : null}
     </Card>
   );
+  if (!onPress) return card(false);
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}>
+      {({ pressed }) => card(pressed)}
+    </Pressable>
+  );
 }
 
-export function ExerciseItem({ exercise, onToggle }: { exercise: ExerciseDto; onToggle?: (isCompleted: boolean) => void }) {
+export function ExerciseItem({
+  exercise,
+  onToggle,
+  onPress,
+}: {
+  exercise: ExerciseDto;
+  onToggle?: (isCompleted: boolean) => void;
+  onPress?: () => void;
+}) {
   const t = useTranslations("mobile.day");
   const done = Boolean(exercise.isCompleted);
   const detail = [
@@ -75,11 +98,16 @@ export function ExerciseItem({ exercise, onToggle }: { exercise: ExerciseDto; on
 
   return (
     <View style={[styles.exercise, done && styles.done]}>
-      <View style={styles.grow}>
+      <Pressable
+        disabled={!onPress}
+        accessibilityRole={onPress ? "button" : undefined}
+        onPress={onPress}
+        style={({ pressed }) => [styles.grow, pressed && styles.pressedText]}
+      >
         <AppText style={[styles.exerciseName, done && styles.struck]}>{exercise.name}</AppText>
         {detail.length > 0 ? <AppText variant="small">{detail.join(" · ")}</AppText> : null}
         {exercise.notes ? <AppText variant="muted">{exercise.notes}</AppText> : null}
-      </View>
+      </Pressable>
       {onToggle ? <CheckButton checked={done} label={exercise.name} onPress={() => onToggle(!done)} /> : null}
     </View>
   );
@@ -89,9 +117,11 @@ export function ExerciseItem({ exercise, onToggle }: { exercise: ExerciseDto; on
 export function ExerciseSections({
   exercises,
   onToggle,
+  onPress,
 }: {
   exercises: ExerciseDto[];
   onToggle?: (exercise: ExerciseDto, isCompleted: boolean) => void;
+  onPress?: (exercise: ExerciseDto) => void;
 }) {
   const sections: { label: string; items: ExerciseDto[] }[] = [];
   for (const exercise of exercises) {
@@ -109,6 +139,7 @@ export function ExerciseSections({
               key={exercise.id}
               exercise={exercise}
               onToggle={onToggle ? (done) => onToggle(exercise, done) : undefined}
+              onPress={onPress ? () => onPress(exercise) : undefined}
             />
           ))}
         </Card>
@@ -157,6 +188,8 @@ const styles = StyleSheet.create({
   grow: { flex: 1, gap: 2 },
   emoji: { fontSize: 26 },
   done: { opacity: 0.6 },
+  pressed: { backgroundColor: colors.cardPressed },
+  pressedText: { opacity: 0.6 },
   struck: { textDecorationLine: "line-through" },
   check: {
     width: 30,

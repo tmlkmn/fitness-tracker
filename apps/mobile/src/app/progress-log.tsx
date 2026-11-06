@@ -1,13 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ProgressLogDto } from "@fitmusc/shared/api/dto";
 import { decimalString, progressLogSchema } from "@fitmusc/shared/api/schemas";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useState, type ReactNode } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useTranslations } from "use-intl";
 
 import { DateField, Field, Input, NumberInput } from "@/components/form";
 import { AppText, Button, Card, ErrorView, LoadingView, useErrorMessage } from "@/components/ui";
+import { useCloseGuard } from "@/hooks/close-guard";
 import { useDeleteProgressLog, useProfile, useProgressLogs, useSaveProgressLog, type ProgressLogInput } from "@/hooks/wellness";
 import { todayStr } from "@/lib/dates";
 import {
@@ -50,7 +51,6 @@ export default function ProgressLogScreen() {
 function ProgressForm({ editing, latest }: { editing: ProgressLogDto | undefined; latest: ProgressLogDto | undefined }) {
   const t = useTranslations();
   const tm = useTranslations("progress.modal");
-  const router = useRouter();
   const errorMessage = useErrorMessage();
   const height = Number(useProfile().data?.height ?? 0);
   const save = useSaveProgressLog(editing?.id ?? null);
@@ -64,6 +64,10 @@ function ProgressForm({ editing, latest }: { editing: ProgressLogDto | undefined
     BODY_PARTS.some(([, prefix]) => bodyPartFields(prefix).some(([k]) => editing?.[k])),
   );
   const [invalid, setInvalid] = useState<Set<MeasurementKey>>(new Set());
+  const [initial] = useState(() => ({ logDate, values, notes }));
+  const dirty =
+    logDate !== initial.logDate || notes !== initial.notes || ALL_FIELDS.some((k) => values[k] !== initial.values[k]);
+  const { leave } = useCloseGuard(dirty && !save.isPending && !remove.isPending);
   const [formError, setFormError] = useState<string | null>(null);
 
   const set = (key: MeasurementKey, text: string) => {
@@ -106,7 +110,7 @@ function ProgressForm({ editing, latest }: { editing: ProgressLogDto | undefined
     const parsed = progressLogSchema.safeParse(input);
     if (!parsed.success) return setFormError(t("mobile.progress.invalidNumber"));
     save.mutate(parsed.data, {
-      onSuccess: () => router.back(),
+      onSuccess: leave,
       onError: (err) => setFormError(errorMessage(err)),
     });
   };
@@ -120,7 +124,7 @@ function ProgressForm({ editing, latest }: { editing: ProgressLogDto | undefined
         style: "destructive",
         onPress: () =>
           remove.mutate(editing.id, {
-            onSuccess: () => router.back(),
+            onSuccess: leave,
             onError: (err) => setFormError(errorMessage(err)),
           }),
       },

@@ -3,7 +3,7 @@ import type { SleepLogDto } from "@fitmusc/shared/api/dto";
 import { dateString } from "@fitmusc/shared/api/schemas";
 import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 import type { Locale } from "@fitmusc/shared/locale";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
@@ -11,6 +11,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { Field, Input, TimeField } from "@/components/form";
 import { AppText, Button, Card, ErrorView, LoadingView, useErrorMessage } from "@/components/ui";
 import { useSleepDuration } from "@/components/wellness";
+import { useCloseGuard } from "@/hooks/close-guard";
 import { useDeleteSleep, useSaveSleep, useSleep } from "@/hooks/wellness";
 import { sleepMinutes } from "@/lib/dates";
 import { colors, seriesColors, spacing } from "@/lib/theme";
@@ -37,7 +38,6 @@ function SleepForm({ date, log }: { date: string; log: SleepLogDto | null }) {
   const t = useTranslations();
   const tf = useTranslations("sleep.form");
   const locale = useLocale() as Locale;
-  const router = useRouter();
   const errorMessage = useErrorMessage();
   const duration = useSleepDuration();
   const save = useSaveSleep(date);
@@ -49,8 +49,14 @@ function SleepForm({ date, log }: { date: string; log: SleepLogDto | null }) {
   const [quality, setQuality] = useState(log?.quality ?? 3);
   const [notes, setNotes] = useState(log?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
+  const dirty =
+    bedtime !== (log?.bedtime ?? "23:00") ||
+    wakeTime !== (log?.wakeTime ?? "07:00") ||
+    quality !== (log?.quality ?? 3) ||
+    notes !== (log?.notes ?? "");
+  const { leave } = useCloseGuard(dirty && !save.isPending && !remove.isPending);
 
-  const done = { onSuccess: () => router.back(), onError: (err: unknown) => setError(errorMessage(err)) };
+  const done = { onSuccess: leave, onError: (err: unknown) => setError(errorMessage(err)) };
   const submit = () => {
     setError(null);
     save.mutate({ logDate: date, bedtime, wakeTime, quality, notes: notes.trim() || null }, done);

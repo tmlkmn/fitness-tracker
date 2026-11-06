@@ -86,7 +86,12 @@ export default function TodayScreen() {
           <SectionTitle>{t("mobile.today.meals")}</SectionTitle>
           {meals.length === 0 ? <AppText variant="muted">{t("mobile.day.noMeals")}</AppText> : null}
           {meals.map((meal) => (
-            <MealItem key={meal.id} meal={meal} onToggle={(isCompleted) => toggleMeal.mutate({ id: meal.id, isCompleted })} />
+            <MealItem
+              key={meal.id}
+              meal={meal}
+              onToggle={(isCompleted) => toggleMeal.mutate({ id: meal.id, isCompleted })}
+              onPress={() => router.push({ pathname: "/meal-form", params: { dayId: String(dayId), mealId: String(meal.id) } })}
+            />
           ))}
 
           {exercises.length > 0 ? (
@@ -95,6 +100,9 @@ export default function TodayScreen() {
               <ExerciseSections
                 exercises={exercises}
                 onToggle={(exercise, isCompleted) => toggleExercise.mutate({ id: exercise.id, isCompleted })}
+                onPress={(exercise) =>
+                  router.push({ pathname: "/exercise-form", params: { dayId: String(dayId), exerciseId: String(exercise.id) } })
+                }
               />
             </>
           ) : null}
