@@ -60,6 +60,7 @@ import { isMealLabel, getLocalizedMealLabel } from "@fitmusc/shared/meal-labels"
 import { buildAiUserNote } from "@/lib/ai-user-note";
 import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
 import { defaultUiDayModesForLevel } from "@/lib/day-modes-default";
+import { pastDowsOfWeek } from "@fitmusc/shared/week";
 import { DayModeLevelHint } from "@/components/calendar/day-mode-level-hint";
 import { DeloadRecommendationBanner } from "@/components/calendar/deload-recommendation-banner";
 
@@ -87,7 +88,7 @@ interface AiWeeklyPlanModalProps {
   serviceType?: string;
   /** User's fitness level — drives the default workout/rest split shown in the picker. */
   fitnessLevel?: string | null;
-  /** Monday of the week being generated (YYYY-MM-DD). */
+  /** Monday of the week being generated (YYYY-MM-DD) — the plan's week, not the display week. */
   weekStartStr?: string;
   /** Today's date (YYYY-MM-DD). */
   todayStr?: string;
@@ -334,17 +335,11 @@ export function AiWeeklyPlanModal({
   // Past-day detection: when generating for the CURRENT week, days before
   // today are already gone — disable them in the picker so the user can't
   // request content the AI would waste tokens on. For future weeks, no day
-  // is past.
+  // is past. Counted from the plan's Monday (dow 0), never the display week
+  // start: a Sunday-start calendar would otherwise shift every day by one.
   const pastDows = useMemo(() => {
     if (!weekStartStr || !todayStr) return new Set<number>();
-    if (todayStr < weekStartStr) return new Set<number>();  // future week
-    const start = new Date(weekStartStr + "T00:00:00");
-    const today = new Date(todayStr + "T00:00:00");
-    const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays >= 7) return new Set<number>();  // past week (button is hidden, but defensive)
-    const past = new Set<number>();
-    for (let i = 0; i < diffDays; i++) past.add(i);  // dows strictly before today
-    return past;
+    return new Set(pastDowsOfWeek(weekStartStr, todayStr));
   }, [weekStartStr, todayStr]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [location, setLocation] = useState<"gym" | "home">(() => loadWorkoutPrefs().location);

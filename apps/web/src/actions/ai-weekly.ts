@@ -18,7 +18,8 @@ import {
 import {
   type AIWeeklyPlan,
 } from "@/lib/ai-weekly-types";
-import { getMondayStr, addDaysStr } from "@/lib/utils";
+import { getMondayStr, addDaysStr, getTurkeyTodayStr } from "@/lib/utils";
+import { pastDowsOfWeek } from "@fitmusc/shared/week";
 import {
   insertMealsForDay,
   insertExercisesForDay,
@@ -386,7 +387,9 @@ export async function applyWeeklyPlan(
   // Past days (e.g. Mon–Wed when re-applying on Thu) are PRESERVED: never
   // delete, update, or overwrite. The merged plan may still contain rest
   // entries for those days; we filter them out of every apply branch.
-  const pastSet = new Set(pastDows ?? []);
+  // The server adds the days it knows are past (Europe/Istanbul), so a client
+  // that sends none — or counts from a Sunday week start — can't overwrite them.
+  const pastSet = new Set([...(pastDows ?? []), ...pastDowsOfWeek(dateStr, getTurkeyTodayStr())]);
   const isPast = (dow: number) => pastSet.has(dow);
   const futureDays = plan.days.filter((d) => !isPast(d.dayOfWeek));
 

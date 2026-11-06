@@ -20,7 +20,7 @@ import { useUserProfile } from "@/hooks/use-user";
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
-import { getWeekStartDate, type WeekStart } from "@fitmusc/shared/week";
+import { getWeekStartDate, mondayOf, pastDowsOfWeek, type WeekStart } from "@fitmusc/shared/week";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,9 +84,6 @@ export default function TakvimPage() {
   const [createdDailyPlanId, setCreatedDailyPlanId] = useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [generateMode, setGenerateMode] = useState<"both" | "nutrition" | "workout">("both");
-  // pastDows of the most recent generation — forwarded to apply so past
-  // days' real data is never overwritten on re-apply.
-  const [lastPastDows, setLastPastDows] = useState<number[] | undefined>(undefined);
 
   const { data, isLoading } = useWeekPlansByDate(selectedDate);
   const { data: planDates } = useDatesWithPlans(viewYear, viewMonth);
@@ -206,14 +203,18 @@ export default function TakvimPage() {
   ) => {
     const m = mode ?? generateMode;
     setGenerateMode(m);
-    setLastPastDows(pastDows);
     generateWeekly.mutate({ dateStr: selectedDate, userNote, generateMode: m, dayModes, pastDows, deloadWeek });
   };
+
+  // Past days are recomputed at apply time (the server checks again): a saved
+  // suggestion applied without generating first, or a plan generated
+  // yesterday, must never overwrite a day that is already behind us.
+  const applyPastDows = () => pastDowsOfWeek(selectedDate, formatDateStr(new Date()));
 
   const handleApplyWeekly = () => {
     if (!generateWeekly.data) return;
     applyWeekly.mutate(
-      { dateStr: selectedDate, plan: generateWeekly.data, applyMode: generateMode, pastDows: lastPastDows },
+      { dateStr: selectedDate, plan: generateWeekly.data, applyMode: generateMode, pastDows: applyPastDows() },
       {
         onSuccess: () => {
           setWeeklyModalOpen(false);
@@ -226,7 +227,7 @@ export default function TakvimPage() {
   const handleApplySaved = (plan: import("@/actions/ai-weekly").AIWeeklyPlan) => {
     if (isMonthBlocked) return;
     applyWeekly.mutate(
-      { dateStr: selectedDate, plan, applyMode: generateMode, pastDows: lastPastDows },
+      { dateStr: selectedDate, plan, applyMode: generateMode, pastDows: applyPastDows() },
       {
         onSuccess: () => {
           setWeeklyModalOpen(false);
@@ -596,7 +597,7 @@ export default function TakvimPage() {
           hasExistingPlan={!!data?.weeklyPlan}
           serviceType={userProfile?.serviceType ?? undefined}
           fitnessLevel={userProfile?.fitnessLevel ?? null}
-          weekStartStr={weekStartStr}
+          weekStartStr={mondayOf(selectedDate)}
           todayStr={todayStr}
         />
       )}
