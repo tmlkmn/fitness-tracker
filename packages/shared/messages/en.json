@@ -3689,7 +3689,13 @@
       "labelRequired": "Choose a meal name.",
       "contentRequired": "Describe what you eat.",
       "invalidMacros": "Calories must be a whole number, macros like 12.5.",
-      "noCandidates": "No results."
+      "noCandidates": "No results.",
+      "addFromFoods": "Add from the food list",
+      "portionLess": "Smaller portion",
+      "portionMore": "Larger portion",
+      "foodInvalid": "Name, portion and calories (whole number) are required; macros like 12.5.",
+      "emojiDefault": "Default",
+      "dailyHint": "Tapping a plan replaces all of this day's meals with it."
     },
     "exerciseForm": {
       "nameRequired": "Enter the exercise name.",

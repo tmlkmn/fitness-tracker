@@ -1,5 +1,5 @@
-import type { ExerciseLibraryEntryDto, IdDto, MealPickerDto, PreviousExerciseDto } from "@fitmusc/shared/api/dto";
-import type { ExerciseInputBody, MealInputBody } from "@fitmusc/shared/api/schemas";
+import type { ExerciseLibraryEntryDto, IdDto, MealPickerDto, PreviousExerciseDto, UserFoodDto } from "@fitmusc/shared/api/dto";
+import type { ExerciseInputBody, MealInputBody, UserFoodBody } from "@fitmusc/shared/api/schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
@@ -63,6 +63,27 @@ export function useMealPicker(query: string, excludeDayId: number, enabled: bool
       api<MealPickerDto>(`/meals/picker?excludeDayId=${excludeDayId}${q ? `&q=${encodeURIComponent(q)}` : ""}`),
     enabled,
     placeholderData: (previous) => previous,
+  });
+}
+
+/** The user's own foods for the food reference (the web's "Mine" tab). */
+export function useUserFoods(enabled: boolean) {
+  return useQuery({ queryKey: ["userFoods.list"], queryFn: () => api<UserFoodDto[]>("/user-foods"), enabled });
+}
+
+export function useCreateUserFood() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UserFoodBody) => api<IdDto>("/user-foods", { method: "POST", body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["userFoods.list"] }),
+  });
+}
+
+export function useDeleteUserFood() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api(`/user-foods/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["userFoods.list"] }),
   });
 }
 

@@ -6,15 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Smile, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
-
-const PRESET_ICONS = [
-  "🍳", "🥐", "🥞", "🥓", "🍞", "🥖",
-  "🍗", "🥩", "🍖", "🐟", "🦐", "🥚",
-  "🥗", "🥙", "🌯", "🍲", "🍛", "🍝",
-  "🍚", "🍜", "🌮", "🌭", "🍔", "🍕",
-  "🥛", "☕", "🧋", "🍵", "🥤", "🍶",
-  "🍎", "🍌", "🥑", "🥜", "🧀", "🍫",
-];
+import { MEAL_ICON_PRESETS as PRESET_ICONS } from "@fitmusc/shared/meal-icons";
 
 interface IconPickerProps {
   value?: string | null;

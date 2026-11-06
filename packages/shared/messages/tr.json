@@ -3689,7 +3689,13 @@
       "labelRequired": "Öğün adını seç.",
       "contentRequired": "Ne yediğini yaz.",
       "invalidMacros": "Kalori tam sayı, makrolar 12.5 gibi olmalı.",
-      "noCandidates": "Sonuç yok."
+      "noCandidates": "Sonuç yok.",
+      "addFromFoods": "Besin listesinden ekle",
+      "portionLess": "Porsiyonu azalt",
+      "portionMore": "Porsiyonu artır",
+      "foodInvalid": "Ad, porsiyon ve kalori (tam sayı) gerekli; makrolar 12.5 gibi olmalı.",
+      "emojiDefault": "Varsayılan",
+      "dailyHint": "Bir plana dokunursan bu günün tüm öğünleri o planla değiştirilir."
     },
     "exerciseForm": {
       "nameRequired": "Egzersiz adını yaz.",

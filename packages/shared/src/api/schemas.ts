@@ -143,6 +143,7 @@ export const userFoodSchema = z.object({
   fatG: nullableDecimal,
   category: z.enum(FOOD_CATEGORIES).nullable().optional(),
 });
+export type UserFoodBody = z.infer<typeof userFoodSchema>;
 
 export const purchasedSchema = z.object({ isPurchased: z.boolean() });
 

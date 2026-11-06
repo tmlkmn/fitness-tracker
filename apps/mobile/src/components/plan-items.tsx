@@ -11,7 +11,8 @@ import { colors, radius, spacing } from "@/lib/theme";
 import { AiIconButton } from "./ai";
 import { AppText, Card, ProgressBar } from "./ui";
 
-const MEAL_EMOJI: Record<string, string> = {
+/** A meal's emoji when it has no icon override (`meals.icon`). */
+export const MEAL_EMOJI: Record<string, string> = {
   Kahvaltı: "🍳",
   "Öğle Yemeği": "🥗",
   "Akşam Yemeği": "🍽️",
