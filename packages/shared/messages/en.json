@@ -3664,7 +3664,8 @@
       "aiUnavailable": "AI is unavailable right now. Try again shortly.",
       "quotaReached": "You've used today's AI quota. It resets at midnight.",
       "jobTimeout": "The generation took too long and was cut off. Try again.",
-      "notEnoughData": "Add a measurement first."
+      "notEnoughData": "Add a measurement first.",
+      "aiConsentRequired": "AI features need your permission to send your data (Settings → AI data sharing)."
     },
     "calendar": {
       "noPlanHint": "Create the day manually, then add meals and exercises.",
@@ -3750,7 +3751,7 @@
     },
     "aiConsent": {
       "title": "AI and your data",
-      "body": "For suggestions, plans, analyses and the coach chat, your first name, age, height, weight and measurements, goals, health notes, allergies, plans and what you write are sent to Anthropic (Claude). Anthropic does not use this data to train models. If you don't allow it, everything except the AI features keeps working; you can withdraw your permission any time in Settings.",
+      "body": "For suggestions, plans, analyses and the coach chat, your age, height, weight and measurements, goals, health notes, allergies, health conditions, medications, plans and what you write are sent to Anthropic (Claude, USA); the greeting only gets your first name. Anthropic doesn't use this data to train its models. Without it everything except AI keeps working, and you can revoke it in Settings any time.",
       "allow": "Allow",
       "decline": "Not now",
       "privacy": "Privacy policy",
@@ -3769,6 +3770,43 @@
       "sent": "Thanks — your report was received.",
       "noNote": "No description",
       "longPressHint": "Long-press to report"
+    }
+  },
+  "consent": {
+    "title": "Explicit consent",
+    "intro": "FitMusc processes health data to build your plans and stores data on servers outside Türkiye. Under KVKK (Turkish data protection law) we need your explicit consent for both.",
+    "readFirst": "Read before you agree:",
+    "kvkkLink": "KVKK Disclosure",
+    "privacyLink": "Privacy Policy",
+    "healthLabel": "I explicitly consent to the processing of my health data — height, weight, body measurements, health notes, allergies, health conditions and medications — to provide me with training and nutrition plans.",
+    "abroadLabel": "I explicitly consent to my account and this data being stored with the infrastructure providers the service runs on outside Türkiye (Vercel and Neon, USA; Mailjet for email, EU) and transferred abroad for that purpose.",
+    "aiLabel": "Optional: I explicitly consent to my profile, health and plan data being sent to Anthropic (USA) for the AI features (suggestions, plan generation, progress analysis, coach chat).",
+    "aiHint": "Without it everything except AI works. You can change this any time in Settings → My Data.",
+    "required": "The first two are required for the app to work.",
+    "submit": "Agree and continue",
+    "error": "Couldn't save. Try again.",
+    "declineTitle": "I don't want to consent",
+    "declineBody": "We can't build plans without processing your health data. If you don't consent, you can download your data or permanently delete your account.",
+    "settings": {
+      "title": "Explicit consents",
+      "dataTitle": "Health data and storage abroad",
+      "dataGiven": "Given on {date}.",
+      "dataWithdraw": "Withdraw consent",
+      "dataWithdrawTitle": "Withdraw your consent?",
+      "dataWithdrawBody": "Without it you can't use the app; the consent screen opens until you consent again. Your data isn't deleted — delete your account for that.",
+      "aiTitle": "AI data sharing",
+      "aiGiven": "Allowed on {date}. AI features send your profile, health and plan data to Anthropic (USA).",
+      "aiNotGiven": "Not allowed; AI features are off.",
+      "aiAllow": "Allow",
+      "aiRevoke": "Revoke",
+      "cancel": "Cancel",
+      "error": "Couldn't save. Try again."
+    },
+    "aiGate": {
+      "title": "AI needs your permission",
+      "body": "This feature sends your age, height, weight and measurements, goals, health notes, allergies, health conditions, medications, plans and what you write to Anthropic (USA). Anthropic doesn't use this data to train its models.",
+      "allow": "Allow",
+      "details": "Details"
     }
   }
 }

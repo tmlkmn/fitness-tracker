@@ -12,6 +12,12 @@ import {
 
 const intlMiddleware = createIntlMiddleware(routing);
 
+// better-auth names its cookies `__Secure-…` when its base URL is https —
+// the same rule decides which session-cache cookie to read here. Left to
+// getCookieCache, it would follow NODE_ENV and miss the cookie of a local
+// `next start` over http, silently skipping every status redirect.
+const AUTH_COOKIES_SECURE = (process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "").startsWith("https://");
+
 // Public route names — locale-agnostic (TR canonical, e.g. "/giris" matches both "/tr/giris" and "/en/login").
 // These are the localized PathNames keys without locale prefix.
 const PUBLIC_PATTERNS: RegExp[] = [
@@ -93,6 +99,7 @@ async function statusRedirect(
   try {
     const cached = await getCookieCache(request, {
       secret: process.env.BETTER_AUTH_SECRET,
+      isSecure: AUTH_COOKIES_SECURE,
     });
     const user = cached?.user as StatusRouteFields | undefined;
     if (!user) return null;

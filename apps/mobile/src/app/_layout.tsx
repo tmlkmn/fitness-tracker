@@ -58,7 +58,6 @@ function AppStack() {
             <Stack.Screen name="ai/weekly" options={{ title: "", presentation: "modal" }} />
             <Stack.Screen name="ai/job/[jobId]" options={{ title: "", presentation: "modal" }} />
             <Stack.Screen name="ai/report" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="delete-account" options={{ title: "" }} />
             <Stack.Screen name="weight-targets" options={{ title: "", presentation: "modal" }} />
             <Stack.Screen name="macro-targets" options={{ title: "" }} />
             <Stack.Screen name="notifications" options={{ title: "" }} />
@@ -72,6 +71,10 @@ function AppStack() {
           </Stack.Protected>
           <Stack.Protected guard={!!user && !!blocked}>
             <Stack.Screen name="blocked" options={{ headerShown: false }} />
+          </Stack.Protected>
+          {/* Account deletion must always work — also from the blocked and consent screens. */}
+          <Stack.Protected guard={!!user}>
+            <Stack.Screen name="delete-account" options={{ title: "" }} />
           </Stack.Protected>
           <Stack.Protected guard={!user}>
             <Stack.Screen name="sign-in" options={{ headerShown: false }} />

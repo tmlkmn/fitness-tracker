@@ -328,6 +328,12 @@ export const notificationPreferencesSchema = z.object({
 
 export const deleteAccountSchema = z.object({ confirmEmail: z.string().trim().min(3).max(254) });
 
+/** PUT /me/consents — true records the consent now, false withdraws it. */
+export const consentsSchema = z.object({
+  data: z.boolean().optional(),
+  ai: z.boolean().optional(),
+}).refine(atLeastOneField, "Send at least one field");
+
 // ── Reminders ───────────────────────────────────────────────────────────────
 
 const reminderFields = {

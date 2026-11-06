@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
 import { DataPrivacyCard } from "@/components/settings/data-privacy-card";
+import { ConsentsCard } from "@/components/settings/consents-card";
 import { Database } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -24,7 +25,8 @@ export default function VerilerimPage() {
           </div>
         }
       />
-      <div className="p-4">
+      <div className="p-4 space-y-4">
+        <ConsentsCard />
         <DataPrivacyCard />
       </div>
     </div>

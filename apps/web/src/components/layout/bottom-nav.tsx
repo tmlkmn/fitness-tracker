@@ -43,6 +43,7 @@ const HIDDEN_PATHS = [
   "/giris",
   "/bekliyor",
   "/sifre-degistir",
+  "/acik-riza",
   "/sifremi-unuttum",
   "/sifre-sifirla",
   "/admin",

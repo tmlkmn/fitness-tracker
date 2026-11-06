@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getEntitlement, type BillingUserFields } from "@/lib/billing/entitlement";
 import { getAccessDenial, type AccountAccessFields } from "@/lib/account-access";
+import { userHasDataConsent } from "@/lib/consent";
 
 export async function getAuthSession() {
   const session = await auth.api.getSession({
@@ -15,7 +16,7 @@ export async function getAuthSession() {
   return session.user;
 }
 
-export async function getAuthUser() {
+async function getActiveUser() {
   const user = await getAuthSession();
   // Approval, freeze, legacy membership and billing gates all live in
   // getAccessDenial() so server actions and API routes can never drift apart.
@@ -24,6 +25,20 @@ export async function getAuthUser() {
     throw new Error(denial);
   }
   return user;
+}
+
+export async function getAuthUser() {
+  const user = await getActiveUser();
+  // KVKK: no health data is processed before the user's explicit consent.
+  if (!(await userHasDataConsent(user))) {
+    throw new Error("ConsentRequired");
+  }
+  return user;
+}
+
+/** getAuthUser() without the KVKK data-consent gate — only for giving that consent. */
+export async function getAuthUserWithoutConsent() {
+  return getActiveUser();
 }
 
 export async function getAuthUserWithEntitlement() {

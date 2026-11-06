@@ -35,6 +35,7 @@ import { formatAiError } from "@/lib/ai-errors";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@fitmusc/shared/locale";
 import { isMealLabel, getLocalizedMealLabel } from "@fitmusc/shared/meal-labels";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 interface AiSuggestionModalProps {
   open: boolean;
@@ -205,6 +206,7 @@ export function AiSuggestionModal({
             {view === "saved" ? t("savedTitle") : t("modalTitle")}
           </SheetTitle>
         </SheetHeader>
+        <AiConsentGate>
         <div className="space-y-4">
           {/* Current meal info — always visible */}
           <div className="p-3 bg-muted rounded-lg">
@@ -513,7 +515,8 @@ export function AiSuggestionModal({
             </div>
           )}
         </div>
-      </SheetContent>
+      </AiConsentGate>
+        </SheetContent>
     </Sheet>
   );
 }

@@ -26,6 +26,8 @@ interface SessionValue {
   signOut: () => Promise<void>;
   /** After the user fixed it elsewhere (e.g. on the web) — the next request re-checks. */
   retryAccess: () => void;
+  /** Shows the blocked screen right away, e.g. after withdrawing the KVKK data consent. */
+  reportDenial: (code: AccessDenial) => void;
 }
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -78,6 +80,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // The session expired or was revoked (e.g. signed out on another device).
       if (error.status === 401) void endSession({ unregister: false });
       else if (error.status === 403 && isAccessDenial(error.code)) setDenial(error.code);
+      // The AI consent was withdrawn elsewhere (e.g. on the web): re-read it so
+      // the next AI action asks again instead of failing.
+      else if (error.code === "AI_CONSENT_REQUIRED") void queryClient.invalidateQueries({ queryKey: ["me.consents"] });
     });
     return () => setApiErrorListener(null);
   }, [endSession]);
@@ -114,6 +119,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         void refetch(); // mustChangePassword lives on the session user
         void queryClient.invalidateQueries();
       },
+      reportDenial: setDenial,
     };
   }, [user, isPending, denial, localeOverride, setLocale, signIn, endSession, refetch]);
 

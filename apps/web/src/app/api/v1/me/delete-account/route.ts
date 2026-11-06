@@ -10,7 +10,7 @@ import { deleteMyAccount } from "@/actions/account";
 export const POST = apiRoute(
   {
     input: deleteAccountSchema,
-    auth: { requireApproved: false, requireActiveBilling: false, allowFrozen: true },
+    auth: { requireApproved: false, requireActiveBilling: false, allowFrozen: true, requireDataConsent: false },
     errors: { EmailMismatch: [400, "EMAIL_MISMATCH"] },
   },
   async ({ input }) => {

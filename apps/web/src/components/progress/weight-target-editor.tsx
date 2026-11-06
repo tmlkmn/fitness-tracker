@@ -16,6 +16,7 @@ import { useUpdateUserWeightTargets } from "@/hooks/use-user";
 import { useLatestProgress } from "@/hooks/use-progress";
 import { Pencil, Sparkles, Loader2, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 interface WeightTargetEditorProps {
   currentWeight?: string | null;
@@ -125,6 +126,7 @@ export function WeightTargetEditor({
           </div>
 
           {hasProgress && !aiSuggestion && (
+            <AiConsentGate>
             <Button
               variant="outline"
               size="sm"
@@ -139,6 +141,7 @@ export function WeightTargetEditor({
               )}
               {aiLoading ? t("calculating") : t("aiSuggest")}
             </Button>
+            </AiConsentGate>
           )}
 
           {aiSuggestion && (

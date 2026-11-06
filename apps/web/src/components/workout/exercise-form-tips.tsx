@@ -10,11 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Loader2, AlertCircle } from "lucide-react";
 import { useExerciseFormTips } from "@/hooks/use-exercise-form-tips";
+import { useAiConsentGranted } from "@/hooks/use-consents";
 import { formatAiError } from "@/lib/ai-errors";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 interface ExerciseFormTipsProps {
   name: string;
@@ -27,12 +29,14 @@ interface ExerciseFormTipsProps {
 export function ExerciseFormTips({ name, notes, englishName, triggerClassName, triggerLabel }: ExerciseFormTipsProps) {
   const [open, setOpen] = useState(false);
   const t = useTranslations("workout.formTips");
+  // The tips load on open, so they wait for the AI consent (AiConsentGate asks).
+  const aiAllowed = useAiConsentGranted();
 
   const {
     data,
     isLoading,
     error: queryError,
-  } = useExerciseFormTips(name, notes ?? null, open, englishName ?? null);
+  } = useExerciseFormTips(name, notes ?? null, open && aiAllowed, englishName ?? null);
 
   const errorMessage = queryError ? formatAiError(queryError) : null;
 
@@ -66,6 +70,7 @@ export function ExerciseFormTips({ name, notes, englishName, triggerClassName, t
                 {t("title", { name })}
               </SheetTitle>
             </SheetHeader>
+        <AiConsentGate>
             <div className="space-y-3">
               {isLoading && (
                 <div className="flex items-center justify-center py-6">
@@ -126,7 +131,8 @@ export function ExerciseFormTips({ name, notes, englishName, triggerClassName, t
               )}
               {tips && !isLoading && <AiDisclaimer />}
             </div>
-          </SheetContent>
+          </AiConsentGate>
+        </SheetContent>
         </Sheet>
       )}
     </>

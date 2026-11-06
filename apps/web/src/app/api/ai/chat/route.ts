@@ -1,5 +1,6 @@
 import { requireApiUser } from "@/lib/api-auth";
 import { checkRateLimit } from "@/lib/ai";
+import { aiConsentDenied } from "@/lib/ai-consent-response";
 import { getUserLocale } from "@fitmusc/shared/locale";
 import { streamCoachReply } from "@/lib/ai-coach-chat";
 
@@ -15,6 +16,8 @@ export async function POST(request: Request) {
   try {
     await checkRateLimit(userId, "chat");
   } catch (err) {
+    const consentDenied = aiConsentDenied(err, locale, "text");
+    if (consentDenied) return consentDenied;
     const msg = err instanceof Error && err.message.startsWith("COOLDOWN:")
       ? (locale === "en"
           ? `Please wait ${err.message.split(":")[1]} seconds before sending again.`

@@ -13,6 +13,7 @@ const PATHS = {
   disclaimer: { tr: "/feragatname", en: "/disclaimer" },
   privacy: { tr: "/gizlilik", en: "/privacy" },
   terms: { tr: "/kullanim-sartlari", en: "/terms" },
+  kvkk: { tr: "/kvkk", en: "/kvkk" },
 } as const satisfies Record<string, Record<Locale, string>>;
 
 export function openWebPage(page: keyof typeof PATHS, locale: Locale) {

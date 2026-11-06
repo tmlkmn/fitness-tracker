@@ -25,6 +25,7 @@ export async function GET(
     requireApproved: false,
     requireActiveBilling: false,
     allowFrozen: true,
+    requireDataConsent: false,
   });
   if (response) return response;
 

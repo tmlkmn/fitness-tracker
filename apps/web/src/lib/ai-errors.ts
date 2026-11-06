@@ -30,6 +30,10 @@ export function formatAiError(err: unknown): string {
     return "Lütfen biraz bekle, ardından tekrar dene.";
   }
 
+  if (msg === "AI_CONSENT_REQUIRED") {
+    return "Yapay zeka özellikleri için verilerinin Anthropic'e gönderilmesine izin vermen gerekiyor (Ayarlar → Verilerim).";
+  }
+
   if (msg === "AI_UNAVAILABLE") {
     return "AI şu an kullanılamıyor. Lütfen tekrar dene.";
   }

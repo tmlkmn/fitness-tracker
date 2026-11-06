@@ -9,9 +9,10 @@ Sentry.init({
   // Enable logs to be sent to Sentry
   enableLogs: true,
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // No IP addresses, cookies (session tokens) or request headers in error
+  // reports: they would carry personal data and live session credentials to
+  // Sentry. Errors still arrive with their stack and route.
+  sendDefaultPii: false,
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

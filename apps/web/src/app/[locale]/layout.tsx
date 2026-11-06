@@ -27,8 +27,8 @@ import { SwRegister } from "./sw-register";
 import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 import { NetworkStatus } from "@/components/layout/network-status";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ConsentedAnalytics } from "@/components/consented-analytics";
+import { ConsentGuard } from "@/components/consent/consent-guard";
 import { CookieConsent } from "@/components/cookie-consent";
 import { HealthDisclaimerConsent } from "@/components/health-disclaimer-consent";
 import { GlobalSearchProvider } from "@/components/layout/global-search-provider";
@@ -158,13 +158,13 @@ export default async function LocaleLayout({
                 <Toaster />
                 <CookieConsent />
                 <HealthDisclaimerConsent />
+                <ConsentGuard />
                 <SwRegister />
               </GlobalSearchProvider>
             </ThemeProvider>
           </QueryProvider>
         </NextIntlClientProvider>
-        <Analytics />
-        <SpeedInsights />
+        <ConsentedAnalytics />
       </body>
     </html>
   );

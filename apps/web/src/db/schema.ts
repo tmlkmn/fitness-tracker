@@ -61,6 +61,11 @@ export const users = pgTable(
     banReason: text("ban_reason"),
     banExpires: timestamp("ban_expires"),
     frozenAt: timestamp("frozen_at"),
+    // KVKK explicit consents (@fitmusc/shared/consent): when given, null when
+    // never given or withdrawn. data = health data + hosting abroad (required
+    // to use the app), ai = sending data to Anthropic for the AI features.
+    dataConsentAt: timestamp("data_consent_at"),
+    aiConsentAt: timestamp("ai_consent_at"),
     mustChangePassword: boolean("must_change_password").default(false),
     inviteExpiresAt: timestamp("invite_expires_at"),
     membershipType: text("membership_type"),

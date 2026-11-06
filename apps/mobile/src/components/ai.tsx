@@ -241,12 +241,12 @@ export function AiDisclaimer({ reportContext }: { reportContext?: string }) {
 export function AiConsentCard() {
   const t = useTranslations("mobile.aiConsent");
   const locale = useLocale() as Locale;
-  const { set } = useAiConsent();
+  const { set, saving } = useAiConsent();
   return (
     <Card>
       <AppText variant="heading">{t("title")}</AppText>
       <AppText variant="muted">{t("body")}</AppText>
-      <Button label={t("allow")} onPress={() => void set(true)} />
+      <Button label={t("allow")} loading={saving} onPress={() => void set(true).catch(() => {})} />
       <Button label={t("privacy")} variant="ghost" onPress={() => void openWebPage("privacy", locale)} />
     </Card>
   );

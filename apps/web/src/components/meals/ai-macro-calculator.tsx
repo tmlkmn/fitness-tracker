@@ -15,6 +15,7 @@ import { generateAIMacroTargets, type AIMacroResult } from "@/actions/ai-macro";
 import { updateMacroStrategy } from "@/actions/user";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { useTranslations } from "next-intl";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 export function AIMacroCalculator() {
   const t = useTranslations("meals.aiMacro");
@@ -80,6 +81,7 @@ export function AIMacroCalculator() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-3">
+        <AiConsentGate>
         <p className="text-xs text-muted-foreground">{t("subtitle")}</p>
 
         <textarea
@@ -171,6 +173,7 @@ export function AIMacroCalculator() {
             </div>
           </div>
         )}
+      </AiConsentGate>
       </CardContent>
     </Card>
   );

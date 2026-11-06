@@ -63,6 +63,7 @@ import { defaultUiDayModesForLevel } from "@fitmusc/shared/day-modes-default";
 import { pastDowsOfWeek } from "@fitmusc/shared/week";
 import { DayModeLevelHint } from "@/components/calendar/day-mode-level-hint";
 import { DeloadRecommendationBanner } from "@/components/calendar/deload-recommendation-banner";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -590,6 +591,7 @@ export function AiWeeklyPlanModal({
             {t("title")}
           </SheetTitle>
         </SheetHeader>
+        <AiConsentGate>
 
         <div className="space-y-4">
           {hasExistingPlan && (
@@ -1105,7 +1107,8 @@ export function AiWeeklyPlanModal({
             </div>
           )}
         </div>
-      </SheetContent>
+      </AiConsentGate>
+        </SheetContent>
 
       {/* Delete saved suggestion confirmation */}
       <Dialog open={deleteConfirmId !== null} onOpenChange={(o) => { if (!o) setDeleteConfirmId(null); }}>

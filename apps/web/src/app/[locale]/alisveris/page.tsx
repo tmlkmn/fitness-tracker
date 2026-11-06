@@ -6,6 +6,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderMenu } from "@/components/layout/header-menu";
 import { useAllWeeks } from "@/hooks/use-plans";
 import { useShoppingList, useToggleShopping, useGenerateShoppingList } from "@/hooks/use-shopping";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 import { ShoppingCategory } from "@/components/shopping/shopping-category";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -250,6 +251,7 @@ function AlisverisContent() {
             <p className="text-sm text-muted-foreground">
               {t("emptyDescription")}
             </p>
+            <AiConsentGate className="text-left">
             <Button
               onClick={handleGenerate}
               disabled={generateShopping.isPending || !activeWeekId}
@@ -258,6 +260,7 @@ function AlisverisContent() {
               <Sparkles className="h-4 w-4" />
               {t("generateButton")}
             </Button>
+            </AiConsentGate>
           </div>
         )}
       </div>

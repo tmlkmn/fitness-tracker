@@ -16,7 +16,7 @@ export const POST = apiRoute(
 export const DELETE = apiRoute(
   {
     input: expoTokenDeleteSchema,
-    auth: { requireApproved: false, requireActiveBilling: false, allowFrozen: true },
+    auth: { requireApproved: false, requireActiveBilling: false, allowFrozen: true, requireDataConsent: false },
   },
   ({ input, user }) => unregisterExpoPushToken(user.id, input.token),
 );

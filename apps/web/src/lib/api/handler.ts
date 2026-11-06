@@ -195,6 +195,8 @@ export function classifyError(err: unknown, routeErrors?: RouteErrors): Classifi
     return { status: 429, code: rate[1] as "RATE_LIMITED" | "COOLDOWN", retryAfter: rate[2] };
   }
   if (message === "AI_UNAVAILABLE") return { status: 503, code: "AI_UNAVAILABLE" };
+  // checkRateLimit → assertAiConsent (src/lib/consent.ts)
+  if (message === "AI_CONSENT_REQUIRED") return { status: 403, code: "AI_CONSENT_REQUIRED" };
 
   console.error("[api/v1] unhandled error:", err);
   Sentry.captureException(err, { tags: { area: "api-v1" } });

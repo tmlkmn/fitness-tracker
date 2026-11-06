@@ -2,13 +2,14 @@ import type { Locale } from "@fitmusc/shared/locale";
 import { StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
+import { ConsentScreen } from "@/components/consent-screen";
 import { AppText, Button } from "@/components/ui";
 import { useSession, type Blocked } from "@/lib/session";
 import { colors, spacing } from "@/lib/theme";
 import { openWebPage } from "@/lib/web-links";
 
 // Access denial → its texts in the web's `auth` namespace.
-const AUTH_KEY: Record<Exclude<Blocked, "MustChangePassword">, string> = {
+const AUTH_KEY: Record<Exclude<Blocked, "MustChangePassword" | "ConsentRequired">, string> = {
   AccountFrozen: "accountFrozen",
   NotApproved: "pending",
   MembershipExpired: "membershipExpired",
@@ -21,6 +22,7 @@ export default function BlockedScreen() {
   const locale = useLocale() as Locale;
   const { blocked, retryAccess, signOut } = useSession();
   if (!blocked) return null;
+  if (blocked === "ConsentRequired") return <ConsentScreen />;
 
   const mustChange = blocked === "MustChangePassword";
   // An expired trial or membership is renewed outside the app; the store rules

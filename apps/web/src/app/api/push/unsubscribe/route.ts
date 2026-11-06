@@ -11,6 +11,7 @@ export async function POST(request: Request) {
     requireApproved: false,
     requireActiveBilling: false,
     allowFrozen: true,
+    requireDataConsent: false,
   });
   if (response) return response;
 

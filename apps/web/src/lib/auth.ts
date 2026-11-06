@@ -43,27 +43,37 @@ export const auth = betterAuth({
       await sendResetEmail(user.email, url, locale);
     },
   },
+  // The app writes the user row only through its own server actions. Left
+  // open, this endpoint let any signed-in user set the fields below on
+  // themselves (approval, billing, freeze) and walk past every access gate.
+  disabledPaths: ["/update-user"],
   user: {
+    // `input: false` — the access gate, billing and consent fields can never
+    // come from a client body (sign-up included); only server code and the
+    // admin plugin's createUser (which skips input parsing) write them.
     additionalFields: {
       height: { type: "number", required: false },
       weight: { type: "string", required: false },
       targetWeight: { type: "string", required: false },
       healthNotes: { type: "string", required: false },
-      isApproved: { type: "boolean", required: false, defaultValue: false },
-      mustChangePassword: { type: "boolean", required: false, defaultValue: false },
-      inviteExpiresAt: { type: "date", required: false },
-      membershipType: { type: "string", required: false },
-      membershipStartDate: { type: "date", required: false },
-      membershipEndDate: { type: "date", required: false },
-      membershipNotifiedAt: { type: "date", required: false },
+      isApproved: { type: "boolean", required: false, defaultValue: false, input: false },
+      mustChangePassword: { type: "boolean", required: false, defaultValue: false, input: false },
+      inviteExpiresAt: { type: "date", required: false, input: false },
+      membershipType: { type: "string", required: false, input: false },
+      membershipStartDate: { type: "date", required: false, input: false },
+      membershipEndDate: { type: "date", required: false, input: false },
+      membershipNotifiedAt: { type: "date", required: false, input: false },
       hasSeenOnboarding: { type: "boolean", required: false, defaultValue: false },
       locale: { type: "string", required: false, defaultValue: "tr" },
-      frozenAt: { type: "date", required: false },
-      subscriptionStatus: { type: "string", required: false },
-      billingTier: { type: "string", required: false },
-      billingInterval: { type: "string", required: false },
-      trialEndsAt: { type: "date", required: false },
-      nextBillingDate: { type: "date", required: false },
+      frozenAt: { type: "date", required: false, input: false },
+      subscriptionStatus: { type: "string", required: false, input: false },
+      billingTier: { type: "string", required: false, input: false },
+      billingInterval: { type: "string", required: false, input: false },
+      trialEndsAt: { type: "date", required: false, input: false },
+      nextBillingDate: { type: "date", required: false, input: false },
+      // KVKK data consent — read by the proxy and the mobile app from the
+      // session; the AI consent is read from the DB where it's enforced.
+      dataConsentAt: { type: "date", required: false, input: false },
     },
   },
   session: {

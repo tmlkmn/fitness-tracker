@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useAiQuota, useInvalidateAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 function useTimeAgo() {
   const t = useTranslations("progress.aiAnalysis");
@@ -87,6 +88,7 @@ export function ProgressAiAnalysis() {
   return (
     <Card>
       <CardContent className="p-4 space-y-3">
+        <AiConsentGate>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -144,6 +146,7 @@ export function ProgressAiAnalysis() {
         )}
 
         {analysis && !loading && <AiDisclaimer />}
+      </AiConsentGate>
       </CardContent>
     </Card>
   );

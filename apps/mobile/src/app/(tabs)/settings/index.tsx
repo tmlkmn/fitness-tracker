@@ -2,11 +2,11 @@ import type { Locale } from "@fitmusc/shared/locale";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
 import { AppText, Button, Card, Screen, useErrorMessage } from "@/components/ui";
-import { useAiConsent } from "@/hooks/ai-consent";
+import { useAiConsent, useSetConsents } from "@/hooks/ai-consent";
 import { usePushRegistration } from "@/hooks/push";
 import type { PushRegistration } from "@/lib/push";
 import { useSession } from "@/lib/session";
@@ -30,9 +30,10 @@ export default function SettingsScreen() {
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const errorMessage = useErrorMessage();
-  const { user, setLocale, signOut } = useSession();
+  const { user, setLocale, signOut, reportDenial } = useSession();
   const push = usePushRegistration();
   const aiConsent = useAiConsent();
+  const consents = useSetConsents();
   const [localeError, setLocaleError] = useState<string | null>(null);
   const [changing, setChanging] = useState<Locale | null>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -49,6 +50,28 @@ export default function SettingsScreen() {
       setChanging(null);
     }
   };
+
+  const setAi = (value: boolean) => {
+    aiConsent.set(value).catch(() => Alert.alert(t("consent.settings.error")));
+  };
+
+  // Without the data consent the app can't run: the consent screen takes over.
+  const withdrawDataConsent = () =>
+    Alert.alert(t("consent.settings.dataWithdrawTitle"), t("consent.settings.dataWithdrawBody"), [
+      { text: t("consent.settings.cancel"), style: "cancel" },
+      {
+        text: t("consent.settings.dataWithdraw"),
+        style: "destructive",
+        onPress: () =>
+          consents.mutate(
+            { data: false },
+            {
+              onSuccess: () => reportDenial("ConsentRequired"),
+              onError: () => Alert.alert(t("consent.settings.error")),
+            },
+          ),
+      },
+    ]);
 
   const pushResult = push.data;
   const pushKey = pushResult
@@ -114,9 +137,9 @@ export default function SettingsScreen() {
         <AppText variant="small">{t("mobile.aiConsent.settingsTitle")}</AppText>
         <AppText variant="muted">{t(aiConsent.granted ? "mobile.aiConsent.granted" : "mobile.aiConsent.notGranted")}</AppText>
         {aiConsent.granted ? (
-          <Button label={t("mobile.aiConsent.revoke")} variant="secondary" onPress={() => void aiConsent.set(false)} />
+          <Button label={t("mobile.aiConsent.revoke")} variant="secondary" loading={aiConsent.saving} onPress={() => setAi(false)} />
         ) : (
-          <Button label={t("mobile.aiConsent.allow")} variant="secondary" onPress={() => void aiConsent.set(true)} />
+          <Button label={t("mobile.aiConsent.allow")} variant="secondary" loading={aiConsent.saving} onPress={() => setAi(true)} />
         )}
       </Card>
 
@@ -124,6 +147,15 @@ export default function SettingsScreen() {
         <AppText variant="small">{t("mobile.settings.privacyAccount")}</AppText>
         <Button label={t("cookieConsent.privacyLink")} variant="secondary" onPress={() => openWebPage("privacy", locale)} />
         <Button label={t("footer.links.terms")} variant="secondary" onPress={() => openWebPage("terms", locale)} />
+        <Button label={t("consent.kvkkLink")} variant="secondary" onPress={() => openWebPage("kvkk", locale)} />
+        {user?.role === "admin" ? null : (
+          <Button
+            label={t("consent.settings.dataWithdraw")}
+            variant="secondary"
+            loading={consents.isPending}
+            onPress={withdrawDataConsent}
+          />
+        )}
         <Button label={t("account.delete.title")} variant="danger" onPress={() => router.push("/delete-account")} />
       </Card>
 

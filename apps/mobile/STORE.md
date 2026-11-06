@@ -14,10 +14,11 @@ Bu belge uygulamayı mağazalara göndermek için gerekenleri toplar. Kodda yap�
 | Kullanılmayan Face ID izin metni kaldırıldı | `app.json` → `expo-secure-store` eklentisi |
 | Build profilleri: `preview` (dahili dağıtım, Android APK) ve `production` (mağaza) | `eas.json` |
 | Uygulama içi hesap silme (App Store 5.1.1(v), Google Play hesap silme kuralı) | Ayarlar → Gizlilik ve hesap → Hesabımı sil (`src/app/delete-account.tsx`) |
-| Üçüncü taraf AI'a veri göndermeden önce açık izin (App Store 5.1.2(i)); izin Ayarlar'dan geri alınabilir | `src/hooks/ai-consent.ts`; tüm AI butonları, sohbet, selamlama ve form ipuçları bu izne bağlı |
+| KVKK açık rızası: ilk girişte sağlık verisi ve yurt dışında saklama için zorunlu rıza ekranı (web'deki `/acik-riza` ile aynı kayıt) | `src/components/consent-screen.tsx` (sunucu 403 `ConsentRequired` döndükçe engelli ekranın yerine açılır); Ayarlar → Gizlilik ve hesap → Rızamı geri al |
+| Üçüncü taraf AI'a veri göndermeden önce açık izin (App Store 5.1.2(i)); izin Ayarlar'dan geri alınabilir | `src/hooks/ai-consent.ts`; izin sunucuda tutulur (`/api/v1/me/consents`, web ile ortak) ve sunucu izinsiz AI çağrısını 403 `AI_CONSENT_REQUIRED` ile reddeder; tüm AI butonları, sohbet, selamlama ve form ipuçları bu izne bağlı |
 | AI içeriğini uygulama içinden bildirme (Google Play'in AI ile üretilen içerik politikası) | Her AI sonucunun altında "İçeriği bildir"; sohbette yanıta uzun basma → `src/app/ai/report.tsx` (geri bildirim olarak admin'e düşer) |
 | Uygulama dışında satın almaya yönlendirme yok: deneme süresi / üyelik biten hesapta "Web'de aç" butonu ve "plan seç" metni gösterilmiyor (App Store 3.1.1) | `src/app/blocked.tsx` |
-| Gizlilik politikası ve kullanım şartları bağlantıları | Ayarlar → Gizlilik ve hesap |
+| Gizlilik politikası, KVKK aydınlatma metni ve kullanım şartları bağlantıları | Ayarlar → Gizlilik ve hesap |
 | Play Store ikonu (512×512) ve tanıtım görseli (1024×500) | `store/play-icon-512.png`, `store/play-feature-graphic.png` |
 
 ## 2. Senin yapacakların (sırayla)
@@ -111,7 +112,7 @@ Play Console'daki diğer App content formları:
 
 ## 5. İnceleme notları (App Review Information / Play notları için, İngilizce)
 
-> FitMusc is a fitness and nutrition tracker for members of the FitMusc service. Accounts are created by invitation or on our website; the app has no sign-up and no purchases. Use the demo account below. AI features (meal/workout suggestions, weekly plans, progress analysis, coach chat) are powered by Anthropic's Claude: before any data is sent, the app asks for explicit permission (Settings → AI data sharing withdraws it), and every AI answer can be reported from inside the app. Accounts can be deleted in Settings → Privacy & account → Delete my account. Push notifications are used for reminders and finished AI plans.
+> FitMusc is a fitness and nutrition tracker for members of the FitMusc service. Accounts are created by invitation or on our website; the app has no sign-up and no purchases. Use the demo account below. AI features (meal/workout suggestions, weekly plans, progress analysis, coach chat) are powered by Anthropic's Claude: before any data is sent, the app asks for explicit permission (Settings → AI data sharing withdraws it), and every AI answer can be reported from inside the app. On first use the app asks for explicit consent to process health data (required by Turkish data protection law, KVKK); please accept it to continue. Accounts can be deleted in Settings → Privacy & account → Delete my account, also from the consent screen. Push notifications are used for reminders and finished AI plans.
 
 ## 6. Mağaza listesi taslakları
 
@@ -151,13 +152,13 @@ FitMusc is not a medical service; suggestions are for information only.
    - Uygulamada satın alma ya da yönlendirme yok; bu riski azaltır ama ortadan kaldırmaz.
    - Google Play, başka yerden satın alınmış içeriğin yalnızca kullanılmasına daha toleranslı.
    - Reddedilirse seçenekler: IAP eklemek (RevenueCat), ya da şimdilik yalnızca Android / yalnızca ABD.
-2. **Gizlilik politikası metni**
-   - Web'deki politika Anthropic'e "anonim hale getirilmiş özetler" gittiğini söylüyor.
-   - Gerçekte ad, yaş, cinsiyet, ölçümler, sağlık notları, alerjiler, planlar ve sohbet metni gidiyor (e-posta gitmiyor).
-   - Metin bu gerçeğe göre düzeltilmeli. KVKK açısından sağlık verisi özel nitelikli kişisel veri; yurt dışına (ABD) aktarım için açık rıza ve aydınlatma metni hukukçuyla gözden geçirilmeli.
+2. **KVKK (2026-11-07'de kodda çözülenler ve hukukçuya kalanlar)**
+   - Çözüldü: gizlilik politikası ve KVKK aydınlatma metni gerçek veri akışına göre yeniden yazıldı (Anthropic'e giden veriler anonim değil, tüm alt işleyiciler ve ülkeleri listelendi). Açık rızalar artık gerçekten alınıyor ve tarihiyle kaydediliyor (sağlık verisi + yurt dışında saklama zorunlu, AI isteğe bağlı).
+   - Hukukçuya: aydınlatma metninde veri sorumlusunun tam unvanı ve adresi yok; VERBİS kaydı gerekip gerekmediği; ABD'ye düzenli aktarımın 2024 değişikliğinden sonra yalnızca açık rızaya dayanıp dayanamayacağı (Kurul'un standart sözleşmesi ve 5 iş günü içinde bildirim gerekebilir); sağlık verisi rızasının hizmetin ön şartı yapılmasının uygunluğu.
+   - Paylaşım ekranı onaylı tüm kullanıcıların ad ve e-postasını listeliyor (politikada yazıyor). Herkese açık kayıt açılmadan önce e-postayla arama modeline geçilmeli.
 3. **Kamuya açık silme sayfası:** Google, giriş gerektirmeyen bir sayfayı tercih ediyor. Silme adımlarını anlatan ve iletişim yolu veren bir sayfa (ör. `/hesap-silme`) eklemek Play incelemesini kolaylaştırır.
 4. **Logo kaynağı**
    - İkon, 512 piksellik PNG'den 1024'e büyütüldü.
    - Vektör ya da 1024+ ana dosyan varsa `assets/images/icon.png`, `android-icon-foreground.png` ve `store/` görsellerini ondan yeniden üret. İkonlar opak olmalı.
 5. **Android bildirim simgesi:** Durum çubuğunda uygulama ikonu beyaz bir kare olarak görünür. Tek renkli 96×96 bir simge (`expo-notifications` eklentisinin `icon` ayarı) eklenebilir.
-6. **Web paket güncellemesi:** Next 16.4 ve better-auth 1.6.34 önce Vercel preview'da doğrulanmalı (giriş, push, PDF dışa aktarma), sonra main'e alınmalı. Mobil bunlardan bağımsız; production API'ye karşı çalışır.
+6. **Web paket güncellemesi:** Next 16.4 ve better-auth 1.6.34 ile giriş (web ve mobil), sayfalar ve PDF dışa aktarma yerelde production build'le test edildi. Push teslimi ve gerçek https ortamı için main'den önce Vercel preview'da bir kez denenmeli. Preview production DB'yi kullandığı için rıza ekranı orada da gerçek hesaplara görünür.

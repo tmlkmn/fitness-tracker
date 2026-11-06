@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
   const { user, response } = await requireApiUser({
     requireApproved: false,
     requireActiveBilling: false,
+    requireDataConsent: false,
   });
   if (response) return response;
 

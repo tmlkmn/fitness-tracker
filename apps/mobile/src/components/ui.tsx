@@ -119,6 +119,8 @@ export function useErrorMessage() {
         return t("jobTimeout");
       case "NOT_ENOUGH_DATA":
         return t("notEnoughData");
+      case "AI_CONSENT_REQUIRED":
+        return t("aiConsentRequired");
       default:
         return t("generic");
     }

@@ -38,6 +38,7 @@ import { formatDate } from "@fitmusc/shared/date-format";
 import { buildAiUserNote } from "@/lib/ai-user-note";
 import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 type Tab = "suggest" | "saved";
 
@@ -297,6 +298,7 @@ export function AiMealModal({
             {t("title")}
           </SheetTitle>
         </SheetHeader>
+        <AiConsentGate>
 
         <div className="flex gap-1 p-1 bg-muted rounded-lg">
           <button
@@ -480,7 +482,8 @@ export function AiMealModal({
             ))}
           </div>
         )}
-      </SheetContent>
+      </AiConsentGate>
+        </SheetContent>
     </Sheet>
     </>
   );

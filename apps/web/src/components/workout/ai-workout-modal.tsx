@@ -18,6 +18,7 @@ import { MeasurementNudge } from "@/components/ai/measurement-nudge";
 import { useTranslations } from "next-intl";
 import { buildAiUserNote } from "@/lib/ai-user-note";
 import { AiNoteTextarea } from "@/components/ai/ai-note-textarea";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -204,6 +205,7 @@ export function AiWorkoutModal({
             {title}
           </SheetTitle>
         </SheetHeader>
+        <AiConsentGate>
 
         <div className="space-y-4">
           <div className="p-3 bg-muted rounded-lg">
@@ -372,7 +374,8 @@ export function AiWorkoutModal({
             </div>
           )}
         </div>
-      </SheetContent>
+      </AiConsentGate>
+        </SheetContent>
     </Sheet>
     </>
   );

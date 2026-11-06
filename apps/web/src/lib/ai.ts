@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { aiUsageLogs, users } from "@/db/schema";
 import { eq, and, gte, sql, inArray } from "drizzle-orm";
 import { getEntitlement } from "@/lib/billing/entitlement";
+import { assertAiConsent } from "@/lib/consent";
 
 export type AiUsageStatus =
   | "success"
@@ -173,6 +174,11 @@ async function resolveDailyLimit(userId: string, feature: AIFeature): Promise<nu
 }
 
 export async function checkRateLimit(userId: string, feature: AIFeature): Promise<void> {
+  // Every AI entry point passes through here, so this is where the KVKK AI
+  // consent is enforced. Exercise demos only send an exercise name — no user
+  // data — and stay available without it.
+  if (feature !== "exercise-demo") await assertAiConsent(userId);
+
   const limit = await resolveDailyLimit(userId, feature);
   const startOfDay = getStartOfDay();
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { requireApiUser } from "@/lib/api-auth";
 import { checkRateLimit } from "@/lib/ai";
+import { aiConsentDenied } from "@/lib/ai-consent-response";
 import { getUserLocale } from "@fitmusc/shared/locale";
 import { generateWeeklyPlan } from "@/lib/ai-weekly-generate";
 
@@ -45,6 +46,8 @@ export async function POST(request: Request) {
   try {
     await checkRateLimit(userId, "weekly");
   } catch (err) {
+    const consentDenied = aiConsentDenied(err, locale, "json");
+    if (consentDenied) return consentDenied;
     const msg = err instanceof Error && err.message.startsWith("COOLDOWN:")
       ? `Lütfen ${err.message.split(":")[1]} saniye bekleyin.`
       : "Günlük haftalık plan limitine ulaştınız (max 2/gün).";

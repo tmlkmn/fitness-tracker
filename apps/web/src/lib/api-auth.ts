@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import type { BillingUserFields } from "@/lib/billing/entitlement";
 import { getAccessDenial } from "@/lib/account-access";
+import { userHasDataConsent } from "@/lib/consent";
 
 /**
  * Unified auth wrapper for API route handlers (under `src/app/api/**`).
@@ -34,6 +35,7 @@ interface SessionUserShape extends BillingUserFields {
   locale?: string | null;
   isApproved?: boolean | null;
   frozenAt?: Date | string | null;
+  dataConsentAt?: Date | string | null;
 }
 
 export interface ApiAuthOptions {
@@ -57,6 +59,14 @@ export interface ApiAuthOptions {
    * invoice PDF download, and push unsubscribe.
    */
   allowFrozen?: boolean;
+  /**
+   * Require the KVKK data consent (`users.data_consent_at`). Default true.
+   *
+   * Off only for what a user who hasn't consented must still be able to do:
+   * give the consent, export or delete their account, leave push, pay and
+   * download invoices.
+   */
+  requireDataConsent?: boolean;
 }
 
 export type ApiAuthResult =
@@ -81,6 +91,9 @@ export async function requireApiUser(
   const denial = getAccessDenial(user, options);
   if (denial) {
     return deny(denial, 403);
+  }
+  if (options.requireDataConsent !== false && !(await userHasDataConsent(user))) {
+    return deny("ConsentRequired", 403);
   }
 
   return { user, response: null };

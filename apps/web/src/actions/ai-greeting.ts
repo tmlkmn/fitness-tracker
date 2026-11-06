@@ -314,10 +314,13 @@ export async function getDailyGreeting(): Promise<DailyGreeting> {
 
   try {
     await checkRateLimit(user.id, "greeting");
-  } catch {
+  } catch (err) {
     const dayKindForFallback = await fetchTodayPlanType(user.id, today);
     message = fallbackMessage(tod, locale, dayKindForFallback);
-    await persistGreeting(user.id, today, locale, message);
+    // Without the AI consent the plain greeting is not kept for the day, so
+    // the AI one appears as soon as the user allows it.
+    const noConsent = err instanceof Error && err.message === "AI_CONSENT_REQUIRED";
+    if (!noConsent) await persistGreeting(user.id, today, locale, message);
     return { message, firstName, cached: false };
   }
 

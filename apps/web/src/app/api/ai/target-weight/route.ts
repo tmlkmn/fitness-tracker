@@ -1,5 +1,6 @@
 import { requireApiUser } from "@/lib/api-auth";
 import { checkRateLimit } from "@/lib/ai";
+import { aiConsentDenied } from "@/lib/ai-consent-response";
 import { getUserLocale } from "@fitmusc/shared/locale";
 import { suggestTargetWeight } from "@/lib/ai-target-weight";
 
@@ -21,6 +22,8 @@ export async function POST() {
   try {
     await checkRateLimit(userId, "target-weight");
   } catch (err) {
+    const consentDenied = aiConsentDenied(err, locale, "json");
+    if (consentDenied) return consentDenied;
     const msg = err instanceof Error && err.message.startsWith("COOLDOWN:")
       ? `Lütfen ${err.message.split(":")[1]} saniye bekleyin.`
       : "Günlük hedef kilo önerisi limitine ulaştınız (max 2/gün).";

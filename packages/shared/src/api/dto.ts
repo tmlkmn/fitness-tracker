@@ -566,6 +566,15 @@ export interface MacroTargetsForDayDto {
   planType: string | null;
 }
 
+/**
+ * GET / PUT /me/consents — when each KVKK consent was given (ISO), null when
+ * never given or withdrawn. Check them with `@fitmusc/shared/consent`.
+ */
+export interface ConsentsDto {
+  dataConsentAt: string | null;
+  aiConsentAt: string | null;
+}
+
 /** PUT /me/locale */
 export interface LocaleResultDto {
   success: boolean;

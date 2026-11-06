@@ -40,6 +40,7 @@ export const routing = defineRouting({
     "/uyelik-doldu": { tr: "/uyelik-doldu", en: "/membership-expired" },
     "/deneme-bitti": { tr: "/deneme-bitti", en: "/trial-expired" },
     "/dondurulmus": { tr: "/dondurulmus", en: "/suspended" },
+    "/acik-riza": { tr: "/acik-riza", en: "/consent" },
     "/profil-tamamla": { tr: "/profil-tamamla", en: "/complete-profile" },
 
     // Sharing

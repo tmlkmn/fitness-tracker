@@ -1,3 +1,4 @@
+import { hasDataConsent } from "@fitmusc/shared/consent";
 import { getAccessDenial, type AccountAccessFields } from "@/lib/account-access";
 
 /**
@@ -12,6 +13,7 @@ import { getAccessDenial, type AccountAccessFields } from "@/lib/account-access"
 
 export interface StatusRouteFields extends AccountAccessFields {
   mustChangePassword?: boolean | null;
+  dataConsentAt?: Date | string | null;
 }
 
 // Canonical TR path + its localized variants, for each blocked state.
@@ -21,6 +23,7 @@ export const STATUS_ROUTES = {
   pending: { tr: "/bekliyor", en: "/pending" },
   membershipExpired: { tr: "/uyelik-doldu", en: "/membership-expired" },
   trialExpired: { tr: "/deneme-bitti", en: "/trial-expired" },
+  consent: { tr: "/acik-riza", en: "/consent" },
 } as const;
 
 export type StatusRouteKey = keyof typeof STATUS_ROUTES;
@@ -30,6 +33,7 @@ const DENIAL_TO_KEY = {
   NotApproved: "pending",
   MembershipExpired: "membershipExpired",
   TrialExpired: "trialExpired",
+  ConsentRequired: "consent",
 } as const;
 
 /**
@@ -45,7 +49,9 @@ export function resolveStatusRouteKey(
   if (user.role === "admin") return null;
   if (user.mustChangePassword) return "changePassword";
   const denial = getAccessDenial(user);
-  return denial ? DENIAL_TO_KEY[denial] : null;
+  if (denial) return DENIAL_TO_KEY[denial];
+  // KVKK: an otherwise active account first gives its explicit consent.
+  return hasDataConsent(user.dataConsentAt) ? null : "consent";
 }
 
 /** Localized path (e.g. "/suspended" for en) for a status-route key. */

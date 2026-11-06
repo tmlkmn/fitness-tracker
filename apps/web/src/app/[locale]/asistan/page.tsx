@@ -12,6 +12,7 @@ import { Bot, Trash2, Loader2 } from "lucide-react";
 import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { useTranslations } from "next-intl";
 import { markAiVisited } from "@/lib/onboarding-storage";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 export default function AsistanPage() {
   const { messages, isStreaming, isLoading, send, abort, clearHistory } = useAIChat();
@@ -61,6 +62,7 @@ export default function AsistanPage() {
         }
       />
 
+      <AiConsentGate className="m-4">
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
         {isLoading && (
           <div className="flex items-center justify-center h-full">
@@ -121,6 +123,7 @@ export default function AsistanPage() {
           disabled={chatQuota?.remaining === 0}
         />
       </div>
+      </AiConsentGate>
     </div>
   );
 }

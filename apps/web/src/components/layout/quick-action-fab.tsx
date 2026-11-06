@@ -23,6 +23,7 @@ const HIDDEN_PATH_PREFIXES = [
   "/giris",
   "/bekliyor",
   "/sifre-degistir",
+  "/acik-riza",
   "/sifremi-unuttum",
   "/sifre-sifirla",
   "/admin",

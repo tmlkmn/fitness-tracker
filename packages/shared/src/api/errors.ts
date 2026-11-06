@@ -8,6 +8,7 @@ export const ACCESS_DENIALS = [
   "NotApproved",
   "MembershipExpired",
   "TrialExpired",
+  "ConsentRequired", // KVKK data consent missing → the consent screen
 ] as const;
 
 export type AccessDenial = (typeof ACCESS_DENIALS)[number];
@@ -24,6 +25,7 @@ export type ApiErrorCode =
   | "COOLDOWN" // 429 — see the Retry-After header
   | "AI_UNAVAILABLE" // 503
   | "AI_EMPTY_RESPONSE" // 502 — the model returned nothing usable; retry
+  | "AI_CONSENT_REQUIRED" // 403 — the user hasn't allowed sending their data to the AI provider
   | "INTERNAL" // 500
   // ── Endpoint-specific business rules ──
   | "SAME_DAY" // 400 — move/swap source and target are the same day

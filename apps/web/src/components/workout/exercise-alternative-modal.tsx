@@ -25,6 +25,7 @@ import { ExerciseDemoModal } from "./exercise-demo-modal";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { loadWorkoutPrefs, saveWorkoutPrefs } from "@/lib/workout-prefs";
 import { useTranslations } from "next-intl";
+import { AiConsentGate } from "@/components/consent/ai-consent-gate";
 
 const EQUIPMENT_OPTIONS = [
   "Dumbbell",
@@ -141,6 +142,7 @@ export function ExerciseAlternativeModal({
             <span className="truncate">{exerciseName}</span>
           </SheetTitle>
         </SheetHeader>
+        <AiConsentGate>
 
         <div className="space-y-4">
           {error && (
@@ -318,7 +320,8 @@ export function ExerciseAlternativeModal({
             </div>
           )}
         </div>
-      </SheetContent>
+      </AiConsentGate>
+        </SheetContent>
     </Sheet>
   );
 }
