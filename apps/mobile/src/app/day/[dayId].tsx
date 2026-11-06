@@ -10,6 +10,7 @@ import { Alert } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
 import { AiButton, JobBanner, MonthGateNotice } from "@/components/ai";
+import { OfflineBanner } from "@/components/offline-banner";
 import { ExerciseSections, MacroSummary, MealItem } from "@/components/plan-items";
 import { AppText, Banner, Button, Card, ErrorView, LoadingView, Screen, Segmented, useErrorMessage } from "@/components/ui";
 import { SleepCard, WaterCard } from "@/components/wellness";
@@ -53,6 +54,7 @@ export default function DayScreen() {
     <>
       <Stack.Screen options={{ title }} />
       <Screen refreshing={meals.isRefetching || exercises.isRefetching} onRefresh={refresh}>
+        <OfflineBanner />
         {readOnly ? (
           <Banner icon={<Ionicons name="lock-closed" size={14} color={colors.warning} />}>{t("day.pastDayBanner.title")}</Banner>
         ) : null}

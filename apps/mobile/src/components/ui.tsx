@@ -1,3 +1,4 @@
+import { onlineManager } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import {
   ActivityIndicator,
@@ -102,7 +103,8 @@ export function LoadingView() {
 export function useErrorMessage() {
   const t = useTranslations("mobile.errors");
   return (error: unknown): string => {
-    if (!(error instanceof ApiRequestError)) return t("generic");
+    // No error object while offline: a query paused with nothing saved yet.
+    if (!(error instanceof ApiRequestError)) return onlineManager.isOnline() ? t("generic") : t("network");
     switch (error.code) {
       case "NETWORK":
         return t("network");

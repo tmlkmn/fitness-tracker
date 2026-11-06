@@ -1,7 +1,8 @@
 import { NativeTabs } from "expo-router/native-tabs";
 import { useTranslations } from "use-intl";
 
-import { useAiJobNotifications, usePushRegistration } from "@/hooks/push";
+import { useOutboxSync } from "@/hooks/outbox";
+import { usePushNotifications, usePushRegistration } from "@/hooks/push";
 import { colors } from "@/lib/theme";
 
 export default function TabsLayout() {
@@ -10,7 +11,8 @@ export default function TabsLayout() {
   const tp = useTranslations("progress");
   const ta = useTranslations("assistant");
   usePushRegistration();
-  useAiJobNotifications();
+  usePushNotifications();
+  useOutboxSync();
 
   return (
     <NativeTabs tintColor={colors.primary} backgroundColor={colors.background} iconColor={{ default: colors.textMuted, selected: colors.primary }}>

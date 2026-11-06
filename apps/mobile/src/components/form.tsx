@@ -105,15 +105,18 @@ export function TimeField({ value, onChange, accessibilityLabel }: { value: stri
 export function DateField({
   value,
   onChange,
+  minimumDate,
   maximumDate,
   accessibilityLabel,
 }: {
   value: string;
   onChange: (date: string) => void;
+  minimumDate?: string;
   maximumDate?: string;
   accessibilityLabel: string;
 }) {
   const locale = useLocale() as Locale;
+  const min = minimumDate ? fromDateString(minimumDate) : undefined;
   const max = maximumDate ? fromDateString(maximumDate) : undefined;
   if (Platform.OS === "ios") {
     return (
@@ -125,6 +128,7 @@ export function DateField({
           locale={pickerLocale(locale)}
           themeVariant="dark"
           accentColor={colors.primary}
+          minimumDate={min}
           maximumDate={max}
           accessibilityLabel={accessibilityLabel}
           onValueChange={(_event, date) => onChange(toDateString(date))}
@@ -140,6 +144,7 @@ export function DateField({
         DateTimePickerAndroid.open({
           value: fromDateString(value),
           mode: "date",
+          minimumDate: min,
           maximumDate: max,
           onValueChange: (_event, date) => onChange(toDateString(date)),
         })

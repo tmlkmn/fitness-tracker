@@ -4,11 +4,16 @@ import { AppState, Platform } from "react-native";
 
 import { ApiRequestError } from "./api";
 
+/** How long the saved offline copy is usable (src/lib/offline-cache.ts); unused queries are kept as long. */
+export const CACHE_MAX_AGE = 3 * 24 * 60 * 60_000;
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       // Same as the web hooks.
       staleTime: 60_000,
+      // Must cover the saved copy's age, or garbage-collected queries drop out of it.
+      gcTime: CACHE_MAX_AGE,
       // 4xx answers won't change on a retry; network errors and 5xx might.
       retry: (failureCount, error) =>
         !(error instanceof ApiRequestError && error.status >= 400 && error.status < 500) && failureCount < 2,

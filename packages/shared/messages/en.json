@@ -3727,6 +3727,24 @@
         "foodAllergens": "Food allergies",
         "dailyRoutine": "Daily routine"
       }
+    },
+    "sharing": {
+      "title": "Sharing",
+      "pastWeek": "Past weeks can't be shared.",
+      "alreadyShared": "This week is already shared with this person.",
+      "sharedWith": "Shared with",
+      "revoke": "Stop sharing",
+      "revokeConfirm": "{name} will no longer see this week."
+    },
+    "notifications": {
+      "clearConfirm": "All notifications will be deleted."
+    },
+    "notificationSettings": {
+      "pushHint": "Applies to every device on your account."
+    },
+    "reminders": {
+      "titleRequired": "Enter a title.",
+      "daysRequired": "Pick at least one day."
     }
   }
 }

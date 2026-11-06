@@ -6,6 +6,8 @@ import * as SecureStore from "expo-secure-store";
 import { API_URL, APP_SCHEME } from "./config";
 
 const APP_ORIGIN = `${APP_SCHEME}://`;
+/** SecureStore key prefix of the expo plugin (cookie, cached session). */
+export const AUTH_STORAGE_PREFIX = "fitmusc";
 
 /**
  * The expo plugin sends `expo-origin` = Linking.createURL(""), which is the
@@ -28,7 +30,7 @@ export const authClient = createAuthClient({
     customFetchImpl: (input, init) => fetch(input, withAppOrigin(init)),
   },
   plugins: [
-    expoClient({ scheme: APP_SCHEME, storagePrefix: "fitmusc", storage: SecureStore }),
+    expoClient({ scheme: APP_SCHEME, storagePrefix: AUTH_STORAGE_PREFIX, storage: SecureStore }),
     // Server-side user fields the app reads (apps/web/src/lib/auth.ts).
     inferAdditionalFields({
       user: {

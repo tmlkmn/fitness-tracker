@@ -1,6 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ShoppingItemDto, WeeklyPlanDto } from "@fitmusc/shared/api/dto";
-import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 import { coerceMealLabel, getLocalizedMealLabel } from "@fitmusc/shared/meal-labels";
 import type { Locale } from "@fitmusc/shared/locale";
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -11,7 +10,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { AppText, Button, Card, Chip, ErrorView, LoadingView, ProgressBar, Screen, useErrorMessage } from "@/components/ui";
 import { useGenerateShoppingList, useMealRefs, useShoppingList, useTogglePurchased, useWeeks } from "@/hooks/shopping";
 import { ApiRequestError } from "@/lib/api";
-import { addDays, todayStr } from "@/lib/dates";
+import { addDays, todayStr, weekRangeLabel } from "@/lib/dates";
 import { colors, radius, spacing } from "@/lib/theme";
 
 function currentWeekId(weeks: WeeklyPlanDto[]): number | null {
@@ -23,14 +22,7 @@ function useWeekLabel() {
   const t = useTranslations("shopping");
   const locale = useLocale() as Locale;
   return (week: WeeklyPlanDto) => {
-    if (!week.startDate) return t("weekShort", { week: week.weekNumber });
-    const end = addDays(week.startDate, 6);
-    const fmt = (d: string, o: Intl.DateTimeFormatOptions) => formatDate(parseDateOnly(d), locale, o);
-    const startMonth = fmt(week.startDate, { month: "short" });
-    const endMonth = fmt(end, { month: "short" });
-    const startDay = Number(week.startDate.slice(8));
-    const endDay = Number(end.slice(8));
-    return startMonth === endMonth ? `${startDay}–${endDay} ${startMonth}` : `${startDay} ${startMonth} – ${endDay} ${endMonth}`;
+    return week.startDate ? weekRangeLabel(week.startDate, locale) : t("weekShort", { week: week.weekNumber });
   };
 }
 

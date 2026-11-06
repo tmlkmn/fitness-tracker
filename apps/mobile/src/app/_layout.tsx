@@ -59,6 +59,14 @@ function AppStack() {
             <Stack.Screen name="ai/job/[jobId]" options={{ title: "", presentation: "modal" }} />
             <Stack.Screen name="weight-targets" options={{ title: "", presentation: "modal" }} />
             <Stack.Screen name="macro-targets" options={{ title: "" }} />
+            <Stack.Screen name="notifications" options={{ title: "" }} />
+            <Stack.Screen name="notification-settings" options={{ title: "" }} />
+            <Stack.Screen name="reminders" options={{ title: "" }} />
+            <Stack.Screen name="reminder-form" options={{ title: "", presentation: "modal" }} />
+            <Stack.Screen name="sharing" options={{ title: "" }} />
+            <Stack.Screen name="share-week" options={{ title: "", presentation: "modal" }} />
+            <Stack.Screen name="shared/week/[weeklyPlanId]" options={{ title: "" }} />
+            <Stack.Screen name="shared/day/[dayId]" options={{ title: "" }} />
           </Stack.Protected>
           <Stack.Protected guard={!!user && !!blocked}>
             <Stack.Screen name="blocked" options={{ headerShown: false }} />

@@ -1,3 +1,5 @@
+import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
 import type { WeekStart } from "@fitmusc/shared/week";
 
 // Calendar-date arithmetic on `YYYY-MM-DD` strings. Done in UTC so the result
@@ -21,6 +23,18 @@ export function addDays(date: string, days: number): string {
   d.setUTCDate(d.getUTCDate() + days);
   return fromUtc(d);
 }
+
+/** A plan week's dates from its start: "3–9 Kas", or "28 Eki – 3 Kas" across months. */
+export function weekRangeLabel(start: string, locale: Locale): string {
+  const end = addDays(start, 6);
+  const month = (d: string) => formatDate(parseDateOnly(d), locale, { month: "short" });
+  const startDay = Number(start.slice(8));
+  const endDay = Number(end.slice(8));
+  return month(start) === month(end) ? `${startDay}–${endDay} ${month(start)}` : `${startDay} ${month(start)} – ${endDay} ${month(end)}`;
+}
+
+/** A plan week is past once its last day is (web: isWeekPast — such weeks can't be shared). */
+export const isWeekPast = (start: string) => addDays(start, 6) < todayStr();
 
 /** 0 = Sunday … 6 = Saturday. */
 export const weekday = (date: string) => toUtc(date).getUTCDay();

@@ -13,7 +13,7 @@ import { useCalendarWeek, useWeeklyAiGate } from "@/hooks/ai";
 import { useDayByDate, useDaySummaries, usePlanTypes, useWeekStart } from "@/hooks/calendar";
 import { aiWeekOf } from "@/lib/ai-weekly";
 import { useEnsureDay } from "@/hooks/edit";
-import { addDays, monthGrid, monthOf, shiftMonth, todayStr, weekDates } from "@/lib/dates";
+import { addDays, isWeekPast, monthGrid, monthOf, shiftMonth, todayStr, weekDates } from "@/lib/dates";
 import { colors, radius, spacing } from "@/lib/theme";
 import { openWebPage } from "@/lib/web-links";
 
@@ -254,6 +254,9 @@ function SelectedDay({
   const router = useRouter();
   const ensureDay = useEnsureDay();
   const errorMessage = useErrorMessage();
+  // The day's week (same query as WeeklyAi): past weeks can't be shared.
+  const week = useCalendarWeek(date);
+  const weekStart = week.data?.weeklyPlan?.startDate ?? null;
   const heading = formatDate(parseDateOnly(date), locale, { weekday: "long", day: "numeric", month: "long" });
 
   if (day.isLoading) {
@@ -307,6 +310,13 @@ function SelectedDay({
           label={`🛒 ${t("calendar.shoppingList")}`}
           variant="secondary"
           onPress={() => router.push({ pathname: "/shopping", params: { week: String(plan.weeklyPlanId) } })}
+        />
+      ) : null}
+      {plan.weeklyPlanId && week.data?.weeklyPlan?.id === plan.weeklyPlanId && !(weekStart && isWeekPast(weekStart)) ? (
+        <Button
+          label={`👥 ${t("shareManager.shareButton")}`}
+          variant="secondary"
+          onPress={() => router.push({ pathname: "/share-week", params: { weeklyPlanId: String(plan.weeklyPlanId) } })}
         />
       ) : null}
     </Card>

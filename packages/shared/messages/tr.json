@@ -3727,6 +3727,24 @@
         "foodAllergens": "Gıda alerjileri",
         "dailyRoutine": "Günlük akış"
       }
+    },
+    "sharing": {
+      "title": "Paylaşım",
+      "pastWeek": "Geçmiş haftalar paylaşılamaz.",
+      "alreadyShared": "Bu hafta bu kişiyle zaten paylaşılmış.",
+      "sharedWith": "Paylaşılan kişiler",
+      "revoke": "Paylaşımı kaldır",
+      "revokeConfirm": "{name} bu haftayı artık göremeyecek."
+    },
+    "notifications": {
+      "clearConfirm": "Tüm bildirimler silinecek."
+    },
+    "notificationSettings": {
+      "pushHint": "Hesabındaki tüm cihazlar için geçerli."
+    },
+    "reminders": {
+      "titleRequired": "Bir başlık yaz.",
+      "daysRequired": "En az bir gün seç."
     }
   }
 }

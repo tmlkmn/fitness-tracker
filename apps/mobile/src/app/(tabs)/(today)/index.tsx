@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
+import { OfflineBanner } from "@/components/offline-banner";
 import { ExerciseSections, MacroSummary, MealItem } from "@/components/plan-items";
 import { AppText, Button, Card, ErrorView, LoadingView, ProgressBar, Screen, SectionTitle } from "@/components/ui";
 import { SleepCard, WaterCard } from "@/components/wellness";
@@ -36,7 +37,10 @@ export default function TodayScreen() {
   const toggleExercise = useToggleExercise(dayId);
 
   if (dashboard.isLoading) return <LoadingView />;
-  if (dashboard.error && !dashboard.data) return <ErrorView error={dashboard.error} onRetry={() => dashboard.refetch()} />;
+  // An error, or offline with nothing saved on the device yet.
+  if (!dashboard.data && (dashboard.error || dashboard.fetchStatus === "paused")) {
+    return <ErrorView error={dashboard.error} onRetry={() => dashboard.refetch()} />;
+  }
 
   const meals = dashboard.data?.meals ?? [];
   const exercises = dashboard.data?.exercises ?? [];
@@ -44,6 +48,7 @@ export default function TodayScreen() {
 
   return (
     <Screen refreshing={dashboard.isRefetching} onRefresh={() => dashboard.refetch()}>
+      <OfflineBanner />
       <View style={{ gap: spacing.xs }}>
         <AppText variant="muted">{formatDate(parseDateOnly(today), locale, { weekday: "long", day: "numeric", month: "long" })}</AppText>
         {firstName ? <AppText variant="heading">{t("dashboard.welcome", { name: firstName })}</AppText> : null}

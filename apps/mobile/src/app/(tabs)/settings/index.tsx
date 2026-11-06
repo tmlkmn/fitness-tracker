@@ -92,6 +92,14 @@ export default function SettingsScreen() {
             onPress={() => push.refetch()}
           />
         ) : null}
+        <Button label={t("settings.notificationPrefs.title")} variant="secondary" onPress={() => router.push("/notification-settings")} />
+        <Button label={t("settings.remindersCard.title")} variant="secondary" onPress={() => router.push("/reminders")} />
+      </Card>
+
+      <Card>
+        <AppText variant="small">{t("mobile.sharing.title")}</AppText>
+        <AppText variant="muted">{t("sharing.subtitle")}</AppText>
+        <Button label={t("mobile.sharing.title")} variant="secondary" onPress={() => router.push("/sharing")} />
       </Card>
 
       <Card>

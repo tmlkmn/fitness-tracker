@@ -9,6 +9,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
+import { syncCompletion, withPending } from "@/lib/outbox";
 
 import { patchCaches, restore } from "./cache";
 
@@ -21,8 +22,22 @@ export const keys = {
   macroTargets: (planType: string | null) => ["macros.forDay", planType] as const,
 };
 
+// Lists with completion flags lay the offline outbox's unsent ticks over the
+// server's answer (src/lib/outbox.ts), so a refetch never undoes one.
+
 export function useTodayDashboard() {
-  return useQuery({ queryKey: keys.today, queryFn: () => api<TodayDashboardDto>("/dashboard/today") });
+  return useQuery({
+    queryKey: keys.today,
+    queryFn: async () => {
+      const data = await api<TodayDashboardDto>("/dashboard/today");
+      const dayId = data.dailyPlan?.id ?? 0;
+      return {
+        ...data,
+        meals: await withPending("meal", data.meals, dayId),
+        exercises: await withPending("exercise", data.exercises, dayId),
+      };
+    },
+  });
 }
 
 export function useDay(dayId: number) {
@@ -30,17 +45,23 @@ export function useDay(dayId: number) {
 }
 
 export function useDayMeals(dayId: number) {
-  return useQuery({ queryKey: keys.meals(dayId), queryFn: () => api<MealDto[]>(`/days/${dayId}/meals`) });
+  return useQuery({
+    queryKey: keys.meals(dayId),
+    queryFn: async () => withPending("meal", await api<MealDto[]>(`/days/${dayId}/meals`), dayId),
+  });
 }
 
 export function useDayExercises(dayId: number) {
-  return useQuery({ queryKey: keys.exercises(dayId), queryFn: () => api<ExerciseDto[]>(`/days/${dayId}/exercises`) });
+  return useQuery({
+    queryKey: keys.exercises(dayId),
+    queryFn: async () => withPending("exercise", await api<ExerciseDto[]>(`/days/${dayId}/exercises`), dayId),
+  });
 }
 
 export function useDaySupplements(dayId: number | undefined) {
   return useQuery({
     queryKey: keys.supplements(dayId ?? 0),
-    queryFn: () => api<DailySupplementDto[]>(`/days/${dayId}/supplements`),
+    queryFn: async () => withPending("supplement", await api<DailySupplementDto[]>(`/days/${dayId}/supplements`), dayId ?? 0),
     enabled: dayId != null,
   });
 }
@@ -54,7 +75,10 @@ export function useMacroTargets(planType: string | null | undefined) {
   });
 }
 
-// ── Completion toggles (optimistic) ─────────────────────────────────────────
+// ── Completion toggles (optimistic, through the offline outbox) ─────────────
+// networkMode "always": the toggle runs offline too — syncCompletion queues it
+// and resolves, so the optimistic state stays; it only throws (→ rollback)
+// when the server refused the change.
 
 const withCompletion = <T extends { id: number; isCompleted: boolean | null }>(list: T[], id: number, isCompleted: boolean) =>
   list.map((item) => (item.id === id ? { ...item, isCompleted } : item));
@@ -62,8 +86,8 @@ const withCompletion = <T extends { id: number; isCompleted: boolean | null }>(l
 export function useToggleMeal(dayId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, isCompleted }: { id: number; isCompleted: boolean }) =>
-      api(`/meals/${id}/completion`, { method: "PUT", body: { isCompleted } }),
+    networkMode: "always",
+    mutationFn: ({ id, isCompleted }: { id: number; isCompleted: boolean }) => syncCompletion({ kind: "meal", id, dayId, isCompleted }),
     onMutate: async ({ id, isCompleted }) => [
       ...(await patchCaches<MealDto[]>(qc, [keys.meals(dayId)], (l) => withCompletion(l, id, isCompleted))),
       ...(await patchCaches<TodayDashboardDto>(qc, [keys.today], (d) => ({ ...d, meals: withCompletion(d.meals, id, isCompleted) }))),
@@ -79,8 +103,9 @@ export function useToggleMeal(dayId: number) {
 export function useToggleExercise(dayId: number) {
   const qc = useQueryClient();
   return useMutation({
+    networkMode: "always",
     mutationFn: ({ id, isCompleted }: { id: number; isCompleted: boolean }) =>
-      api(`/exercises/${id}/completion`, { method: "PUT", body: { isCompleted } }),
+      syncCompletion({ kind: "exercise", id, dayId, isCompleted }),
     onMutate: async ({ id, isCompleted }) => [
       ...(await patchCaches<ExerciseDto[]>(qc, [keys.exercises(dayId)], (l) => withCompletion(l, id, isCompleted))),
       ...(await patchCaches<TodayDashboardDto>(qc, [keys.today], (d) => ({
@@ -110,8 +135,9 @@ export function useCompleteAll(dayId: number, kind: "meals" | "exercises") {
 export function useToggleSupplement(dayId: number, date: string) {
   const qc = useQueryClient();
   return useMutation({
+    networkMode: "always",
     mutationFn: ({ id, completed }: { id: number; completed: boolean }) =>
-      api(`/supplements/${id}/completions/${date}`, { method: "PUT", body: { completed } }),
+      syncCompletion({ kind: "supplement", id, dayId, date, isCompleted: completed }),
     onMutate: ({ id, completed }) =>
       patchCaches<DailySupplementDto[]>(qc, [keys.supplements(dayId)], (l) =>
         l.map((s) => (s.id === id ? { ...s, isCompleted: completed } : s)),
