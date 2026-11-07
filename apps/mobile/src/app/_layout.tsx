@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 
+import { modalScreenOptions } from "@/components/modal-header";
 import { I18nProvider } from "@/lib/i18n";
 import { queryClient } from "@/lib/query-client";
 import { SessionProvider, useSession } from "@/lib/session";
@@ -47,25 +48,25 @@ function AppStack() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="day/[dayId]" options={{ title: "" }} />
             <Stack.Screen name="shopping" options={{ title: "" }} />
-            <Stack.Screen name="progress-log" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="sleep/[date]" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="meal-form" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="exercise-form" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="ai/meal-variation" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="ai/exercise" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="ai/day-meals" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="ai/workout" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="ai/weekly" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="ai/job/[jobId]" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="ai/report" options={{ title: "", presentation: "modal" }} />
-            <Stack.Screen name="weight-targets" options={{ title: "", presentation: "modal" }} />
+            <Stack.Screen name="progress-log" options={modalScreenOptions} />
+            <Stack.Screen name="sleep/[date]" options={modalScreenOptions} />
+            <Stack.Screen name="meal-form" options={modalScreenOptions} />
+            <Stack.Screen name="exercise-form" options={modalScreenOptions} />
+            <Stack.Screen name="ai/meal-variation" options={modalScreenOptions} />
+            <Stack.Screen name="ai/exercise" options={modalScreenOptions} />
+            <Stack.Screen name="ai/day-meals" options={modalScreenOptions} />
+            <Stack.Screen name="ai/workout" options={modalScreenOptions} />
+            <Stack.Screen name="ai/weekly" options={modalScreenOptions} />
+            <Stack.Screen name="ai/job/[jobId]" options={modalScreenOptions} />
+            <Stack.Screen name="ai/report" options={modalScreenOptions} />
+            <Stack.Screen name="weight-targets" options={modalScreenOptions} />
             <Stack.Screen name="macro-targets" options={{ title: "" }} />
             <Stack.Screen name="notifications" options={{ title: "" }} />
             <Stack.Screen name="notification-settings" options={{ title: "" }} />
             <Stack.Screen name="reminders" options={{ title: "" }} />
-            <Stack.Screen name="reminder-form" options={{ title: "", presentation: "modal" }} />
+            <Stack.Screen name="reminder-form" options={modalScreenOptions} />
             <Stack.Screen name="sharing" options={{ title: "" }} />
-            <Stack.Screen name="share-week" options={{ title: "", presentation: "modal" }} />
+            <Stack.Screen name="share-week" options={modalScreenOptions} />
             <Stack.Screen name="shared/week/[weeklyPlanId]" options={{ title: "" }} />
             <Stack.Screen name="shared/day/[dayId]" options={{ title: "" }} />
           </Stack.Protected>
