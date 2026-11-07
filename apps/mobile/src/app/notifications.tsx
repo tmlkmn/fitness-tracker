@@ -75,7 +75,7 @@ export default function NotificationsScreen() {
           headerRight: items.length > 0 ? () => <ClearButton disabled={clear.isPending} onPress={confirmClear} /> : undefined,
         }}
       />
-      <Screen refreshing={list.isRefetching} onRefresh={() => list.refetch()}>
+      <Screen onRefresh={() => list.refetch()}>
         {present.length >= 2 ? (
           <View style={styles.chips}>
             <Chip label={`${t("dropdown.filterAll")} ${items.length}`} selected={filter === "all"} onPress={() => setFilter("all")} />

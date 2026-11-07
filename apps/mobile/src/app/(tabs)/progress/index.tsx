@@ -46,16 +46,10 @@ export default function ProgressScreen() {
   if (!logs.data) return <ErrorView error={logs.error} onRetry={() => logs.refetch()} />;
 
   const list = logs.data;
-  const refresh = () => {
-    void logs.refetch();
-    void profile.refetch();
-    void water.refetch();
-    void sleep.refetch();
-    void activity.refetch();
-  };
+  const refresh = () => Promise.all([logs.refetch(), profile.refetch(), water.refetch(), sleep.refetch(), activity.refetch()]);
 
   return (
-    <Screen refreshing={logs.isRefetching} onRefresh={refresh}>
+    <Screen onRefresh={refresh}>
       <Summary logs={list} startWeight={profile.data?.weight ?? null} targetWeight={profile.data?.targetWeight ?? null} />
       <MetricChart logs={list} />
       {list.length > 0 ? <AiAnalysis /> : null}

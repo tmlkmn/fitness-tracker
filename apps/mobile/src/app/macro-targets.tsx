@@ -39,7 +39,7 @@ export default function MacroTargetsScreen() {
   return (
     <>
       <Stack.Screen options={{ title: ts("macroTitle") }} />
-      <Screen refreshing={targets.isRefetching} onRefresh={() => targets.refetch()}>
+      <Screen onRefresh={() => targets.refetch()}>
         <AppText variant="muted">{ts("macroSubtitle")}</AppText>
         <Card>
           <MacroGrid macros={targets.data ?? null} />

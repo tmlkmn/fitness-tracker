@@ -22,7 +22,7 @@ export default function SharedDayScreen() {
   const exercises = useSharedDayExercises(id);
   const [tab, setTab] = useState<Tab>("nutrition");
   const queries = [day, meals, exercises];
-  const refetchAll = () => queries.forEach((q) => void q.refetch());
+  const refetchAll = () => Promise.all(queries.map((q) => q.refetch()));
 
   if (queries.some((q) => q.isLoading)) return <LoadingView />;
   if (!day.data || !meals.data || !exercises.data) {
@@ -33,7 +33,7 @@ export default function SharedDayScreen() {
   return (
     <>
       <Stack.Screen options={{ title: day.data.dayName }} />
-      <Screen refreshing={queries.some((q) => q.isRefetching)} onRefresh={refetchAll}>
+      <Screen onRefresh={refetchAll}>
         <AppText variant="muted">
           {day.data.date
             ? `${formatDate(parseDateOnly(day.data.date), locale, { weekday: "long", day: "numeric", month: "long" })} — ${kind}`

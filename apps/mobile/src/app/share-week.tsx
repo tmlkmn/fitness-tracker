@@ -106,11 +106,7 @@ function ShareWeek({ week }: { week: WeeklyPlanDto }) {
 
   return (
     <Screen
-      refreshing={shares.isRefetching}
-      onRefresh={() => {
-        void shares.refetch();
-        void users.refetch();
-      }}
+      onRefresh={() => Promise.all([shares.refetch(), users.refetch()])}
     >
       <Card>
         <AppText variant="heading">{ts("weekTitle", { week: week.weekNumber, title: week.title })}</AppText>

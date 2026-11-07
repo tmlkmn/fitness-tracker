@@ -93,7 +93,7 @@ function WeekList({ weeklyPlanId }: { weeklyPlanId: number }) {
   }
 
   return (
-    <Screen refreshing={items.isRefetching} onRefresh={() => items.refetch()}>
+    <Screen onRefresh={() => items.refetch()}>
       {generate.isPending ? (
         <Card style={styles.generating}>
           <ActivityIndicator color={colors.primary} />

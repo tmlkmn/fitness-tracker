@@ -58,12 +58,7 @@ export default function CalendarScreen() {
 
   return (
     <Screen
-      refreshing={planTypes.isRefetching || day.isRefetching}
-      onRefresh={() => {
-        void planTypes.refetch();
-        void day.refetch();
-        void summaries.refetch();
-      }}
+      onRefresh={() => Promise.all([planTypes.refetch(), day.refetch(), summaries.refetch()])}
     >
       <Segmented
         options={[

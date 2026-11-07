@@ -187,11 +187,17 @@ export function missingProfileFields(profile: UserProfileDto): string[] {
   return REQUIRED_PROFILE.filter((f) => f.missing(profile)).map((f) => f.key);
 }
 
-/** Web ProfileMissingWarning — the fields to fill in (on the web) first. */
+/**
+ * Web ProfileMissingWarning — the fields to fill in first. The profile form is
+ * in the app; the daily routine (the only other field) is still edited on the web.
+ */
 export function ProfileMissing({ missing }: { missing: string[] }) {
   const t = useTranslations("assistant.profileMissing");
   const tf = useTranslations("mobile.ai.profileFields");
+  const td = useTranslations("dashboard");
   const locale = useLocale() as Locale;
+  const router = useRouter();
+  const inApp = missing.some((key) => key !== "dailyRoutine");
   return (
     <Card>
       <AppText variant="heading">{t("title")}</AppText>
@@ -199,7 +205,11 @@ export function ProfileMissing({ missing }: { missing: string[] }) {
       {missing.map((key) => (
         <AppText key={key}>• {tf(key)}</AppText>
       ))}
-      <Button label={t("cta")} variant="secondary" onPress={() => void openWebPage("settings", locale)} />
+      {inApp ? (
+        <Button label={td("completeProfile")} icon="person-circle-outline" variant="secondary" onPress={() => router.push("/profile")} />
+      ) : (
+        <Button label={t("cta")} icon="open-outline" variant="secondary" onPress={() => void openWebPage("settings", locale)} />
+      )}
     </Card>
   );
 }

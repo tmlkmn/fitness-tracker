@@ -67,17 +67,13 @@ export default function TodayScreen() {
   const counted = nutritionOnly ? meals : exercises;
   const todayPct = counted.length > 0 ? Math.round((counted.filter((x) => x.isCompleted).length / counted.length) * 100) : null;
 
-  const refresh = () => {
-    void dashboard.refetch();
-    void activity.refetch();
-    void profile.refetch();
-  };
+  const refresh = () => Promise.all([dashboard.refetch(), activity.refetch(), profile.refetch()]);
 
   return (
-    <Screen refreshing={dashboard.isRefetching} onRefresh={refresh}>
+    <Screen onRefresh={refresh}>
       <OfflineBanner />
       <GreetingCard date={today} firstName={firstName} message={greeting.data?.message} profile={profile.data} />
-      <ProfileIncompleteCard profile={profile.data} onClosed={() => void profile.refetch()} />
+      <ProfileIncompleteCard profile={profile.data} />
 
       {day ? (
         <>

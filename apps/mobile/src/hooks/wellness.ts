@@ -1,5 +1,12 @@
-import type { ProgressLogDto, SleepLogDto, UserProfileDto, WaterLogDto, WaterTargetDto } from "@fitmusc/shared/api/dto";
-import type { progressLogSchema, sleepLogSchema } from "@fitmusc/shared/api/schemas";
+import type {
+  FitnessLevelSuggestionDto,
+  ProgressLogDto,
+  SleepLogDto,
+  UserProfileDto,
+  WaterLogDto,
+  WaterTargetDto,
+} from "@fitmusc/shared/api/dto";
+import type { healthProfileSchema, profileUpdateSchema, progressLogSchema, sleepLogSchema } from "@fitmusc/shared/api/schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { z } from "zod";
 
@@ -18,6 +25,7 @@ export const wellnessKeys = {
   sleepLogs: ["sleep.logs"] as const,
   progressLogs: ["progress.logs"] as const,
   profile: ["me.profile"] as const,
+  fitnessLevelSuggestion: ["me.fitnessLevelSuggestion"] as const,
 };
 
 // ── Water ───────────────────────────────────────────────────────────────────
@@ -113,6 +121,32 @@ export function useProgressLogs() {
 
 export function useProfile() {
   return useQuery({ queryKey: wellnessKeys.profile, queryFn: () => api<UserProfileDto>("/me/profile"), staleTime: 5 * 60_000 });
+}
+
+/** A higher fitness level the user's training history supports; null when there is none. */
+export function useFitnessLevelSuggestion() {
+  return useQuery({
+    queryKey: wellnessKeys.fitnessLevelSuggestion,
+    queryFn: () => api<FitnessLevelSuggestionDto | null>("/me/fitness-level-suggestion"),
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** The web's profile form saves the same two parts: profile fields, then the health profile. */
+export function useSaveProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ profile, health }: { profile: z.input<typeof profileUpdateSchema>; health: z.input<typeof healthProfileSchema> }) => {
+      await api("/me/profile", { method: "PATCH", body: profile });
+      await api("/me/health", { method: "PUT", body: health });
+    },
+    // Macro and water targets are computed from weight, height, age, gender and activity.
+    onSettled: () => {
+      for (const key of [wellnessKeys.profile, wellnessKeys.fitnessLevelSuggestion, ["me.macroTargets"], ["macros.forDay"], ["water.target"]]) {
+        void qc.invalidateQueries({ queryKey: key });
+      }
+    },
+  });
 }
 
 export type ProgressLogInput = z.input<typeof progressLogSchema>;

@@ -61,7 +61,7 @@ export default function RemindersScreen() {
   return (
     <>
       <Stack.Screen options={{ title: t("title") }} />
-      <Screen refreshing={reminders.isRefetching} onRefresh={() => reminders.refetch()}>
+      <Screen onRefresh={() => reminders.refetch()}>
         {activeTemplates + activeSchedule + custom.length === 0 ? (
           <Banner icon={<Ionicons name="sparkles-outline" size={16} color={colors.warning} />}>{t("onboardingHint")}</Banner>
         ) : null}

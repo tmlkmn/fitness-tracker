@@ -48,15 +48,12 @@ export default function DayScreen() {
     { value: "workout", label: t("day.tabs.workout") },
     ...(date ? [{ value: "wellness" as const, label: t("day.tabs.wellness") }] : []),
   ];
-  const refresh = () => {
-    void meals.refetch();
-    void exercises.refetch();
-  };
+  const refresh = () => Promise.all([meals.refetch(), exercises.refetch()]);
 
   return (
     <>
       <Stack.Screen options={{ title }} />
-      <Screen refreshing={meals.isRefetching || exercises.isRefetching} onRefresh={refresh}>
+      <Screen onRefresh={refresh}>
         <OfflineBanner />
         {readOnly ? (
           <Banner icon={<Ionicons name="lock-closed" size={14} color={colors.warning} />}>{t("day.pastDayBanner.title")}</Banner>

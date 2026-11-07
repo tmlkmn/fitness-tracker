@@ -11,7 +11,6 @@ import { useLocale, useTranslations } from "use-intl";
 import { useDaySummaries } from "@/hooks/calendar";
 import { useFriendStreaks } from "@/hooks/gamification";
 import { accents, colors, radius, spacing, withAlpha } from "@/lib/theme";
-import { openWebPage } from "@/lib/web-links";
 
 import { PlanTypeIcon, planTypeStyle } from "./plan-type";
 import { AppText, Button, Card, ProgressBar } from "./ui";
@@ -465,17 +464,13 @@ export function FriendStreakCard() {
 
 // ── Profile prompt ──────────────────────────────────────────────────────────
 
-/**
- * Height, weight or target missing: the plans and AI need them. The app has
- * no profile form, so this opens the web's profile completion page and calls
- * `onClosed` when the browser is closed (to reload the profile).
- */
-export function ProfileIncompleteCard({ profile, onClosed }: { profile: UserProfileDto | undefined; onClosed: () => void }) {
+/** Height, weight or target missing: the plans and AI need them. Opens the profile form. */
+export function ProfileIncompleteCard({ profile }: { profile: UserProfileDto | undefined }) {
   const t = useTranslations("dashboard");
-  const locale = useLocale() as Locale;
+  const router = useRouter();
   if (!profile || (profile.height && profile.weight && profile.targetWeight)) return null;
   return (
-    <Pressable accessibilityRole="link" onPress={() => void openWebPage("completeProfile", locale).then(onClosed)}>
+    <Pressable accessibilityRole="button" onPress={() => router.push("/profile")}>
       {({ pressed }) => (
         <View style={[styles.prompt, pressed && { opacity: 0.7 }]}>
           <IconCircle icon="alert-circle" color={colors.warning} size={36} />
@@ -483,7 +478,7 @@ export function ProfileIncompleteCard({ profile, onClosed }: { profile: UserProf
             <AppText style={styles.linkTitle}>{t("completeProfile")}</AppText>
             <AppText variant="small">{t("completeProfileDesc")}</AppText>
           </View>
-          <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </View>
       )}
     </Pressable>

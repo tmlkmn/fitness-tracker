@@ -3795,6 +3795,10 @@
       "sent": "Teşekkürler, bildirimin alındı.",
       "noNote": "Açıklama yok",
       "longPressHint": "Bildirmek için basılı tut"
+    },
+    "profile": {
+      "invalidAge": "Yaşı 10 ile 120 arasında tam sayı olarak gir.",
+      "invalidHeight": "Boyu 50 ile 300 cm arasında tam sayı olarak gir."
     }
   },
   "consent": {

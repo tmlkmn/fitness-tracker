@@ -78,6 +78,10 @@ export default function SettingsScreen() {
       },
     ]);
 
+  // Body numbers or the health profile (the web checks gender) not filled in yet.
+  const p = profile.data;
+  const profileMissing = p != null && (!p.age || !p.height || !p.weight || !p.targetWeight || !p.gender || !p.dailyActivityLevel);
+
   const pushResult = push.data;
   const pushRegistered = pushResult?.status === "registered";
   const pushKey = pushResult
@@ -85,10 +89,23 @@ export default function SettingsScreen() {
     : null;
 
   return (
-    <Screen refreshing={profile.isRefetching} onRefresh={() => profile.refetch()}>
-      <ProfileSummaryCard name={user?.name} email={user?.email} profile={profile.data} today={todayStr()} />
+    <Screen onRefresh={() => profile.refetch()}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t("settings.items.healthTitle")} onPress={() => router.push("/profile")}>
+        {({ pressed }) => (
+          <View style={pressed && styles.pressed}>
+            <ProfileSummaryCard name={user?.name} email={user?.email} profile={profile.data} today={todayStr()} />
+          </View>
+        )}
+      </Pressable>
 
       <SettingsGroup label={t("settings.groups.goals")}>
+        <SettingsRow
+          icon="person-circle-outline"
+          title={t("settings.items.healthTitle")}
+          subtitle={t("settings.items.healthSubtitle")}
+          tone={profileMissing ? "warning" : "default"}
+          onPress={() => router.push("/profile")}
+        />
         <SettingsRow
           icon="pie-chart-outline"
           title={t("settings.items.macroTitle")}
@@ -212,4 +229,5 @@ const styles = StyleSheet.create({
   segmentLabel: { color: colors.textMuted, fontWeight: "600", fontSize: 13 },
   segmentLabelActive: { color: colors.primaryText, fontWeight: "700", fontSize: 13 },
   version: { textAlign: "center" },
+  pressed: { opacity: 0.8 },
 });

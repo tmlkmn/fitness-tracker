@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { onlineManager } from "@tanstack/react-query";
-import type { ComponentProps, ReactNode } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -76,16 +76,24 @@ export function Button({
   );
 }
 
-/** Scrollable screen body with pull-to-refresh. */
-export function Screen({
-  children,
-  refreshing,
-  onRefresh,
-}: {
-  children: ReactNode;
-  refreshing?: boolean;
-  onRefresh?: () => void;
-}) {
+/**
+ * Scrollable screen body with pull-to-refresh. The spinner shows only while the
+ * user's own pull runs (until `onRefresh` settles): a background refetch, e.g.
+ * after ticking a meal, must not pull the content down and back.
+ */
+export function Screen({ children, onRefresh }: { children: ReactNode; onRefresh?: () => Promise<unknown> }) {
+  const [pulling, setPulling] = useState(false);
+  const pull = async () => {
+    if (!onRefresh) return;
+    setPulling(true);
+    try {
+      await onRefresh();
+    } catch {
+      // The screen's own queries show their errors.
+    } finally {
+      setPulling(false);
+    }
+  };
   return (
     <ScrollView
       style={styles.screen}
@@ -93,7 +101,7 @@ export function Screen({
       contentInsetAdjustmentBehavior="automatic"
       refreshControl={
         onRefresh ? (
-          <RefreshControl refreshing={refreshing ?? false} onRefresh={onRefresh} tintColor={colors.primary} />
+          <RefreshControl refreshing={pulling} onRefresh={pull} tintColor={colors.primary} />
         ) : undefined
       }
     >

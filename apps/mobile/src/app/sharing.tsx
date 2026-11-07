@@ -23,11 +23,7 @@ export default function SharingScreen() {
     <>
       <Stack.Screen options={{ title: t("mobile.sharing.title") }} />
       <Screen
-        refreshing={withMe.isRefetching || weeks.isRefetching}
-        onRefresh={() => {
-          void withMe.refetch();
-          void weeks.refetch();
-        }}
+        onRefresh={() => Promise.all([withMe.refetch(), weeks.refetch()])}
       >
         <SectionTitle>{t("sharing.title")}</SectionTitle>
         {withMe.isLoading ? <LoadingView /> : null}

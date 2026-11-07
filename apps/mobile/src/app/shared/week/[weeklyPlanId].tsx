@@ -24,10 +24,7 @@ export default function SharedWeekScreen() {
     return (
       <ErrorView
         error={week.error ?? days.error}
-        onRetry={() => {
-          void week.refetch();
-          void days.refetch();
-        }}
+        onRetry={() => Promise.all([week.refetch(), days.refetch()])}
       />
     );
   }
@@ -36,11 +33,7 @@ export default function SharedWeekScreen() {
     <>
       <Stack.Screen options={{ title: week.data.title || t("sharing.weeklyTitleFallback") }} />
       <Screen
-        refreshing={week.isRefetching || days.isRefetching}
-        onRefresh={() => {
-          void week.refetch();
-          void days.refetch();
-        }}
+        onRefresh={() => Promise.all([week.refetch(), days.refetch()])}
       >
         <AppText variant="muted">{t("sharing.sharedBy", { name: week.data.ownerName })}</AppText>
         <Banner icon={<Ionicons name="eye-outline" size={16} color={colors.warning} />}>{t("sharing.readOnlyNotice")}</Banner>

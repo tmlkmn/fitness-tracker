@@ -60,6 +60,7 @@ function AppStack() {
             <Stack.Screen name="ai/job/[jobId]" options={modalScreenOptions} />
             <Stack.Screen name="ai/report" options={modalScreenOptions} />
             <Stack.Screen name="weight-targets" options={modalScreenOptions} />
+            <Stack.Screen name="profile" options={modalScreenOptions} />
             <Stack.Screen name="macro-targets" options={{ title: "" }} />
             <Stack.Screen name="notifications" options={{ title: "" }} />
             <Stack.Screen name="notification-settings" options={{ title: "" }} />

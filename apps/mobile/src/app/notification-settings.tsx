@@ -29,7 +29,7 @@ export default function NotificationSettingsScreen() {
   return (
     <>
       <Stack.Screen options={{ title: t("title") }} />
-      <Screen refreshing={prefs.isRefetching} onRefresh={() => prefs.refetch()}>
+      <Screen onRefresh={() => prefs.refetch()}>
         {update.error ? <AppText style={styles.error}>{errorMessage(update.error)}</AppText> : null}
         <Card>
           {/* Unsaved preferences count as on, like the server's dispatch. */}
