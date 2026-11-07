@@ -58,17 +58,24 @@ export function useMyShares(weeklyPlanId: number) {
   });
 }
 
-/** Approved users the week can be shared with. */
+/** People the user shared a plan with before — never the whole user list. */
 export function useShareableUsers() {
   return useQuery({ queryKey: sharingKeys.users, queryFn: () => api<ShareableUserDto[]>("/shareable-users"), staleTime: 5 * 60_000 });
 }
 
-/** Shares the week read-only with a user (the server notifies them). */
+/**
+ * Shares the week read-only (the server notifies the recipient): by the
+ * e-mail the user typed, or by id for someone from useShareableUsers.
+ */
 export function useShareWeek(weeklyPlanId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (sharedWithUserId: string) => api(`/weeks/${weeklyPlanId}/shares`, { method: "POST", body: { sharedWithUserId } }),
-    onSettled: () => qc.invalidateQueries({ queryKey: sharingKeys.myShares(weeklyPlanId) }),
+    mutationFn: (target: { email: string } | { sharedWithUserId: string }) =>
+      api(`/weeks/${weeklyPlanId}/shares`, { method: "POST", body: target }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: sharingKeys.myShares(weeklyPlanId) });
+      void qc.invalidateQueries({ queryKey: sharingKeys.users });
+    },
   });
 }
 

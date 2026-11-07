@@ -147,8 +147,8 @@ function PrivacyTr() {
             Lemon Squeezy (ABD) ve iyzico (Türkiye), abonelik ödemesi ve faturalama için ödeme ve fatura bilgilerinizi işler.
           </Item>
           <Item label="Diğer kullanıcılar">
-            Bir planı paylaştığınız kullanıcılar o planı ve adınızı görür. Plan paylaşırken kişi seçilebilmesi için
-            onaylı kullanıcıların adı ve e-posta adresi, paylaşım ekranında diğer kullanıcılara listelenir.
+            Bir planı paylaştığınız kullanıcılar o planı, adınızı ve e-posta adresinizi görür. Paylaşmak için
+            alıcının e-posta adresini sizin yazmanız gerekir; kullanıcı listesi kimseye gösterilmez.
           </Item>
         </ul>
       </Section>
@@ -305,8 +305,8 @@ function PrivacyEn() {
           </Item>
           <Item label="Payment providers">Lemon Squeezy (USA) and iyzico (Türkiye) process payment and billing details for subscriptions.</Item>
           <Item label="Other users">
-            Users you share a plan with see that plan and your name. So that people can be picked when sharing,
-            approved users&apos; names and email addresses are listed to other users on the sharing screen.
+            Users you share a plan with see that plan, your name and your email address. To share, you type the
+            recipient&apos;s email address; the list of users is never shown to anyone.
           </Item>
         </ul>
       </Section>

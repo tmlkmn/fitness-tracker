@@ -641,7 +641,10 @@ export interface SharedWithMeDto {
   ownerEmail: string;
 }
 
-/** GET /shareable-users */
+/**
+ * GET /shareable-users — people the user has shared a plan with before (for
+ * one-tap sharing). Never the whole user list; others are shared with by e-mail.
+ */
 export interface ShareableUserDto {
   id: string;
   name: string;

@@ -3006,12 +3006,25 @@
   "shareManager": {
     "title": "Plan Sharing",
     "shareButton": "Share",
-    "pickUserTitle": "Pick a User",
-    "noUsers": "No users to share with",
     "select": "Select",
     "notShared": "Not shared yet",
     "noActivePlans": "No active plans to share",
-    "weekTitle": "Week {week}: {title}"
+    "weekTitle": "Week {week}: {title}",
+    "dialogTitle": "Share plan",
+    "emailLabel": "Recipient's email",
+    "emailPlaceholder": "name@example.com",
+    "emailHint": "You can share with FitMusc members whose email you know; users are never listed.",
+    "previousTitle": "People you've shared with",
+    "shared": "Plan shared.",
+    "errors": {
+      "invalidEmail": "Enter a valid email address.",
+      "notFound": "There's no FitMusc account with this email that can receive a plan.",
+      "self": "You can't share a plan with yourself.",
+      "pastWeek": "Past weeks can't be shared.",
+      "alreadyShared": "This week is already shared with this person.",
+      "rateLimited": "Too many attempts. Try again in a little while.",
+      "generic": "Couldn't share. Try again."
+    }
   },
   "sharing": {
     "title": "Shared Plans",
@@ -3734,7 +3747,6 @@
     "sharing": {
       "title": "Sharing",
       "pastWeek": "Past weeks can't be shared.",
-      "alreadyShared": "This week is already shared with this person.",
       "sharedWith": "Shared with",
       "revoke": "Stop sharing",
       "revokeConfirm": "{name} will no longer see this week."

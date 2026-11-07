@@ -3006,12 +3006,25 @@
   "shareManager": {
     "title": "Plan Paylaşımı",
     "shareButton": "Paylaş",
-    "pickUserTitle": "Kullanıcı Seç",
-    "noUsers": "Paylaşılacak kullanıcı yok",
     "select": "Seç",
     "notShared": "Henüz paylaşılmadı",
     "noActivePlans": "Paylaşılacak aktif plan yok",
-    "weekTitle": "Hafta {week}: {title}"
+    "weekTitle": "Hafta {week}: {title}",
+    "dialogTitle": "Planı paylaş",
+    "emailLabel": "Alıcının e-posta adresi",
+    "emailPlaceholder": "ornek@eposta.com",
+    "emailHint": "Yalnızca e-posta adresini bildiğin FitMusc üyeleriyle paylaşabilirsin; kullanıcı listesi gösterilmez.",
+    "previousTitle": "Daha önce paylaştıkların",
+    "shared": "Plan paylaşıldı.",
+    "errors": {
+      "invalidEmail": "Geçerli bir e-posta adresi gir.",
+      "notFound": "Bu e-posta adresiyle paylaşım alabilecek bir FitMusc hesabı yok.",
+      "self": "Planını kendinle paylaşamazsın.",
+      "pastWeek": "Geçmiş haftalar paylaşılamaz.",
+      "alreadyShared": "Bu hafta bu kişiyle zaten paylaşılmış.",
+      "rateLimited": "Çok fazla deneme yaptın. Biraz sonra tekrar dene.",
+      "generic": "Paylaşılamadı. Tekrar dene."
+    }
   },
   "sharing": {
     "title": "Paylaşılan Planlar",
@@ -3734,7 +3747,6 @@
     "sharing": {
       "title": "Paylaşım",
       "pastWeek": "Geçmiş haftalar paylaşılamaz.",
-      "alreadyShared": "Bu hafta bu kişiyle zaten paylaşılmış.",
       "sharedWith": "Paylaşılan kişiler",
       "revoke": "Paylaşımı kaldır",
       "revokeConfirm": "{name} bu haftayı artık göremeyecek."

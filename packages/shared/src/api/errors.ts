@@ -36,6 +36,7 @@ export type ApiErrorCode =
   | "CANNOT_SHARE_WITH_SELF" // 400
   | "PAST_WEEK" // 400 — past weeks can't be shared
   | "ALREADY_SHARED" // 409
+  | "RECIPIENT_NOT_FOUND" // 404 — no approved, active account with that e-mail
   | "NOT_ENOUGH_DATA" // 422 — AI analysis / target weight without a progress log
   | "JOB_IN_PROGRESS" // 409 — an AI job of this kind is still running; `details.jobId`
   | "JOB_TIMEOUT"; // AI job `error` only — the run was cut off before it finished

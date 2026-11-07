@@ -389,7 +389,16 @@ export const reminderEnabledSchema = z.object({ isEnabled: z.boolean() });
 
 // ── Sharing / feedback ──────────────────────────────────────────────────────
 
-export const shareSchema = z.object({ sharedWithUserId: z.string().min(1).max(64) });
+/**
+ * POST /weeks/[id]/shares — the recipient by e-mail (the usual way: users are
+ * never listed) or by id, for someone from GET /shareable-users.
+ */
+export const shareSchema = z
+  .object({
+    sharedWithUserId: z.string().min(1).max(64).optional(),
+    email: z.string().trim().min(3).max(254).regex(/^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/, "Expected an e-mail address").optional(),
+  })
+  .refine((body) => (body.sharedWithUserId === undefined) !== (body.email === undefined), "Send either sharedWithUserId or email");
 
 export const feedbackSchema = z.object({
   category: z.enum(FEEDBACK_CATEGORIES),

@@ -6,14 +6,21 @@ import { useState } from "react";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
-import { AppText, Banner, Card, ErrorView, LoadingView, Screen, SectionTitle, useErrorMessage } from "@/components/ui";
+import { Field, Input } from "@/components/form";
+import { AppText, Banner, Button, Card, ErrorView, LoadingView, Screen, SectionTitle, useErrorMessage } from "@/components/ui";
 import { useMyShares, useRevokeShare, useShareableUsers, useShareWeek } from "@/hooks/sharing";
 import { useWeeks } from "@/hooks/shopping";
 import { ApiRequestError } from "@/lib/api";
 import { isWeekPast, weekRangeLabel } from "@/lib/dates";
 import { colors, spacing } from "@/lib/theme";
 
-/** Share one of the user's weeks read-only, or stop sharing it (web: ShareDialog + ShareManager). */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
+
+/**
+ * Share one of the user's weeks read-only, or stop sharing it (web: ShareDialog
+ * + ShareManager). The recipient is typed by e-mail — users are never listed;
+ * people shared with before are offered for one tap.
+ */
 export default function ShareWeekScreen() {
   const t = useTranslations("shareManager");
   const weeklyPlanId = Number(useLocalSearchParams<{ weeklyPlanId: string }>().weeklyPlanId);
@@ -40,12 +47,44 @@ function ShareWeek({ week }: { week: WeeklyPlanDto }) {
   const share = useShareWeek(week.id);
   const revoke = useRevokeShare(week.id);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
   const past = week.startDate ? isWeekPast(week.startDate) : false;
 
   const shareError = (err: unknown) => {
-    if (err instanceof ApiRequestError && err.code === "PAST_WEEK") return t("mobile.sharing.pastWeek");
-    if (err instanceof ApiRequestError && err.code === "ALREADY_SHARED") return t("mobile.sharing.alreadyShared");
-    return errorMessage(err);
+    if (!(err instanceof ApiRequestError)) return errorMessage(err);
+    switch (err.code) {
+      case "PAST_WEEK":
+        return ts("errors.pastWeek");
+      case "ALREADY_SHARED":
+        return ts("errors.alreadyShared");
+      case "RECIPIENT_NOT_FOUND":
+        return ts("errors.notFound");
+      case "CANNOT_SHARE_WITH_SELF":
+        return ts("errors.self");
+      case "INVALID_INPUT":
+        return ts("errors.invalidEmail");
+      case "RATE_LIMITED":
+        return ts("errors.rateLimited");
+      default:
+        return errorMessage(err);
+    }
+  };
+
+  const shareWith = (target: { email: string } | { sharedWithUserId: string }) => {
+    setError(null);
+    share.mutate(target, {
+      onSuccess: () => {
+        setEmail("");
+        Alert.alert(ts("shared"));
+      },
+      onError: (err) => setError(shareError(err)),
+    });
+  };
+
+  const submitEmail = () => {
+    const value = email.trim();
+    if (!EMAIL_PATTERN.test(value)) return setError(ts("errors.invalidEmail"));
+    shareWith({ email: value });
   };
 
   const confirmRevoke = (item: PlanShareDto) =>
@@ -99,10 +138,27 @@ function ShareWeek({ week }: { week: WeeklyPlanDto }) {
 
       {past ? null : (
         <>
-          <SectionTitle>{ts("pickUserTitle")}</SectionTitle>
-          {users.isLoading ? <LoadingView /> : null}
-          {users.error && !users.data ? <ErrorView error={users.error} onRetry={() => users.refetch()} /> : null}
-          {users.data && available.length === 0 ? <AppText variant="muted">{ts("noUsers")}</AppText> : null}
+          <SectionTitle>{ts("dialogTitle")}</SectionTitle>
+          <Card>
+            <Field label={ts("emailLabel")}>
+              <Input
+                value={email}
+                onChangeText={setEmail}
+                placeholder={ts("emailPlaceholder")}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="off"
+                keyboardType="email-address"
+                textContentType="none"
+                returnKeyType="send"
+                maxLength={254}
+                onSubmitEditing={submitEmail}
+              />
+            </Field>
+            <AppText variant="small">{ts("emailHint")}</AppText>
+            <Button label={ts("shareButton")} loading={share.isPending} disabled={busy || email.trim().length === 0} onPress={submitEmail} />
+          </Card>
+          {available.length > 0 ? <SectionTitle>{ts("previousTitle")}</SectionTitle> : null}
           {available.map((user) => (
             <PersonRow
               key={user.id}
@@ -112,10 +168,7 @@ function ShareWeek({ week }: { week: WeeklyPlanDto }) {
               iconColor={colors.primary}
               label={`${ts("shareButton")}: ${user.name}`}
               disabled={busy}
-              onPress={() => {
-                setError(null);
-                share.mutate(user.id, { onError: (err) => setError(shareError(err)) });
-              }}
+              onPress={() => shareWith({ sharedWithUserId: user.id })}
             />
           ))}
         </>

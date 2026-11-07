@@ -2,81 +2,46 @@
 
 import { db } from "@/db";
 import { shares, weeklyPlans, users } from "@/db/schema";
-import { eq, and, ne, gte, or, isNull } from "drizzle-orm";
+import { eq, and, gte, or, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/auth-utils";
 import { verifyWeeklyPlanOwnership } from "@/lib/ownership";
-import { sendNotification } from "@/lib/notifications";
-import { getServerTranslator } from "@/lib/i18n-server";
-import { addDaysStr, getTurkeyTodayStr, isWeekPast } from "@/lib/utils";
+import {
+  findRecipientByEmail,
+  isShareErrorCode,
+  previousShareRecipients,
+  shareWeekWith,
+  type ShareErrorCode,
+} from "@/lib/sharing";
+import { addDaysStr, getTurkeyTodayStr } from "@/lib/utils";
 
-export async function shareWeeklyPlan(
-  weeklyPlanId: number,
-  sharedWithUserId: string
-) {
+export type ShareTarget = { userId: string } | { email: string };
+
+export type ShareResult =
+  | { ok: true }
+  | { ok: false; error: ShareErrorCode | "RATE_LIMITED"; retryAfter?: number };
+
+/**
+ * Shares the user's week read-only with someone they name by e-mail, or with a
+ * person they shared with before (`getShareableUsers`). Business-rule failures
+ * come back as `{ ok: false, error }` — a thrown message would not reach the
+ * browser in production.
+ */
+export async function shareWeeklyPlan(weeklyPlanId: number, target: ShareTarget): Promise<ShareResult> {
   const user = await getAuthUser();
   await verifyWeeklyPlanOwnership(weeklyPlanId, user.id);
-
-  if (sharedWithUserId === user.id) {
-    throw new Error("Kendi planınızı kendinizle paylaşamazsınız");
+  try {
+    const recipientId =
+      "email" in target ? await findRecipientByEmail(user, target.email) : target.userId;
+    await shareWeekWith(user.id, weeklyPlanId, recipientId);
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    if (isShareErrorCode(message)) return { ok: false, error: message };
+    const rate = /^RATE_LIMITED:(\d+)$/.exec(message);
+    if (rate) return { ok: false, error: "RATE_LIMITED", retryAfter: Number(rate[1]) };
+    throw err;
   }
-
-  // Block sharing past weeks (week end < today)
-  const [planRow] = await db
-    .select({ startDate: weeklyPlans.startDate })
-    .from(weeklyPlans)
-    .where(eq(weeklyPlans.id, weeklyPlanId));
-  if (planRow?.startDate && isWeekPast(planRow.startDate)) {
-    throw new Error("Geçmiş haftalar paylaşılamaz");
-  }
-
-  // Check if already shared
-  const existing = await db
-    .select({ id: shares.id })
-    .from(shares)
-    .where(
-      and(
-        eq(shares.weeklyPlanId, weeklyPlanId),
-        eq(shares.sharedWithUserId, sharedWithUserId)
-      )
-    );
-  if (existing.length > 0) {
-    throw new Error("Bu plan zaten bu kullanıcıyla paylaşılmış");
-  }
-
-  await db.insert(shares).values({
-    weeklyPlanId,
-    ownerUserId: user.id,
-    sharedWithUserId,
-  });
-
-  // Send notification to the shared-with user
-  const [sharer] = await db
-    .select({ name: users.name })
-    .from(users)
-    .where(eq(users.id, user.id));
-  const [plan] = await db
-    .select({ title: weeklyPlans.title })
-    .from(weeklyPlans)
-    .where(eq(weeklyPlans.id, weeklyPlanId));
-
-  const [recipient] = await db
-    .select({ locale: users.locale })
-    .from(users)
-    .where(eq(users.id, sharedWithUserId));
-  const recipientLocale = recipient?.locale === "en" ? "en" : "tr";
-  const t = await getServerTranslator(recipientLocale, "triggerNotifications.planShared");
-  await sendNotification({
-    userId: sharedWithUserId,
-    type: "plan_shared",
-    title: t("title"),
-    body: t("body", { sharerName: sharer.name, planTitle: plan.title }),
-    link: recipientLocale === "en" ? "/en/shared" : "/tr/paylasilan",
-    metadata: { weeklyPlanId, sharedByUserId: user.id },
-  });
-
-  revalidatePath("/ayarlar");
-  revalidatePath("/paylasilan");
 }
 
 export async function revokeShare(shareId: number) {
@@ -146,22 +111,11 @@ export async function getPlansSharedWithMe() {
     );
 }
 
+/**
+ * People the user has shared a plan with before — for one-tap sharing. Never
+ * the whole user list: other recipients are found by e-mail only.
+ */
 export async function getShareableUsers() {
   const user = await getAuthUser();
-
-  return db
-    .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-    })
-    .from(users)
-    // Frozen accounts can't open a shared plan, so don't offer them as targets.
-    .where(
-      and(
-        eq(users.isApproved, true),
-        isNull(users.frozenAt),
-        ne(users.id, user.id)
-      )
-    );
+  return previousShareRecipients(user.id);
 }

@@ -202,9 +202,9 @@ function KvkkTr() {
             faturalama.
           </li>
           <li>
-            <strong className="text-foreground">Diğer kullanıcılar:</strong> paylaştığınız planlar ve adınız, paylaşım
-            yaptığınız kişilere; plan paylaşımında kişi seçilebilmesi için adınız ve e-posta adresiniz diğer onaylı
-            kullanıcılara.
+            <strong className="text-foreground">Diğer kullanıcılar:</strong> paylaştığınız planlar, adınız ve e-posta
+            adresiniz yalnızca planı paylaştığınız kişilere. Paylaşım için alıcının e-posta adresi yazılır; kullanıcı
+            listesi kimseye gösterilmez.
           </li>
         </ul>
         <p className="mt-2">
@@ -339,8 +339,9 @@ function KvkkEn() {
           feature needs and your chat messages (not anonymous; not used for model training). Vercel, Inc. (USA) —
           hosting. Neon (Databricks, US company) — database in Frankfurt (EU). Mailjet SAS (France) — email.
           Sentry (USA) — error tracking without IP addresses or cookies. Expo (USA), Apple and Google — push
-          notifications. Lemon Squeezy (USA) and iyzico (Türkiye) — payments. Other users — plans you share and
-          your name; your name and email are listed to approved users when they pick someone to share with.
+          notifications. Lemon Squeezy (USA) and iyzico (Türkiye) — payments. Other users — only the people you share
+          a plan with see it, your name and your email; you type the recipient&apos;s email and users are never
+          listed.
           Transfers abroad rely on the explicit consent you give before using the app (KVKK Art. 9), and on a
           separate, optional consent for Anthropic.
         </p>

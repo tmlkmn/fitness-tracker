@@ -155,7 +155,7 @@ FitMusc is not a medical service; suggestions are for information only.
 2. **KVKK (2026-11-07'de kodda çözülenler ve hukukçuya kalanlar)**
    - Çözüldü: gizlilik politikası ve KVKK aydınlatma metni gerçek veri akışına göre yeniden yazıldı (Anthropic'e giden veriler anonim değil, tüm alt işleyiciler ve ülkeleri listelendi). Açık rızalar artık gerçekten alınıyor ve tarihiyle kaydediliyor (sağlık verisi + yurt dışında saklama zorunlu, AI isteğe bağlı).
    - Hukukçuya: aydınlatma metninde veri sorumlusunun tam unvanı ve adresi yok; VERBİS kaydı gerekip gerekmediği; ABD'ye düzenli aktarımın 2024 değişikliğinden sonra yalnızca açık rızaya dayanıp dayanamayacağı (Kurul'un standart sözleşmesi ve 5 iş günü içinde bildirim gerekebilir); sağlık verisi rızasının hizmetin ön şartı yapılmasının uygunluğu.
-   - Paylaşım ekranı onaylı tüm kullanıcıların ad ve e-postasını listeliyor (politikada yazıyor). Herkese açık kayıt açılmadan önce e-postayla arama modeline geçilmeli.
+   - Paylaşım artık alıcının e-postası yazılarak yapılıyor; kullanıcı listesi gösterilmiyor (2026-11-07).
 3. **Kamuya açık silme sayfası:** Google, giriş gerektirmeyen bir sayfayı tercih ediyor. Silme adımlarını anlatan ve iletişim yolu veren bir sayfa (ör. `/hesap-silme`) eklemek Play incelemesini kolaylaştırır.
 4. **Logo kaynağı**
    - İkon, 512 piksellik PNG'den 1024'e büyütüldü.
