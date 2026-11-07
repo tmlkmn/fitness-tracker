@@ -160,7 +160,13 @@ function ConsentBox({
 }>) {
   return (
     <div className="flex items-start gap-3">
-      <Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(v === true)} className="mt-0.5" />
+      {/* Larger, thicker box than the default: the 16px / 1px one is hard to spot on the dark theme. */}
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(v) => onChange(v === true)}
+        className="mt-0.5 h-5 w-5 border-2"
+      />
       <label htmlFor={id} className="text-sm leading-relaxed cursor-pointer">
         {label}
         {hint ? <span className="block text-xs text-muted-foreground mt-1">{hint}</span> : null}

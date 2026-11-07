@@ -14,7 +14,9 @@ export async function expireSessionCache(): Promise<void> {
       c.name === "__Secure-better-auth.session_data" ||
       c.name.startsWith("__Secure-better-auth.session_data.")
     ) {
-      cookieStore.delete(c.name);
+      // Browsers ignore a Set-Cookie for a `__Secure-` name unless it is itself
+      // Secure, so a bare delete() leaves the stale copy in place on https.
+      cookieStore.delete({ name: c.name, path: "/", secure: c.name.startsWith("__Secure-") });
     }
   }
 }
