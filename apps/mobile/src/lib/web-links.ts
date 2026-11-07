@@ -9,7 +9,6 @@ const PATHS = {
   home: { tr: "", en: "" },
   forgotPassword: { tr: "/sifremi-unuttum", en: "/forgot-password" },
   changePassword: { tr: "/sifre-degistir", en: "/change-password" },
-  settings: { tr: "/ayarlar", en: "/settings" },
   disclaimer: { tr: "/feragatname", en: "/disclaimer" },
   privacy: { tr: "/gizlilik", en: "/privacy" },
   terms: { tr: "/kullanim-sartlari", en: "/terms" },

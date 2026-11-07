@@ -149,6 +149,20 @@ export function useSaveProfile() {
   });
 }
 
+type RoutineItems = { time: string; event: string }[];
+
+/** Replaces both routines, weekday first, like the web editor. */
+export function useSaveRoutine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ weekday, weekend }: { weekday: RoutineItems; weekend: RoutineItems }) => {
+      await api("/me/routine/weekday", { method: "PUT", body: { items: weekday } });
+      await api("/me/routine/weekend", { method: "PUT", body: { items: weekend } });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: wellnessKeys.profile }),
+  });
+}
+
 export type ProgressLogInput = z.input<typeof progressLogSchema>;
 
 export function useSaveProgressLog(id: number | null) {

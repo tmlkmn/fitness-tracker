@@ -81,6 +81,7 @@ export default function SettingsScreen() {
   // Body numbers or the health profile (the web checks gender) not filled in yet.
   const p = profile.data;
   const profileMissing = p != null && (!p.age || !p.height || !p.weight || !p.targetWeight || !p.gender || !p.dailyActivityLevel);
+  const routineMissing = p != null && (!Array.isArray(p.dailyRoutine) || p.dailyRoutine.length === 0);
 
   const pushResult = push.data;
   const pushRegistered = pushResult?.status === "registered";
@@ -98,7 +99,7 @@ export default function SettingsScreen() {
         )}
       </Pressable>
 
-      <SettingsGroup label={t("settings.groups.goals")}>
+      <SettingsGroup label={t("settings.groups.profileHealth")}>
         <SettingsRow
           icon="person-circle-outline"
           title={t("settings.items.healthTitle")}
@@ -106,6 +107,16 @@ export default function SettingsScreen() {
           tone={profileMissing ? "warning" : "default"}
           onPress={() => router.push("/profile")}
         />
+        <SettingsRow
+          icon="time-outline"
+          title={t("settings.items.routineTitle")}
+          subtitle={t("settings.items.routineSubtitle")}
+          tone={routineMissing ? "warning" : "default"}
+          onPress={() => router.push("/routine")}
+        />
+      </SettingsGroup>
+
+      <SettingsGroup label={t("settings.groups.goals")}>
         <SettingsRow
           icon="pie-chart-outline"
           title={t("settings.items.macroTitle")}
