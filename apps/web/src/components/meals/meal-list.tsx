@@ -93,6 +93,12 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
   };
 
   const macros = useMemo(() => computeMealMacros(mealList ?? []), [mealList]);
+  // The summary bars count the meals ticked as eaten (same as the mobile app);
+  // the plan's own day total stays next to the completion count.
+  const eaten = useMemo(
+    () => computeMealMacros((mealList ?? []).filter((m) => m.isCompleted)),
+    [mealList],
+  );
   const { data: daySupplements } = useSupplementsForDay(dailyPlanId);
   // On training days whey is surfaced as a visible "Post-Workout" shake MEAL, so
   // it must NOT also be counted in the supplement contribution line (double count).
@@ -204,24 +210,17 @@ export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: Mea
     );
   }
 
-  const {
-    calories: totalCalories,
-    protein: totalProtein,
-    carbs: totalCarbs,
-    fat: totalFat,
-    completedCount,
-    percent,
-  } = macros;
+  const { calories: totalCalories, completedCount, percent } = macros;
 
   return (
     <div className="space-y-3">
       <div data-tour="day-macro">
         <DailyMacroSummary
           targets={targets}
-          calories={totalCalories}
-          protein={Math.round(totalProtein)}
-          carbs={Math.round(totalCarbs)}
-          fat={Math.round(totalFat)}
+          calories={eaten.calories}
+          protein={eaten.protein}
+          carbs={eaten.carbs}
+          fat={eaten.fat}
           planType={dailyPlanType ?? null}
           cyclingLabel={cyclingLabel}
           supplementMacros={supplementMacros}

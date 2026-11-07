@@ -18,10 +18,15 @@ export function DailyRingsCard() {
 
   const isLoading = profileLoading || todayLoading || targetsLoading;
 
-  const macros = useMemo(() => computeMealMacros(today?.meals ?? []), [today?.meals]);
+  // The rings fill as meals are ticked as eaten (same as the mobile app), not
+  // with the whole day's plan.
+  const macros = useMemo(
+    () => computeMealMacros((today?.meals ?? []).filter((m) => m.isCompleted)),
+    [today?.meals],
+  );
 
   const mealsCompleted = macros.completedCount;
-  const mealsTotal = macros.total;
+  const mealsTotal = today?.meals?.length ?? 0;
   const exercises = today?.exercises ?? [];
   const exercisesCompleted = exercises.filter((e) => e.isCompleted).length;
   const exercisesTotal = exercises.length;
