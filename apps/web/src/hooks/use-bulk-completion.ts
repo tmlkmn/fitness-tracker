@@ -37,6 +37,7 @@ export function useBulkCompleteMeals() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["meals.byDay"], refetchType: "none" });
       qc.invalidateQueries({ queryKey: ["today-dashboard"], refetchType: "none" });
+      qc.invalidateQueries({ queryKey: ["weekly-macro-totals"], refetchType: "none" });
     },
   });
 }

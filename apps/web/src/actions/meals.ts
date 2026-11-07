@@ -35,6 +35,7 @@ export interface DailyMacroPoint {
   fat: number;
 }
 
+/** Macros of the meals ticked as eaten, per day, for the 7 days ending at `endDate`. */
 export async function getWeeklyMacroTotals(
   endDate: string,
 ): Promise<DailyMacroPoint[]> {
@@ -58,6 +59,7 @@ export async function getWeeklyMacroTotals(
     .where(
       and(
         eq(weeklyPlans.userId, user.id),
+        eq(meals.isCompleted, true),
         gte(dailyPlans.date, startStr),
         lte(dailyPlans.date, endDate),
       ),

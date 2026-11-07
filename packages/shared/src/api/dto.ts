@@ -153,7 +153,7 @@ export interface MealDto {
   sortOrder: number;
 }
 
-/** GET /nutrition/weekly-totals?endDate= — the 7 days ending at endDate. */
+/** GET /nutrition/weekly-totals?endDate= — macros of the meals ticked as eaten, for the 7 days ending at endDate. */
 export interface DailyMacroPointDto {
   date: DateString;
   calories: number;

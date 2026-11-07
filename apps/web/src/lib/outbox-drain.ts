@@ -60,6 +60,7 @@ function invalidateAfterDrain(qc: QueryClient, kinds: Set<string>) {
   if (kinds.has("meal")) {
     markStale(["meals.byDay"]);
     markStale(["today-dashboard"]);
+    markStale(["weekly-macro-totals"]);
   }
   if (kinds.has("exercise")) {
     markStale(["exercises"]);
