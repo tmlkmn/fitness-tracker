@@ -92,7 +92,7 @@ export function FoodReference({ onAdd, onClose }: { onAdd: (food: FoodLike, mult
     tools = creating ? (
       <NewFoodForm onDone={() => setCreating(false)} />
     ) : (
-      <Button label={`+ ${t("addNew")}`} variant="secondary" onPress={() => setCreating(true)} />
+      <Button icon="add" label={t("addNew")} variant="secondary" onPress={() => setCreating(true)} />
     );
   }
 

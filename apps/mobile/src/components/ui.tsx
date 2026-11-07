@@ -1,5 +1,6 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { onlineManager } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -35,6 +36,7 @@ export function Button({
   variant = "primary",
   loading = false,
   disabled = false,
+  icon,
   style,
 }: {
   label: string;
@@ -42,6 +44,8 @@ export function Button({
   variant?: ButtonVariant;
   loading?: boolean;
   disabled?: boolean;
+  /** Leading icon, like the web buttons. */
+  icon?: ComponentProps<typeof Ionicons>["name"];
   style?: StyleProp<ViewStyle>;
 }) {
   const inactive = disabled || loading;
@@ -60,7 +64,14 @@ export function Button({
         style,
       ]}
     >
-      {loading ? <ActivityIndicator color={fg} /> : <Text style={[styles.buttonLabel, { color: fg }]}>{label}</Text>}
+      {loading ? (
+        <ActivityIndicator color={fg} />
+      ) : (
+        <View style={styles.buttonContent}>
+          {icon ? <Ionicons name={icon} size={18} color={fg} /> : null}
+          <Text style={[styles.buttonLabel, { color: fg }]}>{label}</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -249,6 +260,7 @@ const styles = StyleSheet.create({
   buttonPressed: { opacity: 0.8 },
   buttonDisabled: { opacity: 0.5 },
   buttonLabel: { fontSize: 16, fontWeight: "600" },
+  buttonContent: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   screen: { flex: 1, backgroundColor: colors.background },
   screenContent: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl * 2 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.xl, backgroundColor: colors.background },

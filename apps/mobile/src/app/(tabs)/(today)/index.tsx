@@ -6,8 +6,10 @@ import { useTranslations } from "use-intl";
 import {
   AchievementStrip,
   DailyRings,
+  FriendStreakCard,
   GreetingCard,
   NoPlanCard,
+  ProfileIncompleteCard,
   QuickLinks,
   StatsRow,
   StreakCard,
@@ -75,6 +77,7 @@ export default function TodayScreen() {
     <Screen refreshing={dashboard.isRefetching} onRefresh={refresh}>
       <OfflineBanner />
       <GreetingCard date={today} firstName={firstName} message={greeting.data?.message} profile={profile.data} />
+      <ProfileIncompleteCard profile={profile.data} onClosed={() => void profile.refetch()} />
 
       {day ? (
         <>
@@ -143,6 +146,7 @@ export default function TodayScreen() {
           <AchievementStrip stats={activity.data} />
         </>
       ) : null}
+      <FriendStreakCard />
       <QuickLinks weeklyPlanId={weeklyPlan?.id ?? null} />
     </Screen>
   );

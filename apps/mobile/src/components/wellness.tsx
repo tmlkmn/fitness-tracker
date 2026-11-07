@@ -8,7 +8,7 @@ import { todayStr } from "@/lib/dates";
 import { colors, radius, seriesColors, spacing } from "@/lib/theme";
 
 import { AppText, Card, ProgressBar } from "./ui";
-import { IconCircle } from "./visual";
+import { CardHeading, IconCircle } from "./visual";
 
 export function RoundButton({
   icon,
@@ -113,7 +113,7 @@ export function WaterCard({ date, readOnly = false }: { date: string; readOnly?:
     <Card>
       <View style={styles.row}>
         <View style={styles.grow}>
-          <AppText variant="heading">💧 {t("water")}</AppText>
+          <CardHeading icon="water" color={seriesColors.water} title={t("water")} />
           <AppText variant="muted">{t("waterGlasses", { count: water.glasses, target: water.target })}</AppText>
         </View>
         {readOnly ? null : (
@@ -154,7 +154,7 @@ export function SleepCard({ date, readOnly = false }: { date: string; readOnly?:
   const body = (
     <View style={styles.row}>
       <View style={styles.grow}>
-        <AppText variant="heading">🌙 {t("mobile.today.sleep")}</AppText>
+        <CardHeading icon="moon" color={seriesColors.sleep} title={t("mobile.today.sleep")} />
         {log ? (
           <>
             <AppText variant="muted">

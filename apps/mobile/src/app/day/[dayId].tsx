@@ -10,6 +10,7 @@ import { Alert, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
 import { AiButton, JobBanner, MonthGateNotice } from "@/components/ai";
+import { CalorieTrendCard } from "@/components/insights";
 import { OfflineBanner } from "@/components/offline-banner";
 import { ExerciseSections, MacroSummary, MealItem } from "@/components/plan-items";
 import { planTypeStyle } from "@/components/plan-type";
@@ -146,7 +147,7 @@ function NutritionTab({
   const completeAll = useCompleteAll(day.id, "meals");
   const hasMeals = (meals.data?.length ?? 0) > 0;
   const add = readOnly ? null : (
-    <Button label={`＋ ${t("meals.list.addMeal")}`} variant="secondary" onPress={() => router.push({ pathname: "/meal-form", params: { dayId: String(day.id) } })} />
+    <Button icon="add" label={t("meals.list.addMeal")} variant="secondary" onPress={() => router.push({ pathname: "/meal-form", params: { dayId: String(day.id) } })} />
   );
   const ai = readOnly ? null : (
     <AiEntry
@@ -207,6 +208,7 @@ function NutritionTab({
                 onPress={() => completeAll.mutate()}
               />
             ) : null}
+            <CalorieTrendCard endDate={day.date ?? todayStr()} planType={day.planType} />
           </>
         )}
       </ListState>
@@ -258,7 +260,8 @@ function WorkoutTab({
 
   const add = readOnly ? null : (
     <Button
-      label={`＋ ${t("workout.list.addExercise")}`}
+      icon="add"
+      label={t("workout.list.addExercise")}
       variant="secondary"
       onPress={() => router.push({ pathname: "/exercise-form", params: { dayId: String(day.id) } })}
     />
@@ -277,7 +280,8 @@ function WorkoutTab({
       {ai}
       {add}
       <Button
-        label={`↺ ${t("workout.list.fromLastWeek")}`}
+        icon="refresh"
+        label={t("workout.list.fromLastWeek")}
         variant="ghost"
         loading={loadingPrevious || copy.isPending}
         onPress={copyLastWeek}

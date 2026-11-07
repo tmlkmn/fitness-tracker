@@ -1,4 +1,5 @@
 import type {
+  DailyMacroPointDto,
   DailyPlanDto,
   DailySupplementDto,
   ExerciseDto,
@@ -21,6 +22,7 @@ export const keys = {
   exercises: (dayId: number) => ["day.exercises", dayId] as const,
   supplements: (dayId: number) => ["day.supplements", dayId] as const,
   macroTargets: (planType: string | null) => ["macros.forDay", planType] as const,
+  weeklyTotals: (endDate: string) => ["nutrition.weeklyTotals", endDate] as const,
 };
 
 // Lists with completion flags lay the offline outbox's unsent ticks over the
@@ -76,6 +78,14 @@ export function useMacroTargets(planType: string | null | undefined) {
   });
 }
 
+/** Eaten macros per day for the 7 days ending at `endDate`. */
+export function useWeeklyTotals(endDate: string) {
+  return useQuery({
+    queryKey: keys.weeklyTotals(endDate),
+    queryFn: () => api<DailyMacroPointDto[]>(`/nutrition/weekly-totals?endDate=${endDate}`),
+  });
+}
+
 // ── Completion toggles (optimistic, through the offline outbox) ─────────────
 // networkMode "always": the toggle runs offline too — syncCompletion queues it
 // and resolves, so the optimistic state stays; it only throws (→ rollback)
@@ -97,6 +107,7 @@ export function useToggleMeal(dayId: number) {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: keys.meals(dayId) });
       void qc.invalidateQueries({ queryKey: keys.today });
+      void qc.invalidateQueries({ queryKey: ["nutrition.weeklyTotals"] });
       void qc.invalidateQueries({ queryKey: gamificationKeys.activityStats });
     },
   });
@@ -130,6 +141,7 @@ export function useCompleteAll(dayId: number, kind: "meals" | "exercises") {
     mutationFn: () => api(`/days/${dayId}/${kind}/complete-all`, { method: "POST" }),
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: kind === "meals" ? keys.meals(dayId) : keys.exercises(dayId) });
+      if (kind === "meals") void qc.invalidateQueries({ queryKey: ["nutrition.weeklyTotals"] });
       void qc.invalidateQueries({ queryKey: keys.today });
       void qc.invalidateQueries({ queryKey: gamificationKeys.activityStats });
     },

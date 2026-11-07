@@ -94,7 +94,8 @@ function MyWeekShares({ week }: { week: WeeklyPlanDto }) {
       </View>
       {shares.data ? <AppText variant="muted">{names.length > 0 ? names.join(", ") : t("notShared")}</AppText> : null}
       <Button
-        label={`👥 ${t("shareButton")}`}
+        icon="people-outline"
+        label={t("shareButton")}
         variant="secondary"
         onPress={() => router.push({ pathname: "/share-week", params: { weeklyPlanId: String(week.id) } })}
       />

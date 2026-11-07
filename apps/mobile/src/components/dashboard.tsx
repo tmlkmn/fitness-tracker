@@ -9,7 +9,9 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
 import { useDaySummaries } from "@/hooks/calendar";
+import { useFriendStreaks } from "@/hooks/gamification";
 import { accents, colors, radius, spacing, withAlpha } from "@/lib/theme";
+import { openWebPage } from "@/lib/web-links";
 
 import { PlanTypeIcon, planTypeStyle } from "./plan-type";
 import { AppText, Button, Card, ProgressBar } from "./ui";
@@ -404,6 +406,90 @@ export function AchievementStrip({ stats }: { stats: ActivityStatsDto }) {
   );
 }
 
+// ── Friends ─────────────────────────────────────────────────────────────────
+
+// Gold, silver, bronze for the top three.
+const MEDALS = [accents.amber, "#cbd5e1", accents.orangeLight];
+
+function flameColor(streak: number) {
+  if (streak === 0) return colors.textMuted;
+  if (streak < 7) return accents.orangeLight;
+  if (streak < 30) return accents.amber;
+  return accents.red;
+}
+
+/** The user and the people they share plans with, ranked by streak (web: FriendStreakCard). */
+export function FriendStreakCard() {
+  const t = useTranslations("gamification.friend");
+  const streaks = useFriendStreaks();
+  const rows = streaks.data ?? [];
+  if (rows.length === 0) return null;
+  const top = rows[0]?.currentStreak ?? 0;
+  const me = rows.find((r) => r.isMe);
+  return (
+    <Card style={{ gap: spacing.sm }}>
+      <CardHeading icon="people" color={colors.textMuted} title={t("title")} />
+      {rows.map((row, i) => (
+        <View key={row.userId} style={[styles.friend, row.isMe && styles.friendMe]}>
+          <View style={styles.rank}>
+            {i < 3 ? (
+              <Ionicons name="trophy" size={15} color={MEDALS[i]} />
+            ) : (
+              <AppText variant="small" style={styles.tabular}>
+                {i + 1}
+              </AppText>
+            )}
+          </View>
+          <AppText style={[styles.grow, row.isMe && { fontWeight: "700" }]} numberOfLines={1}>
+            {row.isMe ? t("you") : row.name}
+          </AppText>
+          {i === 0 && row.isMe && row.currentStreak > 0 ? <Pill label={t("leader")} color={accents.amber} /> : null}
+          {row.currentStreak > 0 ? (
+            <View style={styles.flame}>
+              <Ionicons name="flame" size={15} color={flameColor(row.currentStreak)} />
+              <AppText style={[styles.legendValue, styles.tabular]}>{row.currentStreak}</AppText>
+            </View>
+          ) : (
+            <AppText variant="small">—</AppText>
+          )}
+        </View>
+      ))}
+      {top > 0 && me?.currentStreak === 0 ? (
+        <AppText variant="small" style={styles.center}>
+          {t("catchUp")}
+        </AppText>
+      ) : null}
+    </Card>
+  );
+}
+
+// ── Profile prompt ──────────────────────────────────────────────────────────
+
+/**
+ * Height, weight or target missing: the plans and AI need them. The app has
+ * no profile form, so this opens the web's profile completion page and calls
+ * `onClosed` when the browser is closed (to reload the profile).
+ */
+export function ProfileIncompleteCard({ profile, onClosed }: { profile: UserProfileDto | undefined; onClosed: () => void }) {
+  const t = useTranslations("dashboard");
+  const locale = useLocale() as Locale;
+  if (!profile || (profile.height && profile.weight && profile.targetWeight)) return null;
+  return (
+    <Pressable accessibilityRole="link" onPress={() => void openWebPage("completeProfile", locale).then(onClosed)}>
+      {({ pressed }) => (
+        <View style={[styles.prompt, pressed && { opacity: 0.7 }]}>
+          <IconCircle icon="alert-circle" color={colors.warning} size={36} />
+          <View style={styles.grow}>
+            <AppText style={styles.linkTitle}>{t("completeProfile")}</AppText>
+            <AppText variant="small">{t("completeProfileDesc")}</AppText>
+          </View>
+          <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
 // ── Quick links ─────────────────────────────────────────────────────────────
 
 function LinkRow({ icon, title, subtitle, href }: { icon: IconName; title: string; subtitle: string; href: Href }) {
@@ -479,5 +565,19 @@ const styles = StyleSheet.create({
   badgeLocked: { backgroundColor: colors.cardPressed },
   lock: { position: "absolute", right: 0, bottom: 0, backgroundColor: colors.card, borderRadius: radius.full, padding: 2 },
   link: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm },
+  friend: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radius.sm },
+  friendMe: { backgroundColor: withAlpha(colors.primary, 0.1), borderWidth: 1, borderColor: withAlpha(colors.primary, 0.3) },
+  rank: { width: 20, alignItems: "center" },
+  flame: { flexDirection: "row", alignItems: "center", gap: 3 },
+  prompt: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: withAlpha(colors.warning, 0.35),
+    backgroundColor: withAlpha(colors.warning, 0.06),
+  },
   linkTitle: { fontSize: 15, fontWeight: "600" },
 });

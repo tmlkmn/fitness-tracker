@@ -105,7 +105,7 @@ function WeekList({ weeklyPlanId }: { weeklyPlanId: number }) {
       {list.length === 0 ? (
         <Card>
           <AppText variant="muted">{t("emptyDescription")}</AppText>
-          <Button label={`✨ ${t("generateButton")}`} loading={generate.isPending} onPress={() => confirmGenerate(false)} />
+          <Button icon="sparkles" label={t("generateButton")} loading={generate.isPending} onPress={() => confirmGenerate(false)} />
         </Card>
       ) : (
         <>
@@ -136,7 +136,8 @@ function WeekList({ weeklyPlanId }: { weeklyPlanId: number }) {
             </Card>
           ))}
           <Button
-            label={`↻ ${t("refresh")}`}
+            icon="refresh"
+            label={t("refresh")}
             variant="ghost"
             disabled={generate.isPending}
             onPress={() => confirmGenerate(true)}

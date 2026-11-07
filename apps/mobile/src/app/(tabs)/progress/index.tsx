@@ -9,10 +9,14 @@ import { useLocale, useTranslations } from "use-intl";
 
 import { AiButton, AiDisclaimer, ErrorBox, Markdown } from "@/components/ai";
 import { BarChart, LineChart, type ChartPoint } from "@/components/charts";
+import { ActivityHeatmap, CalorieTrendCard } from "@/components/insights";
 import { AppText, Button, Card, Chip, ErrorView, LoadingView, Screen, SectionTitle, useErrorMessage } from "@/components/ui";
+import { CardHeading, type IconName } from "@/components/visual";
 import { useInvalidateQuota } from "@/hooks/ai";
+import { useActivityStats } from "@/hooks/gamification";
 import { useProfile, useProgressLogs, useSleepLogs, useWaterLogs } from "@/hooks/wellness";
 import { apiStream } from "@/lib/api";
+import { todayStr } from "@/lib/dates";
 import { CHART_METRICS, type ChartMetric } from "@/lib/progress-metrics";
 import { colors, radius, seriesColors, spacing } from "@/lib/theme";
 
@@ -36,6 +40,7 @@ export default function ProgressScreen() {
   const profile = useProfile();
   const water = useWaterLogs();
   const sleep = useSleepLogs();
+  const activity = useActivityStats();
 
   if (logs.isLoading) return <LoadingView />;
   if (!logs.data) return <ErrorView error={logs.error} onRetry={() => logs.refetch()} />;
@@ -46,6 +51,7 @@ export default function ProgressScreen() {
     void profile.refetch();
     void water.refetch();
     void sleep.refetch();
+    void activity.refetch();
   };
 
   return (
@@ -53,9 +59,11 @@ export default function ProgressScreen() {
       <Summary logs={list} startWeight={profile.data?.weight ?? null} targetWeight={profile.data?.targetWeight ?? null} />
       <MetricChart logs={list} />
       {list.length > 0 ? <AiAnalysis /> : null}
+      {activity.data ? <ActivityHeatmap completionMap={activity.data.completionMap} /> : null}
+      <CalorieTrendCard endDate={todayStr()} />
       <WaterChart />
       <SleepChart />
-      <Button label={`＋ ${t("addMeasurement")}`} onPress={() => router.push("/progress-log")} />
+      <Button icon="add" label={t("addMeasurement")} onPress={() => router.push("/progress-log")} />
       {list.length > 0 ? (
         <>
           <SectionTitle>{t("pastRecords")}</SectionTitle>
@@ -82,9 +90,15 @@ function Summary({ logs, startWeight, targetWeight }: { logs: ProgressLogDto[]; 
   const diffColor = diff == null || diff === 0 ? colors.textMuted : diff < 0 ? colors.primary : colors.danger;
   return (
     <View style={styles.tiles}>
-      <Tile value={now ?? "—"} label={t("now")} />
-      <Tile value={diffText} label={t("diff")} color={diffColor} />
+      <Tile icon="scale-outline" value={now ?? "—"} label={t("now")} />
       <Tile
+        icon={diff == null || diff === 0 ? "remove-outline" : diff < 0 ? "trending-down" : "trending-up"}
+        value={diffText}
+        label={t("diff")}
+        color={diffColor}
+      />
+      <Tile
+        icon="flag-outline"
         value={targetWeight ?? "—"}
         label={t("target")}
         color={targetWeight ? colors.primary : undefined}
@@ -97,12 +111,14 @@ function Summary({ logs, startWeight, targetWeight }: { logs: ProgressLogDto[]; 
 }
 
 function Tile({
+  icon,
   value,
   label,
   color,
   onPress,
   accessibilityLabel,
 }: {
+  icon: IconName;
   value: string;
   label: string;
   color?: string;
@@ -112,6 +128,7 @@ function Tile({
   const card = (pressed: boolean) => (
     <Card style={[styles.tile, pressed && { backgroundColor: colors.cardPressed }]}>
       {onPress ? <Ionicons name="pencil" size={12} color={colors.textMuted} style={styles.tileEdit} /> : null}
+      <Ionicons name={icon} size={18} color={color ?? colors.textMuted} />
       <AppText style={[styles.tileValue, color ? { color } : null]}>{value}</AppText>
       <AppText variant="small" style={styles.center}>
         {label}
@@ -210,7 +227,7 @@ function MetricChart({ logs }: { logs: ProgressLogDto[] }) {
 
   return (
     <Card>
-      <AppText variant="heading">{label}</AppText>
+      <CardHeading icon="analytics" color={seriesColors.weight} title={label} />
       {available.length > 1 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {available.map((m) => (
@@ -233,7 +250,7 @@ function WaterChart() {
   const target = Math.round(logs.reduce((sum, l) => sum + l.targetGlasses, 0) / logs.length);
   return (
     <Card>
-      <ChartHeader title={`💧 ${t("water.title")}`} meta={t("water.lastDays", { count: bars.length })} />
+      <CardHeading icon="water" color={seriesColors.water} title={t("water.title")} right={t("water.lastDays", { count: bars.length })} />
       <BarChart
         bars={bars}
         color={seriesColors.water}
@@ -256,7 +273,7 @@ function SleepChart() {
     .map((l) => ({ key: l.logDate, x: 0, label: shortDate(l.logDate), value: Math.round(((l.durationMinutes ?? 0) / 60) * 10) / 10 }));
   return (
     <Card>
-      <ChartHeader title={`🌙 ${t("sleep.title")}`} meta={t("sleep.lastDays", { count: bars.length })} />
+      <CardHeading icon="moon" color={seriesColors.sleep} title={t("sleep.title")} right={t("sleep.lastDays", { count: bars.length })} />
       <BarChart
         bars={bars}
         color={seriesColors.sleep}
@@ -265,15 +282,6 @@ function SleepChart() {
         accessibilityLabel={`${t("sleep.chart.durationLegend")}: ${bars.map((b) => `${b.label} ${number(b.value)}`).join(", ")}`}
       />
     </Card>
-  );
-}
-
-function ChartHeader({ title, meta }: { title: string; meta: string }) {
-  return (
-    <View style={styles.chartHeader}>
-      <AppText variant="heading">{title}</AppText>
-      <AppText variant="small">{meta}</AppText>
-    </View>
   );
 }
 
@@ -321,7 +329,6 @@ const styles = StyleSheet.create({
   tileValue: { fontSize: 20, fontWeight: "700" },
   center: { textAlign: "center" },
   chips: { gap: spacing.sm },
-  chartHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   historyCard: { padding: 0, gap: 0 },
   historyRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
   divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },

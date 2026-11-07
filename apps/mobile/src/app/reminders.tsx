@@ -272,7 +272,7 @@ function CustomTab({ reminders, onError }: { reminders: ReminderDto[]; onError: 
       {reminders.map((r) => (
         <CustomRow key={r.id} reminder={r} onError={onError} />
       ))}
-      <Button label={`+ ${t("reminderDialog.addNew")}`} variant="secondary" onPress={() => router.push("/reminder-form")} />
+      <Button icon="add" label={t("reminderDialog.addNew")} variant="secondary" onPress={() => router.push("/reminder-form")} />
     </>
   );
 }

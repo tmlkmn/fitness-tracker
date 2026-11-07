@@ -3,18 +3,22 @@ import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 import type { Locale } from "@fitmusc/shared/locale";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
 import { AiButton, JobBanner } from "@/components/ai";
+import { ExerciseSections, MealItem } from "@/components/plan-items";
 import { PLAN_TYPES_SHOWN, PlanTypeIcon, planTypeStyle } from "@/components/plan-type";
 import { AppText, Button, Card, Chip, LoadingView, Screen, Segmented, useErrorMessage } from "@/components/ui";
+import { IconCircle, Pill } from "@/components/visual";
 import { useCalendarWeek, useWeeklyAiGate } from "@/hooks/ai";
 import { useDayByDate, useDaySummaries, usePlanTypes, useWeekStart } from "@/hooks/calendar";
 import { aiWeekOf } from "@/lib/ai-weekly";
 import { useEnsureDay } from "@/hooks/edit";
+import { useDayExercises, useDayMeals, useToggleExercise, useToggleMeal } from "@/hooks/plan";
+import { useProfile } from "@/hooks/wellness";
 import { addDays, isWeekPast, monthGrid, monthOf, shiftMonth, todayStr, weekDates } from "@/lib/dates";
-import { colors, radius, spacing } from "@/lib/theme";
+import { colors, radius, spacing, withAlpha } from "@/lib/theme";
 import { openWebPage } from "@/lib/web-links";
 
 type Mode = "week" | "month";
@@ -218,7 +222,7 @@ function DayCell({
       onPress={onPress}
       style={[styles.cell, styles.cellButton, selected && styles.cellSelected, isToday && !selected && styles.cellToday]}
     >
-      <AppText style={[styles.dayNumber, selected && styles.dayNumberSelected]}>{Number(date.slice(8, 10))}</AppText>
+      <AppText style={[styles.dayNumber, isToday && !selected && styles.dayNumberToday, selected && styles.dayNumberSelected]}>{Number(date.slice(8, 10))}</AppText>
       <View style={styles.cellIcon}>
         {planType ? <PlanTypeIcon planType={planType} size={13} color={selected ? colors.primaryText : undefined} /> : null}
       </View>
@@ -276,7 +280,8 @@ function SelectedDay({
         <AppText variant="small">{t("mobile.calendar.noPlanHint")}</AppText>
         {ensureDay.error ? <AppText style={{ color: colors.danger }}>{errorMessage(ensureDay.error)}</AppText> : null}
         <Button
-          label={`＋ ${t("calendar.manualAdd")}`}
+          icon="add"
+          label={t("calendar.manualAdd")}
           loading={ensureDay.isPending}
           onPress={() => ensureDay.mutate(date, { onSuccess: ({ id }) => router.push(`/day/${id}`) })}
         />
@@ -287,39 +292,122 @@ function SelectedDay({
 
   const summary = summaries.data?.find((s) => s.id === plan.id);
   const style = planTypeStyle(plan.planType);
+  const canShare = plan.weeklyPlanId != null && week.data?.weeklyPlan?.id === plan.weeklyPlanId && !(weekStart && isWeekPast(weekStart));
   return (
-    <Card>
-      <AppText variant="small">{heading}</AppText>
-      <View style={styles.planRow}>
-        <View style={[styles.planBadge, { borderColor: style.color }]}>
-          <PlanTypeIcon planType={plan.planType} size={18} />
+    <>
+      <Card>
+        <View style={styles.planRow}>
+          <IconCircle icon={style.icon} color={style.color} size={44} />
+          <View style={styles.grow}>
+            <AppText variant="small">{heading}</AppText>
+            <AppText variant="heading">{plan.workoutTitle || plan.dayName}</AppText>
+            <View style={styles.planMeta}>
+              <Pill icon={style.icon} label={t(`dashboard.planTypes.${plan.planType}` as "dashboard.planTypes.workout")} color={style.color} />
+              {summary ? (
+                <AppText variant="small">
+                  {t("mobile.calendar.counts", { meals: summary.mealCount, exercises: summary.exerciseCount })}
+                </AppText>
+              ) : null}
+            </View>
+          </View>
         </View>
-        <View style={styles.grow}>
-          <AppText variant="small">{t(`dashboard.planTypes.${plan.planType}`)}</AppText>
-          <AppText variant="heading">{plan.workoutTitle || plan.dayName}</AppText>
-          {summary ? (
-            <AppText variant="muted">
-              {t("mobile.calendar.counts", { meals: summary.mealCount, exercises: summary.exerciseCount })}
-            </AppText>
-          ) : null}
-        </View>
-      </View>
-      <Button label={t("calendar.goToDayDetail")} onPress={() => router.push(`/day/${plan.id}`)} />
-      {plan.weeklyPlanId ? (
-        <Button
-          label={`🛒 ${t("calendar.shoppingList")}`}
-          variant="secondary"
-          onPress={() => router.push({ pathname: "/shopping", params: { week: String(plan.weeklyPlanId) } })}
+        <Button icon="arrow-forward" label={t("calendar.goToDayDetail")} onPress={() => router.push(`/day/${plan.id}`)} />
+        {plan.weeklyPlanId ? (
+          <View style={styles.buttonRow}>
+            <Button
+              icon="cart-outline"
+              label={t("calendar.shoppingList")}
+              variant="secondary"
+              style={styles.grow}
+              onPress={() => router.push({ pathname: "/shopping", params: { week: String(plan.weeklyPlanId) } })}
+            />
+            {canShare ? (
+              <Button
+                icon="people-outline"
+                label={t("shareManager.shareButton")}
+                variant="secondary"
+                style={styles.grow}
+                onPress={() => router.push({ pathname: "/share-week", params: { weeklyPlanId: String(plan.weeklyPlanId) } })}
+              />
+            ) : null}
+          </View>
+        ) : null}
+      </Card>
+      <DayLists dayId={plan.id} planType={plan.planType} readOnly={plan.date != null && plan.date < todayStr()} />
+    </>
+  );
+}
+
+type ListTab = "nutrition" | "workout";
+
+/** The selected day's meals and workout right under the calendar, like the web (DayDetailPanel). Past days are view-only. */
+function DayLists({ dayId, planType, readOnly }: { dayId: number; planType: string; readOnly: boolean }) {
+  const t = useTranslations();
+  const router = useRouter();
+  const profile = useProfile();
+  const meals = useDayMeals(dayId);
+  const exercises = useDayExercises(dayId);
+  const toggleMeal = useToggleMeal(dayId);
+  const toggleExercise = useToggleExercise(dayId);
+  const [tab, setTab] = useState<ListTab>("nutrition");
+  const nutritionOnly = profile.data?.serviceType === "nutrition";
+  const current: ListTab = nutritionOnly ? "nutrition" : tab;
+  const id = String(dayId);
+  const loading = current === "nutrition" ? meals.isLoading : exercises.isLoading;
+
+  let content;
+  if (loading) content = <ActivityIndicator color={colors.primary} />;
+  else if (current === "nutrition") {
+    const data = meals.data ?? [];
+    content =
+      data.length === 0 ? (
+        <AppText variant="muted">{t("mobile.day.noMeals")}</AppText>
+      ) : (
+        data.map((meal) => (
+          <MealItem
+            key={meal.id}
+            meal={meal}
+            onToggle={readOnly ? undefined : (isCompleted) => toggleMeal.mutate({ id: meal.id, isCompleted })}
+            onPress={readOnly ? undefined : () => router.push({ pathname: "/meal-form", params: { dayId: id, mealId: String(meal.id) } })}
+            onAi={readOnly ? undefined : () => router.push({ pathname: "/ai/meal-variation", params: { dayId: id, mealId: String(meal.id) } })}
+          />
+        ))
+      );
+  } else {
+    const data = exercises.data ?? [];
+    content =
+      data.length === 0 ? (
+        <AppText variant="muted">{t(planType === "rest" ? "mobile.day.restDay" : "mobile.day.noExercises")}</AppText>
+      ) : (
+        <ExerciseSections
+          exercises={data}
+          onToggle={readOnly ? undefined : (exercise, isCompleted) => toggleExercise.mutate({ id: exercise.id, isCompleted })}
+          onPress={
+            readOnly
+              ? undefined
+              : (exercise) => router.push({ pathname: "/exercise-form", params: { dayId: id, exerciseId: String(exercise.id) } })
+          }
+          onAi={
+            readOnly ? undefined : (exercise) => router.push({ pathname: "/ai/exercise", params: { dayId: id, exerciseId: String(exercise.id) } })
+          }
         />
-      ) : null}
-      {plan.weeklyPlanId && week.data?.weeklyPlan?.id === plan.weeklyPlanId && !(weekStart && isWeekPast(weekStart)) ? (
-        <Button
-          label={`👥 ${t("shareManager.shareButton")}`}
-          variant="secondary"
-          onPress={() => router.push({ pathname: "/share-week", params: { weeklyPlanId: String(plan.weeklyPlanId) } })}
+      );
+  }
+
+  return (
+    <>
+      {nutritionOnly ? null : (
+        <Segmented
+          options={[
+            { value: "nutrition", label: t("day.tabs.nutrition") },
+            { value: "workout", label: t("day.tabs.workout") },
+          ]}
+          value={current}
+          onChange={setTab}
         />
-      ) : null}
-    </Card>
+      )}
+      {content}
+    </>
   );
 }
 
@@ -338,7 +426,8 @@ const styles = StyleSheet.create({
   cell: { flex: 1, aspectRatio: 0.85, maxHeight: 56 },
   cellButton: { alignItems: "center", justifyContent: "center", borderRadius: radius.sm, gap: 2 },
   cellSelected: { backgroundColor: colors.primary },
-  cellToday: { borderWidth: 1, borderColor: colors.primary },
+  cellToday: { backgroundColor: withAlpha(colors.primary, 0.15) },
+  dayNumberToday: { color: colors.primary },
   dayNumber: { fontSize: 15, fontWeight: "600", fontVariant: ["tabular-nums"] },
   dayNumberSelected: { color: colors.primaryText },
   cellIcon: { height: 14, justifyContent: "center" },
@@ -346,13 +435,7 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   todayRow: { alignItems: "center" },
   planRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  planBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  planMeta: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, marginTop: 2 },
+  buttonRow: { flexDirection: "row", gap: spacing.sm },
   grow: { flex: 1, gap: 2 },
 });

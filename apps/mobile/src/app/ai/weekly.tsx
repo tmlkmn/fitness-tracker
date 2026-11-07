@@ -357,7 +357,7 @@ function SavedWeekDetail({ id, date, onBack }: { id: number; date: string; onBac
 
   return (
     <>
-      <Button label={`‹ ${t("back")}`} variant="ghost" onPress={onBack} />
+      <Button icon="chevron-back" label={t("back")} variant="ghost" onPress={onBack} />
       <GateNotice date={date} week={week} />
       {apply.hasPlan ? <Banner icon={<Ionicons name="warning-outline" size={14} color={colors.warning} />}>{t("willReplace")}</Banner> : null}
       <WeeklyPreview plan={plan} />

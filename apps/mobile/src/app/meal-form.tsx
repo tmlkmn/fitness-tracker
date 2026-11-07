@@ -236,7 +236,7 @@ function MealForm({ dayId, meal }: { dayId: number; meal: MealDto | undefined })
       keyboardDismissMode="interactive"
       automaticallyAdjustKeyboardInsets
     >
-      {meal ? null : <Button label={`📚 ${tf("pickFromLibrary")}`} variant="secondary" onPress={() => setView("picker")} />}
+      {meal ? null : <Button icon="library-outline" label={tf("pickFromLibrary")} variant="secondary" onPress={() => setView("picker")} />}
 
       <Card>
         <AppText variant="small">{tf("mealName")} *</AppText>
@@ -302,7 +302,7 @@ function MealForm({ dayId, meal }: { dayId: number; meal: MealDto | undefined })
             ))}
           </View>
         ) : null}
-        <Button label={`📖 ${tm("addFromFoods")}`} variant="secondary" onPress={() => setView("foods")} />
+        <Button icon="book-outline" label={tm("addFromFoods")} variant="secondary" onPress={() => setView("foods")} />
       </Card>
 
       <Card>
