@@ -1,13 +1,17 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { Locale } from "@fitmusc/shared/locale";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Switch, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
-import { AppText, Button, Card, Screen, useErrorMessage } from "@/components/ui";
+import { ProfileSummaryCard, SettingsGroup, SettingsRow } from "@/components/settings-list";
+import { AppText, Button, Screen, useErrorMessage } from "@/components/ui";
 import { useAiConsent, useSetConsents } from "@/hooks/ai-consent";
 import { usePushRegistration } from "@/hooks/push";
+import { useProfile } from "@/hooks/wellness";
+import { todayStr } from "@/lib/dates";
 import type { PushRegistration } from "@/lib/push";
 import { useSession } from "@/lib/session";
 import { colors, radius, spacing } from "@/lib/theme";
@@ -31,6 +35,7 @@ export default function SettingsScreen() {
   const locale = useLocale() as Locale;
   const errorMessage = useErrorMessage();
   const { user, setLocale, signOut, reportDenial } = useSession();
+  const profile = useProfile();
   const push = usePushRegistration();
   const aiConsent = useAiConsent();
   const consents = useSetConsents();
@@ -74,92 +79,115 @@ export default function SettingsScreen() {
     ]);
 
   const pushResult = push.data;
+  const pushRegistered = pushResult?.status === "registered";
   const pushKey = pushResult
     ? PUSH_TEXT[pushResult.status === "unavailable" ? pushResult.reason : pushResult.status]
     : null;
 
   return (
-    <Screen>
-      <Card>
-        <AppText variant="small">{t("mobile.settings.account")}</AppText>
-        <AppText variant="heading">{user?.name}</AppText>
-        <AppText variant="muted">{user?.email}</AppText>
-      </Card>
+    <Screen refreshing={profile.isRefetching} onRefresh={() => profile.refetch()}>
+      <ProfileSummaryCard name={user?.name} email={user?.email} profile={profile.data} today={todayStr()} />
 
-      <Card>
-        <AppText variant="small">{t("mobile.settings.language")}</AppText>
-        <View style={styles.segment} accessibilityRole="radiogroup">
-          {(["tr", "en"] as const).map((option) => (
-            <Pressable
-              key={option}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: locale === option, busy: changing === option }}
-              onPress={() => chooseLocale(option)}
-              style={[styles.segmentItem, locale === option && styles.segmentActive]}
-            >
-              <AppText style={locale === option ? styles.segmentLabelActive : styles.segmentLabel}>
-                {t(option === "tr" ? "nav.languageTurkish" : "nav.languageEnglish")}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
-        {localeError ? <AppText style={{ color: colors.danger }}>{localeError}</AppText> : null}
-      </Card>
+      <SettingsGroup label={t("settings.groups.goals")}>
+        <SettingsRow
+          icon="pie-chart-outline"
+          title={t("settings.items.macroTitle")}
+          subtitle={t("settings.items.macroSubtitle")}
+          onPress={() => router.push("/macro-targets")}
+        />
+        <SettingsRow icon="flag-outline" title={t("progress.weightTarget.title")} onPress={() => router.push("/weight-targets")} />
+      </SettingsGroup>
 
-      <Card>
-        <AppText variant="small">{t("mobile.settings.notifications")}</AppText>
-        <AppText variant="muted">{pushKey ? t(`mobile.settings.${pushKey}`) : t("common.loading")}</AppText>
-        {pushResult && pushResult.status !== "registered" ? (
-          <Button
-            label={t("mobile.settings.pushEnable")}
-            variant="secondary"
-            loading={push.isFetching}
-            onPress={() => push.refetch()}
-          />
-        ) : null}
-        <Button label={t("settings.notificationPrefs.title")} variant="secondary" onPress={() => router.push("/notification-settings")} />
-        <Button label={t("settings.remindersCard.title")} variant="secondary" onPress={() => router.push("/reminders")} />
-      </Card>
+      <SettingsGroup label={t("settings.groups.app")}>
+        <SettingsRow
+          icon="notifications-outline"
+          title={t("settings.items.notificationsTitle")}
+          subtitle={t("settings.items.notificationsSubtitle")}
+          onPress={() => router.push("/notification-settings")}
+        />
+        <SettingsRow
+          icon="alarm-outline"
+          title={t("settings.items.remindersTitle")}
+          subtitle={t("settings.items.remindersSubtitle")}
+          onPress={() => router.push("/reminders")}
+        />
+        <SettingsRow
+          icon="phone-portrait-outline"
+          title={t("mobile.settings.notifications")}
+          subtitle={pushKey ? t(`mobile.settings.${pushKey}`) : t("common.loading")}
+          tone={pushResult && !pushRegistered ? "warning" : "default"}
+          onPress={pushResult && !pushRegistered ? () => push.refetch() : undefined}
+          trailing={
+            push.isFetching ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : pushRegistered ? (
+              <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+            ) : undefined
+          }
+        />
+        <SettingsRow
+          icon="language-outline"
+          title={t("mobile.settings.language")}
+          subtitle={localeError ?? undefined}
+          trailing={
+            <View style={styles.segment} accessibilityRole="radiogroup">
+              {(["tr", "en"] as const).map((option) => (
+                <Pressable
+                  key={option}
+                  accessibilityRole="radio"
+                  accessibilityLabel={t(option === "tr" ? "nav.languageTurkish" : "nav.languageEnglish")}
+                  accessibilityState={{ checked: locale === option, busy: changing === option }}
+                  onPress={() => chooseLocale(option)}
+                  style={[styles.segmentItem, locale === option && styles.segmentActive]}
+                >
+                  <AppText style={locale === option ? styles.segmentLabelActive : styles.segmentLabel}>{option.toUpperCase()}</AppText>
+                </Pressable>
+              ))}
+            </View>
+          }
+        />
+        <SettingsRow icon="globe-outline" title={t("mobile.settings.openWebApp")} external onPress={() => openWebPage("home", locale)} />
+      </SettingsGroup>
 
-      <Card>
-        <AppText variant="small">{t("mobile.sharing.title")}</AppText>
-        <AppText variant="muted">{t("sharing.subtitle")}</AppText>
-        <Button label={t("mobile.sharing.title")} variant="secondary" onPress={() => router.push("/sharing")} />
-      </Card>
+      <SettingsGroup label={t("settings.groups.sharingData")}>
+        <SettingsRow
+          icon="share-social-outline"
+          title={t("settings.items.sharingTitle")}
+          subtitle={t("settings.items.sharingSubtitle")}
+          onPress={() => router.push("/sharing")}
+        />
+        <SettingsRow
+          icon="sparkles-outline"
+          title={t("mobile.aiConsent.settingsTitle")}
+          subtitle={t(aiConsent.granted ? "mobile.aiConsent.granted" : "mobile.aiConsent.notGranted")}
+          trailing={
+            <Switch
+              accessibilityLabel={t("mobile.aiConsent.settingsTitle")}
+              value={aiConsent.granted}
+              disabled={aiConsent.saving}
+              onValueChange={setAi}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          }
+        />
+      </SettingsGroup>
 
-      <Card>
-        <AppText variant="small">{t("settings.subpages.macroTitle")}</AppText>
-        <AppText variant="muted">{t("meals.aiMacro.title")}</AppText>
-        <Button label={t("settings.subpages.macroTitle")} variant="secondary" onPress={() => router.push("/macro-targets")} />
-      </Card>
-
-      <Card>
-        <AppText variant="small">{t("mobile.aiConsent.settingsTitle")}</AppText>
-        <AppText variant="muted">{t(aiConsent.granted ? "mobile.aiConsent.granted" : "mobile.aiConsent.notGranted")}</AppText>
-        {aiConsent.granted ? (
-          <Button label={t("mobile.aiConsent.revoke")} variant="secondary" loading={aiConsent.saving} onPress={() => setAi(false)} />
-        ) : (
-          <Button label={t("mobile.aiConsent.allow")} variant="secondary" loading={aiConsent.saving} onPress={() => setAi(true)} />
-        )}
-      </Card>
-
-      <Card>
-        <AppText variant="small">{t("mobile.settings.privacyAccount")}</AppText>
-        <Button label={t("cookieConsent.privacyLink")} variant="secondary" onPress={() => openWebPage("privacy", locale)} />
-        <Button label={t("footer.links.terms")} variant="secondary" onPress={() => openWebPage("terms", locale)} />
-        <Button label={t("consent.kvkkLink")} variant="secondary" onPress={() => openWebPage("kvkk", locale)} />
+      <SettingsGroup label={t("mobile.settings.privacyAccount")}>
+        <SettingsRow icon="shield-checkmark-outline" title={t("cookieConsent.privacyLink")} external onPress={() => openWebPage("privacy", locale)} />
+        <SettingsRow icon="document-text-outline" title={t("footer.links.terms")} external onPress={() => openWebPage("terms", locale)} />
+        <SettingsRow icon="reader-outline" title={t("consent.kvkkLink")} external onPress={() => openWebPage("kvkk", locale)} />
         {user?.role === "admin" ? null : (
-          <Button
-            label={t("consent.settings.dataWithdraw")}
-            variant="secondary"
-            loading={consents.isPending}
+          <SettingsRow
+            icon="hand-left-outline"
+            title={t("consent.settings.dataWithdraw")}
+            tone="warning"
+            disabled={consents.isPending}
             onPress={withdrawDataConsent}
           />
         )}
-        <Button label={t("account.delete.title")} variant="danger" onPress={() => router.push("/delete-account")} />
-      </Card>
+        <SettingsRow icon="trash-outline" title={t("account.delete.title")} tone="danger" onPress={() => router.push("/delete-account")} />
+      </SettingsGroup>
 
-      <Button label={t("mobile.settings.openWebApp")} variant="secondary" onPress={() => openWebPage("home", locale)} />
       <Button
         label={t("nav.signOut")}
         variant="danger"
@@ -178,10 +206,10 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  segment: { flexDirection: "row", gap: spacing.xs, backgroundColor: colors.background, borderRadius: radius.md, padding: spacing.xs },
-  segmentItem: { flex: 1, alignItems: "center", paddingVertical: spacing.sm, borderRadius: radius.sm },
+  segment: { flexDirection: "row", gap: 2, backgroundColor: colors.background, borderRadius: radius.sm, padding: 2 },
+  segmentItem: { minWidth: 40, alignItems: "center", paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, borderRadius: radius.sm - 2 },
   segmentActive: { backgroundColor: colors.primary },
-  segmentLabel: { color: colors.textMuted, fontWeight: "500" },
-  segmentLabelActive: { color: colors.primaryText, fontWeight: "600" },
+  segmentLabel: { color: colors.textMuted, fontWeight: "600", fontSize: 13 },
+  segmentLabelActive: { color: colors.primaryText, fontWeight: "700", fontSize: 13 },
   version: { textAlign: "center" },
 });

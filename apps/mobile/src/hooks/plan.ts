@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import { syncCompletion, withPending } from "@/lib/outbox";
 
 import { patchCaches, restore } from "./cache";
+import { gamificationKeys } from "./gamification";
 
 export const keys = {
   today: ["dashboard.today"] as const,
@@ -96,6 +97,7 @@ export function useToggleMeal(dayId: number) {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: keys.meals(dayId) });
       void qc.invalidateQueries({ queryKey: keys.today });
+      void qc.invalidateQueries({ queryKey: gamificationKeys.activityStats });
     },
   });
 }
@@ -117,6 +119,7 @@ export function useToggleExercise(dayId: number) {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: keys.exercises(dayId) });
       void qc.invalidateQueries({ queryKey: keys.today });
+      void qc.invalidateQueries({ queryKey: gamificationKeys.activityStats });
     },
   });
 }
@@ -128,6 +131,7 @@ export function useCompleteAll(dayId: number, kind: "meals" | "exercises") {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: kind === "meals" ? keys.meals(dayId) : keys.exercises(dayId) });
       void qc.invalidateQueries({ queryKey: keys.today });
+      void qc.invalidateQueries({ queryKey: gamificationKeys.activityStats });
     },
   });
 }

@@ -1,15 +1,17 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ExerciseDto, MacroTargetsDto, MealDto } from "@fitmusc/shared/api/dto";
+import { intlLocale } from "@fitmusc/shared/date-format";
+import type { Locale } from "@fitmusc/shared/locale";
 import { coerceMealLabel, getLocalizedMealLabel } from "@fitmusc/shared/meal-labels";
 import { computeMealMacros } from "@fitmusc/shared/meal-macros";
-import type { Locale } from "@fitmusc/shared/locale";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
-import { colors, radius, spacing } from "@/lib/theme";
+import { colors, macroColors, radius, spacing, withAlpha } from "@/lib/theme";
 
 import { AiIconButton } from "./ai";
 import { AppText, Card, ProgressBar } from "./ui";
+import { Pill, type IconName } from "./visual";
 
 /** A meal's emoji when it has no icon override (`meals.icon`). */
 export const MEAL_EMOJI: Record<string, string> = {
@@ -23,6 +25,15 @@ export const MEAL_EMOJI: Record<string, string> = {
   "Akşam Atıştırması": "🌙",
 };
 
+/** Workout section → icon, like the web's section headers. */
+const SECTION_ICONS: Record<string, IconName> = {
+  warmup: "flame",
+  main: "barbell",
+  cooldown: "snow",
+  sauna: "thermometer",
+  swimming: "water",
+};
+
 function CheckButton({ checked, onPress, label }: { checked: boolean; onPress: () => void; label: string }) {
   return (
     <Pressable
@@ -34,6 +45,22 @@ function CheckButton({ checked, onPress, label }: { checked: boolean; onPress: (
       style={[styles.check, checked && styles.checkOn]}
     >
       {checked ? <Ionicons name="checkmark" size={18} color={colors.primaryText} /> : null}
+    </Pressable>
+  );
+}
+
+/** Icon over a small label — the web cards' bottom action bar. */
+function CardAction({ icon, label, onPress, color = colors.textMuted }: { icon: IconName; label: string; onPress: () => void; color?: string }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      hitSlop={4}
+      style={({ pressed }) => [styles.action, pressed && { backgroundColor: colors.cardPressed }]}
+    >
+      <Ionicons name={icon} size={20} color={color} />
+      <AppText style={[styles.actionLabel, { color }]}>{label}</AppText>
     </Pressable>
   );
 }
@@ -52,30 +79,60 @@ export function MealItem({
   onAi?: () => void;
 }) {
   const locale = useLocale() as Locale;
-  const t = useTranslations("meals.macroSummary");
-  const ta = useTranslations("meals.aiSuggestion");
+  const t = useTranslations();
   const done = Boolean(meal.isCompleted);
   const label = getLocalizedMealLabel(coerceMealLabel(meal.mealLabel), locale);
+  const grams = (value: string | null) => (value ? Math.round(Number(value)) : 0);
   const macros = [
-    meal.calories != null ? `${meal.calories} kcal` : null,
-    meal.proteinG ? `${t("protein")} ${Math.round(Number(meal.proteinG))}g` : null,
-    meal.carbsG ? `${t("carbs")} ${Math.round(Number(meal.carbsG))}g` : null,
-    meal.fatG ? `${t("fat")} ${Math.round(Number(meal.fatG))}g` : null,
-  ].filter(Boolean);
+    { label: t("meals.macroSummary.protein"), value: grams(meal.proteinG), color: macroColors.protein },
+    { label: t("meals.macroSummary.carbs"), value: grams(meal.carbsG), color: macroColors.carbs },
+    { label: t("meals.macroSummary.fat"), value: grams(meal.fatG), color: macroColors.fat },
+  ].filter((m) => m.value > 0);
+  const actions = !done && (onPress || onAi);
 
   const card = (pressed: boolean) => (
-    <Card style={[done && styles.done, pressed && styles.pressed]}>
-      <View style={styles.row}>
-        <AppText style={styles.emoji}>{meal.icon || MEAL_EMOJI[meal.mealLabel] || "🍴"}</AppText>
-        <View style={styles.grow}>
-          <AppText variant="heading">{label}</AppText>
-          <AppText variant="small">{meal.mealTime}</AppText>
+    <Card style={[styles.mealCard, done && styles.done, pressed && styles.pressed]}>
+      <View style={styles.mealBody}>
+        <View style={styles.row}>
+          <View style={styles.mealIcon}>
+            <AppText style={styles.emoji}>{meal.icon || MEAL_EMOJI[meal.mealLabel] || "🍴"}</AppText>
+          </View>
+          <View style={styles.grow}>
+            <AppText variant="heading" style={done && styles.struck} numberOfLines={1}>
+              {label}
+            </AppText>
+            <View style={styles.meta}>
+              {meal.mealTime ? (
+                <View style={styles.time}>
+                  <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+                  <AppText variant="small" style={styles.tabular}>
+                    {meal.mealTime}
+                  </AppText>
+                </View>
+              ) : null}
+              {meal.calories != null ? <Pill icon="flame" label={`${meal.calories} kcal`} color={macroColors.calories} /> : null}
+            </View>
+          </View>
+          {onToggle ? <CheckButton checked={done} label={label} onPress={() => onToggle(!done)} /> : null}
         </View>
-        {onAi ? <AiIconButton label={ta("buttonLabel")} onPress={onAi} /> : null}
-        {onToggle ? <CheckButton checked={done} label={label} onPress={() => onToggle(!done)} /> : null}
+        <AppText variant="muted" style={done && styles.struck}>
+          {meal.content}
+        </AppText>
+        {macros.length > 0 ? (
+          <View style={styles.chips}>
+            {macros.map((m) => (
+              <Pill key={m.label} label={`${m.label} ${m.value} g`} color={m.color} />
+            ))}
+          </View>
+        ) : null}
       </View>
-      <AppText style={done && styles.struck}>{meal.content}</AppText>
-      {macros.length > 0 ? <AppText variant="small">{macros.join(" · ")}</AppText> : null}
+      {actions ? (
+        <View style={styles.actions}>
+          {onPress ? <CardAction icon="create-outline" label={t("common.edit")} onPress={onPress} /> : null}
+          <View style={styles.grow} />
+          {onAi ? <CardAction icon="sparkles" label={t("meals.card.ai")} color={colors.primary} onPress={onAi} /> : null}
+        </View>
+      ) : null}
     </Card>
   );
   if (!onPress) return card(false);
@@ -91,35 +148,45 @@ export function ExerciseItem({
   onToggle,
   onPress,
   onAi,
+  first = false,
 }: {
   exercise: ExerciseDto;
   onToggle?: (isCompleted: boolean) => void;
   onPress?: () => void;
   /** Opens alternatives / form tips for this exercise. */
   onAi?: () => void;
+  /** No divider above the first row of a section. */
+  first?: boolean;
 }) {
-  const t = useTranslations("mobile.day");
+  const t = useTranslations("workout.card");
   const ta = useTranslations("mobile.ai");
   const done = Boolean(exercise.isCompleted);
-  const detail = [
-    exercise.sets ? `${t("sets", { sets: exercise.sets })}${exercise.reps ? ` × ${exercise.reps}` : ""}` : exercise.reps,
-    exercise.durationMinutes ? t("minutes", { minutes: exercise.durationMinutes }) : null,
-    exercise.restSeconds ? t("rest", { seconds: exercise.restSeconds }) : null,
-  ].filter(Boolean);
+  const volume =
+    exercise.sets && exercise.reps ? `${exercise.sets}×${exercise.reps}` : exercise.sets ? `${exercise.sets} set` : exercise.reps;
 
   return (
-    <View style={[styles.exercise, done && styles.done]}>
+    <View style={[styles.exercise, !first && styles.divided, done && styles.done]}>
       <Pressable
         disabled={!onPress}
         accessibilityRole={onPress ? "button" : undefined}
         onPress={onPress}
-        style={({ pressed }) => [styles.grow, pressed && styles.pressedText]}
+        style={({ pressed }) => [styles.grow, { gap: spacing.xs }, pressed && styles.pressedText]}
       >
         <AppText style={[styles.exerciseName, done && styles.struck]}>{exercise.name}</AppText>
-        {detail.length > 0 ? <AppText variant="small">{detail.join(" · ")}</AppText> : null}
-        {exercise.notes ? <AppText variant="muted">{exercise.notes}</AppText> : null}
+        {volume || exercise.durationMinutes || exercise.restSeconds ? (
+          <View style={styles.chips}>
+            {volume ? <Pill icon="repeat" label={volume} color={colors.primary} /> : null}
+            {exercise.durationMinutes ? (
+              <Pill icon="time-outline" label={`${exercise.durationMinutes} ${t("minutesShort")}`} color={colors.textMuted} />
+            ) : null}
+            {exercise.restSeconds ? (
+              <Pill icon="hourglass-outline" label={`${exercise.restSeconds} ${t("secondsShort")}`} color={colors.textMuted} />
+            ) : null}
+          </View>
+        ) : null}
+        {exercise.notes ? <AppText style={[styles.note, done && styles.struck]}>{exercise.notes}</AppText> : null}
       </Pressable>
-      {onAi ? <AiIconButton label={ta("exerciseAi", { name: exercise.name })} onPress={onAi} /> : null}
+      {onAi && !done ? <AiIconButton label={ta("exerciseAi", { name: exercise.name })} onPress={onAi} /> : null}
       {onToggle ? <CheckButton checked={done} label={exercise.name} onPress={() => onToggle(!done)} /> : null}
     </View>
   );
@@ -141,6 +208,7 @@ export function ExerciseSections({
   onSectionAi?: (section: string, sectionLabel: string) => void;
 }) {
   const ts = useTranslations("workout.section");
+  const locale = useLocale() as Locale;
   const sections: { label: string; items: ExerciseDto[] }[] = [];
   for (const exercise of exercises) {
     const last = sections[sections.length - 1];
@@ -149,30 +217,36 @@ export function ExerciseSections({
   }
   return (
     <>
-      {sections.map((section, i) => (
-        <Card key={`${section.label}-${i}`}>
-          <View style={styles.row}>
-            <AppText variant="heading" style={styles.grow}>
-              {section.label}
-            </AppText>
-            {onSectionAi ? (
-              <AiIconButton
-                label={ts("aiChangeSection", { section: section.label })}
-                onPress={() => onSectionAi(section.items[0].section, section.label)}
+      {sections.map((section, i) => {
+        const key = section.items[0].section;
+        const doneCount = section.items.filter((e) => e.isCompleted).length;
+        return (
+          <Card key={`${section.label}-${i}`} style={{ gap: spacing.sm }}>
+            <View style={styles.sectionHead}>
+              <Ionicons name={SECTION_ICONS[key] ?? "barbell"} size={15} color={colors.primary} />
+              <AppText style={styles.sectionLabel} numberOfLines={1}>
+                {section.label.toLocaleUpperCase(intlLocale(locale))}
+              </AppText>
+              <AppText variant="small" style={styles.tabular}>
+                {doneCount}/{section.items.length}
+              </AppText>
+              {onSectionAi ? (
+                <AiIconButton label={ts("aiChangeSection", { section: section.label })} onPress={() => onSectionAi(key, section.label)} />
+              ) : null}
+            </View>
+            {section.items.map((exercise, index) => (
+              <ExerciseItem
+                key={exercise.id}
+                exercise={exercise}
+                first={index === 0}
+                onToggle={onToggle ? (done) => onToggle(exercise, done) : undefined}
+                onPress={onPress ? () => onPress(exercise) : undefined}
+                onAi={onAi ? () => onAi(exercise) : undefined}
               />
-            ) : null}
-          </View>
-          {section.items.map((exercise) => (
-            <ExerciseItem
-              key={exercise.id}
-              exercise={exercise}
-              onToggle={onToggle ? (done) => onToggle(exercise, done) : undefined}
-              onPress={onPress ? () => onPress(exercise) : undefined}
-              onAi={onAi ? () => onAi(exercise) : undefined}
-            />
-          ))}
-        </Card>
-      ))}
+            ))}
+          </Card>
+        );
+      })}
     </>
   );
 }
@@ -215,7 +289,8 @@ export function MacroSummary({ meals, targets }: { meals: MealDto[]; targets: Ma
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   grow: { flex: 1, gap: 2 },
-  emoji: { fontSize: 26 },
+  tabular: { fontVariant: ["tabular-nums"] },
+  emoji: { fontSize: 22 },
   done: { opacity: 0.6 },
   pressed: { backgroundColor: colors.cardPressed },
   pressedText: { opacity: 0.6 },
@@ -230,7 +305,33 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  exercise: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.xs },
-  exerciseName: { fontSize: 15, fontWeight: "500" },
+  mealCard: { padding: 0, gap: 0, overflow: "hidden" },
+  mealBody: { padding: spacing.lg, gap: spacing.sm },
+  mealIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: withAlpha(colors.primary, 0.12),
+  },
+  meta: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
+  time: { flexDirection: "row", alignItems: "center", gap: 3 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  action: { alignItems: "center", justifyContent: "center", gap: 2, minHeight: 44, paddingHorizontal: spacing.md, borderRadius: radius.sm },
+  actionLabel: { fontSize: 11, fontWeight: "500" },
+  exercise: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm },
+  divided: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  exerciseName: { fontSize: 15, fontWeight: "600" },
+  note: { fontSize: 13, color: colors.warning },
+  sectionHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  sectionLabel: { flex: 1, fontSize: 12, fontWeight: "700", color: colors.primary, letterSpacing: 0.8 },
   macroRow: { flexDirection: "row", justifyContent: "space-between" },
 });

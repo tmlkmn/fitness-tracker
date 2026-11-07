@@ -1,15 +1,26 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
-import type { Locale } from "@fitmusc/shared/locale";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
-import { useLocale, useTranslations } from "use-intl";
+import { useTranslations } from "use-intl";
 
+import {
+  AchievementStrip,
+  DailyRings,
+  GreetingCard,
+  NoPlanCard,
+  QuickLinks,
+  StatsRow,
+  StreakCard,
+  TodayPlanCard,
+  WeekStrip,
+} from "@/components/dashboard";
 import { OfflineBanner } from "@/components/offline-banner";
-import { ExerciseSections, MacroSummary, MealItem } from "@/components/plan-items";
-import { AppText, Button, Card, ErrorView, LoadingView, ProgressBar, Screen, SectionTitle } from "@/components/ui";
-import { SleepCard, WaterCard } from "@/components/wellness";
+import { ExerciseSections, MealItem } from "@/components/plan-items";
+import { AppText, Card, ErrorView, LoadingView, Screen, SectionTitle } from "@/components/ui";
+import { CardHeading } from "@/components/visual";
+import { SleepTile, WaterTile } from "@/components/wellness";
 import { useGreeting } from "@/hooks/ai";
+import { useActivityStats } from "@/hooks/gamification";
 import {
   useDaySupplements,
   useMacroTargets,
@@ -18,18 +29,22 @@ import {
   useToggleMeal,
   useToggleSupplement,
 } from "@/hooks/plan";
+import { useWeeks } from "@/hooks/shopping";
+import { useProfile } from "@/hooks/wellness";
 import { todayStr } from "@/lib/dates";
 import { useSession } from "@/lib/session";
 import { colors, spacing } from "@/lib/theme";
 
 export default function TodayScreen() {
   const t = useTranslations();
-  const locale = useLocale() as Locale;
   const router = useRouter();
   const { user } = useSession();
   const today = todayStr();
   const dashboard = useTodayDashboard();
   const greeting = useGreeting();
+  const profile = useProfile();
+  const weeks = useWeeks();
+  const activity = useActivityStats();
   const day = dashboard.data?.dailyPlan ?? null;
   const dayId = day?.id ?? 0;
   const targets = useMacroTargets(day?.planType);
@@ -44,54 +59,49 @@ export default function TodayScreen() {
 
   const meals = dashboard.data?.meals ?? [];
   const exercises = dashboard.data?.exercises ?? [];
+  const weeklyPlan = dashboard.data?.weeklyPlan ?? null;
   const firstName = user?.name?.split(" ")[0] ?? "";
+  const nutritionOnly = profile.data?.serviceType === "nutrition";
+  const counted = nutritionOnly ? meals : exercises;
+  const todayPct = counted.length > 0 ? Math.round((counted.filter((x) => x.isCompleted).length / counted.length) * 100) : null;
+
+  const refresh = () => {
+    void dashboard.refetch();
+    void activity.refetch();
+    void profile.refetch();
+  };
 
   return (
-    <Screen refreshing={dashboard.isRefetching} onRefresh={() => dashboard.refetch()}>
+    <Screen refreshing={dashboard.isRefetching} onRefresh={refresh}>
       <OfflineBanner />
-      <View style={{ gap: spacing.xs }}>
-        <AppText variant="muted">{formatDate(parseDateOnly(today), locale, { weekday: "long", day: "numeric", month: "long" })}</AppText>
-        {firstName ? <AppText variant="heading">{t("dashboard.welcome", { name: firstName })}</AppText> : null}
-        {greeting.data?.message ? <AppText variant="muted">{greeting.data.message}</AppText> : null}
+      <GreetingCard date={today} firstName={firstName} message={greeting.data?.message} profile={profile.data} />
+
+      {day ? (
+        <>
+          <TodayPlanCard
+            dayId={day.id}
+            planType={day.planType}
+            workoutTitle={day.workoutTitle}
+            meals={meals}
+            exercises={exercises}
+            nutritionOnly={nutritionOnly}
+          />
+          <DailyRings meals={meals} exercises={exercises} targets={targets.data?.targets} nutritionOnly={nutritionOnly} />
+        </>
+      ) : (
+        <NoPlanCard />
+      )}
+
+      <View style={styles.tiles}>
+        <WaterTile date={today} />
+        <SleepTile date={today} />
       </View>
 
-      {!day ? (
-        <Card>
-          <AppText variant="heading">{t("dashboard.noPlanToday")}</AppText>
-          <AppText variant="muted">{t("mobile.today.noPlanHint")}</AppText>
-        </Card>
-      ) : (
+      {day ? (
         <>
-          <Pressable onPress={() => router.push(`/day/${day.id}`)} accessibilityRole="button">
-            {({ pressed }) => (
-              <Card style={pressed && { backgroundColor: colors.cardPressed }}>
-                <View style={styles.planHeader}>
-                  <View style={styles.grow}>
-                    <AppText variant="small">{t(`dashboard.planTypes.${day.planType}`)}</AppText>
-                    <AppText variant="heading">{day.workoutTitle || t("dashboard.todayPlan")}</AppText>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-                </View>
-                <Progress label={t("mobile.today.meals")} done={meals.filter((m) => m.isCompleted).length} total={meals.length} />
-                {exercises.length > 0 ? (
-                  <Progress
-                    label={t("mobile.today.workout")}
-                    done={exercises.filter((e) => e.isCompleted).length}
-                    total={exercises.length}
-                  />
-                ) : null}
-              </Card>
-            )}
-          </Pressable>
-
-          {meals.length > 0 ? (
-            <Card>
-              <AppText variant="heading">{t("mobile.today.macros")}</AppText>
-              <MacroSummary meals={meals} targets={targets.data?.targets} />
-            </Card>
-          ) : null}
-
-          <SectionTitle>{t("mobile.today.meals")}</SectionTitle>
+          <SectionTitle>
+            <Ionicons name="restaurant" size={17} color={colors.primary} /> {t("mobile.today.meals")}
+          </SectionTitle>
           {meals.length === 0 ? <AppText variant="muted">{t("mobile.day.noMeals")}</AppText> : null}
           {meals.map((meal) => (
             <MealItem
@@ -105,7 +115,9 @@ export default function TodayScreen() {
 
           {exercises.length > 0 ? (
             <>
-              <SectionTitle>{t("mobile.today.workout")}</SectionTitle>
+              <SectionTitle>
+                <Ionicons name="barbell" size={17} color={colors.primary} /> {t("mobile.today.workout")}
+              </SectionTitle>
               <ExerciseSections
                 exercises={exercises}
                 onToggle={(exercise, isCompleted) => toggleExercise.mutate({ id: exercise.id, isCompleted })}
@@ -121,34 +133,18 @@ export default function TodayScreen() {
 
           <Supplements dayId={day.id} date={today} />
         </>
-      )}
-
-      <WaterCard date={today} />
-      <SleepCard date={today} />
-
-      {day ? <Button label={t("mobile.today.openDay")} variant="secondary" onPress={() => router.push(`/day/${day.id}`)} /> : null}
-      {dashboard.data?.weeklyPlan ? (
-        <Button
-          label={`🛒 ${t("calendar.shoppingList")}`}
-          variant="secondary"
-          onPress={() => router.push({ pathname: "/shopping", params: { week: String(dashboard.data?.weeklyPlan?.id) } })}
-        />
       ) : null}
-    </Screen>
-  );
-}
 
-function Progress({ label, done, total }: { label: string; done: number; total: number }) {
-  return (
-    <View style={{ gap: spacing.xs }}>
-      <View style={styles.progressRow}>
-        <AppText variant="muted">{label}</AppText>
-        <AppText variant="small">
-          {done}/{total}
-        </AppText>
-      </View>
-      <ProgressBar value={done} max={total} />
-    </View>
+      {weeklyPlan ? <WeekStrip weeklyPlanId={weeklyPlan.id} weekTitle={weeklyPlan.title} today={today} /> : null}
+      <StatsRow profile={profile.data} weeksCount={weeks.data?.length ?? 0} todayPct={todayPct} nutritionOnly={nutritionOnly} />
+      {activity.data ? (
+        <>
+          <StreakCard stats={activity.data} />
+          <AchievementStrip stats={activity.data} />
+        </>
+      ) : null}
+      <QuickLinks weeklyPlanId={weeklyPlan?.id ?? null} />
+    </Screen>
   );
 }
 
@@ -160,7 +156,7 @@ function Supplements({ dayId, date }: { dayId: number; date: string }) {
   if (list.length === 0) return null;
   return (
     <Card>
-      <AppText variant="heading">💊 {t("supplements")}</AppText>
+      <CardHeading icon="medkit-outline" title={t("supplements")} right={`${list.filter((s) => s.isCompleted).length}/${list.length}`} />
       {list.map((s) => (
         <Pressable
           key={s.id}
@@ -185,9 +181,8 @@ function Supplements({ dayId, date }: { dayId: number; date: string }) {
 }
 
 const styles = StyleSheet.create({
-  planHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  tiles: { flexDirection: "row", gap: spacing.md },
   grow: { flex: 1, gap: 2 },
-  progressRow: { flexDirection: "row", justifyContent: "space-between" },
   supplement: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.xs },
   struck: { textDecorationLine: "line-through", color: colors.textMuted },
 });

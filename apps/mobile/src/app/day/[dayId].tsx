@@ -6,13 +6,15 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import { exerciseInputSchema, type ExerciseInputBody } from "@fitmusc/shared/api/schemas";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState, type ReactNode } from "react";
-import { Alert } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import { useLocale, useTranslations } from "use-intl";
 
 import { AiButton, JobBanner, MonthGateNotice } from "@/components/ai";
 import { OfflineBanner } from "@/components/offline-banner";
 import { ExerciseSections, MacroSummary, MealItem } from "@/components/plan-items";
+import { planTypeStyle } from "@/components/plan-type";
 import { AppText, Banner, Button, Card, ErrorView, LoadingView, Screen, Segmented, useErrorMessage } from "@/components/ui";
+import { CardHeading, Pill } from "@/components/visual";
 import { SleepCard, WaterCard } from "@/components/wellness";
 import { useMonthGate } from "@/hooks/ai";
 import { useCopyLastWeek } from "@/hooks/edit";
@@ -58,6 +60,18 @@ export default function DayScreen() {
         {readOnly ? (
           <Banner icon={<Ionicons name="lock-closed" size={14} color={colors.warning} />}>{t("day.pastDayBanner.title")}</Banner>
         ) : null}
+        <View style={styles.dayHead}>
+          <Pill
+            icon={planTypeStyle(day.data.planType).icon}
+            label={t(`dashboard.planTypes.${day.data.planType}` as "dashboard.planTypes.workout")}
+            color={planTypeStyle(day.data.planType).color}
+          />
+          {day.data.workoutTitle ? (
+            <AppText variant="muted" style={styles.grow} numberOfLines={2}>
+              {day.data.workoutTitle}
+            </AppText>
+          ) : null}
+        </View>
         <Segmented options={tabs} value={tab} onChange={setTab} />
         {tab === "nutrition" ? <NutritionTab day={day.data} meals={meals} readOnly={readOnly} /> : null}
         {tab === "workout" ? <WorkoutTab day={day.data} exercises={exercises} readOnly={readOnly} /> : null}
@@ -159,6 +173,11 @@ function NutritionTab({
         {(list) => (
           <>
             <Card>
+              <CardHeading
+                icon="pie-chart-outline"
+                title={t("mobile.today.macros")}
+                right={`${list.filter((m) => m.isCompleted).length}/${list.length}`}
+              />
               <MacroSummary meals={list} targets={targets.data?.targets} />
             </Card>
             {list.map((meal) => (
@@ -310,3 +329,8 @@ function WorkoutTab({
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  dayHead: { flexDirection: "row", alignItems: "center", gap: 8 },
+  grow: { flex: 1 },
+});
