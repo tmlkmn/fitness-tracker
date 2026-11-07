@@ -114,37 +114,37 @@ function PrivacyTr() {
       <Section title="3. Verilerin Paylaşıldığı Taraflar">
         <p className="mb-2">Verileriniz satılmaz veya kiralanmaz. Yalnızca hizmeti sunmak için aşağıdaki sağlayıcılarla paylaşılır:</p>
         <ul className="list-disc list-inside space-y-2 ml-2">
-          <Item label="Anthropic, PBC (ABD) — yapay zeka">
+          <Item label="Yapay zeka hizmet sağlayıcısı (yurt dışı)">
             Yalnızca bir yapay zeka özelliğini kullandığınızda ve buna açık rıza verdiyseniz, o özelliğin ihtiyaç
             duyduğu veriler gönderilir: yaş, cinsiyet, boy, kilo, hedef kilo, vücut ölçüleri, aktivite ve fitness
             seviyesi, hedefler, spor geçmişi, sağlık notları, gıda alerjileri, sağlık durumları, ilaçlar ve
             takviyeler, günlük rutin, makro hedefleri, öğün ve antrenman planları, su ve uyku kayıtları, sohbet
             mesajlarınız ve notlarınız. Selamlama mesajı için yalnızca adınız gönderilir; e-posta adresiniz hiçbir
             zaman gönderilmez. <strong className="text-foreground">Bu veriler anonim değildir</strong>, size ait
-            sağlık bilgileri içerir. Anthropic, API üzerinden gelen verileri modellerini eğitmek için kullanmaz ve
+            sağlık bilgileri içerir. Yapay zeka hizmet sağlayıcısı, API üzerinden gelen verileri modellerini eğitmek için kullanmaz ve
             yalnızca hizmeti işletmek ve kötüye kullanımı önlemek için sınırlı bir süre saklar. Egzersiz
             gösterimleri için yalnızca egzersizin adı gönderilir; bu kişisel veri içermez.
           </Item>
-          <Item label="Vercel, Inc. (ABD) — barındırma">
+          <Item label="Vercel, Inc. — barındırma">
             Platform&apos;un sunucuları. Tüm istekler ve işlenen veriler bu altyapıdan geçer. Çerez tercihinizde
             analitiğe izin verirseniz Vercel Analytics ve Speed Insights ile çerezsiz, toplu kullanım ve performans
             ölçümü yapılır.
           </Item>
-          <Item label="Neon (Databricks, ABD merkezli) — veritabanı">
+          <Item label="Neon (Databricks) — veritabanı">
             Tüm hesap verileri, Frankfurt&apos;taki (AB) sunucularda şifreli bağlantıyla saklanır.
           </Item>
           <Item label="Mailjet SAS (Fransa, AB) — e-posta">Davet, şifre sıfırlama, bildirim ve fatura e-postaları için e-posta adresiniz ve mesaj içeriği.</Item>
-          <Item label="Functional Software, Inc. — Sentry (ABD) — hata takibi">
+          <Item label="Functional Software, Inc. — Sentry — hata takibi">
             Bir hata oluştuğunda hata mesajı, ilgili sayfa ve tarayıcı/cihaz bilgisi. IP adresi, çerezler ve
             istek başlıkları gönderilmez.
           </Item>
           <Item label="Bildirim servisleri">
-            Mobil bildirimler Expo (650 Industries, ABD) üzerinden Apple ve Google&apos;ın bildirim servislerine,
+            Mobil bildirimler Expo (650 Industries) üzerinden Apple ve Google&apos;ın bildirim servislerine,
             web bildirimleri tarayıcınızın bildirim servisine iletilir. Bu servisler cihazınızın bildirim anahtarını
             ve bildirimin başlığını ve metnini (ör. hatırlatıcı içeriği) alır.
           </Item>
           <Item label="Ödeme kuruluşları">
-            Lemon Squeezy (ABD) ve iyzico (Türkiye), abonelik ödemesi ve faturalama için ödeme ve fatura bilgilerinizi işler.
+            Lemon Squeezy ve iyzico (Türkiye), abonelik ödemesi ve faturalama için ödeme ve fatura bilgilerinizi işler.
           </Item>
           <Item label="Diğer kullanıcılar">
             Bir planı paylaştığınız kullanıcılar o planı, adınızı ve e-posta adresinizi görür. Paylaşmak için
@@ -158,7 +158,7 @@ function PrivacyTr() {
         <ul className={listClass}>
           <li>Sağlık verilerinizin plan sunmak amacıyla işlenmesi (zorunlu)</li>
           <li>Verilerinizin yukarıdaki yurt dışındaki altyapı sağlayıcılarında saklanması ve bu amaçla aktarılması (zorunlu)</li>
-          <li>Yapay zeka özellikleri için verilerinizin Anthropic&apos;e (ABD) gönderilmesi (isteğe bağlı)</li>
+          <li>Yapay zeka özellikleri için verilerinizin yurt dışındaki yapay zeka hizmet sağlayıcısına gönderilmesi (isteğe bağlı)</li>
         </ul>
         <p className="mt-2">
           İlk iki rıza olmadan plan oluşturamayız; vermezseniz verilerinizi indirebilir veya hesabınızı
@@ -276,34 +276,34 @@ function PrivacyEn() {
       <Section title="3. Who Receives Your Data">
         <p className="mb-2">We never sell or rent your data. It is shared only with these providers, to run the service:</p>
         <ul className="list-disc list-inside space-y-2 ml-2">
-          <Item label="Anthropic, PBC (USA) — AI">
+          <Item label="AI service provider (abroad)">
             Only when you use an AI feature and have given your explicit consent, the data that feature needs is
             sent: age, gender, height, weight, target weight, body measurements, activity and fitness level,
             goals, sports history, health notes, food allergies, health conditions, medications and supplements,
             daily routine, macro targets, meal and workout plans, water and sleep logs, your chat messages and
             notes. The greeting only gets your first name; your email address is never sent.{" "}
             <strong className="text-foreground">This data is not anonymous</strong> — it includes your health
-            information. Anthropic does not use API data to train its models and keeps it only for a limited time
+            information. The AI service provider does not use API data to train its models and keeps it only for a limited time
             to operate the service and prevent abuse. Exercise demos only send the exercise name, which is not
             personal data.
           </Item>
-          <Item label="Vercel, Inc. (USA) — hosting">
+          <Item label="Vercel, Inc. — hosting">
             The Platform&apos;s servers; every request and the data it carries pass through them. If you allow
             analytics in the cookie banner, Vercel Analytics and Speed Insights measure usage and performance in
             aggregate, without cookies.
           </Item>
-          <Item label="Neon (Databricks, US company) — database">All account data, stored on servers in Frankfurt (EU) over encrypted connections.</Item>
+          <Item label="Neon (Databricks) — database">All account data, stored on servers in Frankfurt (EU) over encrypted connections.</Item>
           <Item label="Mailjet SAS (France, EU) — email">Your email address and the message for invitations, password resets, notifications and invoices.</Item>
-          <Item label="Functional Software, Inc. — Sentry (USA) — error tracking">
+          <Item label="Functional Software, Inc. — Sentry — error tracking">
             When an error occurs: the error message, the page and browser/device details. No IP addresses, cookies
             or request headers.
           </Item>
           <Item label="Notification services">
-            Mobile notifications go through Expo (650 Industries, USA) to Apple&apos;s and Google&apos;s push
+            Mobile notifications go through Expo (650 Industries) to Apple&apos;s and Google&apos;s push
             services, web notifications through your browser&apos;s push service. They receive your device&apos;s
             push token and the notification&apos;s title and text (e.g. a reminder).
           </Item>
-          <Item label="Payment providers">Lemon Squeezy (USA) and iyzico (Türkiye) process payment and billing details for subscriptions.</Item>
+          <Item label="Payment providers">Lemon Squeezy and iyzico (Türkiye) process payment and billing details for subscriptions.</Item>
           <Item label="Other users">
             Users you share a plan with see that plan, your name and your email address. To share, you type the
             recipient&apos;s email address; the list of users is never shown to anyone.
@@ -316,7 +316,7 @@ function PrivacyEn() {
         <ul className={listClass}>
           <li>Processing your health data to provide plans (required)</li>
           <li>Storing your data with the infrastructure providers abroad listed above (required)</li>
-          <li>Sending your data to Anthropic (USA) for the AI features (optional)</li>
+          <li>Sending your data to the AI service provider abroad for the AI features (optional)</li>
         </ul>
         <p className="mt-2">
           We can&apos;t build plans without the first two; if you don&apos;t give them you can download your data or

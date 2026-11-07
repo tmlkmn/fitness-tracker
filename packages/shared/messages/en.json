@@ -2841,7 +2841,7 @@
       "items": {
         "ai": {
           "title": "AI Fitness Coach",
-          "desc": "Your personal trainer powered by Claude 4, available 24/7. Expert guidance on everything from exercise form to nutrition plans."
+          "desc": "Your AI-powered personal trainer, available 24/7. Expert guidance on everything from exercise form to nutrition plans."
         },
         "nutrition": {
           "title": "Smart Nutrition Tracking",
@@ -2869,7 +2869,7 @@
       "tag": "AI-Powered",
       "heading1": "The World's Most Advanced AI",
       "heading2": "Working For You",
-      "bodyA": "Powered by Anthropic's Claude models, FitMusc doesn't just inform — ",
+      "bodyA": "Powered by advanced AI models, FitMusc doesn't just inform — ",
       "bodyStrong": "it thinks for you",
       "bodyB": ". It tracks your macro budget in real time, suggests meals based on remaining goals, and analyzes your exercise form.",
       "bullets": [
@@ -2881,7 +2881,7 @@
         "Full daily meal plan regeneration"
       ],
       "chatTitle": "AI Fitness Coach",
-      "chatModel": "Claude Sonnet 4.6",
+      "chatModel": "AI-powered",
       "online": "Online",
       "userMsg1": "What's the best meal for an evening workout?",
       "aiMsg1A": "Based on your macro status today, ",
@@ -3776,12 +3776,12 @@
     },
     "aiConsent": {
       "title": "AI and your data",
-      "body": "For suggestions, plans, analyses and the coach chat, your age, height, weight and measurements, goals, health notes, allergies, health conditions, medications, plans and what you write are sent to Anthropic (Claude, USA); the greeting only gets your first name. Anthropic doesn't use this data to train its models. Without it everything except AI keeps working, and you can revoke it in Settings any time.",
+      "body": "For suggestions, plans, analyses and the coach chat, your age, height, weight and measurements, goals, health notes, allergies, health conditions, medications, plans and what you write are sent to an AI service provider abroad; the greeting only gets your first name. The provider doesn't use this data to train its models. Without it everything except AI keeps working, and you can revoke it in Settings any time.",
       "allow": "Allow",
       "decline": "Not now",
       "privacy": "Privacy policy",
       "settingsTitle": "AI data sharing",
-      "granted": "You allowed your data to be sent to Anthropic for the AI features.",
+      "granted": "You allowed your data to be sent to the AI service provider for the AI features.",
       "notGranted": "Not allowed — the AI features ask before sending any data.",
       "revoke": "Withdraw permission"
     },
@@ -3804,8 +3804,8 @@
     "kvkkLink": "KVKK Disclosure",
     "privacyLink": "Privacy Policy",
     "healthLabel": "I explicitly consent to the processing of my health data — height, weight, body measurements, health notes, allergies, health conditions and medications — to provide me with training and nutrition plans.",
-    "abroadLabel": "I explicitly consent to my account and this data being stored with the infrastructure providers the service runs on outside Türkiye (Vercel and Neon, USA; Mailjet for email, EU) and transferred abroad for that purpose.",
-    "aiLabel": "Optional: I explicitly consent to my profile, health and plan data being sent to Anthropic (USA) for the AI features (suggestions, plan generation, progress analysis, coach chat).",
+    "abroadLabel": "I explicitly consent to my account and this data being stored with the infrastructure providers the service runs on outside Türkiye (Vercel and Neon; Mailjet for email) and transferred abroad for that purpose.",
+    "aiLabel": "Optional: I explicitly consent to my profile, health and plan data being sent to an AI service provider abroad for the AI features (suggestions, plan generation, progress analysis, coach chat).",
     "aiHint": "Without it everything except AI works. You can change this any time in Settings → My Data.",
     "required": "The first two are required for the app to work.",
     "submit": "Agree and continue",
@@ -3820,7 +3820,7 @@
       "dataWithdrawTitle": "Withdraw your consent?",
       "dataWithdrawBody": "Without it you can't use the app; the consent screen opens until you consent again. Your data isn't deleted — delete your account for that.",
       "aiTitle": "AI data sharing",
-      "aiGiven": "Allowed on {date}. AI features send your profile, health and plan data to Anthropic (USA).",
+      "aiGiven": "Allowed on {date}. AI features send your profile, health and plan data to an AI service provider abroad.",
       "aiNotGiven": "Not allowed; AI features are off.",
       "aiAllow": "Allow",
       "aiRevoke": "Revoke",
@@ -3829,7 +3829,7 @@
     },
     "aiGate": {
       "title": "AI needs your permission",
-      "body": "This feature sends your age, height, weight and measurements, goals, health notes, allergies, health conditions, medications, plans and what you write to Anthropic (USA). Anthropic doesn't use this data to train its models.",
+      "body": "This feature sends your age, height, weight and measurements, goals, health notes, allergies, health conditions, medications, plans and what you write to an AI service provider abroad. The provider doesn't use this data to train its models.",
       "allow": "Allow",
       "details": "Details"
     }
@@ -3841,7 +3841,7 @@
     "cooldown": "Please wait {wait}, then try again.",
     "cooldownNoTime": "Please wait a moment, then try again.",
     "unavailable": "AI isn't available right now. Please try again.",
-    "consentRequired": "AI features need your permission to send your data to Anthropic (Settings → My Data).",
+    "consentRequired": "AI features need your permission to send your data to the AI service provider (Settings → My Data).",
     "generic": "Something went wrong. Please try again.",
     "duration": {
       "soon": "a moment",

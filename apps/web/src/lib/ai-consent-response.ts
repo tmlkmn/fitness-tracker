@@ -1,8 +1,8 @@
 import type { Locale } from "@fitmusc/shared/locale";
 
 const MESSAGE: Record<Locale, string> = {
-  tr: "Yapay zeka özellikleri için verilerinin Anthropic'e gönderilmesine izin vermen gerekiyor (Ayarlar → Verilerim).",
-  en: "AI features need your permission to send your data to Anthropic (Settings → My Data).",
+  tr: "Yapay zeka özellikleri için verilerinin yapay zeka hizmet sağlayıcısına gönderilmesine izin vermen gerekiyor (Ayarlar → Verilerim).",
+  en: "AI features need your permission to send your data to the AI service provider (Settings → My Data).",
 };
 
 /**

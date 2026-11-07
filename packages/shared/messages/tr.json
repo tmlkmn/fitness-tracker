@@ -2841,7 +2841,7 @@
       "items": {
         "ai": {
           "title": "AI Fitness Koçu",
-          "desc": "Claude 4 ile güçlendirilmiş kişisel antrenörünüz 7/24 yanınızda. Egzersiz tekniğinden beslenme planına kadar her konuda uzman tavsiye."
+          "desc": "Yapay zeka destekli kişisel antrenörünüz 7/24 yanınızda. Egzersiz tekniğinden beslenme planına kadar her konuda uzman tavsiye."
         },
         "nutrition": {
           "title": "Akıllı Beslenme Takibi",
@@ -2869,7 +2869,7 @@
       "tag": "AI Güçlü",
       "heading1": "Dünyanın En İleri AI'ı",
       "heading2": "Sizin İçin Çalışıyor",
-      "bodyA": "Anthropic'in Claude modelleriyle güçlendirilmiş FitMusc, yalnızca bilgi vermez — ",
+      "bodyA": "Gelişmiş yapay zeka modelleriyle güçlendirilmiş FitMusc, yalnızca bilgi vermez — ",
       "bodyStrong": "sizin için düşünür",
       "bodyB": ". Makro bütçenizi gerçek zamanlı takip eder, kalan hedeflerinize göre öğün önerir, egzersiz formunuzu analiz eder.",
       "bullets": [
@@ -2881,7 +2881,7 @@
         "Günlük tam öğün planı yenileme"
       ],
       "chatTitle": "AI Fitness Koçu",
-      "chatModel": "Claude Sonnet 4.6",
+      "chatModel": "Yapay zeka destekli",
       "online": "Çevrimiçi",
       "userMsg1": "Akşam antrenmanı için en iyi öğün ne olur?",
       "aiMsg1A": "Bugünkü makro durumunuza göre antrenman öncesi ",
@@ -3776,12 +3776,12 @@
     },
     "aiConsent": {
       "title": "Yapay zeka ve verilerin",
-      "body": "Öneriler, planlar, analizler ve koç sohbeti için yaşın, boy-kilo ve ölçümlerin, hedeflerin, sağlık notların, alerjilerin, sağlık durumların, ilaçların, planların ve yazdıkların Anthropic'e (Claude, ABD) gönderilir; selamlama mesajı için yalnızca adın gider. Anthropic bu verileri model eğitimi için kullanmaz. İzin vermezsen yapay zeka dışındaki her şey çalışmaya devam eder; iznini Ayarlar'dan istediğin zaman geri alabilirsin.",
+      "body": "Öneriler, planlar, analizler ve koç sohbeti için yaşın, boy-kilo ve ölçümlerin, hedeflerin, sağlık notların, alerjilerin, sağlık durumların, ilaçların, planların ve yazdıkların yurt dışındaki yapay zeka hizmet sağlayıcısına gönderilir; selamlama mesajı için yalnızca adın gider. Sağlayıcı bu verileri model eğitimi için kullanmaz. İzin vermezsen yapay zeka dışındaki her şey çalışmaya devam eder; iznini Ayarlar'dan istediğin zaman geri alabilirsin.",
       "allow": "İzin veriyorum",
       "decline": "Şimdi değil",
       "privacy": "Gizlilik politikası",
       "settingsTitle": "Yapay zeka veri paylaşımı",
-      "granted": "Yapay zeka özellikleri için verilerinin Anthropic'e gönderilmesine izin verdin.",
+      "granted": "Yapay zeka özellikleri için verilerinin yapay zeka hizmet sağlayıcısına gönderilmesine izin verdin.",
       "notGranted": "İzin verilmedi; yapay zeka özellikleri veri göndermeden önce izin ister.",
       "revoke": "İzni geri al"
     },
@@ -3804,8 +3804,8 @@
     "kvkkLink": "KVKK Aydınlatma Metni",
     "privacyLink": "Gizlilik Politikası",
     "healthLabel": "Boy, kilo, vücut ölçüleri, sağlık notları, alerjiler, sağlık durumları ve ilaçlar dahil sağlık verilerimin, bana antrenman ve beslenme planı sunulması amacıyla işlenmesine açık rıza veriyorum.",
-    "abroadLabel": "Hesabımın ve bu verilerin, hizmetin çalıştığı yurt dışındaki altyapı sağlayıcılarında (Vercel ve Neon, ABD; e-posta için Mailjet, AB) saklanmasına ve bu amaçla yurt dışına aktarılmasına açık rıza veriyorum.",
-    "aiLabel": "İsteğe bağlı: Yapay zeka özellikleri (öneriler, plan üretimi, ilerleme analizi, koç sohbeti) için profil, sağlık ve plan verilerimin Anthropic'e (ABD) gönderilmesine açık rıza veriyorum.",
+    "abroadLabel": "Hesabımın ve bu verilerin, hizmetin çalıştığı yurt dışındaki altyapı sağlayıcılarında (Vercel ve Neon; e-posta için Mailjet) saklanmasına ve bu amaçla yurt dışına aktarılmasına açık rıza veriyorum.",
+    "aiLabel": "İsteğe bağlı: Yapay zeka özellikleri (öneriler, plan üretimi, ilerleme analizi, koç sohbeti) için profil, sağlık ve plan verilerimin yurt dışındaki yapay zeka hizmet sağlayıcısına gönderilmesine açık rıza veriyorum.",
     "aiHint": "Vermezsen yapay zeka dışındaki her şey çalışır. Bu tercihi Ayarlar → Verilerim'den istediğin zaman değiştirebilirsin.",
     "required": "İlk iki onay uygulamanın çalışması için gerekli.",
     "submit": "Onayla ve devam et",
@@ -3820,7 +3820,7 @@
       "dataWithdrawTitle": "Rızanı geri almak istiyor musun?",
       "dataWithdrawBody": "Rızanı geri alırsan uygulamayı kullanamazsın; yeniden rıza verene kadar rıza ekranı açılır. Verilerin silinmez, silmek için hesabını silebilirsin.",
       "aiTitle": "Yapay zeka veri paylaşımı",
-      "aiGiven": "{date} tarihinde izin verdin. Yapay zeka özellikleri profil, sağlık ve plan verilerini Anthropic'e (ABD) gönderir.",
+      "aiGiven": "{date} tarihinde izin verdin. Yapay zeka özellikleri profil, sağlık ve plan verilerini yurt dışındaki yapay zeka hizmet sağlayıcısına gönderir.",
       "aiNotGiven": "İzin verilmedi; yapay zeka özellikleri kapalı.",
       "aiAllow": "İzin ver",
       "aiRevoke": "İzni geri al",
@@ -3829,7 +3829,7 @@
     },
     "aiGate": {
       "title": "Yapay zeka için izin gerekli",
-      "body": "Bu özellik çalışırken yaşın, boy-kilo ve ölçümlerin, hedeflerin, sağlık notların, alerjilerin, sağlık durumların, ilaçların, planların ve yazdıkların Anthropic'e (ABD) gönderilir. Anthropic bu verileri model eğitiminde kullanmaz.",
+      "body": "Bu özellik çalışırken yaşın, boy-kilo ve ölçümlerin, hedeflerin, sağlık notların, alerjilerin, sağlık durumların, ilaçların, planların ve yazdıkların yurt dışındaki yapay zeka hizmet sağlayıcısına gönderilir. Sağlayıcı bu verileri model eğitiminde kullanmaz.",
       "allow": "İzin veriyorum",
       "details": "Ayrıntılar"
     }
@@ -3841,7 +3841,7 @@
     "cooldown": "Lütfen {wait} bekle, ardından tekrar dene.",
     "cooldownNoTime": "Lütfen biraz bekle, ardından tekrar dene.",
     "unavailable": "AI şu an kullanılamıyor. Lütfen tekrar dene.",
-    "consentRequired": "Yapay zeka özellikleri için verilerinin Anthropic'e gönderilmesine izin vermen gerekiyor (Ayarlar → Verilerim).",
+    "consentRequired": "Yapay zeka özellikleri için verilerinin yapay zeka hizmet sağlayıcısına gönderilmesine izin vermen gerekiyor (Ayarlar → Verilerim).",
     "generic": "Bir hata oluştu. Lütfen tekrar dene.",
     "duration": {
       "soon": "yakında",

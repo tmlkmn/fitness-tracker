@@ -158,7 +158,7 @@ function KvkkTr() {
           </li>
           <li>
             <strong className="text-foreground">Açık rıza (KVKK m.6/3-a ve m.9):</strong> yapay zeka özellikleri için
-            verilerin Anthropic&apos;e aktarılması. Bu rıza isteğe bağlıdır; verilmezse yapay zeka dışındaki tüm
+            verilerin yurt dışındaki yapay zeka hizmet sağlayıcısına aktarılması. Bu rıza isteğe bağlıdır; verilmezse yapay zeka dışındaki tüm
             özellikler çalışır.
           </li>
         </ul>
@@ -171,18 +171,18 @@ function KvkkTr() {
         </p>
         <ul className="list-disc list-inside space-y-2 ml-2">
           <li>
-            <strong className="text-foreground">Anthropic, PBC (ABD):</strong> yalnızca yapay zeka rızası verdiyseniz
+            <strong className="text-foreground">Yapay zeka hizmet sağlayıcısı (yurt dışı):</strong> yalnızca yapay zeka rızası verdiyseniz
             ve bir yapay zeka özelliğini kullandığınızda; o özelliğin gerektirdiği profil, sağlık (sağlık notları,
             alerjiler, sağlık durumları, ilaçlar, ölçümler) ve plan verileri ile sohbet mesajlarınız. Selamlama
-            için yalnızca adınız gönderilir, e-posta adresiniz gönderilmez. Bu veriler anonim değildir. Anthropic
+            için yalnızca adınız gönderilir, e-posta adresiniz gönderilmez. Bu veriler anonim değildir. Sağlayıcı
             bu verileri model eğitiminde kullanmaz.
           </li>
           <li>
-            <strong className="text-foreground">Vercel, Inc. (ABD):</strong> platformun barındırılması; tüm istekler
+            <strong className="text-foreground">Vercel, Inc.:</strong> platformun barındırılması; tüm istekler
             bu sunuculardan geçer. Çerez tercihinizde izin verirseniz çerezsiz, toplu kullanım ölçümü.
           </li>
           <li>
-            <strong className="text-foreground">Neon (Databricks, ABD merkezli):</strong> veritabanı; veriler
+            <strong className="text-foreground">Neon (Databricks):</strong> veritabanı; veriler
             Frankfurt&apos;taki (AB) sunucularda saklanır.
           </li>
           <li>
@@ -190,15 +190,15 @@ function KvkkTr() {
             ve mesaj içeriği.
           </li>
           <li>
-            <strong className="text-foreground">Functional Software, Inc. — Sentry (ABD):</strong> hata takibi; hata
+            <strong className="text-foreground">Functional Software, Inc. — Sentry:</strong> hata takibi; hata
             mesajı, sayfa ve cihaz bilgisi (IP adresi ve çerezler hariç).
           </li>
           <li>
-            <strong className="text-foreground">Expo (650 Industries, ABD), Apple ve Google:</strong> mobil ve web
+            <strong className="text-foreground">Expo (650 Industries), Apple ve Google:</strong> mobil ve web
             bildirimlerinin iletilmesi; bildirim anahtarı ve bildirim metni.
           </li>
           <li>
-            <strong className="text-foreground">Lemon Squeezy (ABD) ve iyzico (Türkiye):</strong> abonelik ödemesi ve
+            <strong className="text-foreground">Lemon Squeezy ve iyzico (Türkiye):</strong> abonelik ödemesi ve
             faturalama.
           </li>
           <li>
@@ -209,7 +209,7 @@ function KvkkTr() {
         </ul>
         <p className="mt-2">
           Yurt dışındaki sağlayıcılara aktarım, KVKK m.9 kapsamında uygulamayı kullanmaya başlamadan önce
-          alınan açık rızanıza dayanır; Anthropic&apos;e aktarım için ayrıca, isteğe bağlı açık rıza alınır.
+          alınan açık rızanıza dayanır; yapay zeka hizmet sağlayıcısına aktarım için ayrıca, isteğe bağlı açık rıza alınır.
         </p>
       </Section>
 
@@ -328,22 +328,22 @@ function KvkkEn() {
           </li>
           <li>
             <strong className="text-foreground">Explicit consent (Art. 6/3-a and 9):</strong> transferring data to
-            Anthropic for the AI features — optional
+            the AI service provider abroad for the AI features — optional
           </li>
         </ul>
       </Section>
 
       <Section title="Recipients">
         <p>
-          Anthropic, PBC (USA) — AI features, only with your AI consent; the profile, health and plan data a
-          feature needs and your chat messages (not anonymous; not used for model training). Vercel, Inc. (USA) —
-          hosting. Neon (Databricks, US company) — database in Frankfurt (EU). Mailjet SAS (France) — email.
-          Sentry (USA) — error tracking without IP addresses or cookies. Expo (USA), Apple and Google — push
-          notifications. Lemon Squeezy (USA) and iyzico (Türkiye) — payments. Other users — only the people you share
+          AI service provider (abroad) — AI features, only with your AI consent; the profile, health and plan data a
+          feature needs and your chat messages (not anonymous; not used for model training). Vercel, Inc. —
+          hosting. Neon (Databricks) — database in Frankfurt (EU). Mailjet SAS (France) — email.
+          Sentry — error tracking without IP addresses or cookies. Expo, Apple and Google — push
+          notifications. Lemon Squeezy and iyzico (Türkiye) — payments. Other users — only the people you share
           a plan with see it, your name and your email; you type the recipient&apos;s email and users are never
           listed.
           Transfers abroad rely on the explicit consent you give before using the app (KVKK Art. 9), and on a
-          separate, optional consent for Anthropic.
+          separate, optional consent for the AI service provider.
         </p>
       </Section>
 
