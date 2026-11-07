@@ -17,7 +17,7 @@ import {
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, AlertTriangle, BarChart3 } from "lucide-react";
-import { getAiWarningsAnalytics, type AiWarningsAnalytics } from "@/actions/admin";
+import { type AiWarningsAnalytics } from "@/actions/admin";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import {
   CHART_TOOLTIP_CURSOR,
@@ -25,6 +25,7 @@ import {
   CHART_TOOLTIP_LABEL_STYLE,
   CHART_TOOLTIP_STYLE,
 } from "@/lib/chart-theme";
+import { callAction } from "@/lib/safe-action";
 
 const FEATURE_KEYS = [
   "meal", "exercise", "analyze", "chat", "workout",
@@ -80,7 +81,7 @@ export default function AiWarningsPage() {
     let cancelled = false;
     (async () => {
       try {
-        const analytics = await getAiWarningsAnalytics();
+        const analytics = await callAction("getAiWarningsAnalytics");
         if (!cancelled) setData(analytics);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "";

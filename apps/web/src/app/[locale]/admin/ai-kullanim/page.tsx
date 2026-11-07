@@ -4,13 +4,10 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import {
-  getAiUsageByFeature,
-  getAiUsageByUser,
   type FeatureUsage,
   type UserAiUsage,
 } from "@/actions/admin";
 import {
-  getAdminAiCostSummary,
   type AiCostSummary,
 } from "@/actions/admin-operations";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +22,7 @@ import {
   useFeatureLabel,
 } from "@/components/admin/admin-labels";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
+import { callAction } from "@/lib/safe-action";
 
 function formatUsd(v: number): string {
   if (v >= 100) return v.toFixed(0);
@@ -50,9 +48,9 @@ export default function AdminAiUsagePage() {
     (async () => {
       try {
         const [c, f, u] = await Promise.all([
-          getAdminAiCostSummary(),
-          getAiUsageByFeature(),
-          getAiUsageByUser(),
+          callAction("getAdminAiCostSummary"),
+          callAction("getAiUsageByFeature"),
+          callAction("getAiUsageByUser"),
         ]);
         if (cancelled) return;
         setCost(c);

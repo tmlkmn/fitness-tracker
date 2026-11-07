@@ -45,10 +45,10 @@ export async function moveDayContents(
   } = input;
 
   if (sourceDailyPlanId === targetDailyPlanId) {
-    throw new Error("Kaynak ve hedef gün aynı olamaz");
+    throw new Error("SAME_DAY");
   }
   if (!includeWorkout && !includeMeals) {
-    throw new Error("En az antrenman ya da beslenme seçilmeli");
+    throw new Error("NOTHING_SELECTED");
   }
 
   const user = await getAuthUser();
@@ -64,9 +64,9 @@ export async function moveDayContents(
     .from(dailyPlans)
     .where(eq(dailyPlans.id, targetDailyPlanId));
 
-  if (!source || !target) throw new Error("Gün bulunamadı");
+  if (!source || !target) throw new Error("NOT_FOUND");
   if (source.weeklyPlanId !== target.weeklyPlanId) {
-    throw new Error("Sadece aynı hafta içinde taşıma yapılabilir");
+    throw new Error("DIFFERENT_WEEK");
   }
 
   const sourceExerciseIds = includeWorkout

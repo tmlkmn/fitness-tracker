@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { listAllFeedbacks, respondToFeedback, closeFeedback } from "@/actions/feedback";
+import { respondToFeedback, closeFeedback } from "@/actions/feedback";
 import type { FeedbackWithUser } from "@/actions/feedback";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -20,6 +20,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
+import { callAction } from "@/lib/safe-action";
 
 const CATEGORY_CONFIG: Record<string, { tKey: string; icon: typeof MessageSquare; className: string }> = {
   suggestion: { tKey: "suggestion", icon: Lightbulb, className: "text-blue-400 bg-blue-400/10" },
@@ -160,7 +161,7 @@ export default function AdminFeedbackPage() {
 
   const fetchFeedbacks = async () => {
     try {
-      const data = await listAllFeedbacks();
+      const data = await callAction("listAllFeedbacks");
       setFeedbackList(data);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "";

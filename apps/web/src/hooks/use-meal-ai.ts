@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  generateDailyMeals,
   applyDailyMeals,
   saveDailyMealSuggestion,
   getSavedDailyMealSuggestions,
@@ -8,6 +7,7 @@ import {
   type AIMeal,
 } from "@/actions/ai-meals";
 import { invalidateMealQueries } from "@/hooks/ai-invalidation";
+import { callAction } from "@/lib/safe-action";
 
 export function useGenerateDailyMeals() {
   const qc = useQueryClient();
@@ -18,7 +18,7 @@ export function useGenerateDailyMeals() {
     }: {
       dailyPlanId: number;
       userNote?: string;
-    }) => generateDailyMeals(dailyPlanId, userNote),
+    }) => callAction("generateDailyMeals", dailyPlanId, userNote),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["ai.quota"] });
     },

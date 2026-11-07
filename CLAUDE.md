@@ -43,6 +43,7 @@ No test framework is configured.
 
 **Data flow pattern** (three layers):
 1. **Server Actions** (`src/actions/`) — all DB operations via Drizzle ORM, marked `"use server"`. Mutations call `revalidatePath()`. Actions that access user data call `getAuthUser()` for session-based userId.
+   - **Errors reaching the browser:** in production React strips the message of an error a server action throws (only a digest arrives), so client code can never branch on `err.message`. When the UI must tell failures apart, register the action in `SAFE_ACTIONS` (`src/actions/safe-action.ts`) and call it with `callAction("name", ...args)` (`src/lib/safe-action.ts`): an expected failure — an identifier-like code such as `EmailMismatch`, `RATE_LIMITED:30`, `SAME_DAY`, or a better-auth `body.code` — is rethrown in the browser with that code as its message; anything else stays generic. Throw codes, not sentences, from actions and translate them in the UI (AI errors: `useAiErrorMessage`, `aiErrors.*`). Returning `{ ok: false, error }` (e.g. `shareWeeklyPlan`) is the other option. API routes call the actions directly and map the same codes.
 2. **Custom Hooks** (`src/hooks/`) — TanStack React Query wrappers. Queries call server actions as `queryFn`; mutations invalidate relevant keys on success. 60s stale time.
 3. **Components** — client components consume hooks; server components (e.g. `src/app/gun/[dayId]/page.tsx`) call server actions directly with `await`.
 

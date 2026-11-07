@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { HelpCircle, Loader2, AlertCircle } from "lucide-react";
 import { useExerciseFormTips } from "@/hooks/use-exercise-form-tips";
 import { useAiConsentGranted } from "@/hooks/use-consents";
-import { formatAiError } from "@/lib/ai-errors";
+import { useAiErrorMessage } from "@/hooks/use-ai-error-message";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -27,6 +27,7 @@ interface ExerciseFormTipsProps {
 }
 
 export function ExerciseFormTips({ name, notes, englishName, triggerClassName, triggerLabel }: ExerciseFormTipsProps) {
+  const formatAiError = useAiErrorMessage();
   const [open, setOpen] = useState(false);
   const t = useTranslations("workout.formTips");
   // The tips load on open, so they wait for the AI consent (AiConsentGate asks).

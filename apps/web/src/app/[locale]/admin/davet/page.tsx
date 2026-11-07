@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { inviteUser } from "@/actions/admin";
 import type { MembershipType } from "@/actions/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserPlus, Loader2, CheckCircle, Copy, Check } from "lucide-react";
@@ -9,6 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import type { Locale } from "@fitmusc/shared/locale";
+import { callAction } from "@/lib/safe-action";
 
 const MEMBERSHIP_KEYS: { value: MembershipType; tKey: string }[] = [
   { value: "1-month", tKey: "1-month" },
@@ -73,7 +73,7 @@ export default function DavetPage() {
     setLoading(true);
 
     try {
-      const result = await inviteUser(
+      const result = await callAction("inviteUser", 
         email,
         name,
         {

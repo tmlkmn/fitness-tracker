@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Eye, AlertCircle, ChevronDown, ChevronUp, X } from "lucide-react";
 import Image from "next/image";
 import { useExerciseDemo } from "@/hooks/use-exercise-demo";
-import { formatAiError } from "@/lib/ai-errors";
+import { useAiErrorMessage } from "@/hooks/use-ai-error-message";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
@@ -33,6 +33,7 @@ const MUSCLE_KEYS = new Set([
 ]);
 
 export function ExerciseDemoModal({ name, triggerClassName, triggerLabel }: ExerciseDemoModalProps) {
+  const formatAiError = useAiErrorMessage();
   const t = useTranslations("workout.demoModal");
   const [open, setOpen] = useState(false);
 

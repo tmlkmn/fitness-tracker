@@ -11,11 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { generateAIMacroTargets, type AIMacroResult } from "@/actions/ai-macro";
+import { type AIMacroResult } from "@/actions/ai-macro";
 import { updateMacroStrategy } from "@/actions/user";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { useTranslations } from "next-intl";
 import { AiConsentGate } from "@/components/consent/ai-consent-gate";
+import { callAction } from "@/lib/safe-action";
 
 export function AIMacroCalculator() {
   const t = useTranslations("meals.aiMacro");
@@ -30,7 +31,7 @@ export function AIMacroCalculator() {
   const handleCalculate = () => {
     startTransition(async () => {
       try {
-        const res = await generateAIMacroTargets(description);
+        const res = await callAction("generateAIMacroTargets", description);
         setResult(res);
       } catch (err) {
         const msg =
@@ -43,7 +44,8 @@ export function AIMacroCalculator() {
         } else if (msg === "AI_UNAVAILABLE") {
           toast.error(t("unavailable"));
         } else {
-          toast.error(msg);
+          // Anything else is no code (callAction keeps unexpected errors generic).
+          toast.error(t("computeFailed"));
         }
       }
     });

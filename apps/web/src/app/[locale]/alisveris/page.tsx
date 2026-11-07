@@ -24,7 +24,7 @@ import { ShoppingCart, CheckCircle, Sparkles, RefreshCw, AlertCircle } from "luc
 import { ExportButton } from "@/components/export/export-button";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { formatAiError } from "@/lib/ai-errors";
+import { useAiErrorMessage } from "@/hooks/use-ai-error-message";
 import type { Locale } from "@fitmusc/shared/locale";
 import { formatDate, parseDateOnly } from "@fitmusc/shared/date-format";
 
@@ -59,6 +59,7 @@ function findCurrentWeekId(
 }
 
 function AlisverisContent() {
+  const formatAiError = useAiErrorMessage();
   const searchParams = useSearchParams();
   const weekParam = searchParams.get("week");
   const { data: weeks, isLoading: weeksLoading } = useAllWeeks();

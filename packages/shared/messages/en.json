@@ -880,7 +880,20 @@
       "mealUnit": "{count} meals",
       "cancel": "Cancel",
       "submit": "Move",
-      "submitting": "Moving..."
+      "submitting": "Moving...",
+      "errors": {
+        "sameDay": "The source and target day can't be the same.",
+        "nothingSelected": "Select the workout, the meals or both.",
+        "differentWeek": "You can only move within the same week.",
+        "notFound": "Day not found.",
+        "generic": "Couldn't move the program. Please try again."
+      },
+      "toast": {
+        "moved": "Moved to {target}{summary}",
+        "swapped": "Swapped with {target}{summary}",
+        "exercises": "{count, plural, one {# exercise} other {# exercises}}",
+        "meals": "{count, plural, one {# meal} other {# meals}}"
+      }
     },
     "copyDialog": {
       "title": "Copy from Last Week",
@@ -3819,6 +3832,24 @@
       "body": "This feature sends your age, height, weight and measurements, goals, health notes, allergies, health conditions, medications, plans and what you write to Anthropic (USA). Anthropic doesn't use this data to train its models.",
       "allow": "Allow",
       "details": "Details"
+    }
+  },
+  "aiErrors": {
+    "quotaReached": "You've reached today's AI limit — it resets in {countdown}.",
+    "tooMany": "Too many requests. Please wait {wait}.",
+    "tooManyNoTime": "Too many requests. Please wait a moment.",
+    "cooldown": "Please wait {wait}, then try again.",
+    "cooldownNoTime": "Please wait a moment, then try again.",
+    "unavailable": "AI isn't available right now. Please try again.",
+    "consentRequired": "AI features need your permission to send your data to Anthropic (Settings → My Data).",
+    "generic": "Something went wrong. Please try again.",
+    "duration": {
+      "soon": "a moment",
+      "hoursMinutes": "{h}h {m}m",
+      "hours": "{h}h",
+      "minutes": "{m} min",
+      "minutesSeconds": "{m} min {s}s",
+      "seconds": "{s}s"
     }
   }
 }

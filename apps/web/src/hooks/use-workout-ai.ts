@@ -1,15 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  generateWorkoutReplacement,
   applyWorkoutReplacement,
-  generateSectionReplacement,
   applySectionReplacement,
-  generateExerciseVariation,
   applyExerciseVariation,
   type AIExercise,
   type AIExerciseVariation,
 } from "@/actions/ai-workout";
 import { invalidateWorkoutQueries } from "@/hooks/ai-invalidation";
+import { callAction } from "@/lib/safe-action";
 
 // ─── Feature 1: Full Workout ────────────────────────────────────────────────
 
@@ -17,7 +15,7 @@ export function useGenerateWorkoutReplacement() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ dailyPlanId, userNote }: { dailyPlanId: number; userNote?: string }) =>
-      generateWorkoutReplacement(dailyPlanId, userNote),
+      callAction("generateWorkoutReplacement", dailyPlanId, userNote),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["ai.quota"] });
     },
@@ -55,7 +53,7 @@ export function useGenerateSectionReplacement() {
       section: string;
       sectionLabel: string;
       userNote?: string;
-    }) => generateSectionReplacement(dailyPlanId, section, sectionLabel, userNote),
+    }) => callAction("generateSectionReplacement", dailyPlanId, section, sectionLabel, userNote),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["ai.quota"] });
     },
@@ -93,7 +91,7 @@ export function useGenerateExerciseVariation() {
       exerciseId: number;
       userNote?: string;
       forceRefresh?: boolean;
-    }) => generateExerciseVariation(exerciseId, userNote, forceRefresh),
+    }) => callAction("generateExerciseVariation", exerciseId, userNote, forceRefresh),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["ai.quota"] });
     },

@@ -13,7 +13,7 @@ import {
   useApplySectionReplacement,
 } from "@/hooks/use-workout-ai";
 import { useProfileCheck } from "@/hooks/use-profile-check";
-import { formatAiError } from "@/lib/ai-errors";
+import { useAiErrorMessage } from "@/hooks/use-ai-error-message";
 import { useTranslations } from "next-intl";
 
 interface Exercise {
@@ -48,6 +48,7 @@ export function WorkoutSection({
   onToggle,
   readOnly,
 }: WorkoutSectionProps) {
+  const formatAiError = useAiErrorMessage();
   const [modalOpen, setModalOpen] = useState(false);
   const [profileWarningOpen, setProfileWarningOpen] = useState(false);
   const generate = useGenerateSectionReplacement();

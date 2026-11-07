@@ -24,7 +24,7 @@ import { MonthGateWarning } from "@/components/ai/month-gate-warning";
 import { computeMealMacros } from "@fitmusc/shared/meal-macros";
 import { computeSupplementMacros, isProteinPowder } from "@/lib/supplement-macros";
 import { useSupplementsForDay } from "@/hooks/use-supplements-for-day";
-import { formatAiError } from "@/lib/ai-errors";
+import { useAiErrorMessage } from "@/hooks/use-ai-error-message";
 import { formatEnergy, type EnergyUnit } from "@fitmusc/shared/units";
 import type { AIMeal } from "@/actions/ai-meals";
 import { useTranslations } from "next-intl";
@@ -37,6 +37,7 @@ interface MealListProps {
 }
 
 export function MealList({ dailyPlanId, readOnly, planDate, dailyPlanType }: MealListProps) {
+  const formatAiError = useAiErrorMessage();
   const t = useTranslations("meals.list");
   const { data: mealList, isLoading } = useMeals(dailyPlanId);
   const toggleMeal = useToggleMeal();

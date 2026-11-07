@@ -10,10 +10,9 @@ export const POST = apiRoute(
     params: z.object({ dayId: idParam }),
     input: moveDayContentsSchema,
     errors: {
-      "Kaynak ve hedef gün aynı olamaz": [400, "SAME_DAY"],
-      "En az antrenman ya da beslenme seçilmeli": [400, "NOTHING_SELECTED"],
-      "Gün bulunamadı": [404, "NOT_FOUND"],
-      "Sadece aynı hafta içinde taşıma yapılabilir": [400, "DIFFERENT_WEEK"],
+      SAME_DAY: [400, "SAME_DAY"],
+      NOTHING_SELECTED: [400, "NOTHING_SELECTED"],
+      DIFFERENT_WEEK: [400, "DIFFERENT_WEEK"],
     },
   },
   ({ params, input }): Promise<JsonSource<MoveDayContentsResultDto>> =>

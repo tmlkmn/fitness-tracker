@@ -5,7 +5,6 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
-  listAllUsers,
   resendInvite,
   removeUserAction,
   freezeUserAction,
@@ -22,6 +21,7 @@ import { ExtendDialog } from "@/components/admin/extend-dialog";
 import { ConfirmFreezeDialog } from "@/components/admin/confirm-freeze-dialog";
 import { UserCard } from "@/components/admin/user-card";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
+import { callAction } from "@/lib/safe-action";
 
 type StatusFilter =
   | "all"
@@ -66,7 +66,7 @@ export default function AdminUsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const data = await listAllUsers();
+      const data = await callAction("listAllUsers");
       setUsers(data);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "";

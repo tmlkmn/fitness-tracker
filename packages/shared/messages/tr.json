@@ -880,7 +880,20 @@
       "mealUnit": "{count} öğün",
       "cancel": "Vazgeç",
       "submit": "Taşı",
-      "submitting": "Taşınıyor..."
+      "submitting": "Taşınıyor...",
+      "errors": {
+        "sameDay": "Kaynak ve hedef gün aynı olamaz.",
+        "nothingSelected": "En az antrenman ya da beslenme seçmelisin.",
+        "differentWeek": "Yalnızca aynı hafta içinde taşıyabilirsin.",
+        "notFound": "Gün bulunamadı.",
+        "generic": "Program taşınamadı, lütfen tekrar dene."
+      },
+      "toast": {
+        "moved": "{target} gününe taşındı{summary}",
+        "swapped": "{target} ile yer değiştirildi{summary}",
+        "exercises": "{count} egzersiz",
+        "meals": "{count} öğün"
+      }
     },
     "copyDialog": {
       "title": "Geçen Haftadan Kopyala",
@@ -3819,6 +3832,24 @@
       "body": "Bu özellik çalışırken yaşın, boy-kilo ve ölçümlerin, hedeflerin, sağlık notların, alerjilerin, sağlık durumların, ilaçların, planların ve yazdıkların Anthropic'e (ABD) gönderilir. Anthropic bu verileri model eğitiminde kullanmaz.",
       "allow": "İzin veriyorum",
       "details": "Ayrıntılar"
+    }
+  },
+  "aiErrors": {
+    "quotaReached": "Günlük AI limitine ulaştın — {countdown} sonra yenilenir.",
+    "tooMany": "Çok fazla istek gönderdin. Lütfen {wait} bekle.",
+    "tooManyNoTime": "Çok fazla istek gönderdin. Lütfen biraz bekle.",
+    "cooldown": "Lütfen {wait} bekle, ardından tekrar dene.",
+    "cooldownNoTime": "Lütfen biraz bekle, ardından tekrar dene.",
+    "unavailable": "AI şu an kullanılamıyor. Lütfen tekrar dene.",
+    "consentRequired": "Yapay zeka özellikleri için verilerinin Anthropic'e gönderilmesine izin vermen gerekiyor (Ayarlar → Verilerim).",
+    "generic": "Bir hata oluştu. Lütfen tekrar dene.",
+    "duration": {
+      "soon": "yakında",
+      "hoursMinutes": "{h} sa {m} dk",
+      "hours": "{h} sa",
+      "minutes": "{m} dk",
+      "minutesSeconds": "{m} dk {s} sn",
+      "seconds": "{s} sn"
     }
   }
 }

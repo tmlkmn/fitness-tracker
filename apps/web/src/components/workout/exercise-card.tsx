@@ -20,7 +20,7 @@ import {
 } from "@/hooks/use-workout-ai";
 import { useUpdateExercise } from "@/hooks/use-exercise-crud";
 import type { AIExerciseVariation } from "@/actions/ai-workout";
-import { formatAiError } from "@/lib/ai-errors";
+import { useAiErrorMessage } from "@/hooks/use-ai-error-message";
 import { useTranslations } from "next-intl";
 
 interface ExerciseCardProps {
@@ -56,6 +56,7 @@ export function ExerciseCard({
   readOnly,
   dailyPlanId,
 }: ExerciseCardProps) {
+  const formatAiError = useAiErrorMessage();
   const [modalOpen, setModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);

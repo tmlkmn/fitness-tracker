@@ -23,7 +23,7 @@ import { useAiQuota, getQuota } from "@/hooks/use-ai-quota";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { useMonthGate } from "@/hooks/use-month-gate";
 import { MonthGateWarning } from "@/components/ai/month-gate-warning";
-import { formatAiError } from "@/lib/ai-errors";
+import { useAiErrorMessage } from "@/hooks/use-ai-error-message";
 import { useTranslations } from "next-intl";
 
 interface WorkoutListProps {
@@ -34,6 +34,7 @@ interface WorkoutListProps {
 }
 
 export function WorkoutList({ dailyPlanId, readOnly, planDate, workoutTitle }: WorkoutListProps) {
+  const formatAiError = useAiErrorMessage();
   const t = useTranslations("workout.list");
   const { data: exerciseList, isLoading } = useExercises(dailyPlanId);
   const toggleExercise = useToggleExercise();

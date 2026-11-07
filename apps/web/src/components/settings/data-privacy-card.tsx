@@ -18,7 +18,7 @@ import { Download, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "@/i18n/navigation";
-import { deleteMyAccount } from "@/actions/account";
+import { callAction } from "@/lib/safe-action";
 
 export function DataPrivacyCard() {
   const t = useTranslations("account");
@@ -36,7 +36,7 @@ export function DataPrivacyCard() {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await deleteMyAccount(confirmText.trim());
+      await callAction("deleteMyAccount", confirmText.trim());
       toast.success(t("delete.success"));
       await signOut();
       router.push("/giris");

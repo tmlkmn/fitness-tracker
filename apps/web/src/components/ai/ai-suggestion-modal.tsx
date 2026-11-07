@@ -20,7 +20,6 @@ import {
   ArrowLeft,
   Trash2,
 } from "lucide-react";
-import { generateMealVariation } from "@/actions/ai";
 import type { MealVariationSuggestion } from "@/actions/ai";
 import { useUpdateMeal } from "@/hooks/use-meal-crud";
 import {
@@ -31,11 +30,12 @@ import {
 import { useInvalidateAiQuota } from "@/hooks/use-ai-quota";
 import { AiQuotaBadge } from "@/components/ai/ai-quota-badge";
 import { AiDisclaimer } from "@/components/ai/ai-disclaimer";
-import { formatAiError } from "@/lib/ai-errors";
+import { useAiErrorMessage } from "@/hooks/use-ai-error-message";
 import { useTranslations, useLocale } from "next-intl";
 import type { Locale } from "@fitmusc/shared/locale";
 import { isMealLabel, getLocalizedMealLabel } from "@fitmusc/shared/meal-labels";
 import { AiConsentGate } from "@/components/consent/ai-consent-gate";
+import { callAction } from "@/lib/safe-action";
 
 interface AiSuggestionModalProps {
   open: boolean;
@@ -64,6 +64,7 @@ export function AiSuggestionModal({
   carbsG,
   fatG,
 }: AiSuggestionModalProps) {
+  const formatAiError = useAiErrorMessage();
   const t = useTranslations("meals.aiSuggestion");
   const locale = useLocale() as Locale;
   const INGREDIENT_TAGS = t.raw("ingredients") as string[];
@@ -104,7 +105,7 @@ export function AiSuggestionModal({
     setLoading(true);
     setError("");
     try {
-      const result = await generateMealVariation({
+      const result = await callAction("generateMealVariation", {
         mealLabel,
         currentContent,
         calories,

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getExerciseFormTips } from "@/actions/ai";
+import { callAction } from "@/lib/safe-action";
 
 export function useExerciseFormTips(
   exerciseName: string,
@@ -9,7 +9,7 @@ export function useExerciseFormTips(
 ) {
   return useQuery({
     queryKey: ["exerciseFormTips", exerciseName, exerciseNotes ?? "", englishName ?? ""],
-    queryFn: () => getExerciseFormTips(exerciseName, exerciseNotes, englishName),
+    queryFn: () => callAction("getExerciseFormTips", exerciseName, exerciseNotes, englishName),
     enabled,
     staleTime: Infinity,
   });

@@ -1,17 +1,28 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
-  moveDayContents,
   type MoveDayContentsInput,
 } from "@/actions/day-content-move";
+import { callAction } from "@/lib/safe-action";
+
+// Error code thrown by moveDayContents → its text in workout.moveDialog.errors.
+const ERROR_KEY: Record<string, string> = {
+  SAME_DAY: "sameDay",
+  NOTHING_SELECTED: "nothingSelected",
+  DIFFERENT_WEEK: "differentWeek",
+  NOT_FOUND: "notFound",
+  Unauthorized: "notFound",
+};
 
 export function useMoveDayContents() {
   const qc = useQueryClient();
+  const t = useTranslations("workout.moveDialog");
 
   return useMutation({
-    mutationFn: (input: MoveDayContentsInput) => moveDayContents(input),
+    mutationFn: (input: MoveDayContentsInput) => callAction("moveDayContents", input),
 
     onMutate: async ({ sourceDailyPlanId, targetDailyPlanId, mode, includeWorkout, includeMeals }) => {
       // Cancel in-flight queries so they don't overwrite the optimistic state
@@ -66,14 +77,13 @@ export function useMoveDayContents() {
     onSuccess: (result) => {
       const parts: string[] = [];
       if (result.movedExerciseCount > 0)
-        parts.push(`${result.movedExerciseCount} egzersiz`);
+        parts.push(t("toast.exercises", { count: result.movedExerciseCount }));
       if (result.movedMealCount > 0)
-        parts.push(`${result.movedMealCount} öğün`);
+        parts.push(t("toast.meals", { count: result.movedMealCount }));
 
       const summary = parts.length > 0 ? ` (${parts.join(", ")})` : "";
-      const action = result.mode === "swap" ? "yer değişti" : "taşındı";
-
-      toast.success(`${result.targetLabel} ile ${action}${summary}`);
+      const values = { target: result.targetLabel, summary };
+      toast.success(result.mode === "swap" ? t("toast.swapped", values) : t("toast.moved", values));
     },
 
     onError: (err, vars, context) => {
@@ -87,11 +97,8 @@ export function useMoveDayContents() {
       if (context?.prevTargetMeals !== undefined)
         qc.setQueryData(["meals.byDay", vars.targetDailyPlanId], context.prevTargetMeals);
 
-      const msg =
-        err instanceof Error && err.message
-          ? err.message
-          : "Program taşınamadı, lütfen tekrar deneyin";
-      toast.error(msg);
+      const key = err instanceof Error && Object.hasOwn(ERROR_KEY, err.message) ? ERROR_KEY[err.message] : undefined;
+      toast.error(t(`errors.${key ?? "generic"}`));
     },
 
     onSettled: (_data, _err, vars) => {

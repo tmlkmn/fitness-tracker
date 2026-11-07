@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter, Link } from "@/i18n/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { signIn } from "@/lib/auth-client";
-import { signUpWithTrial } from "@/actions/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dumbbell, Loader2, Eye, EyeOff } from "lucide-react";
 import type { Locale } from "@fitmusc/shared/locale";
+import { callAction } from "@/lib/safe-action";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const inputClass =
@@ -39,7 +39,7 @@ export function SignupForm() {
 
     setLoading(true);
     try {
-      await signUpWithTrial({
+      await callAction("signUpWithTrial", {
         email: trimmedEmail,
         password,
         name: trimmedName,

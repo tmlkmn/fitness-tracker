@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getShoppingList, toggleShoppingItem, generateShoppingList } from "@/actions/shopping";
+import { getShoppingList, toggleShoppingItem } from "@/actions/shopping";
+import { callAction } from "@/lib/safe-action";
 
 type ShoppingItem = Awaited<ReturnType<typeof getShoppingList>>[number];
 
@@ -58,7 +59,7 @@ export function useToggleShopping() {
 export function useGenerateShoppingList() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (weeklyPlanId: number) => generateShoppingList(weeklyPlanId),
+    mutationFn: (weeklyPlanId: number) => callAction("generateShoppingList", weeklyPlanId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["shopping"] });
     },
