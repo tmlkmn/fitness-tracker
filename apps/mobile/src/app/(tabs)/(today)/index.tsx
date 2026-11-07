@@ -1,5 +1,4 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useTranslations } from "use-intl";
 
@@ -17,20 +16,12 @@ import {
   WeekStrip,
 } from "@/components/dashboard";
 import { OfflineBanner } from "@/components/offline-banner";
-import { ExerciseSections, MealItem } from "@/components/plan-items";
-import { AppText, Card, ErrorView, LoadingView, Screen, SectionTitle } from "@/components/ui";
+import { AppText, Card, ErrorView, LoadingView, Screen } from "@/components/ui";
 import { CardHeading } from "@/components/visual";
 import { SleepTile, WaterTile } from "@/components/wellness";
 import { useGreeting } from "@/hooks/ai";
 import { useActivityStats } from "@/hooks/gamification";
-import {
-  useDaySupplements,
-  useMacroTargets,
-  useTodayDashboard,
-  useToggleExercise,
-  useToggleMeal,
-  useToggleSupplement,
-} from "@/hooks/plan";
+import { useDaySupplements, useMacroTargets, useTodayDashboard, useToggleSupplement } from "@/hooks/plan";
 import { useWeeks } from "@/hooks/shopping";
 import { useProfile } from "@/hooks/wellness";
 import { todayStr } from "@/lib/dates";
@@ -38,8 +29,6 @@ import { useSession } from "@/lib/session";
 import { colors, spacing } from "@/lib/theme";
 
 export default function TodayScreen() {
-  const t = useTranslations();
-  const router = useRouter();
   const { user } = useSession();
   const today = todayStr();
   const dashboard = useTodayDashboard();
@@ -48,10 +37,7 @@ export default function TodayScreen() {
   const weeks = useWeeks();
   const activity = useActivityStats();
   const day = dashboard.data?.dailyPlan ?? null;
-  const dayId = day?.id ?? 0;
   const targets = useMacroTargets(day?.planType);
-  const toggleMeal = useToggleMeal(dayId);
-  const toggleExercise = useToggleExercise(dayId);
 
   if (dashboard.isLoading) return <LoadingView />;
   // An error, or offline with nothing saved on the device yet.
@@ -96,43 +82,7 @@ export default function TodayScreen() {
         <SleepTile date={today} />
       </View>
 
-      {day ? (
-        <>
-          <SectionTitle>
-            <Ionicons name="restaurant" size={17} color={colors.primary} /> {t("mobile.today.meals")}
-          </SectionTitle>
-          {meals.length === 0 ? <AppText variant="muted">{t("mobile.day.noMeals")}</AppText> : null}
-          {meals.map((meal) => (
-            <MealItem
-              key={meal.id}
-              meal={meal}
-              onToggle={(isCompleted) => toggleMeal.mutate({ id: meal.id, isCompleted })}
-              onPress={() => router.push({ pathname: "/meal-form", params: { dayId: String(dayId), mealId: String(meal.id) } })}
-              onAi={() => router.push({ pathname: "/ai/meal-variation", params: { dayId: String(dayId), mealId: String(meal.id) } })}
-            />
-          ))}
-
-          {exercises.length > 0 ? (
-            <>
-              <SectionTitle>
-                <Ionicons name="barbell" size={17} color={colors.primary} /> {t("mobile.today.workout")}
-              </SectionTitle>
-              <ExerciseSections
-                exercises={exercises}
-                onToggle={(exercise, isCompleted) => toggleExercise.mutate({ id: exercise.id, isCompleted })}
-                onPress={(exercise) =>
-                  router.push({ pathname: "/exercise-form", params: { dayId: String(dayId), exerciseId: String(exercise.id) } })
-                }
-                onAi={(exercise) =>
-                  router.push({ pathname: "/ai/exercise", params: { dayId: String(dayId), exerciseId: String(exercise.id) } })
-                }
-              />
-            </>
-          ) : null}
-
-          <Supplements dayId={day.id} date={today} />
-        </>
-      ) : null}
+      {day ? <Supplements dayId={day.id} date={today} /> : null}
 
       {weeklyPlan ? <WeekStrip weeklyPlanId={weeklyPlan.id} weekTitle={weeklyPlan.title} today={today} /> : null}
       <StatsRow profile={profile.data} weeksCount={weeks.data?.length ?? 0} todayPct={todayPct} nutritionOnly={nutritionOnly} />

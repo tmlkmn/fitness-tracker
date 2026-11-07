@@ -25,6 +25,31 @@ import { colors } from "@/lib/theme";
 
 type Tab = "nutrition" | "workout" | "wellness";
 
+/** Asks before ticking every unfinished item, like the web's BulkCompleteDialog. */
+function useConfirmCompleteAll() {
+  const t = useTranslations("bulkComplete");
+  return (count: number, label: string, run: () => void) =>
+    Alert.alert(t("title"), t.markup("body", { count, label, strong: (chunks) => chunks }), [
+      { text: t("cancel"), style: "cancel" },
+      { text: t("confirm"), onPress: run },
+    ]);
+}
+
+/** "Move to another day" (past days: "to today or later") — opens the move screen. */
+function MoveButton({ day, what, readOnly }: { day: DailyPlanDto; what: "meals" | "workout"; readOnly: boolean }) {
+  const t = useTranslations(what === "meals" ? "meals.list" : "workout.list");
+  const router = useRouter();
+  if (day.weeklyPlanId == null) return null;
+  return (
+    <Button
+      icon="swap-horizontal"
+      label={t(readOnly ? "moveToTodayOrFuture" : "moveToAnotherDay")}
+      variant={readOnly ? "secondary" : "ghost"}
+      onPress={() => router.push({ pathname: "/move-day", params: { dayId: String(day.id), what } })}
+    />
+  );
+}
+
 export default function DayScreen() {
   const t = useTranslations();
   const locale = useLocale() as Locale;
@@ -142,6 +167,7 @@ function NutritionTab({
   const targets = useMacroTargets(day.planType);
   const toggle = useToggleMeal(day.id);
   const completeAll = useCompleteAll(day.id, "meals");
+  const confirmCompleteAll = useConfirmCompleteAll();
   const hasMeals = (meals.data?.length ?? 0) > 0;
   const add = readOnly ? null : (
     <Button icon="add" label={t("meals.list.addMeal")} variant="secondary" onPress={() => router.push({ pathname: "/meal-form", params: { dayId: String(day.id) } })} />
@@ -199,12 +225,16 @@ function NutritionTab({
             {ai}
             {!readOnly && list.some((m) => !m.isCompleted) ? (
               <Button
+                icon="checkmark-done"
                 label={t("meals.list.completeAll")}
                 variant="secondary"
                 loading={completeAll.isPending}
-                onPress={() => completeAll.mutate()}
+                onPress={() =>
+                  confirmCompleteAll(list.filter((m) => !m.isCompleted).length, t("meals.list.itemLabel"), () => completeAll.mutate())
+                }
               />
             ) : null}
+            <MoveButton day={day} what="meals" readOnly={readOnly} />
             <CalorieTrendCard endDate={day.date ?? todayStr()} planType={day.planType} />
           </>
         )}
@@ -227,6 +257,7 @@ function WorkoutTab({
   const errorMessage = useErrorMessage();
   const toggle = useToggleExercise(day.id);
   const completeAll = useCompleteAll(day.id, "exercises");
+  const confirmCompleteAll = useConfirmCompleteAll();
   const { copy, fetchPrevious } = useCopyLastWeek(day.id);
   const [loadingPrevious, setLoadingPrevious] = useState(false);
   const hasExercises = (exercises.data?.length ?? 0) > 0;
@@ -318,12 +349,16 @@ function WorkoutTab({
             {ai}
             {!readOnly && list.some((e) => !e.isCompleted) ? (
               <Button
+                icon="checkmark-done"
                 label={t("workout.list.completeAll")}
                 variant="secondary"
                 loading={completeAll.isPending}
-                onPress={() => completeAll.mutate()}
+                onPress={() =>
+                  confirmCompleteAll(list.filter((e) => !e.isCompleted).length, t("workout.list.itemLabel"), () => completeAll.mutate())
+                }
               />
             ) : null}
+            <MoveButton day={day} what="workout" readOnly={readOnly} />
           </>
         )}
       </ListState>

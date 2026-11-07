@@ -23,10 +23,13 @@ export default function MacroTargetsScreen() {
   const save = useSaveMacroStrategy();
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [tooShort, setTooShort] = useState(false);
   const length = description.trim().length;
 
   const calculate = () => {
     setError(null);
+    // The AI needs a description of at least MIN_CHARS (web: the button stays disabled).
+    if (length < MIN_CHARS) return setTooShort(true);
     save.reset();
     ai.mutate(description.trim(), { onError: (err) => setError(errorMessage(err)) });
   };
@@ -59,7 +62,11 @@ export default function MacroTargetsScreen() {
             maxLength={MAX_CHARS}
           />
           <View style={styles.counter}>
-            {length > 0 && length < MIN_CHARS ? <AppText style={styles.minChars}>{t("minChars")}</AppText> : <View />}
+            {length < MIN_CHARS ? (
+              <AppText style={tooShort || length > 0 ? styles.minChars : styles.minCharsHint}>{t("minChars")}</AppText>
+            ) : (
+              <View />
+            )}
             <AppText variant="small">
               {length}/{MAX_CHARS}
             </AppText>
@@ -69,7 +76,6 @@ export default function MacroTargetsScreen() {
             feature="macro-ai"
             variant="secondary"
             loading={ai.isPending}
-            disabled={length < MIN_CHARS}
             onPress={calculate}
           />
         </Card>
@@ -124,6 +130,7 @@ const styles = StyleSheet.create({
   value: { fontSize: 17, fontWeight: "600", fontVariant: ["tabular-nums"] },
   counter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   minChars: { color: colors.warning, fontSize: 12 },
+  minCharsHint: { color: colors.textMuted, fontSize: 12 },
   saved: { color: colors.primary, textAlign: "center", fontWeight: "600" },
   explanation: { fontStyle: "italic" },
   actions: { flexDirection: "row", gap: spacing.sm },

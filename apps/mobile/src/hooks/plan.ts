@@ -5,9 +5,12 @@ import type {
   ExerciseDto,
   MacroTargetsForDayDto,
   MealDto,
+  MoveDayContentsResultDto,
   TodayDashboardDto,
 } from "@fitmusc/shared/api/dto";
+import type { moveDayContentsSchema } from "@fitmusc/shared/api/schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { z } from "zod";
 
 import { api } from "@/lib/api";
 import { syncCompletion, withPending } from "@/lib/outbox";
@@ -131,6 +134,32 @@ export function useToggleExercise(dayId: number) {
       void qc.invalidateQueries({ queryKey: keys.exercises(dayId) });
       void qc.invalidateQueries({ queryKey: keys.today });
       void qc.invalidateQueries({ queryKey: gamificationKeys.activityStats });
+    },
+  });
+}
+
+/** Moves / swaps this day's workout and/or meals onto another day of the same week (web: MoveDayContentsDialog). */
+export function useMoveDayContents(sourceDayId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: z.input<typeof moveDayContentsSchema>) =>
+      api<MoveDayContentsResultDto>(`/days/${sourceDayId}/move`, { method: "POST", body }),
+    // Both days' lists and plan types change; the calendar, Today and the trends read them.
+    onSettled: () => {
+      for (const key of [
+        ["day"],
+        ["day.byDate"],
+        ["day.meals"],
+        ["day.exercises"],
+        keys.today,
+        ["calendar.month"],
+        ["week.daySummaries"],
+        ["macros.forDay"],
+        ["nutrition.weeklyTotals"],
+        gamificationKeys.activityStats,
+      ]) {
+        void qc.invalidateQueries({ queryKey: key });
+      }
     },
   });
 }

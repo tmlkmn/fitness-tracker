@@ -328,7 +328,12 @@ function SelectedDay({
           </View>
         ) : null}
       </Card>
-      <DayLists dayId={plan.id} planType={plan.planType} readOnly={plan.date != null && plan.date < todayStr()} />
+      <DayLists
+        dayId={plan.id}
+        planType={plan.planType}
+        readOnly={plan.date != null && plan.date < todayStr()}
+        canMove={plan.weeklyPlanId != null}
+      />
     </>
   );
 }
@@ -336,7 +341,7 @@ function SelectedDay({
 type ListTab = "nutrition" | "workout";
 
 /** The selected day's meals and workout right under the calendar, like the web (DayDetailPanel). Past days are view-only. */
-function DayLists({ dayId, planType, readOnly }: { dayId: number; planType: string; readOnly: boolean }) {
+function DayLists({ dayId, planType, readOnly, canMove }: { dayId: number; planType: string; readOnly: boolean; canMove: boolean }) {
   const t = useTranslations();
   const router = useRouter();
   const profile = useProfile();
@@ -349,6 +354,8 @@ function DayLists({ dayId, planType, readOnly }: { dayId: number; planType: stri
   const current: ListTab = nutritionOnly ? "nutrition" : tab;
   const id = String(dayId);
   const loading = current === "nutrition" ? meals.isLoading : exercises.isLoading;
+  const count = current === "nutrition" ? (meals.data?.length ?? 0) : (exercises.data?.length ?? 0);
+  const listT = current === "nutrition" ? "meals.list" : "workout.list";
 
   let content;
   if (loading) content = <ActivityIndicator color={colors.primary} />;
@@ -402,6 +409,16 @@ function DayLists({ dayId, planType, readOnly }: { dayId: number; planType: stri
         />
       )}
       {content}
+      {canMove && !loading && count > 0 ? (
+        <Button
+          icon="swap-horizontal"
+          label={t(`${listT}.${readOnly ? "moveToTodayOrFuture" : "moveToAnotherDay"}`)}
+          variant="ghost"
+          onPress={() =>
+            router.push({ pathname: "/move-day", params: { dayId: id, what: current === "nutrition" ? "meals" : "workout" } })
+          }
+        />
+      ) : null}
     </>
   );
 }

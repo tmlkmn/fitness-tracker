@@ -62,6 +62,7 @@ function AppStack() {
             <Stack.Screen name="weight-targets" options={modalScreenOptions} />
             <Stack.Screen name="profile" options={modalScreenOptions} />
             <Stack.Screen name="routine" options={modalScreenOptions} />
+            <Stack.Screen name="move-day" options={modalScreenOptions} />
             <Stack.Screen name="macro-targets" options={{ title: "" }} />
             <Stack.Screen name="notifications" options={{ title: "" }} />
             <Stack.Screen name="notification-settings" options={{ title: "" }} />
